@@ -771,18 +771,18 @@ void Board::DrawGameObjects(Graphics *g) {
 }
 
 bool Board::KeyUp(Sexy::KeyCode theKey) {
-    // 联机对战屏蔽按键
+    // 联机对战屏蔽按键，仅允许返回键
     if (gTcpConnected || gTcpClientSocket >= 0) {
-        return false;
+        return theKey == KEYCODE_BACK;
     }
 
     return old_Board_KeyUp(this, theKey);
 }
 
 bool Board::KeyDown(KeyCode theKey) {
-    // 联机对战屏蔽按键
+    // 联机对战屏蔽按键，仅允许返回键
     if (gTcpConnected || gTcpClientSocket >= 0) {
-        return false;
+        return theKey == KEYCODE_BACK;
     }
 
     // 用于切换键盘模式，自动开关砸罐子老虎机种子雨关卡内的"自动拾取植物卡片"功能

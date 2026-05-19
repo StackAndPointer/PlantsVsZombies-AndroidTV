@@ -56,19 +56,14 @@ void VSSetupMenu::_destructor() {
     old_VSSetupMenu_Destructor(this);
 }
 
-void VSSetupMenu::SnapControllerWidgetToSide(Sexy::Widget *theWidget, VSSide theSide) {
-    if (theWidget == nullptr) {
-        return;
-    }
-    int targetX = theWidget->mX;
+static int GetControllerSideAnchorX(VSSide theSide) {
     if (theSide == VS_SIDE_PLANT) {
-        targetX = 240;
-    } else if (theSide == VS_SIDE_ZOMBIE) {
-        targetX = 410;
-    } else {
-        targetX = 325;
+        return 240;
     }
-    theWidget->Move(targetX, theWidget->mY);
+    if (theSide == VS_SIDE_ZOMBIE) {
+        return 410;
+    }
+    return 325;
 }
 
 void VSSetupMenu::Draw(Graphics *g) {
@@ -315,11 +310,9 @@ void VSSetupMenu::MouseUp(int x, int y, int theCount) {
         if (resolvedSideP1 != VS_SIDE_NONE && resolvedSideP1 == mSides[1]) {
             resolvedSideP1 = mSides[0];
         }
-        if (resolvedSideP1 == mSides[0]) {
-            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
-        }
         mSides[0] = resolvedSideP1;
-        this->SnapControllerWidgetToSide(aControllerWidgetP1, mSides[0]);
+        aControllerWidgetP1->Move(GetControllerSideAnchorX(mSides[0]), aControllerWidgetP1->mY);
+        GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
         if (gTcpClientSocket >= 0) {
             U8U8_Event event = {{EventType::EVENT_SERVER_VSSETUPMENU_SET_SIDE}, 0, mSides[0] == -1 ? uint8_t(2) : uint8_t(mSides[0])};
             netplay::PutEvent(event);
@@ -342,7 +335,8 @@ void VSSetupMenu::MouseUp(int x, int y, int theCount) {
             netplay::PutEvent(event);
         } else {
             mSides[1] = aSideP2;
-            this->SnapControllerWidgetToSide(aControllerWidgetP2, mSides[1]);
+            aControllerWidgetP2->Move(GetControllerSideAnchorX(mSides[1]), aControllerWidgetP2->mY);
+            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
             is2PControllerMoving = false;
         }
     }
@@ -578,11 +572,12 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 resolvedSide = mSides[1];
             }
 
-            if (mSides[1] == resolvedSide) {
-                GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
-            }
+            Sexy::Widget *controllerWidget = FindWidget(8);
             mSides[1] = resolvedSide;
-            this->SnapControllerWidgetToSide(FindWidget(8), mSides[1]);
+            if (controllerWidget != nullptr) {
+                controllerWidget->Move(GetControllerSideAnchorX(mSides[1]), controllerWidget->mY);
+            }
+            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
             is2PControllerMoving = false;
             if (gTcpClientSocket >= 0) {
                 uint8_t sideData = (resolvedSide == VS_SIDE_NONE) ? 2 : uint8_t(resolvedSide);
@@ -706,11 +701,12 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             if (aSide < VS_SIDE_NONE || aSide > VS_SIDE_ZOMBIE) {
                 break;
             }
-            if (mSides[sideSlot] == aSide) {
-                GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, sideSlot, 0);
-            }
             mSides[sideSlot] = aSide;
-            this->SnapControllerWidgetToSide(FindWidget(sideSlot == 0 ? 7 : 8), mSides[sideSlot]);
+            Sexy::Widget *controllerWidget = FindWidget(sideSlot == 0 ? 7 : 8);
+            if (controllerWidget != nullptr) {
+                controllerWidget->Move(GetControllerSideAnchorX(mSides[sideSlot]), controllerWidget->mY);
+            }
+            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, sideSlot, 0);
             if (sideSlot == 0) {
                 is1PControllerMoving = false;
             } else {
