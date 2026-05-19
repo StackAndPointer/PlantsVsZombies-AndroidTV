@@ -600,7 +600,9 @@ public:
         static_assert(std::is_integral_v<decltype(r)>, "resize_and_overwrite operation must return an integer");
         assert((r >= 0) && (size_type(r) <= n));
         term._r = size_type(r);
+#if __has_cpp_attribute(assume)
         [[assume(term._r <= n)]];
+#endif
     }
 
     void swap(basic_string &other) noexcept /* strengthened */ {
