@@ -389,6 +389,7 @@ void InitHookFunction() {
 
 
     homura::HookFunc(ToolTipWidget_DrawAddr, &ToolTipWidget::Draw, &old_ToolTipWidget_Draw);
+    homura::HookFunc(ToolTipWidget_CalculateSizeAddr, &ToolTipWidget::CalculateSize, nullptr);
 
 
     homura::HookFunc(Zombie_UpdateAddr, &Zombie::Update, nullptr);

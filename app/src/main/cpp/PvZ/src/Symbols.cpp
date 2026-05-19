@@ -1162,6 +1162,8 @@ bool LoadGameMain() {
     ToolTipWidget_SetLabelAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget8SetLabelERKSs");
     ToolTipWidget_GetLinesAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget8GetLinesERSt6vectorISsSaISsEE");
     ToolTipWidget_DrawAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget4DrawEPN4Sexy8GraphicsE");
+    ToolTipWidget_CalculateSizeAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget13CalculateSizeEv");
+
 
     TodDrawImageCelCenterScaledFAddr = libGameMain.GetSymbol("_Z28TodDrawImageCelCenterScaledFPN4Sexy8GraphicsEPNS_5ImageEffiff");
     TodDrawImageCelFAddr = libGameMain.GetSymbol("_Z16TodDrawImageCelFPN4Sexy8GraphicsEPNS_5ImageEffii");

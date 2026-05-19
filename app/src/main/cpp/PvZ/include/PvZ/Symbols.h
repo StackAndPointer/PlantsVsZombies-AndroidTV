@@ -1163,6 +1163,7 @@ inline void *ToolTipWidget_SetTitleAddr;
 inline void *ToolTipWidget_SetLabelAddr;
 inline void *ToolTipWidget_GetLinesAddr;
 inline void *ToolTipWidget_DrawAddr;
+inline void *ToolTipWidget_CalculateSizeAddr;
 
 
 inline void *GridItem__constructorAddr;

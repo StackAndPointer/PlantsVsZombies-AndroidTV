@@ -65,6 +65,8 @@ public:
 
     void Draw(Sexy::Graphics *g);
 
+    void CalculateSize();
+
 protected:
     void _constructor() {
         reinterpret_cast<void (*)(ToolTipWidget *)>(ToolTipWidget__constructorAddr)(this);

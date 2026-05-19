@@ -18,12 +18,66 @@
  */
 
 #include "PvZ/Lawn/Board/ToolTipWidget.h"
+#include "Homura/Logger.h"
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 #include <PvZ/Lawn/LawnApp.h>
 #include <vector>
 
 using namespace Sexy;
+
+void ToolTipWidget::CalculateSize() {
+    auto StringWidth = [](Sexy::Font *font, const pvzstl::string &text) -> int { return ((int (*)(Sexy::Font *, const pvzstl::string *))font->vTable[8])(font, &text); };
+
+    // 先计算标题和警告文本的最大宽度
+    int maxWidth = StringWidth(mTitleFont, mTitle);
+
+    int warningWidth = StringWidth(mWarningTextFont, mWarningText);
+    if (warningWidth > maxWidth)
+        maxWidth = warningWidth;
+
+    // GetLines() 会根据 mGetsLinesWidth 自动换行
+    // 原版逻辑：最大文本宽度 - 30，但最小不能小于 100
+    mGetsLinesWidth = maxWidth - 30;
+    if (mGetsLinesWidth < 100)
+        mGetsLinesWidth = 100;
+
+    // 计算正文分行
+    std::vector<pvzstl::string> lines;
+    GetLines(lines);
+
+    // 正文每一行也参与 tooltip 宽度计算
+    for (const pvzstl::string &line : lines) {
+        int lineWidth = StringWidth(mWarningTextFont, line);
+        if (lineWidth > maxWidth)
+            maxWidth = lineWidth;
+    }
+
+    // 左右各 5 像素 padding
+    mWidth = maxWidth + 10;
+
+    // 计算高度
+    int height = 6;
+
+    if (!mTitle.empty()) {
+        height = mTitleFont->GetAscent() + 8;
+    }
+
+    if (!mWarningText.empty()) {
+        // 推荐用 mWarningTextFont，因为 Draw() 里警告文本就是用这个字体画的
+        height += mWarningTextFont->GetAscent() + 2;
+    }
+
+    if (!lines.empty()) {
+        int lineHeight = mWarningTextFont->GetAscent();
+
+        height += static_cast<int>(lines.size()) * lineHeight;
+        height += static_cast<int>(lines.size() - 1) * 2;
+    }
+
+    mHeight = height;
+}
+
 
 void ToolTipWidget::Draw(Sexy::Graphics *g) {
     if (!mVisible)

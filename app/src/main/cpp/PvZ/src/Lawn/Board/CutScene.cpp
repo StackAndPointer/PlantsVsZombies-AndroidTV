@@ -37,6 +37,12 @@ void CutScene::ShowShovel() {
         return;
     }
 
+    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+        // 对战直接启用铲子
+        mBoard->mShowShovel = true;
+        return;
+    }
+
     old_CutScene_ShowShovel(this);
 }
 
