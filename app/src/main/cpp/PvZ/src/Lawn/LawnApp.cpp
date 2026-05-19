@@ -1259,6 +1259,8 @@ bool LawnApp::HasBeatenChallenge(GameMode theGameMode) {
     return mPlayerInfo->mChallengeRecords[aChallengeIndex] > 0;
 }
 
+void Sexy_InputManager_DispatchEvent(int a1, int a2, int a3, int a4) {}
+
 static bool zombatarResLoaded;
 
 void LawnApp::LoadZombatarResources() {

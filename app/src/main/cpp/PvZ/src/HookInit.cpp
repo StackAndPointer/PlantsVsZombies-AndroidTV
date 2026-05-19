@@ -124,6 +124,7 @@ void InitHookFunction() {
     homura::HookFunc(Board_GetPumpkinAtAddr, &Board::GetPumpkinAt, nullptr);
     homura::HookFunc(Board_ZombiesWonAddr, &Board::ZombiesWon, &old_BoardZombiesWon);
     homura::HookFunc(Board_KeyDownAddr, &Board::KeyDown, &old_Board_KeyDown);
+    homura::HookFunc(Board_KeyUpAddr, &Board::KeyUp, &old_Board_KeyUp);
     homura::HookFunc(Board_UpdateSunSpawningAddr, &Board::UpdateSunSpawning, nullptr);
     homura::HookFunc(Board_UpdateZombieSpawningAddr, &Board::UpdateZombieSpawning, &old_Board_UpdateZombieSpawning);
     homura::HookFunc(Board_PickBackgroundAddr, &Board::PickBackground, &old_Board_PickBackground);

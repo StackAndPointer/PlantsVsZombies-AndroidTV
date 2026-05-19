@@ -770,7 +770,21 @@ void Board::DrawGameObjects(Graphics *g) {
     }
 }
 
-void Board::KeyDown(KeyCode theKey) {
+bool Board::KeyUp(Sexy::KeyCode theKey) {
+    // 联机对战屏蔽按键
+    if (gTcpConnected || gTcpClientSocket >= 0) {
+        return false;
+    }
+
+    return old_Board_KeyUp(this, theKey);
+}
+
+bool Board::KeyDown(KeyCode theKey) {
+    // 联机对战屏蔽按键
+    if (gTcpConnected || gTcpClientSocket >= 0) {
+        return false;
+    }
+
     // 用于切换键盘模式，自动开关砸罐子老虎机种子雨关卡内的"自动拾取植物卡片"功能
     if (theKey >= 37 && theKey <= 40) {
         if (!keyboardMode) {
@@ -780,7 +794,7 @@ void Board::KeyDown(KeyCode theKey) {
         requestDrawShovelInCursor = false;
     }
 
-    old_Board_KeyDown(this, theKey);
+    return old_Board_KeyDown(this, theKey);
 }
 
 Coin *Board::AddCoin(int theX, int theY, CoinType theCoinType, CoinMotion theCoinMotion) {

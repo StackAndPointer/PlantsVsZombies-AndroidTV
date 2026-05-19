@@ -629,7 +629,8 @@ public:
     void __MouseDrag(int x, int y);
     void __MouseUp(int x, int y, int theClickCount);
     void ButtonDepress(int theId);
-    void KeyDown(Sexy::KeyCode theKey);
+    bool KeyDown(Sexy::KeyCode theKey);
+    bool KeyUp(Sexy::KeyCode theKey);
 
     void processClientEvent(const BaseEvent *event);
     void processServerEvent(const BaseEvent *event);
@@ -737,7 +738,9 @@ inline void (*old_BoardZombiesWon)(Board *board, Zombie *zombie);
 
 inline Plant *(*old_Board_AddPlant)(Board *board, int x, int y, SeedType seedType, SeedType theImitaterType, int playerIndex, bool doPlantEffect);
 
-inline void (*old_Board_KeyDown)(Board *board, Sexy::KeyCode theKey);
+inline bool (*old_Board_KeyDown)(Board *board, Sexy::KeyCode theKey);
+
+inline bool (*old_Board_KeyUp)(Board *board, Sexy::KeyCode theKey);
 
 inline void (*old_Board_UpdateZombieSpawning)(Board *board);
 
