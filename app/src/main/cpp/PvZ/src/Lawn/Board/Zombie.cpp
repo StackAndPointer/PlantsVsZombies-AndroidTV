@@ -185,10 +185,9 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
 
     switch (theType) {
         case ZombieType::ZOMBIE_BALLOON:
-            if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-                mAltitude = 0;
+            if (mApp->IsVSMode() && IsOnBoard()) {
+                mAltitude = 0.0f;
                 mFlyingHealth = 150;
-                PickRandomSpeed();
             }
             break;
 
@@ -540,7 +539,7 @@ void Zombie::UpdateZombieFlyer() {
         LandFlyer(0U);
     }
 
-    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+    if (mApp->IsVSMode()) {
         float aMaxAltitude = 50.0f;
         if (mZombiePhase == ZombiePhase::PHASE_BALLOON_FLYING) {
             Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
@@ -554,7 +553,7 @@ void Zombie::UpdateZombieFlyer() {
                         mApp->PlayFoley(FoleyType::FOLEY_BALLOONINFLATE);
                     }
                     mAltitude++;
-                    mVelX = 0;
+                    mVelX = 0.0f;
                     UpdateAnimSpeed();
                 } else {
                     mPhaseCounter = 50;
@@ -4253,7 +4252,7 @@ void Zombie::PickRandomSpeed() {
     if (mApp->IsVSMode() && gTcpConnected)
         return;
 
-    if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_WALKING_IN_POOL || (IsFlying() && mApp->IsVSMode())) {
+    if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_WALKING_IN_POOL) {
         mVelX = 0.3f;
     } else if (mZombiePhase == ZombiePhase::PHASE_DIGGER_WALKING) { // 矿工行走
         if (mApp->IsIZombieLevel()) {
