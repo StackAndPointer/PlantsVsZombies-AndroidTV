@@ -2470,7 +2470,7 @@ void Zombie::EatPlant(Plant *thePlant) {
             mApp->PlaySample(SOUND_GULP);
         }
         if (gTcpClientSocket >= 0) {
-            BaseEvent event = {EventType::EVENT_SERVER_BOARD_PLANT_EATEN};
+            U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 0};
             netplay::PutEvent(event);
         }
 

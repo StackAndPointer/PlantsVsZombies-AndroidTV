@@ -1697,9 +1697,22 @@ void Board::processServerEvent(const BaseEvent *event) {
             plant->mLaunchCounter = int(eventPlantAdd->data3);
             serverPlantIDMap[eventPlantAdd->data5.u16x2.u16_1] = uint16_t(mPlants.DataArrayGetID(plant));
         } break;
-        case EVENT_SERVER_BOARD_PLANT_EATEN:
-            mApp->PlaySample(SOUND_GULP);
-            break;
+        case EVENT_SERVER_BOARD_PLAY_SOUND: {
+            auto *eventSound = static_cast<const U8_Event *>(event);
+            switch (eventSound->data) {
+                case 0:
+                    mApp->PlaySample(SOUND_GULP);
+                    break;
+                case 1:
+                    mApp->PlaySample(SOUND_BUZZER);
+                    break;
+                case 2:
+                    mApp->PlaySample(SOUND_SEEDLIFT);
+                    break;
+                default:
+                    break;
+            }
+        } break;
         case EVENT_SERVER_BOARD_PLANT_DIE: {
             auto *eventPlantDie = static_cast<const U16_Event *>(event);
             uint16_t serverPlantID = eventPlantDie->data;
@@ -3657,7 +3670,13 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             if (currentSeedBankIndex != newSeedPacketIndex || mGameState != 7) {
                 mGamepadControls[0]->mGamepadState = 7;
                 mGamepadControls[0]->mIsInShopSeedBank = false;
-                mApp->PlaySample(Sexy::SOUND_SEEDLIFT);
+                bool isClientGamepadControl = mGamepadControls[0]->mPlayerIndex2 == 1;
+                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 2};
+                    netplay::PutEvent(event);
+                } else {
+                    mApp->PlaySample(SOUND_SEEDLIFT);
+                }
             } else if (currentSeedBankIndex == newSeedPacketIndex && mGameState == 7) {
                 mGamepadControls[0]->mGamepadState = 1;
                 if (!isTwoSeedBankMode)
@@ -3691,7 +3710,13 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || mGameState_2P != 7) {
                 mGamepadControls[1]->mGamepadState = 7;
                 mGamepadControls[1]->mIsInShopSeedBank = false;
-                mApp->PlaySample(Sexy::SOUND_SEEDLIFT);
+                bool isClientGamepadControl = mGamepadControls[1]->mPlayerIndex2 == 1;
+                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 2};
+                    netplay::PutEvent(event);
+                } else {
+                    mApp->PlaySample(SOUND_SEEDLIFT);
+                }
             } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && mGameState_2P == 7) {
                 mGamepadControls[1]->mGamepadState = 1;
                 if (!isTwoSeedBankMode)
@@ -4253,9 +4278,9 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
                         seedBank_2P->mSeedPackets[seedPacketIndexNew_2P].mLastSelectedTime = 0.0f;  // 动画效果专用
                     }
                 }
-                if (mGameMode == GameMode::GAMEMODE_MP_VS) {
-                    mGamepadControls[1]->mGamepadState = 1;
-                }
+                //                if (mGameMode == GameMode::GAMEMODE_MP_VS) {
+                //                    mGamepadControls[1]->mGamepadState = 1;
+                //                }
             }
         }
     }
@@ -4348,7 +4373,13 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             if (currentSeedBankIndex != newSeedPacketIndex || mGameState != 7) {
                 mGamepadControls[0]->mGamepadState = 7;
                 mGamepadControls[0]->mIsInShopSeedBank = false;
-                mApp->PlaySample(Sexy::SOUND_SEEDLIFT);
+                bool isClientGamepadControl = mGamepadControls[0]->mPlayerIndex2 == 1;
+                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 2};
+                    netplay::PutEvent(event);
+                } else {
+                    mApp->PlaySample(SOUND_SEEDLIFT);
+                }
             } else if (currentSeedBankIndex == newSeedPacketIndex && mGameState == 7) {
                 mGamepadControls[0]->mGamepadState = 1;
                 if (!isTwoSeedBankMode)
@@ -4382,7 +4413,14 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || mGameState_2P != 7) {
                 mGamepadControls[1]->mGamepadState = 7;
                 mGamepadControls[1]->mIsInShopSeedBank = false;
-                mApp->PlaySample(Sexy::SOUND_SEEDLIFT);
+
+                bool isClientGamepadControl = mGamepadControls[1]->mPlayerIndex2 == 1;
+                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 2};
+                    netplay::PutEvent(event);
+                } else {
+                    mApp->PlaySample(SOUND_SEEDLIFT);
+                }
             } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && mGameState_2P == 7) {
                 mGamepadControls[1]->mGamepadState = 1;
                 if (!isTwoSeedBankMode)
@@ -4887,9 +4925,9 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                         seedBank_2P->mSeedPackets[seedPacketIndexNew_2P].mLastSelectedTime = 0.0f; // 动画效果专用
                     }
                 }
-                if (aGameMode == GameMode::GAMEMODE_MP_VS) {
-                    mGamepadControls[1]->mGamepadState = 1;
-                }
+                //                if (aGameMode == GameMode::GAMEMODE_MP_VS) {
+                //                    mGamepadControls[1]->mGamepadState = 1;
+                //                }
                 if (gTouchStateSecond == TouchState::TOUCHSTATE_VALID_COBCONON_SECOND) {
                     mApp->ClearSecondPlayer();
                     mGamepadControls[1]->mPlayerIndex2 = -1;

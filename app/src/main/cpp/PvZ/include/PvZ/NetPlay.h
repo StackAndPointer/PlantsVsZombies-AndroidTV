@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3168;
+inline constexpr uint32_t NETPLAY_VERSION = 3169;
 
 enum EventType : uint8_t {
     EVENT_NULL,
@@ -119,7 +119,6 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_PLANT_FIRE,                         // 射出子弹
     EVENT_SERVER_BOARD_PLANT_ADD,
     EVENT_SERVER_BOARD_PLANT_DIE,
-    EVENT_SERVER_BOARD_PLANT_EATEN,      // 播放植物被吃掉的音效
     EVENT_SERVER_BOARD_PLANT_DO_SPECIAL, // 同步植物触发特性
     EVENT_SERVER_BOARD_PLANT_CHOMPER_BIT,
     EVENT_SERVER_BOARD_PLANT_MAGNETSHROOM_ATTACK,
@@ -159,6 +158,8 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_ZOMBIE_WIN, // 僵尸方通过进家胜利
 
     EVENT_SERVER_BOARD_LAWNMOWER_START,
+
+    EVENT_SERVER_BOARD_PLAY_SOUND, // 播放音效
 
     EVENT_SERVER_BOARD_TAKE_SUNMONEY,
     EVENT_SERVER_BOARD_TAKE_DEATHMONEY,

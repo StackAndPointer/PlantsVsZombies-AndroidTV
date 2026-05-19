@@ -1073,8 +1073,17 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             int aGridY = mBoard->PixelToGridYKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
 
             if (!mBoard->CanTakeDeathMoney(aPacketCost) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK
-                || mBoard->HasLevelAwardDropped())
+                || mBoard->HasLevelAwardDropped()) {
+                bool isClientGamepadControl = mPlayerIndex2 == 1;
+                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
+                    netplay::PutEvent(event);
+                } else {
+                    mGameObject->mApp->PlaySample(SOUND_BUZZER);
+                }
                 return;
+            }
+
 
             if (aPacketType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE) {
                 std::vector<SeedType> aPlantSeeds, aZombieSeeds;
@@ -1093,7 +1102,13 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 
             if (mBoard->HasLevelAwardDropped() || (mBoard->mChallenge->IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode <= 1 && Challenge::IsMPResourceProducer(aSeedPacket->mPacketType))
                 || mBoard->mChallenge->ISMPSeedSuddenDeathDisabled(aSeedBank->mIsZombie, aPacketType)) {
-                mGameObject->mApp->PlaySample(Sexy::SOUND_BUZZER);
+                bool isClientGamepadControl = mPlayerIndex2 == 1;
+                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
+                    netplay::PutEvent(event);
+                } else {
+                    mGameObject->mApp->PlaySample(SOUND_BUZZER);
+                }
                 return;
             }
 
@@ -1125,6 +1140,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 
                     aSeedPacket->Deactivate();
                     aSeedPacket->WasPlanted(mPlayerIndex1);
+                    mGamepadState = 1;
                 }
             }
 
@@ -1135,6 +1151,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                     aGraveStone->mVSGraveStoneHealth = 350;
                     aSeedPacket->Deactivate();
                     aSeedPacket->WasPlanted(mPlayerIndex1);
+                    mGamepadState = 1;
                 }
             }
 
@@ -1166,6 +1183,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 
                 aSeedPacket->Deactivate();
                 aSeedPacket->WasPlanted(mPlayerIndex2);
+                mGamepadState = 1;
                 return;
             }
         } else {
@@ -1176,10 +1194,18 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 || mBoard->HasLevelAwardDropped()) {
                 // 优化玩家体验：不执行旧函数，使未成功种下的卡槽不会退回未选取状态
                 //                old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
+                bool isClientGamepadControl = mPlayerIndex2 == 1;
+                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
+                    netplay::PutEvent(event);
+                } else {
+                    mGameObject->mApp->PlaySample(SOUND_BUZZER);
+                }
                 return;
             }
 
             if (aPacketType < SeedType::NUM_SEED_TYPES) {
+                // TODO: 重写旧函数，以在客机种植失败时告知客机播放BUZZER,而非主机播放BUZZER
                 old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
                 return;
             }
