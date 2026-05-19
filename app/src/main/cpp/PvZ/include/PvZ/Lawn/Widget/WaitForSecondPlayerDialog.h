@@ -139,6 +139,7 @@ public:
     bool mServerP2PFailSent;
     bool mServerP2PDoneReceived;
     bool mServerGameStarting;
+    int mServerGameStartingTick;
     std::uint32_t mServerRelayEpoch;
     int mServerP2PLocalPort;
     int mServerP2PProbePort;
@@ -171,6 +172,8 @@ public:
     void ServerSendStart();    // host start (optional)
     void ServerSendAskStart(); // guest ask host to start
     void ServerSendSetSpectate(bool allow);
+    void ServerSendSwitchRole(bool toSpectator);
+    void ServerSendRejoinRole(bool toSpectator);
     bool ServerSendNatPort();
     bool ServerSendP2PProbe();
     bool ServerOpenP2PListener();

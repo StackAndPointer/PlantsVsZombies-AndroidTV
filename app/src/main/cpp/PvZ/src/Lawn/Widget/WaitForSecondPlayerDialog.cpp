@@ -67,6 +67,7 @@ constexpr int kMode3ServerRecentItemStartY = 304;
 constexpr int kMode3ServerTargetLineH = 38;
 constexpr int kMode3ServerTargetMaxLen = 22; // "255.255.255.255:65535" + '\0'
 constexpr int kMode3ServerRecentCount = 3;
+constexpr int kMode3StartTimeoutTicks = 1000; // ~10s
 constexpr const char *kOfficialServer1Addr = "8.163.89.131:26667";
 constexpr const char *kOfficialServer2Addr = "39.107.81.44:26667";
 
@@ -427,6 +428,23 @@ static bool Mode3ConnectSelectedTarget(WaitForSecondPlayerDialog *dialog) {
     }
     return Mode3ConnectToTarget(dialog, ip, port);
 }
+
+static bool Mode3CanSwitchGuestToSpectator(const WaitForSecondPlayerDialog *dialog) {
+    if (!dialog || !dialog->mServerJoined || dialog->mServerGameStarting || !dialog->mServerConnected || dialog->mServerConnecting) {
+        return false;
+    }
+    if (!dialog->mServerJoinedSpectateAllowed) {
+        return false;
+    }
+    return dialog->mServerSpectatorCount < 6;
+}
+
+static bool Mode3CanSwitchSpectatorToGuest(const WaitForSecondPlayerDialog *dialog) {
+    if (!dialog || !dialog->mServerSpectating || dialog->mServerGameStarting || !dialog->mServerConnected || dialog->mServerConnecting) {
+        return false;
+    }
+    return gSecondPlayerName[0] == '\0';
+}
 } // namespace
 
 bool WaitForSecondPlayerDialog::ServerHostRoomLocked() const {
@@ -556,7 +574,15 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
             }
 
             // right: 创建 / 退出
-            mRightButton->SetLabel(mServerHosting ? "[EXIT_ROOM_BUTTON]" : "[CREATE_ROOM_BUTTON]");
+            if (mServerHosting) {
+                mRightButton->SetLabel("[EXIT_ROOM_BUTTON]");
+            } else if (mServerJoined) {
+                mRightButton->SetLabel("[SPECTATE]");
+            } else if (mServerSpectating) {
+                mRightButton->SetLabel("[CLIENT]");
+            } else {
+                mRightButton->SetLabel("[CREATE_ROOM_BUTTON]");
+            }
 
             // ✅ YesButton：host/joined 都显示“开始游戏”
             if (mServerHosting) {
@@ -611,7 +637,13 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
 
             // 创建按钮：空闲态可创建；hosting 时可退出
             bool canCreateIdle = (mServerConnected && !mServerConnecting && !mServerJoined && !mServerSpectating && !mServerCreatePending && !startBusy);
-            mRightButton->mDisabled = !canCreateIdle;
+            if (mServerJoined) {
+                mRightButton->mDisabled = !Mode3CanSwitchGuestToSpectator(this);
+            } else if (mServerSpectating) {
+                mRightButton->mDisabled = !Mode3CanSwitchSpectatorToGuest(this);
+            } else {
+                mRightButton->mDisabled = !canCreateIdle;
+            }
         } break;
     }
 
@@ -734,6 +766,7 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     mServerP2PFailSent = false;
     mServerP2PDoneReceived = false;
     mServerGameStarting = false;
+    mServerGameStartingTick = 0;
     mServerRelayEpoch = 0;
     mServerP2PLocalPort = 0;
     mServerP2PProbePort = 0;
@@ -1232,6 +1265,19 @@ void WaitForSecondPlayerDialog::Update() {
         // 网络 IO（你实现：包含 connect 完成检测、收包解析等）
         ServerUpdateIO();
         ServerUpdateP2P();
+        if (mServerGameStarting) {
+            mServerGameStartingTick++;
+            if (mServerGameStartingTick >= kMode3StartTimeoutTicks) {
+                mServerGameStarting = false;
+                mServerGameStartingTick = 0;
+                mServerP2PStatusText = "P2P: start timeout";
+                mServerStatusText = TodStringTranslate("[STATUS_START_TIMEOUT]");
+                ServerResetP2PState(true);
+                if (mServerConnected) {
+                    ServerSendQuery();
+                }
+            }
+        }
 
         // 自动 Query：仅在“空闲态”每秒一次
         // 空闲态定义：已连接 && 未创建房间 && 未加入房间 && 未进入 relay
@@ -2030,7 +2076,11 @@ void WaitForSecondPlayerDialog::ButtonDepress_Thunk(this ButtonListener &self, i
                     }
                     if (aDialog->mServerHosting) {
                         aDialog->ServerSendExitRoom(); // EXIT_ROOM(0x06)
-                    } else if (!aDialog->mServerJoined && !aDialog->mServerSpectating) {
+                    } else if (aDialog->mServerJoined) {
+                        aDialog->ServerSendRejoinRole(true);
+                    } else if (aDialog->mServerSpectating) {
+                        aDialog->ServerSendRejoinRole(false);
+                    } else {
                         aDialog->ServerSendCreate(); // CREATE(0x01)
                     }
                     aDialog->RefreshButtons();
@@ -2165,6 +2215,9 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                         mServerHostedRoomName[0] = '\0';
                     }
                     mServerStatusText = TodStringTranslate("[STATUS_ROOM_CREATED]");
+                    if (mApp && mApp->mPlayerInfo && mApp->mPlayerInfo->mHostAllowSpectate) {
+                        ServerSendSetSpectate(true);
+                    }
                 }
                 break;
             }
@@ -2385,6 +2438,10 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                     if (mServerHosting && rid == mServerHostedRoomId) {
                         mServerHostSpectateAllowed = (payload[4] != 0);
                         mServerHostForceRelay = (payload[5] != 0);
+                        if (mApp && mApp->mPlayerInfo) {
+                            mApp->mPlayerInfo->mHostAllowSpectate = mServerHostSpectateAllowed;
+                            mApp->mPlayerInfo->SaveDetails();
+                        }
                     } else if (mServerJoined && rid == mServerJoinedRoomId) {
                         mServerJoinedSpectateAllowed = (payload[4] != 0);
                     }
@@ -2467,6 +2524,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
             }
             case 0x8A: { // P2P_DONE
                 mServerP2PDoneReceived = true;
+                mServerGameStartingTick = 0;
                 mServerStatusText = TodStringTranslate("[STATUS_BATTLE_BEGIN]");
                 if (mServerP2PPendingSock >= 0) {
                     mServerP2PStatusText = "P2P: server confirmed direct channel";
@@ -2491,6 +2549,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 mServerHostForceRelay = false;
                 mServerClientWantStart = false;
                 mServerAskedWantStart = false;
+                mServerGameStartingTick = 0;
                 mServerHostedRoomId = 0;
                 mServerJoinedRoomId = 0;
                 mServerHostedRoomName[0] = '\0';
@@ -3461,6 +3520,71 @@ void WaitForSecondPlayerDialog::ServerSendSetSpectate(bool allow) {
     }
 }
 
+void WaitForSecondPlayerDialog::ServerSendSwitchRole(bool toSpectator) {
+    if (!mServerConnected || mServerConnecting || mServerSock < 0) {
+        return;
+    }
+    if (toSpectator) {
+        if (!Mode3CanSwitchGuestToSpectator(this)) {
+            return;
+        }
+    } else {
+        if (!Mode3CanSwitchSpectatorToGuest(this)) {
+            return;
+        }
+    }
+
+    uint8_t buf[2];
+    buf[0] = 0x10; // SWITCH_ROLE
+    buf[1] = toSpectator ? 1 : 0;
+    if (!SendAll(mServerSock, buf, sizeof(buf))) {
+        mServerStatusText = "switch role failed";
+        ServerDisconnect("switch role send fail");
+    }
+}
+
+void WaitForSecondPlayerDialog::ServerSendRejoinRole(bool toSpectator) {
+    if (!mServerConnected || mServerConnecting || mServerSock < 0 || mServerJoinedRoomId == 0) {
+        mServerStatusText = "switch role unavailable";
+        return;
+    }
+    if (toSpectator) {
+        if (!Mode3CanSwitchGuestToSpectator(this)) {
+            mServerStatusText = "cannot switch to spectator";
+            return;
+        }
+    } else {
+        if (!Mode3CanSwitchSpectatorToGuest(this)) {
+            mServerStatusText = "cannot switch to guest";
+            return;
+        }
+    }
+
+    const char *playerName = (mApp && mApp->mPlayerInfo && mApp->mPlayerInfo->mName) ? mApp->mPlayerInfo->mName : "";
+    int nameLen = (int)std::strlen(playerName);
+    if (nameLen > 255)
+        nameLen = 255;
+
+    uint8_t buf[1 + 4 + 4 + 1 + 255];
+    buf[0] = toSpectator ? 0x0F : 0x03; // JOIN_SPECTATE / JOIN
+    homura::WriteBEI32(buf + 1, mServerJoinedRoomId);
+    homura::WriteBEI32(buf + 5, NETPLAY_VERSION);
+    buf[9] = (uint8_t)nameLen;
+    if (nameLen > 0) {
+        std::memcpy(buf + 10, playerName, nameLen);
+    }
+
+    if (!ServerSendU8(0x07)) { // LEAVE_ROOM
+        mServerStatusText = TodStringTranslate("[STATUS_SEND_LEAVE_FAIL]");
+        return;
+    }
+    if (!SendAll(mServerSock, buf, size_t(10 + nameLen))) {
+        mServerStatusText = TodStringTranslate("[STATUS_SEND_JOIN_FAIL]");
+        return;
+    }
+    mServerStatusText = toSpectator ? "switching to spectator..." : "switching to guest...";
+}
+
 
 void WaitForSecondPlayerDialog::ServerSendExitRoom() {
     // EXIT_ROOM = 0x06
@@ -3495,6 +3619,7 @@ void WaitForSecondPlayerDialog::ServerSendStart() {
     // START = 0x05
     ServerResetP2PState(true);
     mServerGameStarting = true;
+    mServerGameStartingTick = 0;
     if (!mServerP2PNatSent) {
         mServerP2PStatusText = "P2P: no local listener, waiting relay";
     } else if (!mServerP2PProbeDone) {
@@ -3575,6 +3700,7 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
     mServerRoomPage = 0;
     mSrvRecvLen = 0;
     mServerP2PTick = 0;
+    mServerGameStartingTick = 0;
 
     if (!hasActiveVsSocket) {
         gSecondPlayerName[0] = '\0';

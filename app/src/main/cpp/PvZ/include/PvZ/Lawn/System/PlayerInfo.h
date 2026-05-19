@@ -81,7 +81,7 @@ public:
     bool mVSBanMode;
     bool mVSBalancePatchMode;
     bool mVSResultsSendPlayerName;
-    bool mUnused607; //  607
+    bool mHostAllowSpectate;
     Mode3RecentServerStorage serverStorage;
     bool mRenamed;
     bool mUnused675[70];
