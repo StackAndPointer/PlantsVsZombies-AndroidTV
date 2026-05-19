@@ -2815,7 +2815,7 @@ bool Zombie::EffectedByDamage(unsigned int theDamageRangeFlags) {
 
     if (mApp->IsVSMode()) {
         if (IsFlying()) {
-            return mAltitude < 50.0f / 2; // 对战气球低空飞行时会受到攻击
+            return mAltitude < FLYER_ALTITUDE; // 对战气球低空飞行时会受到攻击
         }
     }
 
@@ -3807,10 +3807,14 @@ Zombie *Zombie::FindZombieTarget() {
 
     Zombie *aZombie = nullptr;
     while (mBoard->IterateZombies(aZombie)) {
-        if (mMindControlled != aZombie->mMindControlled && !aZombie->IsFlying() && aZombie->mZombiePhase != ZombiePhase::PHASE_DIGGER_TUNNELING
-            && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_DIVING && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_DIVING_SCREAMING
-            && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_RISING && aZombie->mZombieHeight != ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED && !aZombie->IsDeadOrDying()
-            && aZombie->mRow == mRow) {
+        if (mMindControlled != aZombie->mMindControlled && aZombie->mZombiePhase != ZombiePhase::PHASE_DIGGER_TUNNELING && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_DIVING
+            && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_DIVING_SCREAMING && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_RISING
+            && aZombie->mZombieHeight != ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED && !aZombie->IsDeadOrDying() && aZombie->mRow == mRow) {
+            // 对战气球低空飞行时可被敌方僵尸索敌
+            if (aZombie->IsFlying() && (!mApp->IsVSMode() || aZombie->mAltitude >= FLYER_ALTITUDE)) {
+                continue;
+            }
+
             if (aZombie->mZombieType == ZombieType::ZOMBIE_BOSS && aZombie->mZombiePhase != ZombiePhase::PHASE_BOSS_IDLE) {
                 continue;
             }
@@ -3944,6 +3948,26 @@ int Zombie::TakeHelmDamage(int theDamage, unsigned int theDamageFlags) {
             aBodyReanim->SetImageOverride("zombie_football_helmet", addonImages.IMAGE_REANIM_ZOMBIE_GIGA_FOOTBALL_HELMET3);
         }
     }
+    return aDamageRemaining;
+}
+
+int Zombie::TakeFlyingDamage(int theDamage, unsigned int theDamageFlags) {
+    if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_CAUSE_FLASH)) {
+        mJustGotShotCounter = 25;
+    }
+
+    // 对战气球可被减速
+    if (mApp->IsVSMode() && TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_FREEZE)) {
+        ApplyChill(false);
+    }
+
+    int aDamageActual = std::min(mFlyingHealth, theDamage);
+    int aDamageRemaining = theDamage - aDamageActual;
+    mFlyingHealth -= aDamageActual;
+    if (mFlyingHealth == 0) {
+        LandFlyer(theDamageFlags);
+    }
+
     return aDamageRemaining;
 }
 

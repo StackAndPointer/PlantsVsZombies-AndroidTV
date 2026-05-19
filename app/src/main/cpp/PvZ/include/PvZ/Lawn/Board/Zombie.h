@@ -59,6 +59,7 @@ inline constexpr float KICKED_ZOMBIE_GRAVITY = 0.05f * 0.8f;
 inline constexpr float CHILLED_SPEED_FACTOR = 0.4f;
 inline constexpr float CLIP_HEIGHT_LIMIT = -100.0f;
 inline constexpr float CLIP_HEIGHT_OFF = -200.0f;
+inline constexpr float FLYER_ALTITUDE = 25.0f;
 inline constexpr Sexy::Color ZOMBIE_MINDCONTROLLED_COLOR = Sexy::Color(128, 0, 192, 255);
 inline constexpr Sexy::Color ZOMBIE_REVIVED_COLOR = Sexy::Color(135, 206, 250, 180);
 
@@ -216,9 +217,6 @@ public:
     }
     static void SetupShieldReanims(ZombieType theZombieType, Reanimation *aReanim) {
         reinterpret_cast<void (*)(ZombieType, Reanimation *)>(Zombie_SetupShieldReanimsAddr)(theZombieType, aReanim);
-    }
-    int TakeFlyingDamage(int theDamage, unsigned int theDamageFlags) {
-        return reinterpret_cast<int (*)(Zombie *, int, unsigned int)>(Zombie_TakeFlyingDamageAddr)(this, theDamage, theDamageFlags);
     }
     int TakeShieldDamage(int theDamage, unsigned int theDamageFlags) {
         return reinterpret_cast<int (*)(Zombie *, int, unsigned int)>(Zombie_TakeShieldDamageAddr)(this, theDamage, theDamageFlags);
@@ -416,6 +414,7 @@ public:
     void TakeDamage(int theDamage, unsigned int theDamageFlags);
     void TakeDamage_Origin(int theDamage, unsigned int theDamageFlags);
     int TakeHelmDamage(int theDamage, unsigned int theDamageFlags);
+    int TakeFlyingDamage(int theDamage, unsigned int theDamageFlags);
     void PlayZombieReanim(const char *theTrackName, ReanimLoopType theLoopType, int theBlendTime, float theAnimRate);
     void StartWalkAnim(int theBlendTime);
     void ReanimShowPrefix(const char *theTrackPrefix, int theRenderGroup);
