@@ -817,11 +817,6 @@ bool LoadGameMain() {
     AlmanacDialog_GetZombiePositionAddr = libGameMain.GetSymbol("_ZN13AlmanacDialog17GetZombiePositionE10ZombieTypeRiS1_");
     AlmanacDialog_ZombieIsShownAddr = libGameMain.GetSymbol("_ZN13AlmanacDialog12ZombieIsShownE10ZombieType");
     AlmanacDialog_ZombieHasSilhouetteAddr = libGameMain.GetSymbol("_ZN13AlmanacDialog18ZombieHasSilhouetteE10ZombieType");
-    if (AlmanacDialog_ZombieIsShownAddr == nullptr || AlmanacDialog_ZombieHasSilhouetteAddr == nullptr) {
-        LOG_ERROR("Almanac symbols missing: ZombieIsShown=0x{:X}, ZombieHasSilhouette=0x{:X}",
-                  reinterpret_cast<std::uintptr_t>(AlmanacDialog_ZombieIsShownAddr),
-                  reinterpret_cast<std::uintptr_t>(AlmanacDialog_ZombieHasSilhouetteAddr));
-    }
     AlmanacDialog_UpdateAddr = libGameMain.GetSymbol("_ZN13AlmanacDialog6UpdateEv");
     AlmanacDialog_SetupLayoutPlantsAddr = libGameMain.GetSymbol("_ZN13AlmanacDialog17SetupLayoutPlantsEPN4Sexy8GraphicsE");
 

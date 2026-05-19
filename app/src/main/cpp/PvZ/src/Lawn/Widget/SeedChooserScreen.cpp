@@ -1584,6 +1584,11 @@ void SeedChooserScreen::Draw(Graphics *g) {
         if (FindSeedInBank(anIndex, false) == SEED_NONE) {
             int x, y;
             GetSeedPositionInBank(anIndex, x, y, 0);
+            // 修复植物方选卡时僵尸方翻页后空卡槽绘制变暗
+            if (mApp->IsVSMode()) {
+                g->SetColorizeImages(true);
+                g->SetColor(Color(255, 255, 255));
+            }
             g->DrawImage(Sexy::IMAGE_SEEDPACKETSILHOUETTE, x, y);
         }
     }
