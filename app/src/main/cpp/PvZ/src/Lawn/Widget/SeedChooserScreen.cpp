@@ -945,7 +945,7 @@ void SeedChooserScreen::ButtonDepress_Origin(int theId) {
         return;
     }
 
-    if (theId == SeedChooserScreen::SeedChooserScreen_Page) {
+    if (theId == SeedChooserScreen_Page) {
         mPageIndex = (mPageIndex == 0) ? 1 : 0;
         // 翻页后光标移动回第一张卡
         int x, y;
@@ -953,6 +953,7 @@ void SeedChooserScreen::ButtonDepress_Origin(int theId) {
         mCursorPositionX1 = mCursorPositionX2 = x;
         mCursorPositionY1 = mCursorPositionY2 = y;
         mSeedIndex1 = mSeedIndex2 = SeedType(0);
+        return;
     }
 
     old_SeedChooserScreen_ButtonDepress(this, theId);
@@ -1171,9 +1172,9 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
     m1PChoosingSeeds = !mApp->IsCoopMode() || mSeedsIn1PBank < 4;
 
     bool mViewLawnButtonDisabled = mViewLawnButton == nullptr || !mBoard->mCutScene->IsSurvivalRepick();
-    bool mStoreButtonDisabled = mStoreButton == nullptr || mStoreButton->mDisabled;
-    bool mStartButtonDisabled = mStartButton == nullptr || mStartButton->mDisabled;
-    bool mAlmanacButtonDisabled = mAlmanacButton == nullptr || mAlmanacButton->mDisabled;
+    bool mStoreButtonDisabled = mStoreButton == nullptr || mStoreButton->mBtnNoDraw;
+    bool mStartButtonDisabled = mStartButton == nullptr || mStartButton->mBtnNoDraw;
+    bool mAlmanacButtonDisabled = mAlmanacButton == nullptr || mAlmanacButton->mBtnNoDraw;
 
     if (!mViewLawnButtonDisabled) { // !mDisabled
         Sexy::Rect mViewLawnButtonRect = {mViewLawnButton->mX, mViewLawnButton->mY, mViewLawnButton->mWidth, 50};
