@@ -1066,13 +1066,14 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
     SeedBank *aSeedBank = GetSeedBank();
     SeedPacket *aSeedPacket = &aSeedBank->mSeedPackets[mSelectedSeedIndex];
     SeedType aPacketType = aSeedPacket->mPacketType;
-    int aCost = mBoard->GetCurrentPlantCost(aSeedPacket->mPacketType, SeedType::SEED_NONE);
+    int aPacketCost = mBoard->GetCurrentPlantCost(aSeedPacket->mPacketType, SeedType::SEED_NONE);
     if (mGameObject->mApp->IsVSMode() && theButton == Sexy::GamepadButton::GAMEPAD_BUTTON_A) {
         if (mIsZombie) {
             int aGridX = mBoard->PixelToGridXKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
             int aGridY = mBoard->PixelToGridYKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
 
-            if (!mBoard->CanTakeDeathMoney(aCost) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) || mBoard->HasLevelAwardDropped())
+            if (!mBoard->CanTakeDeathMoney(aPacketCost) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK
+                || mBoard->HasLevelAwardDropped())
                 return;
 
             if (aPacketType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE) {
@@ -1084,7 +1085,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                         aSeedBank->mSeedPackets[aPacketIndex].SetPacketType(aSeedType, SeedType::SEED_NONE);
                     }
                 }
-                mBoard->TakeDeathMoney(aCost);
+                mBoard->TakeDeathMoney(aPacketCost);
                 aSeedPacket->Deactivate();
                 aSeedPacket->WasPlanted(mPlayerIndex2);
                 return;
@@ -1111,7 +1112,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                     aTargetGridItem = aMound;
                 }
 
-                if (aTargetLevel >= 0 && mBoard->TakeDeathMoney(aCost)) {
+                if (aTargetLevel >= 0 && mBoard->TakeDeathMoney(aPacketCost)) {
                     GridItem *aUpgradeMound = mBoard->AddAMound(aGridX, aGridY, aTargetLevel);
                     if (aUpgradeMound) {
                         aUpgradeMound->mIsSpecialGrave = true;
@@ -1128,7 +1129,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             }
 
             if (aPacketType == SeedType::SEED_ZOMBIE_GRAVESTONE) {
-                if (mBoard->CanAddGraveStoneAt(aGridX, aGridY) && mBoard->TakeDeathMoney(aCost)) {
+                if (mBoard->CanAddGraveStoneAt(aGridX, aGridY) && mBoard->TakeDeathMoney(aPacketCost)) {
                     GridItem *aGraveStone = mBoard->AddAGraveStone(aGridX, aGridY);
                     aGraveStone->mIsSpecialGrave = false;
                     aGraveStone->mVSGraveStoneHealth = 350;
@@ -1138,7 +1139,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             }
 
             ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(aPacketType);
-            if (aZombieType != ZombieType::ZOMBIE_INVALID && mBoard->TakeDeathMoney(aCost)) {
+            if (aZombieType != ZombieType::ZOMBIE_INVALID && mBoard->TakeDeathMoney(aPacketCost)) {
                 if (aZombieType == ZombieType::ZOMBIE_BUNGEE) {
                     Zombie *aBungeeZombie = mBoard->AddZombieInRow(aZombieType, aGridY, 0, false);
                     aBungeeZombie->mTargetCol = aGridX;
@@ -1149,20 +1150,16 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 } else if (aZombieType == ZombieType::ZOMBIE_FLAG) {
                     mBoard->DisplayAdviceAgain("[ADVICE_HUGE_WAVE]", MessageStyle::MESSAGE_STYLE_HUGE_WAVE, AdviceType::ADVICE_HUGE_WAVE);
                     mBoard->SpawnZombieWave();
-                } else if (Challenge::IsMPZombieTypeAddInRow(aZombieType)) {
+                } else if (Challenge::IsMPZombieTypeAddInRow(aZombieType) || mBoard->mPlantRow[aGridY] == PlantRowType::PLANTROW_POOL) {
                     mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, true);
                 } else {
-                    if (mBoard->mPlantRow[aGridY] == PlantRowType::PLANTROW_POOL) { // 如果是水路则放置在出生点
-                        mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, true);
-                    } else {
-                        Zombie *aZombie = mBoard->AddZombie(aZombieType, Zombie::ZOMBIE_WAVE_VS, false);
-                        if (aZombie) {
-                            if (mBoard->StageHasRoof()) {
-                                Zombie *aBungeeZombie = mBoard->AddZombie(ZombieType::ZOMBIE_BUNGEE, Zombie::ZOMBIE_WAVE_VS, false);
-                                aBungeeZombie->BungeeDropZombie(aZombie, aGridX, aGridY);
-                            } else {
-                                aZombie->RiseFromGrave(aGridX, aGridY);
-                            }
+                    Zombie *aZombie = mBoard->AddZombie(aZombieType, Zombie::ZOMBIE_WAVE_VS, false);
+                    if (aZombie) {
+                        if (mBoard->StageHasRoof()) {
+                            Zombie *aBungeeZombie = mBoard->AddZombie(ZombieType::ZOMBIE_BUNGEE, Zombie::ZOMBIE_WAVE_VS, false);
+                            aBungeeZombie->BungeeDropZombie(aZombie, aGridX, aGridY);
+                        } else {
+                            aZombie->RiseFromGrave(aGridX, aGridY);
                         }
                     }
                 }
@@ -1175,8 +1172,10 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             int aGridX = mBoard->PixelToGridXKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
             int aGridY = mBoard->PixelToGridYKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
 
-            if (!mBoard->CanTakeSunMoney(aCost, 0) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) || mBoard->HasLevelAwardDropped()) {
-                old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
+            if (!mBoard->CanTakeSunMoney(aPacketCost, 0) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK
+                || mBoard->HasLevelAwardDropped()) {
+                // 优化玩家体验：不执行旧函数，使未成功种下的卡槽不会退回未选取状态
+                //                old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
                 return;
             }
 
@@ -1194,7 +1193,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                         aSeedBank->mSeedPackets[aPacketIndex].SetPacketType(aSeedType, SeedType::SEED_NONE);
                     }
                 }
-                mBoard->TakeSunMoney(aCost, 0);
+                mBoard->TakeSunMoney(aPacketCost, 0);
                 aSeedPacket->Deactivate();
                 aSeedPacket->WasPlanted(mPlayerIndex1);
             }
@@ -1207,3 +1206,4 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 void ZenGardenControls::Update(float a2) {
     old_ZenGardenControls_Update(this, a2);
 }
+1
