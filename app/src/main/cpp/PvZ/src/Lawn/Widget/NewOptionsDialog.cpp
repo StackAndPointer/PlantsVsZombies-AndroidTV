@@ -52,10 +52,10 @@ void NewOptionsDialog::ButtonDepress(int buttonId) {
                     netplay::PutEvent(event);
                     GamepadControls *clientGamepadControls = mApp->mBoard->mGamepadControls[1]->mPlayerIndex2 == 1 ? mApp->mBoard->mGamepadControls[1] : mApp->mBoard->mGamepadControls[0];
                     if (!clientGamepadControls->mIsZombie) {
-                        mApp->SetBoardResult(7);
+                        mApp->SetBoardResult(8);
                         mApp->mGameScene = SCENE_ZOMBIES_WON;
                     } else {
-                        mApp->SetBoardResult(8);
+                        mApp->SetBoardResult(7);
                         mApp->mGameScene = SCENE_PLANTS_WON;
                     }
                 }
@@ -66,10 +66,10 @@ void NewOptionsDialog::ButtonDepress(int buttonId) {
                     netplay::PutEvent(event);
                     GamepadControls *serverGamepadControls = mApp->mBoard->mGamepadControls[0]->mPlayerIndex2 == 0 ? mApp->mBoard->mGamepadControls[0] : mApp->mBoard->mGamepadControls[1];
                     if (!serverGamepadControls->mIsZombie) {
-                        mApp->SetBoardResult(7);
+                        mApp->SetBoardResult(8);
                         mApp->mGameScene = SCENE_ZOMBIES_WON;
                     } else {
-                        mApp->SetBoardResult(8);
+                        mApp->SetBoardResult(7);
                         mApp->mGameScene = SCENE_PLANTS_WON;
                     }
                     const bool plantWin = (mApp->mGameScene == SCENE_PLANTS_WON);
