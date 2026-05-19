@@ -1206,4 +1206,3 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 void ZenGardenControls::Update(float a2) {
     old_ZenGardenControls_Update(this, a2);
 }
-1

@@ -1500,7 +1500,7 @@ static int GetVSCostBalanced(SeedType theSeedType) {
             break;
     }
 
-    if (gLawnApp->mBoard->StageIsNight() && Plant::IsNocturnal(theSeedType)) {
+    if (gLawnApp->mBoard && gLawnApp->mBoard->StageIsNight() && Plant::IsNocturnal(theSeedType)) {
         aCost += 25;
     }
 
