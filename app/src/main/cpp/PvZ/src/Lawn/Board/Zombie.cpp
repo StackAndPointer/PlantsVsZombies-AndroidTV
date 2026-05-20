@@ -625,6 +625,10 @@ void Zombie::UpdateZombieImp() {
 }
 
 void Zombie::UpdateSuperFanImp() {
+    if (!mHasHead || IsDeadOrDying()) {
+        return;
+    }
+
     if (Zombie *aZombie = FindZombieGigaFootball()) {
         mRelatedZombieID = mBoard->ZombieGetID(aZombie);
     }
@@ -2605,6 +2609,10 @@ void Zombie::UpdateZombiePogo() {
 
 bool Zombie::IsFlying() {
     return mZombiePhase == ZombiePhase::PHASE_BALLOON_FLYING || mZombiePhase == ZombiePhase::PHASE_BALLOON_POPPING;
+}
+
+bool Zombie::IsImpFlying() {
+    return mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP && (mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN || mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_BLOCKED);
 }
 
 int Zombie::GetBobsledPosition() {

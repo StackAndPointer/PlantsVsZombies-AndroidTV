@@ -5942,7 +5942,7 @@ void Board::KillAllPlantsInGrid(int theGridX, int theGridY) {
     while (IteratePlants(aPlant)) {
         if (aPlant->mPlantCol == theGridX && aPlant->mRow == theGridY) {
             mPlantsEaten++;
-            aPlant->Die();
+            aPlant->mPlantHealth -= 301;
         }
     }
 }

@@ -431,6 +431,7 @@ public:
     bool IsBouncingPogo();
     void UpdateZombiePogo();
     bool IsFlying();
+    bool IsImpFlying();
     int GetBobsledPosition();
     void BobsledCrash();
     bool IsBobsledTeamWithSled();

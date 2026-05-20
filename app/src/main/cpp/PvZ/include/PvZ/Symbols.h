@@ -1300,6 +1300,7 @@ extern int &SOUND_MENU_L_ST;
 extern int &SOUND_MENU_C_ST;
 extern int &SOUND_MENU_R_ST;
 extern int &SOUND_THROW;
+extern int &SOUND_BLOVER;
 
 extern Image *&IMAGE_CURSOR_P1_TEXT;
 extern Image *&IMAGE_CURSOR_P2_TEXT;

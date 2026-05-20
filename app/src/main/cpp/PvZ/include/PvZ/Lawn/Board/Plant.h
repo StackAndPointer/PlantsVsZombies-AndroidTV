@@ -243,9 +243,6 @@ public:
     void LaunchStarFruit() {
         reinterpret_cast<void (*)(Plant *)>(Plant_LaunchStarFruitAddr)(this);
     }
-    void BlowAwayFliers(int theX, int theRow) {
-        reinterpret_cast<void (*)(Plant *, int, int)>(Plant_BlowAwayFliersAddr)(this, theX, theRow);
-    }
     bool IsUpgradableTo(SeedType theUpgradedType) {
         return reinterpret_cast<bool (*)(Plant *, SeedType)>(Plant_IsUpgradableToAddr)(this, theUpgradedType);
     }
@@ -290,6 +287,7 @@ public:
     bool DrawMagnetItemsOnTop();
     void SetImitaterFilterEffect();
     void BurnRow(int theRow);
+    void BlowAwayFliers(int theX, int theRow);
     bool MakesSun();
     void UpdateProductionPlant();
     void UpdateShooting();

@@ -1322,6 +1322,7 @@ int &Sexy::SOUND_MENU_L_ST = *libGameMain.GetSymbol<int>("_ZN4Sexy15SOUND_MENU_L
 int &Sexy::SOUND_MENU_C_ST = *libGameMain.GetSymbol<int>("_ZN4Sexy15SOUND_MENU_C_STE");
 int &Sexy::SOUND_MENU_R_ST = *libGameMain.GetSymbol<int>("_ZN4Sexy15SOUND_MENU_R_STE");
 int &Sexy::SOUND_THROW = *libGameMain.GetSymbol<int>("_ZN4Sexy11SOUND_THROWE");
+int &Sexy::SOUND_BLOVER = *libGameMain.GetSymbol<int>("_ZN4Sexy12SOUND_BLOVERE");
 
 Sexy::Image *&Sexy::IMAGE_PLANTSHADOW2 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy18IMAGE_PLANTSHADOW2E");
 Sexy::Image *&Sexy::IMAGE_WHITEWATER_SHADOW = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy23IMAGE_WHITEWATER_SHADOWE");

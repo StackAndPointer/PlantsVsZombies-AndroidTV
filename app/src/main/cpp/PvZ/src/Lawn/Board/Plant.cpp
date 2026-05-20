@@ -1331,6 +1331,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_INSTANT_COFFEE:
         case SeedType::SEED_ZOMBIE_NORMAL:
         case SeedType::SEED_ZOMBIE_IMP:
+        case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
             return 25;
         case SeedType::SEED_ZOMBIE_GRAVESTONE:
         case SeedType::SEED_ZOMBIE_TRASHCAN:
@@ -1339,7 +1340,6 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_PEA_HEAD:
         case SeedType::SEED_ZOMBIE_SQUASH_HEAD:
         case SeedType::SEED_ZOMBIE_MOUND:
-        case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
             return 50;
         case SeedType::SEED_SQUASH:
         case SeedType::SEED_GARLIC:
@@ -1418,6 +1418,7 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
             case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
             case SeedType::SEED_ZOMBIE_SQUASH_HEAD:
             case SeedType::SEED_ZOMBIE_MOUND:
+            case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
                 return 1500;
             case SeedType::SEED_ZOMBONI:
             case SeedType::SEED_ZOMBIE_POGO:
@@ -1813,6 +1814,21 @@ void Plant::BurnRow(int theRow) {
         // 注：原版中将 Zombie::BossDestroyIceballInRow(int) 函数改为了 Zombie::BossDestroyIceball()，冰球是否位于目标行的判断则移动至此处进行
         aBossZombie->BossDestroyIceballInRow(theRow);
     }
+}
+
+void Plant::BlowAwayFliers(int theX, int theRow) {
+    Zombie *aZombie = nullptr;
+    while (mBoard->IterateZombies(aZombie)) {
+        if (!aZombie->IsDeadOrDying()) {
+            Rect aZombieRect = aZombie->GetZombieRect();
+            if (aZombie->IsFlying() || aZombie->IsImpFlying() /* 新增粉丝小鬼被吹飞 */) {
+                aZombie->mBlowingAway = true;
+            }
+        }
+    }
+
+    mApp->PlaySample(SOUND_BLOVER);
+    mBoard->mFogBlownCountDown = 4000;
 }
 
 bool Plant::MakesSun() {
