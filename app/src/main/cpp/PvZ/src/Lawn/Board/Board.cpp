@@ -2410,6 +2410,207 @@ void Board::processServerEvent(const BaseEvent *event) {
     }
 }
 
+static void CheatPlacePlant(Board *theBoard, int theCol, int theRow, SeedType theSeedType, bool isImitaterPlant) {
+    const int colsCount = (theSeedType == SeedType::SEED_COBCANNON) ? 8 : 9; // 玉米加农炮不种在九列
+    const int width = (theSeedType == SeedType::SEED_COBCANNON) ? 2 : 1;     // 玉米加农炮宽度两列
+    const int rowsCount = theBoard->StageHas6Rows() ? 6 : 5;
+    const bool isIZMode = theBoard->mApp->IsIZombieLevel();
+
+    auto PlacePlant = [theBoard, theSeedType, isImitaterPlant, isIZMode](int theCol, int theRow) {
+        Plant *aPlant = theBoard->AddPlant(theCol, theRow, theSeedType, (isImitaterPlant ? SeedType::SEED_IMITATER : SeedType::SEED_NONE), 0, true);
+        if (isImitaterPlant) {
+            aPlant->SetImitaterFilterEffect();
+        }
+        if (isIZMode) {
+            theBoard->mChallenge->IZombieSetupPlant(aPlant);
+        }
+    };
+
+    // 全场
+    if (theCol == 9 && theRow == 6) {
+        for (int col = 0; col < colsCount; col += width) {
+            for (int row = 0; row < rowsCount; row++) {
+                PlacePlant(col, row);
+            }
+        }
+    }
+    // 单行
+    else if (theCol == 9 && theRow < 6) {
+        for (int col = 0; col < colsCount; col += width) {
+            PlacePlant(col, theRow);
+        }
+    }
+    // 单列
+    else if (theCol < 9 && theRow == 6) {
+        for (int row = 0; row < rowsCount; row++) {
+            PlacePlant(theCol, row);
+        }
+    }
+    // 单格
+    else if (theCol < colsCount && theRow < rowsCount) {
+        PlacePlant(theCol, theRow);
+    }
+}
+
+static void CheatPlaceZombie(Board *theBoard, int theCol, int theRow, ZombieType theZombieType) {
+    if (theZombieType == ZombieType::ZOMBIE_BOSS) {
+        theBoard->AddZombieInRow(theZombieType, 0, 0, true);
+        return;
+    }
+
+    const int colsCount = 9;
+    const int rowsCount = theBoard->StageHas6Rows() ? 6 : 5;
+
+    // 僵尸出生线
+    if (theCol == 10 && theRow == 6) {
+        for (int row = 0; row < rowsCount; ++row) {
+            theBoard->AddZombieInRow(theZombieType, row, theBoard->mCurrentWave, true);
+        }
+    }
+    // 僵尸出生点
+    else if (theCol == 10 && theRow < 6) {
+        theBoard->AddZombieInRow(theZombieType, theRow, theBoard->mCurrentWave, true);
+    }
+    // 全场
+    else if (theCol == 9 && theRow == 6) {
+        for (int col = 0; col < colsCount; ++col) {
+            for (int row = 0; row < rowsCount; ++row) {
+                theBoard->mChallenge->IZombiePlaceZombie(theZombieType, col, row);
+            }
+        }
+    }
+    // 单行
+    else if (theCol == 9 && theRow < 6) {
+        for (int col = 0; col < colsCount; ++col) {
+            theBoard->mChallenge->IZombiePlaceZombie(theZombieType, col, theRow);
+        }
+    }
+    // 单列
+    else if (theCol < 9 && theRow == 6) {
+        for (int row = 0; row < rowsCount; ++row) {
+            theBoard->mChallenge->IZombiePlaceZombie(theZombieType, theCol, row);
+        }
+    }
+    // 单格
+    else if (theCol < colsCount && theRow < rowsCount) {
+        theBoard->mChallenge->IZombiePlaceZombie(theZombieType, theCol, theRow);
+    }
+}
+
+static void CheatPlaceGraveStone(Board *theBoard, int theCol, int theRow) {
+    const int colsCount = 9;
+    const int rowsCount = theBoard->StageHas6Rows() ? 6 : 5;
+
+    // 全场
+    if (theCol == 9 && theRow == 6) {
+        for (GridItem *aGridItem = nullptr; theBoard->IterateGridItems(aGridItem);) {
+            if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE) {
+                aGridItem->GridItemDie();
+            }
+        }
+        for (int col = 0; col < colsCount; ++col) {
+            for (int row = 0; row < rowsCount; ++row) {
+                theBoard->mChallenge->GraveDangerSpawnGraveAt(col, row);
+            }
+        }
+    }
+    // 单行
+    else if (theCol == 9 && theRow < 6) {
+        for (GridItem *aGridItem = nullptr; theBoard->IterateGridItems(aGridItem);) {
+            if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE && aGridItem->mGridY == theRow) {
+                aGridItem->GridItemDie();
+            }
+        }
+        for (int col = 0; col < colsCount; ++col) {
+            theBoard->mChallenge->GraveDangerSpawnGraveAt(col, theRow);
+        }
+    }
+    // 单列
+    else if (theCol < 9 && theRow == 6) {
+        for (GridItem *aGridItem = nullptr; theBoard->IterateGridItems(aGridItem);) {
+            if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE && aGridItem->mGridX == theCol) {
+                aGridItem->GridItemDie();
+            }
+        }
+        for (int row = 0; row < rowsCount; ++row) {
+            theBoard->mChallenge->GraveDangerSpawnGraveAt(theCol, row);
+        }
+    }
+    // 单格
+    else if (theCol < 9 && theRow < 6) {
+        if (theBoard->GetGraveStoneAt(theCol, theRow) == nullptr) {
+            theBoard->mChallenge->GraveDangerSpawnGraveAt(theCol, theRow);
+        }
+    }
+}
+
+static void CheatSetZombieSpawn(Board *theBoard, const bool (&theZombiesToSpawn)[ZombieType::NUM_ZOMBIE_TYPES]) {
+    int typesCount = 0;                          // 已选僵尸种类数
+    int typesList[ZombieType::NUM_ZOMBIE_TYPES]; // 已选僵尸种类列表
+
+    // 将僵尸代号放入种类列表, 并更新已选种类数
+    for (int type = 0; type < ZombieType::NUM_ZOMBIE_TYPES; ++type) {
+        if (theZombiesToSpawn[type] && type != ZombieType::ZOMBIE_BUNGEE) // 飞贼僵尸不应作为正常僵尸出现在出怪列表中
+        {
+            typesList[typesCount++] = type;
+        }
+    }
+
+    // 设置出怪需要选择至少 1 种除飞贼以外的僵尸
+    if (typesCount < 1) {
+        return;
+    }
+
+    // 自然出怪
+    if (choiceSpawnMode == 1) {
+        // 清空出怪列表
+        for (int wave = 0, numWaves = theBoard->mNumWaves; wave < numWaves; ++wave) {
+            for (int index = 0; index < MAX_ZOMBIES_IN_WAVE; ++index) {
+                theBoard->mZombiesInWave[wave][index] = ZombieType::ZOMBIE_INVALID;
+            }
+        }
+
+        // 设置游戏中的僵尸允许类型
+        for (int type = 0; type < ZombieType::NUM_ZOMBIE_TYPES; ++type) {
+            theBoard->mZombieAllowed[type] = theZombiesToSpawn[type];
+        }
+        theBoard->mZombieAllowed[ZombieType::ZOMBIE_NORMAL] = true; // 自然出怪下必须含有普通僵尸
+
+        theBoard->PickZombieWaves(); // 由游戏生成出怪列表
+    }
+    // 极限出怪
+    else if (choiceSpawnMode == 2) {
+        int indexInLevel = 0;
+        // 均匀填充出怪列表
+        for (int wave = 0, numWaves = theBoard->mNumWaves; wave < numWaves; ++wave) {
+            for (int indexInWave = 0; indexInWave < MAX_ZOMBIES_IN_WAVE; ++indexInWave) {
+                // 使用僵尸的“关内序号”遍历设置出怪可能会比使用“波内序号”更加均匀
+                theBoard->mZombiesInWave[wave][indexInWave] = ZombieType(typesList[indexInLevel % typesCount]);
+                ++indexInLevel;
+            }
+            if (theBoard->IsFlagWave(wave)) {
+                theBoard->mZombiesInWave[wave][0] = ZombieType::ZOMBIE_FLAG; // 生成旗帜僵尸
+                if (theZombiesToSpawn[ZombieType::ZOMBIE_BUNGEE]) {
+                    // 生成飞贼僵尸
+                    for (int index : {1, 2, 3, 4})
+                        theBoard->mZombiesInWave[wave][index] = ZombieType::ZOMBIE_BUNGEE;
+                }
+            }
+        }
+        // 不能只出雪人僵尸, 在第一波生成 1 只普通僵尸
+        if (theZombiesToSpawn[ZombieType::ZOMBIE_YETI] && typesCount == 1) {
+            theBoard->mZombiesInWave[0][0] = ZombieType::ZOMBIE_NORMAL;
+        }
+    }
+
+    // 重新生成选卡预览僵尸
+    if (theBoard->mApp->mGameScene == GameScenes::SCENE_LEVEL_INTRO) {
+        theBoard->RemoveCutsceneZombies();
+        theBoard->mCutScene->mPlacedZombies = false;
+    }
+}
+
+
 void Board::Update() {
     isMainMenu = false;
 
@@ -2499,11 +2700,11 @@ void Board::Update() {
         // }
     }
 
-    if (ClearAllPlant) {
+    if (clearAllPlant) {
         if (!IsOnlineModeActiveAndConnectedToServer()) {
             RemoveAllPlants();
         }
-        ClearAllPlant = false;
+        clearAllPlant = false;
     }
 
     if (clearAllZombies) {
@@ -2533,7 +2734,6 @@ void Board::Update() {
 
     if (recoverAllMowers) {
         if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer()) {
-            // Board_RemoveAllMowers(this);
             ResetLawnMowers();
         }
         recoverAllMowers = false;
@@ -2542,8 +2742,7 @@ void Board::Update() {
     // 魅惑所有僵尸
     if (hypnoAllZombies) {
         if (!IsOnlineModeActiveAndConnectedToServer()) {
-            Zombie *aZombie = nullptr;
-            while (IterateZombies(aZombie)) {
+            for (Zombie *aZombie = nullptr; IterateZombies(aZombie);) {
                 if (aZombie->mZombieType != ZombieType::ZOMBIE_BOSS) {
                     aZombie->mMindControlled = true;
                 }
@@ -2560,26 +2759,26 @@ void Board::Update() {
     }
 
     if (startAllMowers) {
-        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer())
+        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer()) {
             for (LawnMower *alawnMower = nullptr; IterateLawnMowers(alawnMower); alawnMower->StartMower()) {}
+        }
         startAllMowers = false;
     }
 
     // 修改卡槽
-    if (setSeedPacket && choiceSeedType != SeedType::SEED_NONE) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
-            if (targetSeedBank == 1) {
-                if (choiceSeedType < SeedType::NUM_SEED_TYPES && !mGamepadControls[0]->mIsZombie) {
-                    mSeedBank[0]->mSeedPackets[choiceSeedPacketIndex].mPacketType = isImitaterSeed ? SeedType::SEED_IMITATER : choiceSeedType;
-                    mSeedBank[0]->mSeedPackets[choiceSeedPacketIndex].mImitaterType = isImitaterSeed ? choiceSeedType : SeedType::SEED_NONE;
-                } else if (choiceSeedType > SeedType::SEED_ZOMBIE_GRAVESTONE && mGamepadControls[0]->mIsZombie) // IZ模式里用不了墓碑
-                    mSeedBank[0]->mSeedPackets[choiceSeedPacketIndex].mPacketType = choiceSeedType;
-            } else if (targetSeedBank == 2 && mSeedBank[1] != nullptr) {
-                if (choiceSeedType < SeedType::NUM_SEED_TYPES && !mGamepadControls[1]->mIsZombie) {
-                    mSeedBank[1]->mSeedPackets[choiceSeedPacketIndex].mPacketType = isImitaterSeed ? SeedType::SEED_IMITATER : choiceSeedType;
-                    mSeedBank[1]->mSeedPackets[choiceSeedPacketIndex].mImitaterType = isImitaterSeed ? choiceSeedType : SeedType::SEED_NONE;
-                } else if (Challenge::IsZombieSeedType(choiceSeedType) && mGamepadControls[1]->mIsZombie)
-                    mSeedBank[1]->mSeedPackets[choiceSeedPacketIndex].mPacketType = choiceSeedType;
+    if (setSeedPacket) {
+        if (choiceSeedType != SeedType::SEED_NONE && !IsOnlineModeActiveAndConnectedToServer()) {
+            if (SeedBank *aSeedBank = mSeedBank[targetSeedBank]) {
+                SeedPacket &aSeedPacket = aSeedBank->mSeedPackets[choiceSeedPacketIndex];
+                if (aSeedBank->mIsZombie) {
+                    // IZ模式中用不了墓碑
+                    if (Challenge::IsZombieSeedType(choiceSeedType) && (choiceSeedType != SeedType::SEED_ZOMBIE_GRAVESTONE || mApp->IsVSMode())) {
+                        aSeedPacket.mPacketType = choiceSeedType;
+                    }
+                } else if (choiceSeedType < SeedType::NUM_SEED_TYPES) {
+                    aSeedPacket.mPacketType = isImitaterSeed ? SeedType::SEED_IMITATER : choiceSeedType;
+                    aSeedPacket.mImitaterType = isImitaterSeed ? choiceSeedType : SeedType::SEED_NONE;
+                }
             }
         }
         setSeedPacket = false;
@@ -2610,209 +2809,45 @@ void Board::Update() {
         layPastedFormation = false;
     }
 
-    if (ladderBuild) {
-        // 防止选“所有行”或“所有列”的时候放置到场外
-        if (!IsOnlineModeActiveAndConnectedToServer() && theBuildLadderX < 9 && theBuildLadderY < (StageHas6Rows() ? 6 : 5) && GetLadderAt(theBuildLadderX, theBuildLadderY) == nullptr) {
-            AddALadder(theBuildLadderX, theBuildLadderY);
+    // 放置植物
+    if (gCheatPlacePlant) {
+        if (gCheatPlacePlantType != SeedType::SEED_NONE && !IsOnlineModeActiveAndConnectedToServer()) {
+            CheatPlacePlant(this, gCheatPlaceColumn, gCheatPlaceRow, gCheatPlacePlantType, gCheatIsPlaceImitaterPlant);
         }
-        ladderBuild = false;
+        gCheatPlacePlant = false;
     }
 
-
-    // 植物放置
-    if (plantBuild && theBuildPlantType != SeedType::SEED_NONE) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
-            int colsCount = (theBuildPlantType == SeedType::SEED_COBCANNON) ? 8 : 9; // 玉米加农炮不种在九列
-            int width = (theBuildPlantType == SeedType::SEED_COBCANNON) ? 2 : 1;     // 玉米加农炮宽度两列
-            int rowsCount = StageHas6Rows() ? 6 : 5;
-            bool isIZMode = mApp->IsIZombieLevel();
-            // 全场
-            if (theBuildPlantX == 9 && theBuildPlantY == 6) {
-                for (int x = 0; x < colsCount; x += width) {
-                    for (int y = 0; y < rowsCount; y++) {
-                        Plant *theBuiltPlant = AddPlant(x, y, theBuildPlantType, (isImitaterPlant ? SeedType::SEED_IMITATER : SeedType::SEED_NONE), 0, true);
-                        if (isImitaterPlant)
-                            theBuiltPlant->SetImitaterFilterEffect();
-                        if (isIZMode)
-                            mChallenge->IZombieSetupPlant(theBuiltPlant);
-                    }
-                }
-            }
-            // 单行
-            else if (theBuildPlantX == 9 && theBuildPlantY < 6) {
-                for (int x = 0; x < colsCount; x += width) {
-                    Plant *theBuiltPlant = AddPlant(x, theBuildPlantY, theBuildPlantType, (isImitaterPlant ? SeedType::SEED_IMITATER : SeedType::SEED_NONE), 0, true);
-                    if (isImitaterPlant)
-                        theBuiltPlant->SetImitaterFilterEffect();
-                    if (isIZMode)
-                        mChallenge->IZombieSetupPlant(theBuiltPlant);
-                }
-            }
-            // 单列
-            else if (theBuildPlantX < 9 && theBuildPlantY == 6) {
-                for (int y = 0; y < rowsCount; y++) {
-                    Plant *theBuiltPlant = AddPlant(theBuildPlantX, y, theBuildPlantType, (isImitaterPlant ? SeedType::SEED_IMITATER : SeedType::SEED_NONE), 0, true);
-                    if (isImitaterPlant)
-                        theBuiltPlant->SetImitaterFilterEffect();
-                    if (isIZMode)
-                        mChallenge->IZombieSetupPlant(theBuiltPlant);
-                }
-            }
-            // 单格
-            else if (theBuildPlantX < colsCount && theBuildPlantY < rowsCount) {
-                Plant *theBuiltPlant = AddPlant(theBuildPlantX, theBuildPlantY, theBuildPlantType, (isImitaterPlant ? SeedType::SEED_IMITATER : SeedType::SEED_NONE), 0, true);
-                if (isImitaterPlant)
-                    theBuiltPlant->SetImitaterFilterEffect();
-                if (isIZMode)
-                    mChallenge->IZombieSetupPlant(theBuiltPlant);
-            }
+    // 放置僵尸
+    if (gCheatPlaceZombie) {
+        if (gCheatPlaceZombieType != ZombieType::ZOMBIE_INVALID && !IsOnlineModeActiveAndConnectedToServer()) {
+            CheatPlaceZombie(this, gCheatPlaceColumn, gCheatPlaceRow, gCheatPlaceZombieType);
         }
-        plantBuild = false;
-    }
-
-    // 僵尸放置
-    if (zombieBuild && theBuildZombieType != ZombieType::ZOMBIE_INVALID) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
-            if (theBuildZombieType == ZombieType::ZOMBIE_BOSS)
-                AddZombieInRow(theBuildZombieType, 0, 0, true);
-            else {
-                int colsCount = 9;
-                int rowsCount = StageHas6Rows() ? 6 : 5;
-                // 僵尸出生线
-                if (BuildZombieX == 10 && BuildZombieY == 6)
-                    for (int y = 0; y < rowsCount; ++y)
-                        AddZombieInRow(theBuildZombieType, y, mCurrentWave, true);
-                // 僵尸出生点
-                else if (BuildZombieX == 10 && BuildZombieY < 6)
-                    AddZombieInRow(theBuildZombieType, BuildZombieY, mCurrentWave, true);
-                // 全场
-                else if (BuildZombieX == 9 && BuildZombieY == 6)
-                    for (int x = 0; x < colsCount; ++x)
-                        for (int y = 0; y < rowsCount; ++y)
-                            mChallenge->IZombiePlaceZombie(theBuildZombieType, x, y);
-                // 单行
-                else if (BuildZombieX == 9 && BuildZombieY < 6)
-                    for (int x = 0; x < colsCount; ++x)
-                        mChallenge->IZombiePlaceZombie(theBuildZombieType, x, BuildZombieY);
-                // 单列
-                else if (BuildZombieX < 9 && BuildZombieY == 6)
-                    for (int y = 0; y < rowsCount; ++y)
-                        mChallenge->IZombiePlaceZombie(theBuildZombieType, BuildZombieX, y);
-                // 单格
-                else if (BuildZombieX < colsCount && BuildZombieY < rowsCount)
-                    mChallenge->IZombiePlaceZombie(theBuildZombieType, BuildZombieX, BuildZombieY);
-            }
-        }
-        zombieBuild = false;
+        gCheatPlaceZombie = false;
     }
 
     // 放置墓碑
-    if (graveBuild) {
+    if (gCheatPlaceGraveStone) {
         if (!IsOnlineModeActiveAndConnectedToServer()) {
-            int colsCount = 9;
-            int rowsCount = StageHas6Rows() ? 6 : 5;
-            // 全场
-            if (BuildZombieX == 9 && BuildZombieY == 6) {
-                GridItem *aGridItem = nullptr;
-                while (IterateGridItems(aGridItem)) {
-                    if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE) {
-                        aGridItem->GridItemDie();
-                    }
-                }
-                for (int x = 0; x < colsCount; ++x) {
-                    for (int y = 0; y < rowsCount; ++y) {
-                        mChallenge->GraveDangerSpawnGraveAt(x, y);
-                    }
-                }
-            }
-            // 单行
-            else if (BuildZombieX == 9 && BuildZombieY < 6) {
-                GridItem *aGridItem = nullptr;
-                while (IterateGridItems(aGridItem)) {
-                    if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE && aGridItem->mGridY == BuildZombieY) {
-                        aGridItem->GridItemDie();
-                    }
-                }
-                for (int x = 0; x < colsCount; ++x) {
-                    mChallenge->GraveDangerSpawnGraveAt(x, BuildZombieY);
-                }
-            }
-            // 单列
-            else if (BuildZombieX < 9 && BuildZombieY == 6) {
-                GridItem *aGridItem = nullptr;
-                while (IterateGridItems(aGridItem)) {
-                    if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE && aGridItem->mGridX == BuildZombieX) {
-                        aGridItem->GridItemDie();
-                    }
-                }
-                for (int y = 0; y < rowsCount; ++y) {
-                    mChallenge->GraveDangerSpawnGraveAt(BuildZombieX, y);
-                }
-            }
-            // 单格
-            else if (BuildZombieX < 9 && BuildZombieY < 6) {
-                mChallenge->GraveDangerSpawnGraveAt(BuildZombieX, BuildZombieY);
+            CheatPlaceGraveStone(this, gCheatPlaceColumn, gCheatPlaceRow);
+        }
+        gCheatPlaceGraveStone = false;
+    }
+
+    // 放置梯子
+    if (gCheatPlaceLadder) {
+        // 防止选“所有行”或“所有列”的时候放置到空地
+        if (gCheatPlaceColumn < 9 && gCheatPlaceRow < (StageHas6Rows() ? 6 : 5) && !IsOnlineModeActiveAndConnectedToServer()) {
+            if (GetLadderAt(gCheatPlaceColumn, gCheatPlaceRow) == nullptr) {
+                AddALadder(gCheatPlaceColumn, gCheatPlaceRow);
             }
         }
-        graveBuild = false;
+        gCheatPlaceLadder = false;
     }
 
     // 出怪设置
-    if (buttonSetSpawn && choiceSpawnMode != 0) {
-        int typesCount = 0;                          // 已选僵尸种类数
-        int typesList[ZombieType::NUM_ZOMBIE_TYPES]; // 已选僵尸种类列表
-        // 将僵尸代号放入种类列表, 并更新已选种类数
-        for (int type = 0; type < ZombieType::NUM_ZOMBIE_TYPES; ++type) {
-            if (checkZombiesAllowed[type] && type != ZombieType::ZOMBIE_BUNGEE) // 飞贼僵尸不应作为正常僵尸出现在出怪列表中
-            {
-                typesList[typesCount] = type;
-                ++typesCount;
-            }
-        }
-        if (typesCount > 0) // 设置出怪需要选择至少 1 种除飞贼以外的僵尸
-        {
-            // 自然出怪
-            if (choiceSpawnMode == 1) {
-                // 清空出怪列表
-                for (int wave = 0; wave < mNumWaves; ++wave) {
-                    for (int index = 0; index < MAX_ZOMBIES_IN_WAVE; ++index)
-                        mZombiesInWave[wave][index] = ZombieType::ZOMBIE_INVALID;
-                }
-                // 设置游戏中的僵尸允许类型
-                for (int type = 0; type < ZombieType::NUM_ZOMBIE_TYPES; ++type)
-                    mZombieAllowed[type] = checkZombiesAllowed[type];
-                mZombieAllowed[ZombieType::ZOMBIE_NORMAL] = true; // 自然出怪下必须含有普通僵尸
-                // 由游戏生成出怪列表
-                PickZombieWaves();
-            }
-            // 极限出怪
-            else if (choiceSpawnMode == 2) {
-                int indexInLevel = 0;
-                // 均匀填充出怪列表
-                for (int wave = 0; wave < mNumWaves; ++wave) {
-                    for (int indexInWave = 0; indexInWave < MAX_ZOMBIES_IN_WAVE; ++indexInWave) {
-                        // 使用僵尸的“关内序号”遍历设置出怪可能会比使用“波内序号”更加均匀
-                        mZombiesInWave[wave][indexInWave] = (ZombieType)typesList[indexInLevel % typesCount];
-                        ++indexInLevel;
-                    }
-                    if (IsFlagWave(wave)) {
-                        mZombiesInWave[wave][0] = ZombieType::ZOMBIE_FLAG; // 生成旗帜僵尸
-                        if (checkZombiesAllowed[ZombieType::ZOMBIE_BUNGEE]) {
-                            // 生成飞贼僵尸
-                            for (int index : {1, 2, 3, 4})
-                                mZombiesInWave[wave][index] = ZombieType::ZOMBIE_BUNGEE;
-                        }
-                    }
-                }
-                // 不能只出雪人僵尸, 在第一波生成 1 只普通僵尸
-                if (checkZombiesAllowed[ZombieType::ZOMBIE_YETI] && typesCount == 1)
-                    mZombiesInWave[0][0] = ZombieType::ZOMBIE_NORMAL;
-            }
-            // 重新生成选卡预览僵尸
-            if (mApp->mGameScene == GameScenes::SCENE_LEVEL_INTRO) {
-                RemoveCutsceneZombies();
-                mCutScene->mPlacedZombies = false;
-            }
+    if (buttonSetSpawn) {
+        if (choiceSpawnMode > 0 && !IsOnlineModeActiveAndConnectedToServer()) {
+            CheatSetZombieSpawn(this, gCheatZombiesToSpawn);
         }
         buttonSetSpawn = false;
     }

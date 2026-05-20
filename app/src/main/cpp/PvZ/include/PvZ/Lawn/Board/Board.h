@@ -655,28 +655,19 @@ bool LawnLoadGame(Board *theBoard, SaveGameContext *theFilePath);
 const char *GetNameByAchievementId(AchievementType theAchievementId);
 Sexy::Image *GetIconByAchievementId(AchievementType theAchievementId);
 /***************************************************************************************************************/
-inline int theBuildLadderX;
-inline int theBuildPlantX;
-inline int BuildZombieX;
-inline int theBuildLadderY;
-inline int theBuildPlantY;
-inline int BuildZombieY;
-inline bool ladderBuild;
-inline bool graveBuild;
-inline bool plantBuild;
-inline bool zombieBuild;
-inline SeedType theBuildPlantType = SeedType::SEED_NONE;
-inline ZombieType theBuildZombieType = ZombieType::ZOMBIE_INVALID;
-inline bool isImitaterPlant;
-inline int theBuildZombieCount = 1;
-inline int theZombieBuildRow;
-inline int theZombieBuildi;
-inline bool uniformBuildZombie;
-inline int theUniformZombieBuildRow;
+inline int gCheatPlaceColumn;
+inline int gCheatPlaceRow;
+inline bool gCheatPlaceLadder;
+inline bool gCheatPlaceGraveStone;
+inline bool gCheatPlacePlant;
+inline bool gCheatPlaceZombie;
+inline SeedType gCheatPlacePlantType = SeedType::SEED_NONE;
+inline ZombieType gCheatPlaceZombieType = ZombieType::ZOMBIE_INVALID;
+inline bool gCheatIsPlaceImitaterPlant;
 inline bool passNowLevel;
 inline std::string customFormation;
 inline int formationId = -1;
-inline bool ClearAllPlant;
+inline bool clearAllPlant;
 inline bool clearAllZombies;
 inline bool hypnoAllZombies;
 inline bool freezeAllZombies;
@@ -688,10 +679,10 @@ inline bool banMower;
 inline bool layChoseFormation;
 inline bool layPastedFormation;
 inline bool noFog;
-inline bool checkZombiesAllowed[ZombieType::NUM_ZOMBIE_TYPES]; // 僵尸选中情况
-inline int choiceSpawnMode;                                    // 刷怪模式
-inline bool buttonSetSpawn;                                    // 设置出怪
-inline int targetSeedBank = 1;
+inline bool gCheatZombiesToSpawn[ZombieType::NUM_ZOMBIE_TYPES]; // 僵尸选中情况
+inline int choiceSpawnMode;                                     // 刷怪模式
+inline bool buttonSetSpawn;                                     // 设置出怪
+inline int targetSeedBank;
 inline int choiceSeedPacketIndex;
 inline SeedType choiceSeedType = SeedType::SEED_NONE;
 inline bool isImitaterSeed;

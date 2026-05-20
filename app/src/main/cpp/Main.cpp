@@ -306,44 +306,40 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_support_Preferences_Changes(J
             VSBackGround = value; // 更换场景
             break;
         case 103:
-            theBuildPlantType = (SeedType)(value >= 49 ? value + 1 : value - 1); // 植物类型
+            gCheatPlacePlantType = (SeedType)(value >= 49 ? value + 1 : value - 1); // 植物类型
             break;
         case 104:
-            theBuildZombieType = (ZombieType)(value - 1); // 僵尸类型
+            gCheatPlaceZombieType = (ZombieType)(value - 1); // 僵尸类型
             break;
         case 105:
-            theBuildLadderX = value; // 横坐标
-            theBuildPlantX = value;
-            BuildZombieX = value;
+            gCheatPlaceColumn = value; // 横坐标
             break;
         case 106:
-            theBuildLadderY = value; // 纵坐标
-            theBuildPlantY = value;
-            BuildZombieY = value;
+            gCheatPlaceRow = value; // 纵坐标
             break;
         case 107:
-            isImitaterPlant = boolean; // 模仿者植物
+            gCheatIsPlaceImitaterPlant = boolean; // 模仿者植物
             break;
         case 108:
-            plantBuild = boolean; // 种植植物
+            gCheatPlacePlant = boolean; // 种植植物
             break;
         case 109:
-            zombieBuild = boolean; // 放置僵尸
+            gCheatPlaceZombie = boolean; // 放置僵尸
             break;
         case 110:
-            ladderBuild = boolean; // 搭梯子(单格)
+            gCheatPlaceLadder = boolean; // 搭梯子(单格)
             break;
         case 111:
             recoverAllMowers = boolean; // 恢复所有小推车
             break;
         case 112:
-            ClearAllPlant = boolean; // 清除所有植物
+            clearAllPlant = boolean; // 清除所有植物
             break;
         case 113:
             clearAllMowers = boolean; // 清除所有小推车
             break;
         case 114:
-            graveBuild = boolean; // 冒墓碑
+            gCheatPlaceGraveStone = boolean; // 冒墓碑
             break;
         case 115:
             clearAllZombies = boolean; // 清除所有僵尸
@@ -366,18 +362,18 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_support_Preferences_Changes(J
             layPastedFormation = boolean; // 布置粘贴阵型
             break;
         case 141:
-            targetSeedBank = value + 1; // 目标卡槽
+            targetSeedBank = value; // 目标卡槽
             break;
         case 142:
             choiceSeedPacketIndex = value; // 卡片位置
             break;
         case 143:
             if (value <= 48) {
-                choiceSeedType = (SeedType)(value - 1); // [豌豆射手, 模仿者)
+                choiceSeedType = SeedType(value - 1); // [豌豆射手, 模仿者)
             } else if (value <= 52) {
-                choiceSeedType = (SeedType)(value + 1); // [爆炸坚果, NUM_SEED_TYPES)
+                choiceSeedType = SeedType(value + 1); // [爆炸坚果, NUM_SEED_TYPES)
             } else if (value <= 76) {
-                choiceSeedType = (SeedType)(value + 8); // [墓碑, 气球僵尸]
+                choiceSeedType = SeedType(value + 8); // [墓碑, 气球僵尸]
             }
             break; // 卡片类型
         case 144:
@@ -387,88 +383,88 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_support_Preferences_Changes(J
             setSeedPacket = boolean; // 更换卡片
             break;
         case 200:
-            checkZombiesAllowed[ZombieType::ZOMBIE_NORMAL] = boolean; // 普通僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_NORMAL] = boolean; // 普通僵尸
             break;
         case 202:
-            checkZombiesAllowed[ZombieType::ZOMBIE_TRAFFIC_CONE] = boolean; // 路障僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_TRAFFIC_CONE] = boolean; // 路障僵尸
             break;
         case 203:
-            checkZombiesAllowed[ZombieType::ZOMBIE_POLEVAULTER] = boolean; // 撑杆僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_POLEVAULTER] = boolean; // 撑杆僵尸
             break;
         case 204:
-            checkZombiesAllowed[ZombieType::ZOMBIE_PAIL] = boolean; // 铁桶僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_PAIL] = boolean; // 铁桶僵尸
             break;
         case 205:
-            checkZombiesAllowed[ZombieType::ZOMBIE_NEWSPAPER] = boolean; // 报纸僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_NEWSPAPER] = boolean; // 报纸僵尸
             break;
         case 206:
-            checkZombiesAllowed[ZombieType::ZOMBIE_DOOR] = boolean; // 铁网门僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_DOOR] = boolean; // 铁网门僵尸
             break;
         case 207:
-            checkZombiesAllowed[ZombieType::ZOMBIE_FOOTBALL] = boolean; // 橄榄球僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_FOOTBALL] = boolean; // 橄榄球僵尸
             break;
         case 208:
-            checkZombiesAllowed[ZombieType::ZOMBIE_DANCER] = boolean; // 舞者僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_DANCER] = boolean; // 舞者僵尸
             break;
         case 211:
-            checkZombiesAllowed[ZombieType::ZOMBIE_SNORKEL] = boolean; // 潜水僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_SNORKEL] = boolean; // 潜水僵尸
             break;
         case 212:
-            checkZombiesAllowed[ZombieType::ZOMBIE_ZAMBONI] = boolean; // 雪橇车僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_ZAMBONI] = boolean; // 雪橇车僵尸
             break;
         case 214:
-            checkZombiesAllowed[ZombieType::ZOMBIE_DOLPHIN_RIDER] = boolean; // 海豚骑士僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_DOLPHIN_RIDER] = boolean; // 海豚骑士僵尸
             break;
         case 215:
-            checkZombiesAllowed[ZombieType::ZOMBIE_JACK_IN_THE_BOX] = boolean; // 小丑僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_JACK_IN_THE_BOX] = boolean; // 小丑僵尸
             break;
         case 216:
-            checkZombiesAllowed[ZombieType::ZOMBIE_BALLOON] = boolean; // 气球僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_BALLOON] = boolean; // 气球僵尸
             break;
         case 217:
-            checkZombiesAllowed[ZombieType::ZOMBIE_DIGGER] = boolean; // 矿工僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_DIGGER] = boolean; // 矿工僵尸
             break;
         case 218:
-            checkZombiesAllowed[ZombieType::ZOMBIE_POGO] = boolean; // 蹦蹦僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_POGO] = boolean; // 蹦蹦僵尸
             break;
         case 219:
-            checkZombiesAllowed[ZombieType::ZOMBIE_YETI] = boolean; // 僵尸雪人
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_YETI] = boolean; // 僵尸雪人
             break;
         case 220:
-            checkZombiesAllowed[ZombieType::ZOMBIE_BUNGEE] = boolean; // 飞贼僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_BUNGEE] = boolean; // 飞贼僵尸
             break;
         case 221:
-            checkZombiesAllowed[ZombieType::ZOMBIE_LADDER] = boolean; // 梯子僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_LADDER] = boolean; // 梯子僵尸
             break;
         case 222:
-            checkZombiesAllowed[ZombieType::ZOMBIE_CATAPULT] = boolean; // 投石车僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_CATAPULT] = boolean; // 投石车僵尸
             break;
         case 223:
-            checkZombiesAllowed[ZombieType::ZOMBIE_GARGANTUAR] = boolean; // 白眼巨人僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_GARGANTUAR] = boolean; // 白眼巨人僵尸
             break;
         case 226:
-            checkZombiesAllowed[ZombieType::ZOMBIE_TRASHCAN] = boolean; // 垃圾桶僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_TRASHCAN] = boolean; // 垃圾桶僵尸
             break;
         case 227:
-            checkZombiesAllowed[ZombieType::ZOMBIE_PEA_HEAD] = boolean; // 豌豆射手僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_PEA_HEAD] = boolean; // 豌豆射手僵尸
             break;
         case 228:
-            checkZombiesAllowed[ZombieType::ZOMBIE_WALLNUT_HEAD] = boolean; // 坚果僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_WALLNUT_HEAD] = boolean; // 坚果僵尸
             break;
         case 229:
-            checkZombiesAllowed[ZombieType::ZOMBIE_JALAPENO_HEAD] = boolean; // 火爆辣椒僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_JALAPENO_HEAD] = boolean; // 火爆辣椒僵尸
             break;
         case 230:
-            checkZombiesAllowed[ZombieType::ZOMBIE_GATLING_HEAD] = boolean; // 机枪射手僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_GATLING_HEAD] = boolean; // 机枪射手僵尸
             break;
         case 231:
-            checkZombiesAllowed[ZombieType::ZOMBIE_SQUASH_HEAD] = boolean; // 窝瓜僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_SQUASH_HEAD] = boolean; // 窝瓜僵尸
             break;
         case 232:
-            checkZombiesAllowed[ZombieType::ZOMBIE_TALLNUT_HEAD] = boolean; // 高坚果僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_TALLNUT_HEAD] = boolean; // 高坚果僵尸
             break;
         case 233:
-            checkZombiesAllowed[ZombieType::ZOMBIE_REDEYE_GARGANTUAR] = boolean; // 红眼巨人僵尸
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_REDEYE_GARGANTUAR] = boolean; // 红眼巨人僵尸
             break;
         case 234:
             choiceSpawnMode = value; // 刷怪模式
