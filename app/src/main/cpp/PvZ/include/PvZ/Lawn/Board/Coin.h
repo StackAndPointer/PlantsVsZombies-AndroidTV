@@ -49,7 +49,6 @@ public:
     float mCollectionDistance;     // 34
     SeedType mUsableSeedType;      // 35
     PottedPlant mPottedPlantSpec;  // 36
-    int unknownMember[4];          // 37 ~ 40
     bool mNeedsBouncyArrow;        // 164
     bool mHasBouncyArrow;          // 165
     bool mHitGround;               // 166
