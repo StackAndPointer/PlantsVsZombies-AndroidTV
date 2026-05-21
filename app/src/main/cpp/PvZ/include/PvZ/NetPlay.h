@@ -64,6 +64,7 @@ enum EventType : uint8_t {
     EVENT_SERVER_VSSETUP_ADDON_BUTTON_INIT,
     EVENT_SERVER_VSSETUP_ADDON_CHECKBOX_CHECKED,
     EVENT_CLIENT_VSSETUP_ADDON_CHECKBOX_CHECKED,
+    EVENT_CLIENT_VSSETUP_SEND_NAME_STATE,
     EVENT_SERVER_ENCOUNTER_PICK,
 
     EVENT_SERVER_SEEDCHOOSER_SELECT_SEED,
@@ -366,6 +367,7 @@ inline std::string gIfname;
 
 inline char gSecondPlayerName[32];
 inline char gServerHostName[32];
+inline bool gMetricsHostSendNameAllowed = true;
 
 // 客户端需要
 inline constexpr int MAX_SERVERS = 3;

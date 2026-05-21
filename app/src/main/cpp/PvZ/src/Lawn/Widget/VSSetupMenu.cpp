@@ -473,6 +473,10 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
             auto *eventCheckbox = static_cast<const U8_Event *>(event);
             gVSSetupRequestState = eventCheckbox->data;
         } break;
+        case EVENT_CLIENT_VSSETUP_SEND_NAME_STATE: {
+            auto *eventState = static_cast<const U8_Event *>(event);
+            gMetricsHostSendNameAllowed = eventState->data;
+        } break;
         case EVENT_CLIENT_SEEDCHOOSER_BUTTON_DEPRESS: {
             auto *eventBtnDepress = static_cast<const U8_Event *>(event);
             mApp->mZombieChooserScreen->ButtonDepress_Origin(eventBtnDepress->data);
@@ -723,6 +727,8 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_ExtendedSeeds, eventButtonInit->data2, false);
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_BanMode, eventButtonInit->data3, false);
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_BalancePatch, eventButtonInit->data4, false);
+            U8_Event eventState = {{EventType::EVENT_CLIENT_VSSETUP_SEND_NAME_STATE}, mApp->mPlayerInfo->mVSResultsSendPlayerName};
+            netplay::PutEvent(eventState);
         } break;
         case EVENT_SERVER_VSSETUP_ADDON_CHECKBOX_CHECKED: {
             auto *eventCheckbox = static_cast<const U8U8_Event *>(event);

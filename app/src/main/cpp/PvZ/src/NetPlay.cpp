@@ -127,6 +127,7 @@ void netplay::MetricsResetSettlementEvents() {
     gMetricsShuffleMode = false;
     gMetricsPlantUseCount.clear();
     gMetricsZombieUseCount.clear();
+    gMetricsHostSendNameAllowed = true;
 }
 
 void netplay::MetricsRecordSeedEvent(bool zombieSide, bool banEvent, int seedType) {
@@ -235,22 +236,23 @@ bool netplay::MetricsSendSettlement(bool plantWin, int mainCounter) {
     appendUsage(oss, gMetricsPlantUseCount);
     oss << "&zombie_use=";
     appendUsage(oss, gMetricsZombieUseCount);
-    const bool sendNames = (gLawnApp != nullptr && gLawnApp->mPlayerInfo != nullptr && gLawnApp->mPlayerInfo->mVSResultsSendPlayerName);
-    if (sendNames) {
+    const bool hostAllowName = gMetricsHostSendNameAllowed;
+    const bool guestAllowName = gLawnApp->mPlayerInfo->mVSResultsSendPlayerName;
+    if (hostAllowName || guestAllowName) {
         const char *localName = (gLawnApp && gLawnApp->mPlayerInfo && gLawnApp->mPlayerInfo->mName) ? gLawnApp->mPlayerInfo->mName : "";
         const char *hostName = (gServerHostName[0] != '\0') ? gServerHostName : localName;
         const char *guestName = (gSecondPlayerName[0] != '\0') ? gSecondPlayerName : localName;
         const int hostSide = gGamepad1ToPlayerIndex; // mSides[0]: host selected side
         const bool hostIsPlant = (hostSide == 0);
         const bool hostIsZombie = (hostSide == 1);
-        const char *plantName = hostName;
-        const char *zombieName = guestName;
+        const char *plantName = hostAllowName ? hostName : "";
+        const char *zombieName = guestAllowName ? guestName : "";
         if (hostIsPlant) {
-            plantName = hostName;
-            zombieName = guestName;
+            plantName = hostAllowName ? hostName : "";
+            zombieName = guestAllowName ? guestName : "";
         } else if (hostIsZombie) {
-            plantName = guestName;
-            zombieName = hostName;
+            plantName = guestAllowName ? guestName : "";
+            zombieName = hostAllowName ? hostName : "";
         }
         oss << "&plant_name=" << UrlEncode(plantName);
         oss << "&zombie_name=" << UrlEncode(zombieName);
