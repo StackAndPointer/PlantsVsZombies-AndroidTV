@@ -139,8 +139,6 @@ inline void (*old_AlmanacDialog_Delete2)(AlmanacDialog *almanacDialog);
 
 inline void (*old_AlmanacDialog_DrawPlants)(AlmanacDialog *almanacDialog, Sexy::Graphics *graphics);
 
-inline void (*old_AlmanacDialog_DrawZombies)(AlmanacDialog *, Sexy::Graphics *);
-
 inline void (*old_AlmanacDialog_SetupLayoutPlants)(AlmanacDialog *almanacDialog, Sexy::Graphics *graphics);
 
 #endif // PVZ_LAWN_WIDGET_ALMANAC_DIALOG_H

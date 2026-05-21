@@ -273,7 +273,7 @@ void InitHookFunction() {
     homura::HookFunc(AlmanacDialog_ButtonDepressAddr, &AlmanacDialog::ButtonDepress, nullptr);
     homura::HookFunc(AlmanacDialog_Delete2Addr, &AlmanacDialog::_destructor, &old_AlmanacDialog_Delete2);
     homura::HookFunc(AlmanacDialog_DrawPlantsAddr, &AlmanacDialog::DrawPlants, &old_AlmanacDialog_DrawPlants);
-    homura::HookFunc(AlmanacDialog_DrawZombiesAddr, &AlmanacDialog::DrawZombies, &old_AlmanacDialog_DrawZombies);
+    homura::HookFunc(AlmanacDialog_DrawZombiesAddr, &AlmanacDialog::DrawZombies, nullptr);
     homura::HookFunc(AlmanacDialog_SetupLayoutPlantsAddr, &AlmanacDialog::SetupLayoutPlants, &old_AlmanacDialog_SetupLayoutPlants);
 
 

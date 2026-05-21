@@ -1820,7 +1820,7 @@ void Plant::BlowAwayFliers(int theX, int theRow) {
     Zombie *aZombie = nullptr;
     while (mBoard->IterateZombies(aZombie)) {
         if (!aZombie->IsDeadOrDying()) {
-            Rect aZombieRect = aZombie->GetZombieRect();
+            //            Rect aZombieRect = aZombie->GetZombieRect(); // 原版遗留无用法代码
             if (aZombie->IsFlying() || aZombie->IsImpFlying() /* 新增粉丝小鬼被吹飞 */) {
                 aZombie->mBlowingAway = true;
             }
