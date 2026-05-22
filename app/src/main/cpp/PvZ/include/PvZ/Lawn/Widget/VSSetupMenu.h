@@ -106,8 +106,8 @@ public:
     LawnApp *mApp;                // 73
     VSSetupState mState;          // 74
     int mControllerIndex[2];      // 75  // 0:手柄1, 1:手柄2
-    VSSide mSides[2];             // 77
-    int unkInt79;                 // 79
+    VSSide mSides[2];             // 77 - 78
+    bool mSideLocked[2];          // 79
     VSSide mSeedPickTurn;         // 80
     int mChooserAnimateUpdateCnt; // 81
     VSSetupMode mSetupMode;       // 82

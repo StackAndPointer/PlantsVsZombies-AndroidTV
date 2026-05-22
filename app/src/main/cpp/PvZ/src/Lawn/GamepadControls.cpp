@@ -81,24 +81,25 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
 
     LawnApp *app = gamepadControls->mGameObject->mApp;
     if (app->HasGamepad() || (app->mGamePad1IsOn && app->mGamePad2IsOn)) {
-        if (gamepadControls->mGamepadState == 10) {
-            gamepadControls->GotoState(1);
+        if (gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_DIG_INDICATOR_WAIT) {
+            gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_NORMAL);
             gamepadControls->mIsShowingDigIndicator = false;
         }
-        if (!GamepadButtonDown(app, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_B) && gamepadControls->mGamepadState == 8) {
-            gamepadControls->GotoState(1);
+        if (!GamepadButtonDown(app, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_B) && gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD) {
+            gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_NORMAL);
         }
-        if (!GamepadButtonDown(app, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_X) && gamepadControls->mGamepadState == 3) {
-            gamepadControls->GotoState(4);
+        if (!GamepadButtonDown(app, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_X) && gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_BUTTER_HELD) {
+            gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_BUTTER_RELEASED);
         }
     } else {
         bool escDown = WidgetManagerIsEscDown(app->mWidgetManager);
-        if (escDown && gamepadControls->mGamepadState == 10 && gamepadControls->mGamepadFrameCounter - gamepadControls->mDigIndicatorStartCounter > 20) {
-            gamepadControls->GotoState(8);
+        if (escDown && gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_DIG_INDICATOR_WAIT
+            && gamepadControls->mGamepadFrameCounter - gamepadControls->mDigIndicatorStartCounter > 20) {
+            gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD);
             gamepadControls->mIsShowingDigIndicator = true;
         }
-        if (!escDown && gamepadControls->mGamepadState == 8) {
-            gamepadControls->GotoState(1);
+        if (!escDown && gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD) {
+            gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_NORMAL);
         }
     }
 
@@ -174,7 +175,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
                 } else if (coin->IsSun() || coin->mType == CoinType::COIN_VS_PLANT_TROPHY) {
                     coin->MouseDown(gamepadControls->mCursorPositionX, gamepadControls->mCursorPositionY, 1);
                 }
-            } else if (gameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != 8 && coin->mType == CoinType::COIN_USABLE_SEED_PACKET) {
+            } else if (gameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != MOVEMENT_STATE_DIG_HOLD && coin->mType == CoinType::COIN_USABLE_SEED_PACKET) {
                 gamepadControls->mBoard->RefreshSeedPacketFromCursor(gamepadControls->mPlayerIndex1);
                 coin->GamepadCursorOver(gamepadControls->mPlayerIndex1);
             }
@@ -228,7 +229,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         }
     }
 
-    if (gamepadControls->mGameObject->mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != 8) {
+    if (gamepadControls->mGameObject->mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != MOVEMENT_STATE_DIG_HOLD) {
         Coin *coin = nullptr;
         while (gamepadControls->mBoard->IterateCoins(coin)) {
             if (gamepadControls->mGameObject->mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
@@ -266,7 +267,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         cursorObject->mCursorType = CursorType::CURSOR_TYPE_PLANT_FROM_BANK;
         if (gamepadControls->mIsInShopSeedBank) {
             cursorObject->mSelectedIndex = gamepadControls->mSelectedShopSeedIndex;
-            if (gamepadControls->mGamepadState == 1 || app->IsChallengeWithoutSeedBank()) {
+            if (gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_NORMAL || app->IsChallengeWithoutSeedBank()) {
                 cursorObject->mType = SeedType::SEED_NONE;
                 gamepadControls->mSelectedSeedType = SeedType::SEED_NONE;
             } else {
@@ -412,7 +413,7 @@ void GamepadControls::pickUpCobCannon(Plant *cobCannon) {
         }
     }
 
-    if (cobCannon != otherSelectedCob && cobCannon->mState == PlantState::STATE_COBCANNON_READY && mGamepadState != 8) {
+    if (cobCannon != otherSelectedCob && cobCannon->mState == PlantState::STATE_COBCANNON_READY && mGamepadState != MOVEMENT_STATE_DIG_HOLD) {
         if (!mIsCobCannonSelected) {
             mBoard->ClearCursor(mPlayerIndex1);
             mBoard->mCobCannonCursorDelayCounter = 30;
@@ -588,7 +589,7 @@ void GamepadControls::Update(float a2) {
     // }
     // }
 
-    if (!isKeyboardTwoPlayerMode && !anApp->CanShopLevel() && mGamepadState == 6 && mIsInShopSeedBank) {
+    if (!isKeyboardTwoPlayerMode && !anApp->CanShopLevel() && mGamepadState == MOVEMENT_STATE_SELECT_SEED && mIsInShopSeedBank) {
         mIsInShopSeedBank = false;
     }
 }
@@ -632,7 +633,7 @@ void GamepadControls::UpdatePreviewReanim() {
     SeedBank *aSeedBank = GetSeedBank();
 
     if (!dynamicPreview) { // 如果没开启动态预览，则开启砸罐子无尽和锤僵尸关卡的动态预览，并执行旧游戏函数。
-        if ((anApp->IsWhackAZombieLevel() || anApp->IsScaryPotterLevel()) && mGamepadState == 7) {
+        if ((anApp->IsWhackAZombieLevel() || anApp->IsScaryPotterLevel()) && mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
             if (aSeedBank == nullptr || mSelectedSeedIndex < 0 || mSelectedSeedIndex >= 10) {
                 old_GamepadControls_UpdatePreviewReanim(this);
                 return;
@@ -654,7 +655,7 @@ void GamepadControls::UpdatePreviewReanim() {
     SeedType aSeedType = aCursorObject->mType;
     bool isImitater = aSeedBank->mSeedPackets[mSelectedSeedIndex].mPacketType == SeedType::SEED_IMITATER;
 
-    if ((anApp->IsWhackAZombieLevel() || aGameMode == GameMode::GAMEMODE_SCARY_POTTER_ENDLESS) && mGamepadState == 7) {
+    if ((anApp->IsWhackAZombieLevel() || aGameMode == GameMode::GAMEMODE_SCARY_POTTER_ENDLESS) && mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
         // 开启砸罐子无尽和锤僵尸关卡的动态预览
         SeedPacket *seedPacket = &aSeedBank->mSeedPackets[mSelectedSeedIndex];
         aCursorObject->mType = seedPacket->mPacketType;
@@ -894,7 +895,7 @@ void GamepadControls::UpdatePreviewReanim() {
     if (mPreviewReanim4 == nullptr)
         return;
 
-    if (aCursorObject->mCursorType != CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && mGamepadState != 7)
+    if (aCursorObject->mCursorType != CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && mGamepadState != MOVEMENT_STATE_PLANT_CURSOR)
         return;
     if (mSelectedSeedIndex == -1)
         return;
@@ -951,15 +952,15 @@ void GamepadControls::DrawPreview(Sexy::Graphics *g) {
     if (mGameMode == GameMode::GAMEMODE_CHALLENGE_RAINING_SEEDS) { // 为种子雨添加种植预览
         CursorObject *cursorObject = mPlayerIndex1 ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
         if (cursorObject->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
-            mGamepadState = 7;
+            mGamepadState = MOVEMENT_STATE_PLANT_CURSOR;
             old_GamepadControls_DrawPreview(this, g);
-            mGamepadState = 1;
+            mGamepadState = MOVEMENT_STATE_NORMAL;
             return;
         }
     }
 
     if (anApp->IsWhackAZombieLevel() || anApp->IsScaryPotterLevel()) {
-        if (mGamepadState == 7) {
+        if (mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
             SeedBank *seedBank = GetSeedBank();
             SeedPacket *seedPacket = &seedBank->mSeedPackets[mSelectedSeedIndex];
             mSelectedSeedType = seedPacket->mPacketType == SeedType::SEED_IMITATER ? seedPacket->mImitaterType : seedPacket->mPacketType;
@@ -1012,7 +1013,7 @@ void GamepadControls::DrawPreview(Sexy::Graphics *g) {
         return;
     }
 
-    if (mGamepadState == 7 && mSelectedSeedType == SeedType::SEED_ZOMBIE_MOUND) {
+    if (mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && mSelectedSeedType == SeedType::SEED_ZOMBIE_MOUND) {
         g->SetColorizeImages(true);
         int aGridX = mBoard->PixelToGridXKeepOnBoard(int(mCursorPositionX), int(mCursorPositionY));
         int aGridY = mBoard->PixelToGridYKeepOnBoard(int(mCursorPositionX), int(mCursorPositionY));
@@ -1140,7 +1141,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 
                     aSeedPacket->Deactivate();
                     aSeedPacket->WasPlanted(mPlayerIndex1);
-                    mGamepadState = 1;
+                    mGamepadState = MOVEMENT_STATE_NORMAL;
                 }
             }
 
@@ -1151,7 +1152,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                     aGraveStone->mVSGraveStoneHealth = 350;
                     aSeedPacket->Deactivate();
                     aSeedPacket->WasPlanted(mPlayerIndex1);
-                    mGamepadState = 1;
+                    mGamepadState = MOVEMENT_STATE_NORMAL;
                 }
             }
 
@@ -1183,7 +1184,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 
                 aSeedPacket->Deactivate();
                 aSeedPacket->WasPlanted(mPlayerIndex2);
-                mGamepadState = 1;
+                mGamepadState = MOVEMENT_STATE_NORMAL;
                 return;
             }
         } else {

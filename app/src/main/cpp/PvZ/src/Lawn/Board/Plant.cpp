@@ -237,7 +237,7 @@ void Plant::UpdateReanimColor() {
         return;
     }
     GamepadControls *gamePad = mBoard->mGamepadControls[0];
-    if (gamePad->mGamepadState != 7) {
+    if (gamePad->mGamepadState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
         mSeedType = SeedType::SEED_PEASHOOTER;
         old_Plant_UpdateReanimColor(this);
         mSeedType = aSeedType;
@@ -1671,7 +1671,7 @@ bool Plant::IsUpgrade(SeedType theSeedType) {
             return true;
         }
         GamepadControls *gamePad = board->mGamepadControls[0];
-        return !(gamePad->mGamepadState == 7 && gamePad->mIsInShopSeedBank);
+        return !(gamePad->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && gamePad->mIsInShopSeedBank);
     }
     return old_Plant_IsUpgrade(theSeedType);
 }

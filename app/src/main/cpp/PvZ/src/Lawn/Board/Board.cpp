@@ -1519,7 +1519,7 @@ void Board::processServerEvent(const BaseEvent *event) {
                 clientGamepadControls->mSelectedSeedIndex = event1->data1;
                 clientSeedBank->mSeedPackets[event1->data1].mLastSelectedTime = 0.0f; // 动画效果专用
             }
-            clientGamepadControls->mGamepadState = event1->data2;
+            clientGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data2);
             //            clientGamepadControls->mCursorPositionX = event1->data5;
             //            clientGamepadControls->mCursorPositionY = event1->data5;
         } break;
@@ -1533,7 +1533,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             auto *event1 = static_cast<const U8U8_Event *>(event);
             GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
             CursorObject *clientCursorObject = mGamepadControls[1]->mPlayerIndex2 == 1 ? mCursorObject[1] : mCursorObject[0];
-            clientGamepadControls->mGamepadState = event1->data1;
+            clientGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data1);
             clientCursorObject->mCursorType = (CursorType)event1->data2;
         } break;
         case EVENT_SERVER_BOARD_TOUCH_DOWN: {
@@ -1544,7 +1544,7 @@ void Board::processServerEvent(const BaseEvent *event) {
                 serverGamepadControls->mSelectedSeedIndex = event1->data1;
                 serverSeedBank->mSeedPackets[event1->data1].mLastSelectedTime = 0.0f; // 动画效果专用
             }
-            serverGamepadControls->mGamepadState = event1->data2;
+            serverGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data2);
             serverGamepadControls->mCursorPositionX = event1->data3;
             serverGamepadControls->mCursorPositionY = event1->data4;
         } break;
@@ -1558,28 +1558,28 @@ void Board::processServerEvent(const BaseEvent *event) {
             auto *event1 = static_cast<const U8U8_Event *>(event);
             GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
             CursorObject *serverCursorObject = mGamepadControls[0]->mPlayerIndex2 == 0 ? mCursorObject[0] : mCursorObject[1];
-            serverGamepadControls->mGamepadState = event1->data1;
+            serverGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data1);
             serverCursorObject->mCursorType = (CursorType)event1->data2;
         } break;
         case EVENT_SERVER_BOARD_TOUCH_CLEAR_CURSOR: {
             GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
             ClearCursor(mGamepadControls[0]->mPlayerIndex2 == 0 ? 0 : 1);
-            serverGamepadControls->mGamepadState = 1;
+            serverGamepadControls->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
         } break;
         case EVENT_CLIENT_BOARD_TOUCH_CLEAR_CURSOR: {
             GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
             ClearCursor(mGamepadControls[0]->mPlayerIndex2 == 0 ? 1 : 0);
-            clientGamepadControls->mGamepadState = 1;
+            clientGamepadControls->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
         } break;
         case EVENT_CLIENT_BOARD_GAMEPAD_SET_STATE: {
             GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
             auto *event1 = static_cast<const U8_Event *>(event);
-            clientGamepadControls->mGamepadState = event1->data;
+            clientGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data);
         } break;
         case EVENT_SERVER_BOARD_GAMEPAD_SET_STATE: {
             auto *event1 = static_cast<const U8_Event *>(event);
             GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
-            serverGamepadControls->mGamepadState = event1->data;
+            serverGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data);
         } break;
         case EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL: {
             auto *event1 = static_cast<const U8_Event *>(event);
@@ -2647,8 +2647,8 @@ void Board::Update() {
         mGamepadControls[1]->mIsInShopSeedBank = false;
         mGamepadControls[0]->mPlayerIndex2 = 0;
         mGamepadControls[1]->mPlayerIndex2 = 1;
-        mGamepadControls[0]->mGamepadState = 7;
-        mGamepadControls[1]->mGamepadState = 7;
+        mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
+        mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
     }
 
     if (!mPaused && mTimeStopCounter <= 0) {
@@ -3591,7 +3591,7 @@ void Board::ClientMouseDragLocal(int x, int y) {
 
     if (gClientMouseInBoard) {
         int seedBankHeight = seedBank->mY + seedBank->mHeight;
-        if (y < seedBankHeight && clientGamepadControls->mGamepadState == 7) {
+        if (y < seedBankHeight && clientGamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
             gClientMouseInBoard = false;
             return;
         }
@@ -3663,12 +3663,12 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
     keyboardMode = false;
     SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
     int currentSeedBankIndex = mGamepadControls[0]->mSelectedSeedIndex;
-    int mGameState = mGamepadControls[0]->mGamepadState;
+    BaseGamepadControls::MovementState mGameState = mGamepadControls[0]->mGamepadState;
     bool isCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
 
     SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
     int currentSeedBankIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
-    int mGameState_2P = mGamepadControls[1]->mGamepadState;
+    BaseGamepadControls::MovementState mGameState_2P = mGamepadControls[1]->mGamepadState;
     bool isCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
     HitResult hitResult;
     MouseHitTest(x, y, &hitResult, false);
@@ -3720,7 +3720,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             mGamepadControls[0]->mSelectedSeedIndex = newSeedPacketIndex;
             seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
             if (currentSeedBankIndex != newSeedPacketIndex || mGameState != 7) {
-                mGamepadControls[0]->mGamepadState = 7;
+                mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[0]->mIsInShopSeedBank = false;
                 bool isClientGamepadControl = mGamepadControls[0]->mPlayerIndex2 == 1;
                 if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
@@ -3730,7 +3730,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
                     mApp->PlaySample(SOUND_SEEDLIFT);
                 }
             } else if (currentSeedBankIndex == newSeedPacketIndex && mGameState == 7) {
-                mGamepadControls[0]->mGamepadState = 1;
+                mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 if (!isTwoSeedBankMode)
                     mGamepadControls[0]->mIsInShopSeedBank = true;
             }
@@ -3760,7 +3760,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
 
             if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || mGameState_2P != 7) {
-                mGamepadControls[1]->mGamepadState = 7;
+                mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[1]->mIsInShopSeedBank = false;
                 bool isClientGamepadControl = mGamepadControls[1]->mPlayerIndex2 == 1;
                 if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
@@ -3770,7 +3770,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
                     mApp->PlaySample(SOUND_SEEDLIFT);
                 }
             } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && mGameState_2P == 7) {
-                mGamepadControls[1]->mGamepadState = 1;
+                mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 if (!isTwoSeedBankMode)
                     mGamepadControls[1]->mIsInShopSeedBank = true;
             }
@@ -3792,7 +3792,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_PLAYER1; // 玩家1
         mTouchState = TouchState::TOUCHSTATE_SHOVEL_RECT;
         if (mGameState == 7) {
-            mGamepadControls[0]->mGamepadState = 1;
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             if (!isTwoSeedBankMode)
                 mGamepadControls[0]->mIsInShopSeedBank = true;
             int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
@@ -3823,7 +3823,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_PLAYER2; // 玩家2
         mTouchState = TouchState::TOUCHSTATE_BUTTER_RECT;
         if (mGameState == 7) {
-            mGamepadControls[1]->mGamepadState = 1;
+            mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             if (!isTwoSeedBankMode)
                 mGamepadControls[1]->mIsInShopSeedBank = true;
             int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
@@ -3985,7 +3985,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         if (isValidCobCannon) {
             if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
                 if (mGameState == 7) {
-                    mGamepadControls[0]->mGamepadState = 1;
+                    mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                     mSendKeyWhenTouchUp = false;
                     if (!isTwoSeedBankMode)
                         mGamepadControls[0]->mIsInShopSeedBank = true;
@@ -4001,7 +4001,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
                 mGamepadControls[0]->pickUpCobCannon(plant);
             } else {
                 if (mGameState_2P == 7) {
-                    mGamepadControls[1]->mGamepadState = 1;
+                    mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                     mSendKeyWhenTouchUp = false;
                     if (!isTwoSeedBankMode)
                         mGamepadControls[1]->mIsInShopSeedBank = true;
@@ -4059,9 +4059,9 @@ void Board::__MouseDrag(int x, int y) {
 
     bool isCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
     SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
-    int mGameState_2P = mGamepadControls[1]->mGamepadState;
+    BaseGamepadControls::MovementState mGameState_2P = mGamepadControls[1]->mGamepadState;
     bool isCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
-    int mGameState = mGamepadControls[0]->mGamepadState;
+    BaseGamepadControls::MovementState mGameState = mGamepadControls[0]->mGamepadState;
     GameMode mGameMode = mApp->mGameMode;
     bool isTwoSeedBankMode = (mGameMode == GameMode::GAMEMODE_MP_VS || (mGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && mGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS));
     int seedBankHeight = mApp->IsChallengeWithoutSeedBank() ? 87 : seedBank->mY + seedBank->mHeight;
@@ -4075,7 +4075,7 @@ void Board::__MouseDrag(int x, int y) {
     if (mTouchState == TouchState::TOUCHSTATE_SEED_BANK && mTouchLastY < seedBankHeight && y >= seedBankHeight) {
         mTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SEED_BANK;
         if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-            mGamepadControls[0]->mGamepadState = 7;
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
             mGamepadControls[0]->mIsInShopSeedBank = false;
             requestDrawShovelInCursor = false;
             if (gTcpClientSocket) {
@@ -4087,7 +4087,7 @@ void Board::__MouseDrag(int x, int y) {
                 netplay::PutEvent(event);
             }
         } else {
-            mGamepadControls[1]->mGamepadState = 7;
+            mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
             mGamepadControls[1]->mIsInShopSeedBank = false;
             requestDrawButterInCursor = false;
             if (gTcpClientSocket >= 0 && mGamepadControls[1]->mPlayerIndex2 == 0) {
@@ -4109,7 +4109,7 @@ void Board::__MouseDrag(int x, int y) {
                     U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
                     netplay::PutEvent(event);
                 }
-                mGamepadControls[0]->mGamepadState = 1;
+                mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 mSendKeyWhenTouchUp = true;
             }
         } else if (mTouchLastY < mTouchShovelRectWidth && y >= mTouchShovelRectWidth) {
@@ -4121,7 +4121,7 @@ void Board::__MouseDrag(int x, int y) {
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
                 netplay::PutEvent(event);
             }
-            mGamepadControls[0]->mGamepadState = 1;
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             mSendKeyWhenTouchUp = true;
         }
     }
@@ -4131,7 +4131,7 @@ void Board::__MouseDrag(int x, int y) {
         if (!requestDrawButterInCursor)
             mApp->PlayFoley(FoleyType::FOLEY_FLOOP);
         requestDrawButterInCursor = true;
-        mGamepadControls[1]->mGamepadState = 1;
+        mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
         mSendKeyWhenTouchUp = true;
     }
 
@@ -4159,7 +4159,7 @@ void Board::__MouseDrag(int x, int y) {
 
     if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
         if (mGameState == 7 && mTouchLastY > seedBankHeight && y <= seedBankHeight) {
-            mGamepadControls[0]->mGamepadState = 1; // 退选植物
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL; // 退选植物
             if (!isTwoSeedBankMode)
                 mGamepadControls[0]->mIsInShopSeedBank = true;
             int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
@@ -4175,7 +4175,7 @@ void Board::__MouseDrag(int x, int y) {
         }
     } else {
         if (mGameState_2P == 7 && mTouchLastY > seedBankHeight && y <= seedBankHeight) {
-            mGamepadControls[1]->mGamepadState = 1; // 退选植物
+            mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL; // 退选植物
             if (!isTwoSeedBankMode)
                 mGamepadControls[1]->mIsInShopSeedBank = true;
             int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
@@ -4255,12 +4255,12 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
     if (mTouchState != TouchState::TOUCHSTATE_NONE && mSendKeyWhenTouchUp) {
         SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
         int numSeedsInBank = seedBank->GetNumSeedsOnConveyorBelt();
-        int mGameState = mGamepadControls[0]->mGamepadState;
+        BaseGamepadControls::MovementState mGameState = mGamepadControls[0]->mGamepadState;
         bool isCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
 
         SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
         int numSeedsInBank_2P = seedBank_2P->GetNumSeedsOnConveyorBelt();
-        int mGameState_2P = mGamepadControls[1]->mGamepadState;
+        BaseGamepadControls::MovementState mGameState_2P = mGamepadControls[1]->mGamepadState;
         bool isCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
 
         GameMode mGameMode = mApp->mGameMode;
@@ -4284,7 +4284,7 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
                 } else {
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                 }
-                int mGameStateNew = mGamepadControls[0]->mGamepadState;
+                BaseGamepadControls::MovementState mGameStateNew = mGamepadControls[0]->mGamepadState;
                 int seedPacketIndexNew = mGamepadControls[0]->mSelectedSeedIndex;
                 int numSeedsInBankNew = seedBank->GetNumSeedsOnConveyorBelt();
                 mGamepadControls[0]->mIsInShopSeedBank = mGameStateNew != 7;
@@ -4321,7 +4321,7 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
                 } else {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                 }
-                int mGameStateNew_2P = mGamepadControls[1]->mGamepadState;
+                BaseGamepadControls::MovementState mGameStateNew_2P = mGamepadControls[1]->mGamepadState;
                 int seedPacketIndexNew_2P = mGamepadControls[1]->mSelectedSeedIndex;
                 int numSeedsInBankNew_2P = seedBank_2P->GetNumSeedsOnConveyorBelt();
                 mGamepadControls[1]->mIsInShopSeedBank = mGameStateNew_2P != 7;
@@ -4331,7 +4331,7 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
                     }
                 }
                 //                if (mGameMode == GameMode::GAMEMODE_MP_VS) {
-                //                    mGamepadControls[1]->mGamepadState = 1;
+                //                    mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 //                }
             }
         }
@@ -4364,12 +4364,12 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
 
     SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
     int currentSeedBankIndex = mGamepadControls[0]->mSelectedSeedIndex;
-    int mGameState = mGamepadControls[0]->mGamepadState;
+    BaseGamepadControls::MovementState mGameState = mGamepadControls[0]->mGamepadState;
     bool isCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
 
     SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
     int currentSeedBankIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
-    int mGameState_2P = mGamepadControls[1]->mGamepadState;
+    BaseGamepadControls::MovementState mGameState_2P = mGamepadControls[1]->mGamepadState;
     bool isCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
     HitResult hitResult;
     MouseHitTest(x, y, &hitResult, false);
@@ -4423,7 +4423,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
 
             if (currentSeedBankIndex != newSeedPacketIndex || mGameState != 7) {
-                mGamepadControls[0]->mGamepadState = 7;
+                mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[0]->mIsInShopSeedBank = false;
                 bool isClientGamepadControl = mGamepadControls[0]->mPlayerIndex2 == 1;
                 if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
@@ -4433,7 +4433,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                     mApp->PlaySample(SOUND_SEEDLIFT);
                 }
             } else if (currentSeedBankIndex == newSeedPacketIndex && mGameState == 7) {
-                mGamepadControls[0]->mGamepadState = 1;
+                mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 if (!isTwoSeedBankMode)
                     mGamepadControls[0]->mIsInShopSeedBank = true;
             }
@@ -4463,7 +4463,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
 
             if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || mGameState_2P != 7) {
-                mGamepadControls[1]->mGamepadState = 7;
+                mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[1]->mIsInShopSeedBank = false;
 
                 bool isClientGamepadControl = mGamepadControls[1]->mPlayerIndex2 == 1;
@@ -4474,7 +4474,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                     mApp->PlaySample(SOUND_SEEDLIFT);
                 }
             } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && mGameState_2P == 7) {
-                mGamepadControls[1]->mGamepadState = 1;
+                mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 if (!isTwoSeedBankMode)
                     mGamepadControls[1]->mIsInShopSeedBank = true;
             }
@@ -4508,7 +4508,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
         gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_PLAYER1; // 玩家1
         gTouchStateSecond = TouchState::TOUCHSTATE_SHOVEL_RECT;
         if (mGameState == 7) {
-            mGamepadControls[0]->mGamepadState = 1;
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             if (!isTwoSeedBankMode)
                 mGamepadControls[0]->mIsInShopSeedBank = true;
             int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
@@ -4540,7 +4540,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
         gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_PLAYER2; // 玩家2
         gTouchStateSecond = TouchState::TOUCHSTATE_BUTTER_RECT;
         if (mGameState == 7) {
-            mGamepadControls[1]->mGamepadState = 1;
+            mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             if (!isTwoSeedBankMode)
                 mGamepadControls[1]->mIsInShopSeedBank = true;
             int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
@@ -4711,7 +4711,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                 return;
             } else if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
                 if (mGameState == 7) {
-                    mGamepadControls[0]->mGamepadState = 1;
+                    mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                     gSendKeyWhenTouchUpSecond = false;
                     if (!isTwoSeedBankMode)
                         mGamepadControls[0]->mIsInShopSeedBank = true;
@@ -4722,7 +4722,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                 mGamepadControls[0]->pickUpCobCannon(plant);
             } else {
                 if (mGameState_2P == 7) {
-                    mGamepadControls[1]->mGamepadState = 1;
+                    mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                     gSendKeyWhenTouchUpSecond = false;
                     if (!isTwoSeedBankMode)
                         mGamepadControls[1]->mIsInShopSeedBank = true;
@@ -4750,15 +4750,15 @@ void Board::MouseDragSecond(int x, int y) {
     bool isCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
     bool isCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
     SeedBank *aSeedBank = mGamepadControls[0]->GetSeedBank();
-    int aGameState = mGamepadControls[0]->mGamepadState;
-    int aGameState_2P = mGamepadControls[1]->mGamepadState;
+    BaseGamepadControls::MovementState aGameState = mGamepadControls[0]->mGamepadState;
+    BaseGamepadControls::MovementState aGameState_2P = mGamepadControls[1]->mGamepadState;
     GameMode aGameMode = mApp->mGameMode;
     bool isTwoSeedBankMode = (aGameMode == GameMode::GAMEMODE_MP_VS || (aGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && aGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS));
     int seedBankHeight = mApp->IsChallengeWithoutSeedBank() ? 87 : aSeedBank->mY + aSeedBank->mHeight;
     if (gTouchStateSecond == TouchState::TOUCHSTATE_SEED_BANK && gTouchLastYSecond < seedBankHeight && y >= seedBankHeight) {
         gTouchStateSecond = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SEED_BANK;
         if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-            mGamepadControls[0]->mGamepadState = 7;
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
             mGamepadControls[0]->mIsInShopSeedBank = false;
             requestDrawShovelInCursor = false;
             if (gTcpClientSocket) {
@@ -4770,7 +4770,7 @@ void Board::MouseDragSecond(int x, int y) {
                 netplay::PutEvent(event);
             }
         } else {
-            mGamepadControls[1]->mGamepadState = 7;
+            mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
             mGamepadControls[1]->mIsInShopSeedBank = false;
             requestDrawButterInCursor = false;
             if (gTcpClientSocket >= 0 && mGamepadControls[1]->mPlayerIndex2 == 1) {
@@ -4792,7 +4792,7 @@ void Board::MouseDragSecond(int x, int y) {
                     U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
                     netplay::PutEvent(event);
                 }
-                mGamepadControls[0]->mGamepadState = 1;
+                mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 gSendKeyWhenTouchUpSecond = true;
             }
         } else if (gTouchLastYSecond < mTouchShovelRectWidth && y >= mTouchShovelRectWidth) {
@@ -4804,7 +4804,7 @@ void Board::MouseDragSecond(int x, int y) {
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
                 netplay::PutEvent(event);
             }
-            mGamepadControls[0]->mGamepadState = 1;
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             gSendKeyWhenTouchUpSecond = true;
         }
     }
@@ -4814,7 +4814,7 @@ void Board::MouseDragSecond(int x, int y) {
         if (!requestDrawButterInCursor)
             mApp->PlayFoley(FoleyType::FOLEY_FLOOP);
         requestDrawButterInCursor = true;
-        mGamepadControls[1]->mGamepadState = 1;
+        mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
         gSendKeyWhenTouchUpSecond = true;
     }
 
@@ -4843,8 +4843,8 @@ void Board::MouseDragSecond(int x, int y) {
     }
 
     if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-        if (aGameState == 7 && gTouchLastYSecond > seedBankHeight && y <= seedBankHeight) {
-            mGamepadControls[0]->mGamepadState = 1; // 退选植物
+        if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && gTouchLastYSecond > seedBankHeight && y <= seedBankHeight) {
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL; // 退选植物
             if (!isTwoSeedBankMode)
                 mGamepadControls[0]->mIsInShopSeedBank = true;
             int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
@@ -4859,8 +4859,8 @@ void Board::MouseDragSecond(int x, int y) {
             }
         }
     } else {
-        if (aGameState_2P == 7 && gTouchLastYSecond > seedBankHeight && y <= seedBankHeight) {
-            mGamepadControls[1]->mGamepadState = 1; // 退选植物
+        if (aGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && gTouchLastYSecond > seedBankHeight && y <= seedBankHeight) {
+            mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL; // 退选植物
             if (!isTwoSeedBankMode)
                 mGamepadControls[1]->mIsInShopSeedBank = true;
             int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
@@ -4911,12 +4911,12 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
     if (gTouchStateSecond != TouchState::TOUCHSTATE_NONE && gSendKeyWhenTouchUpSecond) {
         SeedBank *aSeedBank = mGamepadControls[0]->GetSeedBank();
         int aNumSeedsOnConveyor = aSeedBank->GetNumSeedsOnConveyorBelt();
-        int aGameState = mGamepadControls[0]->mGamepadState;
+        BaseGamepadControls::MovementState aGameState = mGamepadControls[0]->mGamepadState;
         bool aIsCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
 
         SeedBank *aSeedBank_2P = mGamepadControls[1]->GetSeedBank();
         int aNumSeedsOnConveyor_2P = aSeedBank_2P->GetNumSeedsOnConveyorBelt();
-        int aGameState_2P = mGamepadControls[1]->mGamepadState;
+        BaseGamepadControls::MovementState aGameState_2P = mGamepadControls[1]->mGamepadState;
         bool aIsCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
 
         GameMode aGameMode = mApp->mGameMode;
@@ -4928,7 +4928,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
         if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             if (requestDrawShovelInCursor) {
                 ShovelDown();
-            } else if (aGameState == 7 || aIsCobCannonSelected || aCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
+            } else if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || aIsCobCannonSelected || aCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
 
                 if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
@@ -4941,7 +4941,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                 } else {
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                 }
-                int mGameStateNew = mGamepadControls[0]->mGamepadState;
+                BaseGamepadControls::MovementState mGameStateNew = mGamepadControls[0]->mGamepadState;
                 int numSeedsInBankNew = aSeedBank->GetNumSeedsOnConveyorBelt();
                 int seedPacketIndexNew = mGamepadControls[0]->mSelectedSeedIndex;
                 mGamepadControls[0]->mIsInShopSeedBank = mGameStateNew != 7;
@@ -4955,7 +4955,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
         } else {
             if (requestDrawButterInCursor) {
                 requestDrawButterInCursor = false;
-            } else if (aGameState_2P == 7 || aIsCobCannonSelected_2P || aCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
+            } else if (aGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || aIsCobCannonSelected_2P || aCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
                 if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
@@ -4967,7 +4967,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                 } else {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                 }
-                int mGameStateNew_2P = mGamepadControls[1]->mGamepadState;
+                BaseGamepadControls::MovementState mGameStateNew_2P = mGamepadControls[1]->mGamepadState;
                 int numSeedsInBankNew_2P = aSeedBank_2P->GetNumSeedsOnConveyorBelt();
                 int seedPacketIndexNew_2P = mGamepadControls[1]->mSelectedSeedIndex;
                 mGamepadControls[1]->mIsInShopSeedBank = mGameStateNew_2P != 7;
@@ -4978,7 +4978,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                     }
                 }
                 //                if (aGameMode == GameMode::GAMEMODE_MP_VS) {
-                //                    mGamepadControls[1]->mGamepadState = 1;
+                //                    mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 //                }
                 if (gTouchStateSecond == TouchState::TOUCHSTATE_VALID_COBCONON_SECOND) {
                     mApp->ClearSecondPlayer();
@@ -5062,7 +5062,7 @@ void Board::UpdateButtons() {
     GamepadControls *aGamepad = (gGamePlayerIndex == 1) ? mGamepadControls[1] : mGamepadControls[0];
     if (gKeyDown) {
         aGamepad->OnKeyDown(KeyCode::KEYCODE_QUICK_DIG, 1112);
-        aGamepad->mGamepadState = 7;
+        aGamepad->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
         gKeyDown = false;
         gGamePlayerIndex = -1;
     }

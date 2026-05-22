@@ -27,6 +27,30 @@ class SeedBank;
 
 class BaseGamepadControls {
 public:
+    enum MovementState {
+        MOVEMENT_STATE_NONE = 0,
+        // 默认光标状态
+        MOVEMENT_STATE_NORMAL = 1,
+        // 暂未确认：进入时清左摇杆速度，退出时清两个字段
+        MOVEMENT_STATE_UNKNOWN_2 = 2,
+        // 按住 X 给僵尸上黄油
+        MOVEMENT_STATE_BUTTER_HELD = 3,
+        // 松开 X 后进入的黄油释放/恢复状态
+        MOVEMENT_STATE_BUTTER_RELEASED = 4,
+        // 方向键移动一格时的瞬时中间状态
+        MOVEMENT_STATE_GRID_STEP = 5,
+        // 在SeedBank中左右选取种子的状态
+        MOVEMENT_STATE_SELECT_SEED = 6,
+        // 选中种子后的种植光标状态
+        MOVEMENT_STATE_PLANT_CURSOR = 7,
+        // 挖掘蓄按状态，退出时根据 mDigIndicatorPercentage 决定是否真正挖掘
+        MOVEMENT_STATE_DIG_HOLD = 8,
+        MOVEMENT_STATE_UNKNOWN_9 = 9,
+        // 长按挖掘前的等待/提示状态
+        MOVEMENT_STATE_DIG_INDICATOR_WAIT = 10,
+    };
+
+public:
     int *mVtable;                            // 0
     homura::Storage<GameObject> mGameObject; // 1 ~ 13
     Board *mBoard;                           // 14
@@ -39,7 +63,7 @@ public:
     float mGridCenterPositionY;    // 21
     float mRightPositionX;         // 22
     float mRightPositionY;         // 23
-    int mGamepadState;             // 24
+    MovementState mGamepadState;   // 24
     int unk1;                      // 25
     float mDigIndicatorPercentage; // 26 , 每按下一次铲除键就加2.3
     float mCursorPositionX;        // 27
