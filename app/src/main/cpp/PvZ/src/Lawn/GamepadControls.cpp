@@ -175,7 +175,8 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
                 } else if (coin->IsSun() || coin->mType == CoinType::COIN_VS_PLANT_TROPHY) {
                     coin->MouseDown(gamepadControls->mCursorPositionX, gamepadControls->mCursorPositionY, 1);
                 }
-            } else if (gameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != MOVEMENT_STATE_DIG_HOLD && coin->mType == CoinType::COIN_USABLE_SEED_PACKET) {
+            } else if (gameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD
+                       && coin->mType == CoinType::COIN_USABLE_SEED_PACKET) {
                 gamepadControls->mBoard->RefreshSeedPacketFromCursor(gamepadControls->mPlayerIndex1);
                 coin->GamepadCursorOver(gamepadControls->mPlayerIndex1);
             }
@@ -229,7 +230,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         }
     }
 
-    if (gamepadControls->mGameObject->mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != MOVEMENT_STATE_DIG_HOLD) {
+    if (gamepadControls->mGameObject->mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD) {
         Coin *coin = nullptr;
         while (gamepadControls->mBoard->IterateCoins(coin)) {
             if (gamepadControls->mGameObject->mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
