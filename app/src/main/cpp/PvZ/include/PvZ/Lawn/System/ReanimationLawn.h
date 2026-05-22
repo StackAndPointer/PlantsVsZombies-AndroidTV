@@ -76,7 +76,6 @@ public:
 
 inline Sexy::MemoryImage *gExtendedZombieImages[EXTENDED_NUM_ZOMBIE_TYPES - NUM_CACHED_ZOMBIE_TYPES];
 
-
 inline void (*old_ReanimatorCache_LoadCachedImages)(ReanimatorCache *a1);
 
 inline void (*old_ReanimatorCache_UpdateReanimationForVariation)(ReanimatorCache *a1, Reanimation *a, DrawVariation theDrawVariation);

@@ -150,8 +150,9 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
     int maxWidth = 256;
     int maxHeight = 256;
 
-    if (theZombieType == ZombieType::ZOMBIE_ZAMBONI)
+    if (theZombieType == ZombieType::ZOMBIE_ZAMBONI) {
         maxWidth = 512;
+    }
 
     MemoryImage *aMemoryImage = MakeBlankCanvasImage(maxWidth, maxHeight);
     Graphics aMemoryGraphics(aMemoryImage);
@@ -279,6 +280,7 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
             Reanimation aReanimFlag;
             aReanimFlag.ReanimationInitializeType(aPosX, aPosY, ReanimationType::REANIM_ZOMBIE_FLAGPOLE);
             aReanimFlag.SetFramesForLayer("Zombie_flag");
+            aReanimFlag.Update();
             aReanimFlag.Draw(&aMemoryGraphics);
         }
         aReanim.Update();
@@ -291,12 +293,14 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
         Reanimation aReanimDriver;
         aReanimDriver.ReanimationInitializeType(46.0f, 22.0f, ReanimationType::REANIM_BOSS_DRIVER);
         aReanimDriver.SetFramesForLayer("anim_idle");
-
+        aReanim.Update();
         aReanim.Draw(&aMemoryGraphics);
+        aReanimDriver.Update();
         aReanimDriver.Draw(&aMemoryGraphics);
         aReanim.AssignRenderGroupToTrack("boss_body1", RENDER_GROUP_HIDDEN);
         aReanim.AssignRenderGroupToTrack("boss_neck", RENDER_GROUP_HIDDEN);
         aReanim.AssignRenderGroupToTrack("boss_head2", RENDER_GROUP_HIDDEN);
+
         aReanim.Draw(&aMemoryGraphics);
         mZombieImages[theZombieType] = aMemoryImage;
     } else if (theZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR) { // 为红眼巨人增加SeedPacket图标
@@ -318,8 +322,9 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
             aTrackName = "anim_walk";
         } else if (theZombieType == ZombieType::ZOMBIE_GARGANTUAR) {
             aPosY = 60.0f;
+        } else if (theZombieType == ZombieType::ZOMBIE_ZAMBONI) {
+            aPosX = 140.0f;
         }
-
         DrawReanimatorFrame(&aMemoryGraphics, aPosX, aPosY, aZombieDef.mReanimationType, aTrackName, DrawVariation::VARIATION_NORMAL);
         mZombieImages[theZombieType] = aMemoryImage;
     }
