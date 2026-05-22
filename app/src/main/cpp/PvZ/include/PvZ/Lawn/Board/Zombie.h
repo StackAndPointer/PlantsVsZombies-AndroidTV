@@ -442,7 +442,7 @@ public:
     static bool IsZombatarZombie(ZombieType theType);
     void SquishAllInSquare(int theX, int theY, ZombieAttackType theAttackType);
     bool IsWalkingBackwards();
-    void SetupDoorArms(Reanimation *aReanim, bool theShow);
+    static void SetupDoorArms(Reanimation *aReanim, bool theShow);
     void ShowDoorArms(bool theShow);
     void StopEating();
     Sexy::Rect GetZombieRect();

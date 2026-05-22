@@ -410,7 +410,8 @@ inline std::unordered_map<int, int> gMetricsZombieUseCount;
 inline bool gIsConnectedToServer = false;
 
 inline bool IsOnlineModeActive() noexcept {
-    return gTcpConnecting || gTcpConnected || gTcpClientSocket >= 0 || gTcpServerSocket >= 0 || gTcpListenSocket >= 0;
+    return gTcpConnected || gTcpClientSocket >= 0;
+    //    return gTcpConnecting || gTcpConnected || gTcpClientSocket >= 0 || gTcpServerSocket >= 0 || gTcpListenSocket >= 0;
 }
 
 inline bool IsOnlineModeActiveAndConnectedToServer() noexcept {

@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/Lawn/System/ReanimationLawn.h"
+#include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Zombie.h"
 #include "PvZ/Lawn/LawnApp.h"
@@ -146,7 +147,6 @@ MemoryImage *ReanimatorCache::MakeBlankMemoryImage(int theWidth, int theHeight) 
 }
 
 Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieType) {
-    // TODO: 修复 BLANK 绘制异常（旗帜、植物僵尸等头部透明图绘制为乱码）
     int maxWidth = 256;
     int maxHeight = 256;
 
@@ -283,6 +283,7 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
         }
         aReanim.Update();
         aReanim.Draw(&aMemoryGraphics);
+        mZombieImages[theZombieType] = aMemoryImage;
     } else if (aZombieDef.mReanimationType == ReanimationType::REANIM_BOSS) {
         Reanimation aReanim;
         aReanim.ReanimationInitializeType(-524.0f, -88.0f, aZombieDef.mReanimationType);
@@ -297,6 +298,7 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
         aReanim.AssignRenderGroupToTrack("boss_neck", RENDER_GROUP_HIDDEN);
         aReanim.AssignRenderGroupToTrack("boss_head2", RENDER_GROUP_HIDDEN);
         aReanim.Draw(&aMemoryGraphics);
+        mZombieImages[theZombieType] = aMemoryImage;
     } else if (theZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR) { // 为红眼巨人增加SeedPacket图标
         Reanimation aReanim;
         aReanim.ReanimationInitializeType(aPosX, aPosY + 20, aZombieDef.mReanimationType);
@@ -319,6 +321,7 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
         }
 
         DrawReanimatorFrame(&aMemoryGraphics, aPosX, aPosY, aZombieDef.mReanimationType, aTrackName, DrawVariation::VARIATION_NORMAL);
+        mZombieImages[theZombieType] = aMemoryImage;
     }
 
     return aMemoryImage;

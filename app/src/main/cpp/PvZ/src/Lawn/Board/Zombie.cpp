@@ -2336,18 +2336,20 @@ void Zombie::CheckForBoardEdge() {
 void Zombie::SetupDoorArms(Reanimation *aReanim, bool theShow) {
     int aArmGroup = RENDER_GROUP_NORMAL;
     int aDoorGroup = RENDER_GROUP_HIDDEN;
+    int aHandGroup = RENDER_GROUP_HIDDEN;
     if (theShow) {
         aArmGroup = RENDER_GROUP_HIDDEN;
         aDoorGroup = RENDER_GROUP_NORMAL;
+        aHandGroup = 3;
     }
 
     aReanim->AssignRenderGroupToPrefix("Zombie_outerarm_hand", aArmGroup);
     aReanim->AssignRenderGroupToPrefix("Zombie_outerarm_lower", aArmGroup);
     aReanim->AssignRenderGroupToPrefix("Zombie_outerarm_upper", aArmGroup);
     aReanim->AssignRenderGroupToPrefix("anim_innerarm", aArmGroup);
-    aReanim->AssignRenderGroupToPrefix("Zombie_outerarm_screendoor", aDoorGroup);
     aReanim->AssignRenderGroupToPrefix("Zombie_innerarm_screendoor", aDoorGroup);
-    aReanim->AssignRenderGroupToPrefix("Zombie_innerarm_screendoor_hand", aDoorGroup);
+    aReanim->AssignRenderGroupToPrefix("Zombie_innerarm_screendoor_hand", aHandGroup);
+    aReanim->AssignRenderGroupToPrefix("Zombie_outerarm_screendoor", aHandGroup);
 }
 
 void Zombie::ShowDoorArms(bool theShow) {

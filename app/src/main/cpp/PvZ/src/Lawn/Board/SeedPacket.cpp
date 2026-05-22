@@ -48,7 +48,7 @@ void SeedPacket::Update() {
         }
     }
 
-    SeedPacket::UpdateSelected();
+    UpdateSelected();
     mLastSelectedTime += 0.006;
     unknownIntMember1 += 0.006;
 
