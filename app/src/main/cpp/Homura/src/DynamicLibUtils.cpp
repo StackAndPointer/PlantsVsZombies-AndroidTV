@@ -59,13 +59,13 @@ void *homura::SharedObjLoader::GetSymbolImpl(const char *name) const {
     }
 #endif
     dlerror(); // clear the error
-    void *symbol = dlsym(handle_, name);
-    if (symbol == nullptr) {
-        if (const char *msg = dlerror()) {
-            LOG_ERROR("Failed to get symbol {:?}: {}", name, msg);
-        } else {
-            LOG_WARN("The value of symbol {:?} is NULL", name);
-        }
+    if (void *symbol = dlsym(handle_, name)) {
+        return symbol;
     }
-    return symbol;
+    if (const char *msg = dlerror()) {
+        LOG_ERROR("Failed to get symbol {:?}: {}", name, msg);
+    } else {
+        LOG_WARN("The value of symbol {:?} is NULL", name);
+    }
+    return nullptr;
 }

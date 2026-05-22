@@ -60,13 +60,14 @@ std::uintptr_t homura::GetLibBaseAddr(std::string_view libName) {
 
     constexpr auto &mapsPath = "/proc/self/maps";
     std::ifstream mapsFile{mapsPath};
-    if (!mapsFile.is_open()) [[unlikely]] {
+    if (!mapsFile.is_open()) {
         LOG_ERROR("Failed to open {:?}", mapsPath);
         return 0;
     }
     for (std::string line; std::getline(mapsFile, line);) {
         if (line.contains(libName)) {
-            // On unix-like OS, `sizeof(long) == sizeof(void *)` is always true
+            // On Unix-like OS, `sizeof(long) == sizeof(void *)` is always true
+            // If trying to get a 64-bit address in a 32-bit process, 'std::stoul' will throw an exception
             const std::uintptr_t baseAddr = std::stoul(line, nullptr, 16);
             baseAddrMap.emplace(libName, baseAddr);
             return baseAddr;
