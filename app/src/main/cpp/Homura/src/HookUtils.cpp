@@ -36,13 +36,17 @@ struct homura::details::CppMemFuncPtr {
 };
 
 void homura::details::CheckVirtualFunc(const CppMemFuncPtr *ptr) {
-#ifdef __arm__
-    if (ptr->adj & 1) {
+#if defined(__arm__) || defined(__aarch64__)
+    // https://github.com/ARM-software/abi-aa/blob/main/cppabi32/cppabi32.rst#representation-of-pointer-to-member-function
+    // https://github.com/ARM-software/abi-aa/blob/main/cppabi64/cppabi64.rst#representation-of-pointer-to-member-function
+    const bool isVirtual = ptr->adj & 1;
+#else
+    const bool isVirtual = std::uintptr_t(ptr->ptr) & 1;
+#endif
+
+    if (isVirtual) [[unlikely]] {
         throw std::logic_error{"Cannot use a virtual function to hook"};
     }
-#else
-#warning "'CheckVirtualFunc' is unimpletement for non-ARM-32 architecture"
-#endif
 }
 
 void homura::details::HookFuncImpl(void *symbol, void *newFunc, void **oldFuncAddr) {
