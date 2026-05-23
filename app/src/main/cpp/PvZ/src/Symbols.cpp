@@ -415,8 +415,8 @@ bool LoadGameMain() {
     Zombie_BossSpawnAttackAddr = libGameMain.GetSymbol("_ZN6Zombie15BossSpawnAttackEv");
     Zombie_DrawBungeeCordAddr = libGameMain.GetSymbol("_ZN6Zombie14DrawBungeeCordEPN4Sexy8GraphicsEii");
     // Zombie_IsTangleKelpTargetAddr = libGameMain.GetSymbol("_ZN6Zombie18IsTanglekelpTargetEv");
-    Zombie_IsTangleKelpTargetAddr = reinterpret_cast<void *>(gLibGameMainBaseAddr + ZOMBIE_ISTANGLEKELPTARGET_ADDR_RELATIVE);
-    Zombie_IsTangleKelpTarget2Addr = reinterpret_cast<void *>(gLibGameMainBaseAddr + ZOMBIE_ISTANGLEKELPTARGET2_ADDR_RELATIVE);
+    Zombie_IsTangleKelpTargetAddr = reinterpret_cast<void *>(gLibGameMainBaseAddr + ZOMBIE_ISTANGLEKELPTARGET_ADDR_RELATIVE + 1); // +1 for thumb
+    Zombie_IsTangleKelpTarget2Addr = reinterpret_cast<void *>(gLibGameMainBaseAddr + ZOMBIE_ISTANGLEKELPTARGET2_ADDR_RELATIVE + 1);
     Zombie_IsImmobiliziedAddr = libGameMain.GetSymbol("_ZN6Zombie14IsImmobiliziedEv");
     Zombie_GetDancerFrameAddr = libGameMain.GetSymbol("_ZN6Zombie14GetDancerFrameEv");
     Zombie_RiseFromGraveAddr = libGameMain.GetSymbol("_ZN6Zombie13RiseFromGraveEii");
