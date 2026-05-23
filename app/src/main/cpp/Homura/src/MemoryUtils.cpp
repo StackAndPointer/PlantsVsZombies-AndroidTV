@@ -66,9 +66,13 @@ std::uintptr_t homura::GetLibBaseAddr(std::string_view libName) {
     }
     for (std::string line; std::getline(mapsFile, line);) {
         if (line.contains(libName)) {
-            // On Unix-like OS, `sizeof(long) == sizeof(void *)` is always true
-            // If trying to get a 64-bit address in a 32-bit process, 'std::stoul' will throw an exception
-            const std::uintptr_t baseAddr = std::stoul(line, nullptr, 16);
+            std::uintptr_t baseAddr;
+            try {
+                // On Unix-like OS, a `long` variable is the same size as a pointer variable
+                baseAddr = std::stoul(line, nullptr, 16);
+            } catch (const std::out_of_range &) {
+                throw std::runtime_error{std::format("Getting a 64-bit address ({}) in a 32-bit program", libName)};
+            }
             baseAddrMap.emplace(libName, baseAddr);
             return baseAddr;
         }

@@ -98,7 +98,7 @@ template <std::destructible T>
 class AutoDestructStorage : public Storage<T> {
 public:
     constexpr AutoDestructStorage() noexcept
-        : Storage<T>{} {};
+        : Storage<T>{} {}
 
     ~AutoDestructStorage() {
         this->Destruct();

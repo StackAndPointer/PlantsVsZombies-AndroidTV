@@ -26,23 +26,25 @@
 
 namespace homura::inline container {
 
-template <typename T>
-concept IsMapType = (std::is_same_v<typename T::value_type, std::pair<typename T::key_type, typename T::mapped_type>>
-                     || std::is_same_v<typename T::value_type, std::pair<const typename T::key_type, typename T::mapped_type>>)
-    && std::is_same_v<std::iter_value_t<typename T::const_iterator>, typename T::value_type> //
-    && requires(const T &map, const typename T::key_type &key) {
-           { map.find(key) } -> std::same_as<typename T::const_iterator>;
-           { map.end() } -> std::same_as<typename T::const_iterator>;
-       };
+namespace details {
+    template <typename T>
+    concept IsMapType = (std::is_same_v<typename T::value_type, std::pair<typename T::key_type, typename T::mapped_type>>
+                         || std::is_same_v<typename T::value_type, std::pair<const typename T::key_type, typename T::mapped_type>>)
+        && std::is_same_v<std::iter_value_t<typename T::const_iterator>, typename T::value_type> //
+        && requires(const T &map, const typename T::key_type &key) {
+               { map.find(key) } -> std::same_as<typename T::const_iterator>;
+               { map.end() } -> std::same_as<typename T::const_iterator>;
+           };
+} // namespace details
 
-template <IsMapType T>
+template <details::IsMapType T>
     requires std::is_copy_constructible_v<typename T::mapped_type>
 [[nodiscard]] auto FindInMap(const T &map, const typename T::key_type &key) -> std::optional<typename T::mapped_type> {
     auto it = map.find(key);
     return (it != map.end()) ? std::optional<typename T::mapped_type>(it->second) : std::nullopt;
 }
 
-template <IsMapType T>
+template <details::IsMapType T>
 bool FindInMap(const T &map, const typename T::key_type &key, std::assignable_from<const typename T::mapped_type &> auto &&output) {
     auto it = map.find(key);
     if (it == map.end()) {

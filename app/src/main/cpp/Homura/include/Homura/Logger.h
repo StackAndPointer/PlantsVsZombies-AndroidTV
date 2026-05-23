@@ -40,15 +40,15 @@ class Logger {
 public:
     static constexpr auto &PVZ_LOG_TAG = "pvztv";
 
-    [[nodiscard]] static Logger &GetInstance() {
-        static Logger logger;
-        return logger;
-    }
-
     Logger(const Logger &) = delete;
     Logger(Logger &&) = delete;
     Logger &operator=(const Logger &) = delete;
     Logger &operator=(Logger &&) = delete;
+
+    [[nodiscard]] static Logger &GetInstance() {
+        static Logger logger;
+        return logger;
+    }
 
     void SetLevel(android_LogPriority level) noexcept {
         level_ = level;

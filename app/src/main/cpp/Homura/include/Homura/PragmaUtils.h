@@ -22,7 +22,7 @@
 
 #define HOMURA_STRINGIZE(x) #x
 
-// See https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
+// https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
 #define DISABLE_WARNING_BEGIN(flag) _Pragma("GCC diagnostic push") _Pragma(HOMURA_STRINGIZE(GCC diagnostic ignored flag))
 #define DISABLE_WARNING_END _Pragma("GCC diagnostic pop")
 
