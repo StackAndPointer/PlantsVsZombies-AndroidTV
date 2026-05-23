@@ -1290,7 +1290,7 @@ bool LoadGameMain() {
 }
 
 
-// 在命名空间作用域中定义可能会意外地定义新变量
+// Note: 在命名空间作用域中定义可能会意外地定义新变量
 
 Sexy::Font *&Sexy::FONT_HOUSEOFTERROR28 = *libGameMain.GetSymbol<Sexy::Font *>("_ZN4Sexy20FONT_HOUSEOFTERROR28E");
 Sexy::Font *&Sexy::FONT_HOUSEOFTERROR20 = *libGameMain.GetSymbol<Sexy::Font *>("_ZN4Sexy20FONT_HOUSEOFTERROR20E");
@@ -1505,19 +1505,18 @@ int &Challenge::gVSResourceDropCount = *libGameMain.GetSymbol<int>("_ZN9Challeng
 
 Sexy::Rect &LawnApp::FULLSCREEN_RECT = *libGameMain.GetSymbol<Sexy::Rect>("_ZN7LawnApp15FULLSCREEN_RECTE");
 int (&VSResultsMenu::msPlayerRecords)[2][5] = *libGameMain.GetSymbol<int[2][5]>("_ZN13VSResultsMenu15msPlayerRecordsE");
-DISABLE_WARNING_BEGIN("-Wextra-qualification") // warning: extra qualification on member 'xxx'
 
+DISABLE_WARNING_BEGIN("-Wextra-qualification") // warning: extra qualification on member 'xxx'
 EffectSystem *& ::gEffectSystem = *libGameMain.GetSymbol<EffectSystem *>("gEffectSystem");
 FoleyParams (&::gLawnFoleyParamArray)[FoleyType::NUM_FOLEY] = *libGameMain.GetSymbol<FoleyParams[FoleyType::NUM_FOLEY]>("gLawnFoleyParamArray");
 FoleyParams *& ::gFoleyParamArray = *libGameMain.GetSymbol<FoleyParams *>("gFoleyParamArray");
 int & ::gFoleyParamArraySize = *libGameMain.GetSymbol<int>("gFoleyParamArraySize");
 LawnApp *& ::gLawnApp = *libGameMain.GetSymbol<LawnApp *>("gLawnApp");
-bool (&::gZombieDefeated)[NUM_ZOMBIE_TYPES] = *libGameMain.GetSymbol<bool[NUM_ZOMBIE_TYPES]>("gZombieDefeated");
+bool (&::gZombieDefeated)[ZombieType::NUM_ZOMBIE_TYPES] = *libGameMain.GetSymbol<bool[ZombieType::NUM_ZOMBIE_TYPES]>("gZombieDefeated");
 TodStringListFormat (&::gLawnStringFormats)[14] = *libGameMain.GetSymbol<TodStringListFormat[14]>("gLawnStringFormats");
 ReanimationParams (&::gLawnReanimationArray)[ReanimationType::NUM_REANIMS] = *libGameMain.GetSymbol<ReanimationParams[ReanimationType::NUM_REANIMS]>("gLawnReanimationArray");
 ReanimatorDefinition *& ::gReanimatorDefArray = *libGameMain.GetSymbol<ReanimatorDefinition *>("gReanimatorDefArray");
 char *& ::ReanimTrackId_anim_head1 = *libGameMain.GetSymbol<char *>("ReanimTrackId_anim_head1");
-
 DISABLE_WARNING_END
 
 bool LoadNativeCode() {
