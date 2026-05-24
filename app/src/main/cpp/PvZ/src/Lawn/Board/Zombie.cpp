@@ -5164,26 +5164,26 @@ void Zombie::BungeeLanding() {
 
 
 void Zombie::UpdateZombieCatapult() {
-    auto syncCatapultPhase = [this](ZombiePhase phase, int phaseCounter) {
+    auto syncCatapultPhase = [this](ZombiePhase phase, int phaseCounter, int summonCounter) {
         if (gTcpClientSocket < 0) {
             return;
         }
         U8U8U16U16_Event event{};
         event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER;
         event.data1 = uint8_t(phase);
-        event.data2 = 0;
+        event.data2 = uint8_t(summonCounter);
         event.data3 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
         event.data4 = uint16_t(phaseCounter);
         netplay::PutEvent(event);
     };
 
     if (mZombiePhase == PHASE_CATAPULT_LAUNCHING) {
+        if (mApp->IsVSMode() && gTcpConnected) {
+            return;
+        }
+
         Reanimation *reanimation = mApp->ReanimationGet(mBodyReanimID);
         if (reanimation->ShouldTriggerTimedEvent(0.545f)) {
-            if (mApp->IsVSMode() && gTcpConnected) {
-                return;
-            }
-
             Plant *thePlant = FindCatapultTarget();
             if (gTcpClientSocket >= 0) {
                 U16U16_Event event{};
@@ -5208,12 +5208,12 @@ void Zombie::UpdateZombieCatapult() {
             if (mSummonCounter == 0) {
                 PlayZombieReanim("anim_walk", REANIM_LOOP, 20, 6.0f);
                 mZombiePhase = PHASE_ZOMBIE_NORMAL;
-                syncCatapultPhase(PHASE_ZOMBIE_NORMAL, mPhaseCounter);
+                syncCatapultPhase(PHASE_ZOMBIE_NORMAL, mPhaseCounter, mSummonCounter);
                 return;
             }
             PlayZombieReanim("anim_idle", REANIM_LOOP, 20, 12.0f);
             mZombiePhase = PHASE_CATAPULT_RELOADING;
-            syncCatapultPhase(PHASE_CATAPULT_RELOADING, mPhaseCounter);
+            syncCatapultPhase(PHASE_CATAPULT_RELOADING, mPhaseCounter, mSummonCounter);
             return;
         }
         return;
@@ -5235,7 +5235,7 @@ void Zombie::UpdateZombieCatapult() {
             mZombiePhase = PHASE_CATAPULT_LAUNCHING;
             mPhaseCounter = 300;
             PlayZombieReanim("anim_shoot", REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
-            syncCatapultPhase(PHASE_CATAPULT_LAUNCHING, mPhaseCounter);
+            syncCatapultPhase(PHASE_CATAPULT_LAUNCHING, mPhaseCounter, mSummonCounter);
             return;
         }
     } else if (mZombiePhase == PHASE_CATAPULT_RELOADING && mPhaseCounter == 0) {
@@ -5251,12 +5251,12 @@ void Zombie::UpdateZombieCatapult() {
             mZombiePhase = PHASE_CATAPULT_LAUNCHING;
             mPhaseCounter = 300;
             PlayZombieReanim("anim_shoot", REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
-            syncCatapultPhase(PHASE_CATAPULT_LAUNCHING, mPhaseCounter);
+            syncCatapultPhase(PHASE_CATAPULT_LAUNCHING, mPhaseCounter, mSummonCounter);
             return;
         }
         PlayZombieReanim("anim_walk", REANIM_LOOP, 20, 6.0f);
         mZombiePhase = PHASE_ZOMBIE_NORMAL;
-        syncCatapultPhase(PHASE_ZOMBIE_NORMAL, mPhaseCounter);
+        syncCatapultPhase(PHASE_ZOMBIE_NORMAL, mPhaseCounter, mSummonCounter);
     }
 }
 

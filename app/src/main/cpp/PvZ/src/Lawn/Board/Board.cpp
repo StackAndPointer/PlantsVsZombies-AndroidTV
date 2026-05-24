@@ -2248,6 +2248,7 @@ void Board::processServerEvent(const BaseEvent *event) {
         case EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER: {
             auto *eventZombiePhaseCounter = static_cast<const U8U8U16U16_Event *>(event);
             uint8_t serverZombiePhase = eventZombiePhaseCounter->data1;
+            uint8_t serverZombieSummonCounter = eventZombiePhaseCounter->data2;
             uint16_t serverZombieID = eventZombiePhaseCounter->data3;
             uint16_t clientZombieID;
             uint16_t serverPhaseCounter = eventZombiePhaseCounter->data4;
@@ -2270,12 +2271,25 @@ void Board::processServerEvent(const BaseEvent *event) {
                         aZombie->PlayZombieReanim("anim_point", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
                     }
                 } else if (aZombie->mZombieType == ZombieType::ZOMBIE_CATAPULT) {
+                    int oldSummonCounter = aZombie->mSummonCounter;
+                    aZombie->mSummonCounter = serverZombieSummonCounter;
                     if (aZombie->mZombiePhase == ZombiePhase::PHASE_ZOMBIE_NORMAL) {
                         aZombie->StartWalkAnim(20);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_CATAPULT_LAUNCHING) {
                         aZombie->PlayZombieReanim("anim_shoot", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_CATAPULT_RELOADING) {
                         aZombie->PlayZombieReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 20, 12.0f);
+                    }
+                    if (oldSummonCounter != aZombie->mSummonCounter) {
+                        if (aZombie->mSummonCounter == 4) {
+                            aZombie->ReanimShowTrack("Zombie_catapult_basketball", -1);
+                        } else if (aZombie->mSummonCounter == 3) {
+                            aZombie->ReanimShowTrack("Zombie_catapult_basketball2", -1);
+                        } else if (aZombie->mSummonCounter == 2) {
+                            aZombie->ReanimShowTrack("Zombie_catapult_basketball3", -1);
+                        } else if (aZombie->mSummonCounter == 1) {
+                            aZombie->ReanimShowTrack("Zombie_catapult_basketball4", -1);
+                        }
                     }
                 }
             }
