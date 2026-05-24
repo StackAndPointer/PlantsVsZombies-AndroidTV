@@ -3881,9 +3881,9 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             // trols1, 27, 1096);//放下手上的植物卡片
             // mSendKeyWhenTouchUp = false;
             // }
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             RefreshSeedPacketFromCursor(0);
-            old_Coin_GamepadCursorOver(coin, 0); // 捡起植物卡片
-            // Coin_Collect((int) coin, 0);
+            coin->Collect(0);
         }
     }
 
@@ -4608,9 +4608,9 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             // trols1, 27, 1096);//放下手上的植物卡片
             // mSendKeyWhenTouchUp = false;
             // }
+            mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             RefreshSeedPacketFromCursor(0);
-            old_Coin_GamepadCursorOver(coin, 0); // 捡起植物卡片
-            // Coin_Collect((int) coin, 0);
+            coin->Collect(0);
         }
     }
 

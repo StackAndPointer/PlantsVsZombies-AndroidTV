@@ -633,7 +633,7 @@ void GamepadControls::UpdatePreviewReanim() {
     CursorObject *aCursorObject = mPlayerIndex1 ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
     SeedBank *aSeedBank = GetSeedBank();
 
-    if (!dynamicPreview) { // 如果没开启动态预览，则开启砸罐子无尽和锤僵尸关卡的动态预览，并执行旧游戏函数。
+    if (!dynamicPreview) { // 如果没开启动态预览，则开启砸罐子无尽和锤僵尸关卡的预览，并执行旧游戏函数。
         if ((anApp->IsWhackAZombieLevel() || anApp->IsScaryPotterLevel()) && mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
             if (aSeedBank == nullptr || mSelectedSeedIndex < 0 || mSelectedSeedIndex >= 10) {
                 old_GamepadControls_UpdatePreviewReanim(this);
@@ -653,7 +653,7 @@ void GamepadControls::UpdatePreviewReanim() {
     if (aSeedBank == nullptr || mSelectedSeedIndex < 0 || mSelectedSeedIndex >= 10) {
         return;
     }
-    SeedType aSeedType = aCursorObject->mType;
+
     bool isImitater = aSeedBank->mSeedPackets[mSelectedSeedIndex].mPacketType == SeedType::SEED_IMITATER;
 
     if ((anApp->IsWhackAZombieLevel() || aGameMode == GameMode::GAMEMODE_SCARY_POTTER_ENDLESS) && mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
@@ -662,6 +662,8 @@ void GamepadControls::UpdatePreviewReanim() {
         aCursorObject->mType = seedPacket->mPacketType;
         aCursorObject->mImitaterType = seedPacket->mImitaterType;
     }
+
+    SeedType aSeedType = aCursorObject->mType;
 
     if (mIsZombie) {
         aSeedType = aSeedBank->mSeedPackets[mSelectedSeedIndex].mPacketType;
@@ -893,43 +895,55 @@ void GamepadControls::UpdatePreviewReanim() {
     }
 
     Reanimation *mPreviewReanim4 = anApp->ReanimationTryToGet(mPreviewReanimID4);
-    if (mPreviewReanim4 == nullptr)
+    if (mPreviewReanim4 == nullptr) {
         return;
-
-    if (aCursorObject->mCursorType != CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && mGamepadState != MOVEMENT_STATE_PLANT_CURSOR)
-        return;
-    if (mSelectedSeedIndex == -1)
-        return;
-
-    SeedPacket *seedPacket = &aSeedBank->mSeedPackets[mSelectedSeedIndex];
-    if (!seedPacket->mActive) {
-        flagUpdateCanPlant = false;
-        flagDrawGray = true;
     }
-    if (mBoard->CanPlantAt(aGridX, aGridY, aSeedType) != PlantingReason::PLANTING_OK) {
-        flagUpdateCanPlant = false;
-        flagDrawGray = true;
+
+    if (aCursorObject->mCursorType != CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && mGamepadState != MOVEMENT_STATE_PLANT_CURSOR) {
+        return;
     }
-    if (!mBoard->HasConveyorBeltSeedBank(mPlayerIndex2) && aCursorObject->mCursorType != CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
-        if (aGameMode == GameMode::GAMEMODE_MP_VS) {
-            if (mIsZombie) {
-                if (!mBoard->CanTakeDeathMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE))) {
-                    flagUpdateCanPlant = false;
-                    flagDrawGray = true;
+
+    if (aCursorObject->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
+        if (mBoard->CanPlantAt(aGridX, aGridY, aSeedType) != PlantingReason::PLANTING_OK) {
+            flagUpdateCanPlant = false;
+            flagDrawGray = true;
+        }
+    } else {
+        if (mSelectedSeedIndex == -1) {
+            return;
+        }
+
+        SeedPacket *seedPacket = &aSeedBank->mSeedPackets[mSelectedSeedIndex];
+        if (!seedPacket->mActive) {
+            flagUpdateCanPlant = false;
+            flagDrawGray = true;
+        }
+        if (mBoard->CanPlantAt(aGridX, aGridY, aSeedType) != PlantingReason::PLANTING_OK) {
+            flagUpdateCanPlant = false;
+            flagDrawGray = true;
+        }
+        if (!mBoard->HasConveyorBeltSeedBank(mPlayerIndex2) && aCursorObject->mCursorType != CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
+            if (aGameMode == GameMode::GAMEMODE_MP_VS) {
+                if (mIsZombie) {
+                    if (!mBoard->CanTakeDeathMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE))) {
+                        flagUpdateCanPlant = false;
+                        flagDrawGray = true;
+                    }
+                } else {
+                    if (!mBoard->CanTakeSunMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE), 0)) {
+                        flagUpdateCanPlant = false;
+                        flagDrawGray = true;
+                    }
                 }
             } else {
-                if (!mBoard->CanTakeSunMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE), 0)) {
+                if (!mBoard->CanTakeSunMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE), mPlayerIndex2)) {
                     flagUpdateCanPlant = false;
                     flagDrawGray = true;
                 }
-            }
-        } else {
-            if (!mBoard->CanTakeSunMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE), mPlayerIndex2)) {
-                flagUpdateCanPlant = false;
-                flagDrawGray = true;
             }
         }
     }
+
 
     Graphics newGraphics(mPreviewImage);
     newGraphics.ClearRect(0, 0, mPreviewImage->mWidth, mPreviewImage->mHeight);
