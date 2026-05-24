@@ -187,7 +187,7 @@ void GridItem::DrawScaryPot(Sexy::Graphics *g) {
     if (mTransparentCounter > 0) { // 如果罐子要被照透(透明度不为0)
         g->DrawImageCel(Sexy::IMAGE_SCARY_POT, aXPos, aYPos, aImageCol, 0);
 
-        Graphics *aInsideGraphics = new Graphics(*g);
+        auto *aInsideGraphics = new Graphics(*g);
         if (mScaryPotType == ScaryPotType::SCARYPOT_SEED) {
             aInsideGraphics->mScaleX = 0.7f;
             aInsideGraphics->mScaleY = 0.7f;

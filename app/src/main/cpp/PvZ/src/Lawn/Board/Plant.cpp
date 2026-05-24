@@ -516,26 +516,18 @@ void Plant::Draw(Sexy::Graphics *g) {
 
 void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theImitaterType, DrawVariation theDrawVariation, float thePosX, float thePosY) {
     // 用于绘制卡槽内的模仿者SeedPacket变白效果、模仿者变身后的植物被压扁的白色效果、模仿者变身前被压扁后绘制模仿者自己而非变身后的植物。
-    int v38 = ((int *)g)[9];
-    int v10 = ((int *)g)[8];
-    int v11 = ((int *)g)[4];
-    int v39 = ((int *)g)[10];
-    int v12 = ((int *)g)[5];
-    int v13 = ((int *)g)[6];
-    int v40 = ((int *)g)[11];
-    int v14 = ((int *)g)[7];
-    int v15 = ((int *)g)[2];
-    int v16 = ((int *)g)[3];
-    Color theColor = g->GetColor();
-    int v18 = theColor[1];
-    int v19 = theColor[2];
-    int v20 = theColor[3];
-    Color color;
-    color.mRed = theColor.mRed;
-    color.mGreen = v18;
-    color.mBlue = v19;
-    color.mAlpha = v20;
-    bool ColorizeImages = g->GetColorizeImages();
+    float oldTransX = g->mTransX;
+    float oldTransY = g->mTransY;
+
+    float oldScaleX = g->mScaleX;
+    float oldScaleY = g->mScaleY;
+    float oldScaleOrigX = g->mScaleOrigX;
+    float oldScaleOrigY = g->mScaleOrigY;
+
+    Rect oldClipRect = g->mClipRect;
+
+    Color oldColor = g->GetColor();
+    bool oldColorizeImages = g->GetColorizeImages();
     SeedType theSeedType2 = theSeedType;
 
     if ((theSeedType == theImitaterType && theImitaterType != SeedType::SEED_NONE) ||         // seedPacket中的灰色模仿者卡片在冷却完成后
@@ -581,7 +573,7 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
                 lawnApp->mReanimatorCache->DrawCachedExtendedZombie(g, thePosX, thePosY, theZombieType);
             }
         }
-        return;
+        //        return;
     } else {
         PlantDefinition aPlantDef = GetPlantDefinition(theSeedType2);
         if (theSeedType2 == SeedType::SEED_GIANT_WALLNUT) {
@@ -607,18 +599,18 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
             lawnApp->mReanimatorCache->DrawCachedPlant(g, v25 + thePosX, v24 + thePosY, theSeedType2, theDrawVariation);
         }
     }
-    ((int *)g)[8] = v10;
-    ((int *)g)[4] = v11;
-    ((int *)g)[9] = v38;
-    ((int *)g)[5] = v12;
-    ((int *)g)[6] = v13;
-    ((int *)g)[10] = v39;
-    ((int *)g)[7] = v14;
-    ((int *)g)[2] = v15;
-    ((int *)g)[11] = v40;
-    ((int *)g)[3] = v16;
-    g->SetColor(color);
-    g->SetColorizeImages(ColorizeImages);
+    g->mClipRect = oldClipRect;
+
+    g->mScaleX = oldScaleX;
+    g->mScaleY = oldScaleY;
+    g->mScaleOrigX = oldScaleOrigX;
+    g->mScaleOrigY = oldScaleOrigY;
+
+    g->mTransX = oldTransX;
+    g->mTransY = oldTransY;
+
+    g->SetColor(oldColor);
+    g->SetColorizeImages(oldColorizeImages);
 }
 
 void Plant::KillAllPlantsNearDoom() {
