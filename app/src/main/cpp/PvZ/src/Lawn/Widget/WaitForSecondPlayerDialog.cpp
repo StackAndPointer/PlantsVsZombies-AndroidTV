@@ -311,6 +311,20 @@ static void Mode3RememberRecentServer(LawnPlayerInfo *playerInfo, std::string_vi
     playerInfo->SaveDetails();
 }
 
+static bool Mode3HasAnyRecentServer(const WaitForSecondPlayerDialog *dialog) {
+    if (!dialog || !dialog->mApp || !dialog->mApp->mPlayerInfo) {
+        return false;
+    }
+
+    for (int i = 0; i < kMode3ServerRecentCount; ++i) {
+        char recentAddr[kMode3ServerTargetMaxLen]{};
+        if (Mode3LoadRecentServer(dialog->mApp->mPlayerInfo, i, recentAddr)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool Mode3ConnectToTarget(WaitForSecondPlayerDialog *dialog, std::string_view ipRaw, int port) {
     if (!dialog) {
         return false;
@@ -381,7 +395,7 @@ static int Mode3ServerTargetCount(const WaitForSecondPlayerDialog *dialog) {
     if (!dialog) {
         return 0;
     }
-    return 2 + kMode3ServerRecentCount;
+    return 2 + (Mode3HasAnyRecentServer(dialog) ? kMode3ServerRecentCount : 0);
 }
 
 static bool Mode3GetSelectedTargetAddr(WaitForSecondPlayerDialog *dialog, std::string &outAddr) {
@@ -949,35 +963,47 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
             if (!mServerConnecting) {
                 const int targetCount = Mode3ServerTargetCount(this);
                 mSelectedRoomIndex_Server = std::clamp(mSelectedRoomIndex_Server, 0, std::max(0, targetCount - 1));
+                const bool hasRecentServers = Mode3HasAnyRecentServer(this);
 
                 Sexy::Color oldColor = g->mColor;
+                Sexy::Font *oldFont = g->GetFont();
+                if (!hasRecentServers) {
+                    g->SetFont(Sexy::FONT_DWARVENTODCRAFT24);
+                }
                 const int officialRow0 = 0;
                 const int officialRow1 = 1;
-                const int y0 = kMode3ServerOfficialItemStartY;
-                const int y1 = kMode3ServerOfficialItemStartY + kMode3ServerTargetLineH;
+                const int officialStartY = kMode3ServerOfficialItemStartY + (hasRecentServers ? 0 : 50);
+                const int officialLineH = kMode3ServerTargetLineH + (hasRecentServers ? 0 : 30);
+                const int y0 = officialStartY;
+                const int y1 = officialStartY + officialLineH;
+                const float selectorScale = hasRecentServers ? 0.45f : 0.75f;
+                const int selectorOffsetY = hasRecentServers ? 25 : 38;
 
-                TodDrawImageScaledF(g, addonImages.leaderboard_selector, 230, y0 - 25, 0.45, 0.45);
+                TodDrawImageScaledF(g, addonImages.leaderboard_selector, hasRecentServers ? 230 : 120, y0 - selectorOffsetY, selectorScale, selectorScale);
                 g->SetColor(mSelectedRoomIndex_Server == officialRow0 ? Sexy::Color(0, 205, 0, 255) : oldColor);
                 pvzstl::string fmt = TodStringTranslate("[OFFICIAL_SERVER_NAME]");
                 TodDrawString(g, StrFormat(fmt.c_str(), 1, kOfficialServer1Addr), 400, y0, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
 
-                TodDrawImageScaledF(g, addonImages.leaderboard_selector, 230, y1 - 25, 0.45, 0.45);
+                TodDrawImageScaledF(g, addonImages.leaderboard_selector, hasRecentServers ? 230 : 120, y1 - selectorOffsetY, selectorScale, selectorScale);
                 g->SetColor(mSelectedRoomIndex_Server == officialRow1 ? Sexy::Color(0, 205, 0, 255) : oldColor);
                 TodDrawString(g, StrFormat(fmt.c_str(), 2, kOfficialServer2Addr), 400, y1, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
-                pvzstl::string iFmt = TodStringTranslate("[CUSTOM_SERVER_NAME]");
-                TodDrawString(g, TodStringTranslate("[CUSTOM_SERVER_LIST]"), 400, kMode3ServerRecentTitleY, g->GetFont(), oldColor, DS_ALIGN_CENTER);
-                for (int i = 0; i < kMode3ServerRecentCount; ++i) {
-                    char recentAddr[kMode3ServerTargetMaxLen]{};
-                    const bool hasRecent = (mApp && mApp->mPlayerInfo) && Mode3LoadRecentServer(mApp->mPlayerInfo, i, recentAddr);
-                    pvzstl::string iCustomServerName = StrFormat(iFmt.c_str(), i + 1, (hasRecent ? recentAddr : TodStringTranslate("[CUSTOM_SERVER_EMPTY]").c_str()));
+                if (hasRecentServers) {
+                    pvzstl::string iFmt = TodStringTranslate("[CUSTOM_SERVER_NAME]");
+                    TodDrawString(g, TodStringTranslate("[CUSTOM_SERVER_LIST]"), 400, kMode3ServerRecentTitleY, g->GetFont(), oldColor, DS_ALIGN_CENTER);
+                    for (int i = 0; i < kMode3ServerRecentCount; ++i) {
+                        char recentAddr[kMode3ServerTargetMaxLen]{};
+                        const bool hasRecent = (mApp && mApp->mPlayerInfo) && Mode3LoadRecentServer(mApp->mPlayerInfo, i, recentAddr);
+                        pvzstl::string iCustomServerName = StrFormat(iFmt.c_str(), i + 1, (hasRecent ? recentAddr : TodStringTranslate("[CUSTOM_SERVER_EMPTY]").c_str()));
 
-                    const int rowY = kMode3ServerRecentItemStartY + i * kMode3ServerTargetLineH;
-                    const int rowIndex = 2 + i;
-                    TodDrawImageScaledF(g, addonImages.leaderboard_selector, 230, rowY - 25, 0.45, 0.45);
-                    g->SetColor(mSelectedRoomIndex_Server == rowIndex ? Sexy::Color(0, 205, 0, 255) : oldColor);
-                    TodDrawString(g, iCustomServerName, 400, rowY, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+                        const int rowY = kMode3ServerRecentItemStartY + i * kMode3ServerTargetLineH;
+                        const int rowIndex = 2 + i;
+                        TodDrawImageScaledF(g, addonImages.leaderboard_selector, 230, rowY - 25, 0.45, 0.45);
+                        g->SetColor(mSelectedRoomIndex_Server == rowIndex ? Sexy::Color(0, 205, 0, 255) : oldColor);
+                        TodDrawString(g, iCustomServerName, 400, rowY, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+                    }
                 }
                 g->SetColor(oldColor);
+                g->SetFont(oldFont);
             }
         } else {
             // hosting/joined 提示
@@ -3409,11 +3435,14 @@ void WaitForSecondPlayerDialog::ServerSelectRoomByMouse(int x, int y) {
             return;
         }
 
+        const bool hasRecentServers = Mode3HasAnyRecentServer(this);
+        const int officialStartY = kMode3ServerOfficialItemStartY + (hasRecentServers ? 0 : 50);
+        const int officialLineH = kMode3ServerTargetLineH + (hasRecentServers ? 0 : 30);
         int targetIndex = -1;
-        const int officialListY = kMode3ServerOfficialItemStartY - 24;
-        if (y >= officialListY && y < officialListY + 2 * kMode3ServerTargetLineH) {
-            targetIndex = (y - officialListY) / kMode3ServerTargetLineH;
-        } else {
+        const int officialListY = officialStartY - 24;
+        if (y >= officialListY && y < officialListY + 2 * officialLineH) {
+            targetIndex = (y - officialListY) / officialLineH;
+        } else if (Mode3HasAnyRecentServer(this)) {
             const int recentListY = kMode3ServerRecentItemStartY - 24;
             if (y >= recentListY && y < recentListY + kMode3ServerRecentCount * kMode3ServerTargetLineH) {
                 targetIndex = 2 + (y - recentListY) / kMode3ServerTargetLineH;
