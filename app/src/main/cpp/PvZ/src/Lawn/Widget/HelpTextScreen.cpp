@@ -53,11 +53,19 @@ void HelpTextScreen_Draw(HelpTextScreen *helpTextScreen, Sexy::Graphics *g) {
     g->DrawImageMirror(Sexy::IMAGE_ZEN_NEXTGARDEN, prevPageButtonX, prevPageButtonY, true);
 }
 
-void HelpTextScreen_HelpTextScreen(HelpTextScreen *helpTextScreen, int *lawnApp, int pageIndex) {
+void HelpTextScreen_HelpTextScreen(HelpTextScreen *helpTextScreen, LawnApp *lawnApp, int pageIndex) {
+    if (lawnApp->mBoard && lawnApp->IsVSMode()) {
+        pageIndex = 2;
+    }
+
+    if (lawnApp->mBoard && lawnApp->IsCoopMode()) {
+        pageIndex = 3;
+    }
+
     old_HelpTextScreen_HelpTextScreen(helpTextScreen, lawnApp, pageIndex);
     // 这个HelpTextScreen是全屏的，但触控事件并不会分发到此处，而是发给子控件。只有内容外侧的点击事件才能收到。
 
-    helpTextScreen->Resize(helpTextScreen->mX, helpTextScreen->mY, 3000, helpTextScreen->mHeight);
+    helpTextScreen->Resize(helpTextScreen->mX, helpTextScreen->mY, 4000, helpTextScreen->mHeight);
 }
 
 void HelpTextScreen_AddedToManager(HelpTextScreen *helpTextScreen, WidgetManager *theWidgetNanager) {

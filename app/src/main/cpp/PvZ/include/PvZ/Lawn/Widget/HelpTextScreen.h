@@ -37,7 +37,7 @@ inline void (*old_HelpTextScreen_Update)(HelpTextScreen *helpTextScreen);
 
 inline void (*old_HelpTextScreen_Draw)(HelpTextScreen *helpTextScreen, Sexy::Graphics *graphics);
 
-inline void (*old_HelpTextScreen_HelpTextScreen)(HelpTextScreen *helpTextScreen, int *lawnApp, int pageIndex);
+inline void (*old_HelpTextScreen_HelpTextScreen)(HelpTextScreen *helpTextScreen, LawnApp *lawnApp, int pageIndex);
 
 inline void (*old_HelpTextScreen_AddedToManager)(HelpTextScreen *helpTextScreen, Sexy::WidgetManager *manager);
 
@@ -54,7 +54,7 @@ void HelpTextScreen_Update(HelpTextScreen *helpTextScreen);
 
 void HelpTextScreen_Draw(HelpTextScreen *helpTextScreen, Sexy::Graphics *graphics);
 
-void HelpTextScreen_HelpTextScreen(HelpTextScreen *helpTextScreen, int *lawnApp, int pageIndex);
+void HelpTextScreen_HelpTextScreen(HelpTextScreen *helpTextScreen, LawnApp *lawnApp, int pageIndex);
 
 void HelpTextScreen_AddedToManager(HelpTextScreen *helpTextScreen, Sexy::WidgetManager *theWidgetNanager);
 
