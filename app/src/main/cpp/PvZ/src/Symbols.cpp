@@ -552,7 +552,8 @@ bool LoadGameMain() {
     SeedChooserScreen_CanPickNowAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen10CanPickNowEv");
     SeedChooserScreen_ShouldDisplayCursorAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen19ShouldDisplayCursorEi");
     SeedChooserScreen_VSAutoPickResourceGenAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen21VSAutoPickResourceGenEv");
-
+    SeedChooserScreen_KeyDownAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen7KeyDownEN4Sexy7KeyCodeE");
+    SeedChooserScreen_KeyUpAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen5KeyUpEN4Sexy7KeyCodeE");
 
     Coin_CoinInitializeAddr = libGameMain.GetSymbol("_ZN4Coin14CoinInitializeEii8CoinType10CoinMotion");
     Coin_UpadteAddr = libGameMain.GetSymbol("_ZN4Coin6UpdateEv");

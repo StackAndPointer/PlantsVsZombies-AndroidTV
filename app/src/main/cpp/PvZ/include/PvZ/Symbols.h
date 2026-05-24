@@ -553,6 +553,8 @@ inline void *SeedChooserScreen_SeedNotAllowedDuringTrialAddr;
 inline void *SeedChooserScreen_CanPickNowAddr;
 inline void *SeedChooserScreen_ShouldDisplayCursorAddr;
 inline void *SeedChooserScreen_VSAutoPickResourceGenAddr;
+inline void *SeedChooserScreen_KeyDownAddr;
+inline void *SeedChooserScreen_KeyUpAddr;
 
 
 inline void *Coin_CoinInitializeAddr;

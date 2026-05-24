@@ -205,6 +205,8 @@ public:
     SeedType SeedHitTest(int x, int y);
     SeedType SeedHitTest_Origin(int x, int y);
     void VSAutoPickResourceGen();
+    bool KeyDown(Sexy::KeyCode theKey);
+    bool KeyUp(Sexy::KeyCode theKey);
 
     void MouseMove(int x, int y);
     void MouseDown(int x, int y, int theClickCount);
@@ -227,8 +229,11 @@ inline SeedChooserTouchState gSeedChooserTouchState = SeedChooserTouchState::SEE
 /***************************************************************************************************************/
 inline bool daveNoPickSeeds;
 
+inline bool (*old_SeedChooserScreen_KeyDown)(SeedChooserScreen *seedChooserScreen, Sexy::KeyCode theKey);
 
-inline void (*old_SeedChooserScreen_RebuildHelpbar)(SeedChooserScreen *instance);
+inline bool (*old_SeedChooserScreen_KeyUp)(SeedChooserScreen *seedChooserScreen, Sexy::KeyCode theKey);
+
+inline void (*old_SeedChooserScreen_RebuildHelpbar)(SeedChooserScreen *seedChooserScreen);
 
 inline void (*old_SeedChooserScreen_SeedChooserScreen)(SeedChooserScreen *seedChooserScreen, bool isZombieChooser);
 

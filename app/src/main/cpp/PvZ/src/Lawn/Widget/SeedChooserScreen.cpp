@@ -1937,3 +1937,21 @@ void SeedChooserScreen::VSAutoPickResourceGen() {
         ++mSeedsIn1PBank;
     }
 }
+
+bool SeedChooserScreen::KeyDown(Sexy::KeyCode theKey) {
+    // 联机对战屏蔽按键，仅允许返回键
+    if (gTcpConnected || gTcpClientSocket >= 0) {
+        return theKey == KEYCODE_BACK;
+    }
+
+    return old_SeedChooserScreen_KeyDown(this, theKey);
+}
+
+bool SeedChooserScreen::KeyUp(Sexy::KeyCode theKey) {
+    // 联机对战屏蔽按键，仅允许返回键
+    if (gTcpConnected || gTcpClientSocket >= 0) {
+        return theKey == KEYCODE_BACK;
+    }
+
+    return old_SeedChooserScreen_KeyUp(this, theKey);
+}
