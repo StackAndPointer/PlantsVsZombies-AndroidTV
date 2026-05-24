@@ -38,9 +38,9 @@ auto GetNewLawnFoleyParamArray() -> FoleyParams (&)[FoleyType::EXTENDED_NUM_FOLE
     std::call_once(flag, [] {
         std::ranges::copy(gLawnFoleyParamArray, newLawnFoleyParamArray);
         static const FoleyParams extendedLawnFoleyParamArray[FoleyType::EXTENDED_NUM_FOLEY - FoleyType::NUM_FOLEY] = {
-            {FoleyType::FOLEY_MENU_LEFT, 0.0f, {&Sexy::SOUND_MENU_L_ST}, 0U},
-            {FoleyType::FOLEY_MENU_CENTRE, 0.0f, {&Sexy::SOUND_MENU_C_ST}, 0U},
-            {FoleyType::FOLEY_MENU_RIGHT, 0.0f, {&Sexy::SOUND_MENU_R_ST}, 0U},
+            {FoleyType::FOLEY_MENU_LEFT, 0.0f, {&Sexy::SOUND_MENU_L_ST}, 1U},
+            {FoleyType::FOLEY_MENU_CENTRE, 0.0f, {&Sexy::SOUND_MENU_C_ST}, 1U},
+            {FoleyType::FOLEY_MENU_RIGHT, 0.0f, {&Sexy::SOUND_MENU_R_ST}, 1U},
             {FoleyType::FOLEY_ALLSTAR_TACKLE, 10.0f, {&addonSounds.allstardbl}, 0U},
             {FoleyType::FOLEY_THRILLER, 0.0f, {&addonSounds.thriller}, 6U},
         };
