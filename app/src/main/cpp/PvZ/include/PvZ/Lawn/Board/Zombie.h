@@ -403,6 +403,9 @@ public:
     bool CanLoseBodyParts();
     void SetupReanimForLostHead();
     void DropHead(unsigned int theDamageFlags);
+    void DropHead_Origin(unsigned int theDamageFlags);
+    void DropPole();
+    void DropFlag();
     void DropHelm(unsigned int theDamageFlags);
     void SetupReanimForLostArm(unsigned int theDamageFlags);
     void DropArm(unsigned int theDamageFlags);

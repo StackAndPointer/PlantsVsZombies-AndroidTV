@@ -427,3 +427,9 @@ void Music2::GameMusicPause(bool thePause) {
 void Music2::FadeOut(int theFadeOutDuration) {
     old_Music2_FadeOut(this, theFadeOutDuration);
 }
+
+
+void Music::MusicTitleScreenInit() {
+    LoadSong(MUSIC_FILE_MAIN_MUSIC, "sounds/mainmusic.xm");
+    MakeSureMusicIsPlaying(MUSIC_TUNE_TITLE_CRAZY_DAVE_MAIN_THEME); // 新增
+}

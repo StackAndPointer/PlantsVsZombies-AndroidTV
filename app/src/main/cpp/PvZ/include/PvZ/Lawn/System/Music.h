@@ -20,6 +20,7 @@
 #ifndef PVZ_LAWN_SYSTEM_MUSIC_H
 #define PVZ_LAWN_SYSTEM_MUSIC_H
 
+#include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Sound/MusicInterface.h"
 #include "PvZ/Symbols.h"
 
@@ -106,6 +107,12 @@ public:
     void SetupMusicFileForTune(MusicFile theMusicFile, MusicTune theMusicTune) {
         reinterpret_cast<void (*)(Music *, MusicFile, MusicTune)>(Music_SetupMusicFileForTuneAddr)(this, theMusicFile, theMusicTune);
     }
+    void LoadSong(MusicFile theMusicFile, const pvzstl::string theFileName) {
+        reinterpret_cast<void (*)(Music *, MusicFile, const pvzstl::string)>(Music_LoadSongAddr)(this, theMusicFile, theFileName);
+    }
+    void MakeSureMusicIsPlaying(MusicTune theMusicTune) {
+        reinterpret_cast<void (*)(Music *, MusicTune)>(Music_MakeSureMusicIsPlayingAddr)(this, theMusicTune);
+    }
 
     void PlayMusic(MusicTune theMusicTune, int theOffset, int theDrumsOffset);
     void MusicUpdate();
@@ -116,6 +123,7 @@ public:
     void UpdateMusicBurst2();
     void ResyncChannel(MusicFile theFile1, MusicFile theFile2);
     void StartGameMusic(bool theStart);
+    void MusicTitleScreenInit();
 
 protected:
     Music() = default;

@@ -411,6 +411,8 @@ bool LoadGameMain() {
     Zombie_DieWithLootAddr = libGameMain.GetSymbol("_ZN6Zombie11DieWithLootEv");
     Zombie_DrawReanimAddr = libGameMain.GetSymbol("_ZN6Zombie10DrawReanimEPN4Sexy8GraphicsER18ZombieDrawPositioni");
     Zombie_DropHeadAddr = libGameMain.GetSymbol("_ZN6Zombie8DropHeadEj");
+    Zombie_DropPoleAddr = libGameMain.GetSymbol("_ZN6Zombie8DropPoleEv");
+    Zombie_DropFlagAddr = libGameMain.GetSymbol("_ZN6Zombie8DropFlagEv");
     Zombie_DropHelmAddr = libGameMain.GetSymbol("_ZN6Zombie8DropHelmEj");
     Zombie_BossSpawnAttackAddr = libGameMain.GetSymbol("_ZN6Zombie15BossSpawnAttackEv");
     Zombie_DrawBungeeCordAddr = libGameMain.GetSymbol("_ZN6Zombie14DrawBungeeCordEPN4Sexy8GraphicsEii");
@@ -886,6 +888,7 @@ bool LoadGameMain() {
     Reanimation_OverrideScaleAddr = libGameMain.GetSymbol("_ZN11Reanimation13OverrideScaleEff");
     Reanimation_SetPositionAddr = libGameMain.GetSymbol("_ZN11Reanimation11SetPositionEff");
     Reanimation_SetImageOverrideAddr = libGameMain.GetSymbol("_ZN11Reanimation16SetImageOverrideEPKcPN4Sexy5ImageE");
+    Reanimation_GetImageOverrideAddr = libGameMain.GetSymbol("_ZN11Reanimation16GetImageOverrideEPKc");
     Reanimation_GetTrackMatrixAddr = libGameMain.GetSymbol("_ZN11Reanimation14GetTrackMatrixEiRN4Sexy15SexyTransform2DE");
     Reanimation_GetAttachmentOverlayMatrixAddr = libGameMain.GetSymbol("_ZN11Reanimation26GetAttachmentOverlayMatrixEiRN4Sexy15SexyTransform2DE");
     Reanimation_AssignRenderGroupToPrefixAddr = libGameMain.GetSymbol("_ZN11Reanimation25AssignRenderGroupToPrefixEPKci");
@@ -995,11 +998,14 @@ bool LoadGameMain() {
     Sexy_AudiereMusicInterface_StopMusicAddr = libGameMain.GetSymbol("_ZN4Sexy21AudiereMusicInterface9StopMusicEi");
     Music_PlayMusicAddr = libGameMain.GetSymbol("_ZN5Music9PlayMusicE9MusicTuneii");
     Music_MusicUpdateAddr = libGameMain.GetSymbol("_ZN5Music11MusicUpdateEv");
+    Music_MusicTitleScreenInitAddr = libGameMain.GetSymbol("_ZN5Music20MusicTitleScreenInitEv");
     Music_StopAllMusicAddr = libGameMain.GetSymbol("_ZN5Music12StopAllMusicEv");
+    Music_LoadSongAddr = libGameMain.GetSymbol("_ZN5Music8LoadSongE9MusicFileRKSs");
     Music_SetupMusicFileForTuneAddr = libGameMain.GetSymbol("_ZN5Music21SetupMusicFileForTuneE9MusicFile9MusicTune");
     Music_MusicResyncAddr = libGameMain.GetSymbol("_ZN5Music11MusicResyncEv");
     Music_GetMusicOrderAddr = libGameMain.GetSymbol("_ZN5Music13GetMusicOrderE9MusicFile");
     Music_PlayFromOffsetAddr = libGameMain.GetSymbol("_ZN5Music14PlayFromOffsetE9MusicFileid");
+    Music_MakeSureMusicIsPlayingAddr = libGameMain.GetSymbol("_ZN5Music22MakeSureMusicIsPlayingE9MusicTune");
     Music2_MakeSureMusicIsPlayingAddr = libGameMain.GetSymbol("_ZN6Music222MakeSureMusicIsPlayingE9MusicTune");
 
 
@@ -1106,6 +1112,7 @@ bool LoadGameMain() {
     TodDrawStringMatrixAddr = libGameMain.GetSymbol("_Z19TodDrawStringMatrixPN4Sexy8GraphicsEPNS_4FontERKNS_11SexyMatrix3ERKSsRKNS_5ColorE");
     TodParticleSystem_OverrideColorAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem13OverrideColorEPKcRKN4Sexy5ColorE");
     TodParticleSystem_OverrideImageAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem13OverrideImageEPKcPN4Sexy5ImageE");
+    TodParticleSystem_OverrideFrameAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem13OverrideFrameEPKci");
     TodParticleSystem_Delete2Addr = libGameMain.GetSymbol("_ZN17TodParticleSystemD2Ev");
     TodParticleSystem_ParticleSystemDieAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem17ParticleSystemDieEv");
     TodParticleSystem_UpdateAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem6UpdateEv");
@@ -1494,6 +1501,19 @@ Sexy::Image *&Sexy::IMAGE_CRATER_ROOF_CENTER = *libGameMain.GetSymbol<Sexy::Imag
 Sexy::Image *&Sexy::IMAGE_ESRB_RATING = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy17IMAGE_ESRB_RATINGE");
 Sexy::Image *&Sexy::IMAGE_ZOMBIEFOOTBALLHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy24IMAGE_ZOMBIEFOOTBALLHEADE");
 Sexy::Image *&Sexy::IMAGE_ZOMBIEIMPHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy19IMAGE_ZOMBIEIMPHEADE");
+Sexy::Image *&Sexy::IMAGE_ZOMBIEDANCERHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy22IMAGE_ZOMBIEDANCERHEADE");
+Sexy::Image *&Sexy::IMAGE_ZOMBIEBACKUPDANCERHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy28IMAGE_ZOMBIEBACKUPDANCERHEADE");
+Sexy::Image *&Sexy::IMAGE_ZOMBIEBOBSLEDHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy23IMAGE_ZOMBIEBOBSLEDHEADE");
+Sexy::Image *&Sexy::IMAGE_ZOMBIELADDERHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy22IMAGE_ZOMBIELADDERHEADE");
+Sexy::Image *&Sexy::IMAGE_ZOMBIEPOLEVAULTERHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy27IMAGE_ZOMBIEPOLEVAULTERHEADE");
+Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_SNORKLE_HEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy32IMAGE_REANIM_ZOMBIE_SNORKLE_HEADE");
+Sexy::Image *&Sexy::IMAGE_ZOMBIEDIGGERHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy22IMAGE_ZOMBIEDIGGERHEADE");
+Sexy::Image *&Sexy::IMAGE_ZOMBIEDOLPHINRIDERHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy28IMAGE_ZOMBIEDOLPHINRIDERHEADE");
+Sexy::Image *&Sexy::IMAGE_ZOMBIEYETIHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy20IMAGE_ZOMBIEYETIHEADE");
+Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES1 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy36IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES1E");
+Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES2 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy36IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES2E");
+Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES3 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy36IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES3E");
+Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES4 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy36IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES4E");
 
 Sexy::MemoryImage *&Sexy::IMAGE_BLANK = *libGameMain.GetSymbol<Sexy::MemoryImage *>("_ZN4Sexy11IMAGE_BLANKE");
 

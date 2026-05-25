@@ -3412,6 +3412,22 @@ void Zombie::SetupReanimForLostHead() {
 }
 
 void Zombie::DropHead(unsigned int theDamageFlags) {
+    if (mApp->IsVSMode() && gTcpConnected) {
+        return;
+    }
+
+    if (gTcpClientSocket >= 0) {
+        U16U16_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_DROP_HEAD;
+        event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+        event.data2 = uint16_t(theDamageFlags);
+        netplay::PutEvent(event);
+    }
+
+    DropHead_Origin(theDamageFlags);
+}
+
+void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
     if (mZombieType >= ZombieType::NUM_CACHED_ZOMBIE_TYPES) {
         if (!CanLoseBodyParts() || !mHasHead)
             return;
@@ -3468,11 +3484,140 @@ void Zombie::DropHead(unsigned int theDamageFlags) {
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_ZOMBIEBACKUPDANCERHEAD);
             }
         }
+        return;
     }
 
-    old_Zombie_DropHead(this, theDamageFlags);
+    if (!CanLoseBodyParts() || !mHasHead)
+        return;
 
-    // 大头贴僵尸掉头时掉饰品(掉帽子和眼镜)
+    if (mButteredCounter > 0) {
+        mButteredCounter = 0;
+        UpdateAnimSpeed();
+    }
+
+    mHasHead = false;
+    SetupReanimForLostHead();
+    if (TestBit(theDamageFlags, DamageFlags::DAMAGE_DOESNT_LEAVE_BODY)) {
+        return;
+    }
+
+    if (Zombie::IsZombotany(mZombieType)) {
+        mApp->ReanimationGet(mSpecialHeadReanimID)->ReanimationDie();
+        mSpecialHeadReanimID = ReanimationID::REANIMATIONID_NULL;
+        return;
+    }
+
+    int aRenderOrder = mRenderOrder + 1;
+    ZombieDrawPosition aDrawPos{};
+    GetDrawPos(aDrawPos);
+    float aPosX = mPosX + aDrawPos.mImageOffsetX + aDrawPos.mHeadX + 11.0f;
+    float aPosY = mPosY + aDrawPos.mImageOffsetY + aDrawPos.mHeadY + aDrawPos.mBodyY + 21.0f;
+    if (mBodyReanimID != ReanimationID::REANIMATIONID_NULL) {
+        GetTrackPosition("anim_head1", aPosX, aPosY);
+    }
+
+    ParticleEffect aEffect = ParticleEffect::PARTICLE_ZOMBIE_HEAD;
+    if (mZombiePhase == ZombiePhase::PHASE_ZOMBIE_MOWERED) {
+        aEffect = ParticleEffect::PARTICLE_MOWERED_ZOMBIE_HEAD;
+    } else if (mInPool) {
+        aEffect = ParticleEffect::PARTICLE_ZOMBIE_HEAD_POOL;
+    }
+    if (mZombieType == ZombieType::ZOMBIE_DANCER) {
+        aRenderOrder = mRenderOrder - 1;
+    }
+    if (mZombieType == ZombieType::ZOMBIE_NEWSPAPER) {
+        aEffect = ParticleEffect::PARTICLE_ZOMBIE_NEWSPAPER_HEAD;
+    } else if (mZombieType == ZombieType::ZOMBIE_POGO) {
+        PogoBreak(theDamageFlags);
+        aEffect = ParticleEffect::PARTICLE_ZOMBIE_POGO_HEAD;
+    } else if (mZombieType == ZombieType::ZOMBIE_BALLOON) {
+        ReanimShowPrefix("anim_hat", RENDER_GROUP_HIDDEN);
+        ReanimShowPrefix("hat", RENDER_GROUP_HIDDEN);
+        aEffect = ParticleEffect::PARTICLE_ZOMBIE_BALLOON_HEAD;
+    } else if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER) {
+        DropPole();
+    } else if (mZombieType == ZombieType::ZOMBIE_FLAG) {
+        DropFlag();
+    }
+
+    TodParticleSystem *aParticle = mApp->AddTodParticle(aPosX, aPosY, aRenderOrder, aEffect);
+    OverrideParticleColor(aParticle);
+    OverrideParticleScale(aParticle);
+    if (aParticle) {
+        if (mZombieType == ZombieType::ZOMBIE_DANCER) {
+            ReanimShowPrefix("Zombie_disco_chops", RENDER_GROUP_HIDDEN);
+            ReanimShowPrefix("Zombie_disco_glasses", RENDER_GROUP_HIDDEN);
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEDANCERHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER) {
+            ReanimShowPrefix("Zombie_disco_chops", RENDER_GROUP_HIDDEN);
+            ReanimShowPrefix("Zombie_backup_stash", RENDER_GROUP_HIDDEN);
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEBACKUPDANCERHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_BOBSLED) {
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEBOBSLEDHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_LADDER) {
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIELADDERHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_IMP) {
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEIMPHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_FOOTBALL) {
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEFOOTBALLHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER) {
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEPOLEVAULTERHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_SNORKEL) {
+            aParticle->OverrideImage(nullptr, IMAGE_REANIM_ZOMBIE_SNORKLE_HEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_DIGGER) {
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEDIGGERHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER) {
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEDOLPHINRIDERHEAD);
+        } else if (mZombieType == ZombieType::ZOMBIE_YETI) {
+            aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEYETIHEAD);
+        }
+    }
+
+    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    if (aBodyReanim && mBoard->mMustacheMode && aBodyReanim->TrackExists("Zombie_mustache")) {
+        ReanimShowPrefix("Zombie_mustache", RENDER_GROUP_HIDDEN);
+
+        TodParticleSystem *aMustacheParticle = mApp->AddTodParticle(aPosX, aPosY, aRenderOrder, ParticleEffect::PARTICLE_ZOMBIE_MUSTACHE);
+        OverrideParticleColor(aMustacheParticle);
+        OverrideParticleScale(aMustacheParticle);
+
+        Sexy::Image *aMustacheImage = aBodyReanim->GetImageOverride("Zombie_mustache");
+        if (aMustacheParticle && aMustacheImage) {
+            aMustacheParticle->OverrideImage(nullptr, aMustacheImage);
+        }
+    }
+
+    if (aBodyReanim && mBoard->mFutureMode) {
+        Sexy::Image *aHeadImage = aBodyReanim->GetImageOverride("anim_head1");
+        int aFrame = -1;
+        if (aHeadImage == IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES1) {
+            aFrame = 0;
+        } else if (aHeadImage == IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES2) {
+            aFrame = 1;
+        } else if (aHeadImage == IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES3) {
+            aFrame = 2;
+        } else if (aHeadImage == IMAGE_REANIM_ZOMBIE_HEAD_SUNGLASSES4) {
+            aFrame = 3;
+        }
+
+        if (aFrame != -1) {
+            TodParticleSystem *aSunglassParticle = mApp->AddTodParticle(aPosX, aPosY, aRenderOrder, ParticleEffect::PARTICLE_ZOMBIE_SUNGLASS);
+            OverrideParticleColor(aSunglassParticle);
+            OverrideParticleScale(aSunglassParticle);
+            if (aSunglassParticle) {
+                aSunglassParticle->OverrideFrame(nullptr, aFrame);
+            }
+        }
+    }
+
+    if (mBoard->mPinataMode && mZombiePhase != ZombiePhase::PHASE_ZOMBIE_MOWERED) {
+        TodParticleSystem *aPinataParticle = mApp->AddTodParticle(aPosX, aPosY, aRenderOrder, ParticleEffect::PARTICLE_ZOMBIE_PINATA);
+        OverrideParticleScale(aPinataParticle);
+    }
+
+    mApp->PlayFoley(FoleyType::FOLEY_LIMBS_POP);
+
+    // ???????????(??????)
     if (IsZombatarZombie(mZombieType)) {
         Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mBossFireBallReanimID);
         if (aHeadReanim != nullptr) {
@@ -3494,6 +3639,14 @@ void Zombie::DropHead(unsigned int theDamageFlags) {
             mBossFireBallReanimID = ReanimationID::REANIMATIONID_NULL;
         }
     }
+}
+
+void Zombie::DropPole() {
+    reinterpret_cast<void (*)(Zombie *)>(Zombie_DropPoleAddr)(this);
+}
+
+void Zombie::DropFlag() {
+    reinterpret_cast<void (*)(Zombie *)>(Zombie_DropFlagAddr)(this);
 }
 
 void Zombie::DropHelm(unsigned int theDamageFlags) {

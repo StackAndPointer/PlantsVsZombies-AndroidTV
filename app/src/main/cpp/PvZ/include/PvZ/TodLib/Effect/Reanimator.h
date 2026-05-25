@@ -224,6 +224,9 @@ public:
     void SetImageOverride(const char *theTrackName, Sexy::Image *theImage) {
         reinterpret_cast<void (*)(Reanimation *, const char *theTrackName, Sexy::Image *)>(Reanimation_SetImageOverrideAddr)(this, theTrackName, theImage);
     }
+    Sexy::Image *GetImageOverride(const char *theTrackName) {
+        return reinterpret_cast<Sexy::Image *(*)(Reanimation *, const char *theTrackName)>(Reanimation_GetImageOverrideAddr)(this, theTrackName);
+    }
     int FindTrackIndex(const char *theTrackName) {
         return reinterpret_cast<int (*)(Reanimation *, const char *)>(Reanimation_FindTrackIndexAddr)(this, theTrackName);
     }

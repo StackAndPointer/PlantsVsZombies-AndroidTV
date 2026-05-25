@@ -85,6 +85,9 @@ public:
     void OverrideImage(const char *theEmitterName, Sexy::Image *theImage) {
         reinterpret_cast<void (*)(TodParticleSystem *, const char *, Sexy::Image *)>(TodParticleSystem_OverrideImageAddr)(this, theEmitterName, theImage);
     }
+    void OverrideFrame(const char *theEmitterName, int theFrame) {
+        reinterpret_cast<void (*)(TodParticleSystem *, const char *, int)>(TodParticleSystem_OverrideFrameAddr)(this, theEmitterName, theFrame);
+    }
     void ParticleSystemDie() {
         reinterpret_cast<void (*)(TodParticleSystem *)>(TodParticleSystem_ParticleSystemDieAddr)(this);
     }

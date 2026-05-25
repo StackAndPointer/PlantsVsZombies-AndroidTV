@@ -600,6 +600,7 @@ void InitHookFunction() {
 
     homura::HookFunc(Music_PlayMusicAddr, &Music::PlayMusic, nullptr);
     homura::HookFunc(Music_MusicUpdateAddr, &Music::MusicUpdate, nullptr);
+    homura::HookFunc(Music_MusicTitleScreenInitAddr, &Music::MusicTitleScreenInit, nullptr);
     homura::HookFunc(Music_UpdateMusicBurstAddr, &Music::UpdateMusicBurst, &old_Music_UpdateMusicBurst);
     homura::HookFunc(Music2_Music2Addr, &Music2::_constructor, &old_Music2_Music2);
 
