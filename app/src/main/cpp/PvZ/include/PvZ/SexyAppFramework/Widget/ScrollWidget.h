@@ -76,6 +76,8 @@ public:
     enum ScrollMode { Disabled, Horizontal, Vertical, Both };
 
     bool clientAllowsScroll;
+    bool mClientDownDispatched;
+    int mDeferredMouseDownMagicCode;
     Widget *mClient;
     Widget *mClientLastDown;
     Sexy::Image *mIndicatorsImage;

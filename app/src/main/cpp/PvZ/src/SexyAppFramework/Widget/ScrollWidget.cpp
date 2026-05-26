@@ -70,6 +70,8 @@ void ScrollWidget::Init() {
 
 
     mClient = nullptr;
+    mClientDownDispatched = false;
+    mDeferredMouseDownMagicCode = 0;
     mClientLastDown = nullptr;
     mIndicatorsImage = nullptr;
     mScrollMode = ScrollWidget::ScrollMode::Vertical;
@@ -400,22 +402,20 @@ void ScrollWidget::TouchBegan(_Touch touch, int theMagicCode) {
         mScrollLastTimestamp = touch.timestamp;
         mScrollTracking = false;
         mSeekScrollTarget = false;
+        mClientDownDispatched = false;
+        mDeferredMouseDownMagicCode = theMagicCode;
         mClientLastDown = GetClientWidgetAt(touch);
-        mClientLastDown->mIsDown = true;
-        mClientLastDown->mIsOver = true;
-        homura::CallVirtualFunc<Widget, 76, void, int, int, int>(mClientLastDown, touch.location.mX, touch.location.mY, theMagicCode); // MouseDown
     }
 }
 
 void ScrollWidget::TouchMoved(_Touch touch) {
     CGPoint cgpoint = CGPoint(touch.location.mX, touch.location.mY) - mScrollTouchReference;
     if (mClient != nullptr) {
-        if (clientAllowsScroll) {
-            if (!mScrollTracking && (mScrollPractical & ScrollWidget::ScrollMode::Horizontal) != ScrollWidget::ScrollMode::Disabled && std::abs(cgpoint.mX) > 4.0f) {
-                mScrollTracking = true;
-            }
-            if (!mScrollTracking && (mScrollPractical & ScrollWidget::ScrollMode::Vertical) != ScrollWidget::ScrollMode::Disabled && std::abs(cgpoint.mY) > 4.0f) {
-                mScrollTracking = true;
+        if (clientAllowsScroll && !mScrollTracking && (std::abs(cgpoint.mX) > SCROLL_DRAG_THRESHOLD || std::abs(cgpoint.mY) > SCROLL_DRAG_THRESHOLD)) {
+            mScrollTracking = true;
+            if (mClientLastDown != nullptr) {
+                mClientLastDown->mIsDown = false;
+                mClientLastDown->mIsOver = false;
             }
         }
     }
@@ -424,6 +424,12 @@ void ScrollWidget::TouchMoved(_Touch touch) {
         return;
     }
     if (mClientLastDown != nullptr) {
+        if (!mClientDownDispatched) {
+            mClientLastDown->mIsDown = true;
+            mClientLastDown->mIsOver = true;
+            homura::CallVirtualFunc<Widget, 76, void, int, int, int>(mClientLastDown, mScrollTouchReference.mX, mScrollTouchReference.mY, mDeferredMouseDownMagicCode); // MouseDown
+            mClientDownDispatched = true;
+        }
         Point b = homura::CallVirtualFunc<Widget, 19, Point>(this) /*GetAbsPos*/ - homura::CallVirtualFunc<Widget, 19, Point>(mClientLastDown) /*GetAbsPos*/;
         Point a(touch.location.mX, touch.location.mY);
         Point cgpoint2 = a + b;
@@ -445,14 +451,24 @@ void ScrollWidget::TouchEnded(_Touch touch, int theMagicCode) {
     if (mScrollTracking) {
         TouchMotion(touch);
         mScrollTracking = false;
+        mClientDownDispatched = false;
+        mClientLastDown = nullptr;
     } else if (mClientLastDown != nullptr) {
+        if (!mClientDownDispatched) {
+            mClientLastDown->mIsDown = true;
+            mClientLastDown->mIsOver = true;
+            homura::CallVirtualFunc<Widget, 76, void, int, int, int>(mClientLastDown, mScrollTouchReference.mX, mScrollTouchReference.mY, mDeferredMouseDownMagicCode); // MouseDown
+            mClientDownDispatched = true;
+        }
         Point b = homura::CallVirtualFunc<Widget, 19, Point>(this) /*GetAbsPos*/ - homura::CallVirtualFunc<Widget, 19, Point>(mClientLastDown) /*GetAbsPos*/;
         Point a(touch.location.mX, touch.location.mY);
         // a + b;
         touch.location += b;
         homura::CallVirtualFunc<Widget, 79, void, int, int, int>(mClientLastDown, touch.location.mX, touch.location.mY, theMagicCode); // MouseUp
         mClientLastDown->mIsDown = false;
+        mClientLastDown->mIsOver = false;
         mClientLastDown = nullptr;
+        mClientDownDispatched = false;
     }
 }
 

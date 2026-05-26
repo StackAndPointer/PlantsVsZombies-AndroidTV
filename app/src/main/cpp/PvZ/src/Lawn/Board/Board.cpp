@@ -3225,13 +3225,17 @@ void Board::Pause(bool thePause) {
     LOG_DEBUG("Pause={}, remoteSync={}", thePause, gPauseSyncFromRemote);
 
     // Spectator is read-only: block any local pause/resume attempts.
-    if ((gIsServerModeSpectator || gIsReplayMode) && !gPauseSyncFromRemote) {
+    if (gIsServerModeSpectator && !gPauseSyncFromRemote) {
         LOG_DEBUG("Pause blocked for spectator");
         return;
     }
 
     if (mPaused == thePause)
         return;
+
+    if (gIsReplayMode && !thePause) {
+        gReplayPauseByMenu = false;
+    }
 
     // 只有“本地主动触发”的暂停/恢复才发网络包
     if (!gPauseSyncFromRemote && mApp->mGameMode == GAMEMODE_MP_VS && !mApp->mVSSetupMenu) {
@@ -5153,7 +5157,7 @@ void Board::UpdateButtons() {
     }
 
     if (mApp->IsVSMode()) {
-        const bool spectatorReadOnly = gIsServerModeSpectator || gIsReplayMode;
+        const bool spectatorReadOnly = gIsServerModeSpectator;
         gBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
         gBoardMenuButton->mDisabled = spectatorReadOnly;
     } else {
@@ -5174,7 +5178,7 @@ void Board::UpdateButtons() {
 
 
 void Board::ButtonDepress(int theId) {
-    if ((gIsServerModeSpectator || gIsReplayMode) && theId == 1000) {
+    if (gIsServerModeSpectator && theId == 1000) {
         // Spectator cannot open pause/options menu.
         return;
     }
@@ -5184,6 +5188,9 @@ void Board::ButtonDepress(int theId) {
         if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || lawnApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
             lawnApp->DoBackToMain();
             return;
+        }
+        if (gIsReplayMode) {
+            gReplayPauseByMenu = true;
         }
         lawnApp->PlaySample(Sexy::SOUND_PAUSE);
         lawnApp->DoNewOptions(false, 0);

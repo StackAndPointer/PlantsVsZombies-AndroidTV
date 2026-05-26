@@ -305,6 +305,7 @@ void replay::StopPlayback() {
     LOG_INFO("[REPLAY] playback stopped");
     gPlaybackState = {};
     gIsReplayMode = false;
+    gReplayPauseByMenu = false;
 }
 
 bool replay::IsPlaybackActive() {

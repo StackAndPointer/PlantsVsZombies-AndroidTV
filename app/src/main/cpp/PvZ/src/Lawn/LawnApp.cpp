@@ -266,6 +266,7 @@ void LawnApp::ClearSecondPlayer() {
     gServerModeTransport = ServerModeTransport::NONE;
     gIsServerModeSpectator = false;
     gIsReplayMode = false;
+    gReplayPauseByMenu = false;
     gReplayHostName[0] = '\0';
     gReplayGuestName[0] = '\0';
     if (gTcpConnected) {
@@ -497,7 +498,8 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
 
 
 void LawnApp::UpdateFrames() {
-    if (gTcpClientSocket >= 0 || gTcpConnected || replay::IsPlaybackActive()) {
+    const bool replayPaused = replay::IsPlaybackActive() && gReplayPauseByMenu && mBoard != nullptr && mBoard->mPaused;
+    if ((gTcpClientSocket >= 0 || gTcpConnected || replay::IsPlaybackActive()) && !replayPaused) {
         ++gNetPingNowTick;
         TickNetDelayAwaitingPong();
         if (!replay::IsPlaybackActive()) {

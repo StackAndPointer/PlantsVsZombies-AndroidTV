@@ -107,6 +107,7 @@ inline bool gIsServerModeNetplay = false;
 inline ServerModeTransport gServerModeTransport = ServerModeTransport::NONE;
 inline bool gIsServerModeSpectator = false;
 inline bool gIsReplayMode = false;
+inline bool gReplayPauseByMenu = false;
 
 struct AddonImages {
     Sexy::Image *pole_night;
