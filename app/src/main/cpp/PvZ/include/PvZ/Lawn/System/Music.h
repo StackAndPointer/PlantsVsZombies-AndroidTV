@@ -107,8 +107,8 @@ public:
     void SetupMusicFileForTune(MusicFile theMusicFile, MusicTune theMusicTune) {
         reinterpret_cast<void (*)(Music *, MusicFile, MusicTune)>(Music_SetupMusicFileForTuneAddr)(this, theMusicFile, theMusicTune);
     }
-    void LoadSong(MusicFile theMusicFile, const pvzstl::string theFileName) {
-        reinterpret_cast<void (*)(Music *, MusicFile, const pvzstl::string)>(Music_LoadSongAddr)(this, theMusicFile, theFileName);
+    void LoadSong(MusicFile theMusicFile, const pvzstl::string &theFileName) {
+        reinterpret_cast<void (*)(Music *, MusicFile, const pvzstl::string &)>(Music_LoadSongAddr)(this, theMusicFile, theFileName);
     }
     void MakeSureMusicIsPlaying(MusicTune theMusicTune) {
         reinterpret_cast<void (*)(Music *, MusicTune)>(Music_MakeSureMusicIsPlayingAddr)(this, theMusicTune);
