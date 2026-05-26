@@ -51,6 +51,10 @@ ProjectileDefinition gProjectileDefinition[] = {
     {ProjectileType::PROJECTILE_ZOMBIE_PEA, 0, 20},
 };
 
+ProjectileDefinition gExtendedProjectileDefinition[] = {
+    {ProjectileType::PROJECTILE_ZOMBIE_POLE, 0, 1001},
+};
+
 void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
     // projectile->mNewProjectileLastX = theX;
     // projectile->mNewProjectileLastY = theY;
@@ -91,7 +95,7 @@ Plant *Projectile::FindCollisionTargetPlant() {
         if (aPlant->mRow != mRow)
             continue;
 
-        if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
+        if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
             if (aPlant->mSeedType == SeedType::SEED_PUFFSHROOM || aPlant->mSeedType == SeedType::SEED_SUNSHROOM || aPlant->mSeedType == SeedType::SEED_POTATOMINE
                 || aPlant->mSeedType == SeedType::SEED_SPIKEWEED || aPlant->mSeedType == SeedType::SEED_SPIKEROCK || aPlant->mSeedType == SeedType::SEED_LILYPAD) // 僵尸豌豆不能击中低矮植物
                 continue;
@@ -99,7 +103,7 @@ Plant *Projectile::FindCollisionTargetPlant() {
 
         Rect aPlantRect = aPlant->GetPlantRect();
         if (GetRectOverlap(aProjectileRect, aPlantRect) > 8) {
-            if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
+            if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
                 return mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_EATING_ORDER);
             } else {
                 return mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_CATAPULT_ORDER);
@@ -176,6 +180,8 @@ Rect Projectile::GetProjectileRect() {
         return Rect(mX, mY, mWidth - 10, mHeight);
     } else if (mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
         return Rect(mX - 25, mY, mWidth + 25, mHeight);
+    } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
+        return Rect(mX + 60, mY, mWidth, mHeight);
     } else {
         return Rect(mX, mY, mWidth, mHeight);
     }
@@ -652,7 +658,7 @@ void Projectile::CheckForCollision() {
         return;
     }
 
-    if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
+    if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
         Plant *aPlant = FindCollisionTargetPlant();
         if (aPlant) {
             const ProjectileDefinition &aProjectileDef = GetProjectileDef();
@@ -781,6 +787,9 @@ unsigned int Projectile::GetDamageFlags(Zombie *theZombie) {
 
 ProjectileDefinition &Projectile::GetProjectileDef() {
     ProjectileDefinition &aProjectileDef = gProjectileDefinition[(int)mProjectileType];
+    if (mProjectileType >= NUM_PROJECTILES) {
+        aProjectileDef = gExtendedProjectileDefinition[mProjectileType - NUM_PROJECTILES];
+    }
     return aProjectileDef;
 }
 
@@ -799,6 +808,9 @@ void Projectile::Draw(Graphics *g) {
     Image *aImage = nullptr;
     float aScaleX = 1.0f;
     float aScaleY = 1.0f;
+    if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
+        aImage = addonImages.IMAGE_PROJECTILEPOLE;
+    }
 
     bool aMirror = false;
     if (mMotionType == ProjectileMotion::MOTION_BEE_BACKWARDS) {
@@ -817,9 +829,9 @@ void Projectile::Draw(Graphics *g) {
             float aOffsetY = mPosZ + mPosY + aCelHeight * 0.5f;
             float aWideScreenOffsetX = 240;
             float aWideScreenOffsetY = 80;
-            if (aMirror)
+            if (aMirror) {
                 aScaleX *= -1;
-
+            }
             SexyTransform2D aTransform;
             TodScaleRotateTransformMatrix(aTransform, aOffsetX + mBoard->mX + aWideScreenOffsetX, aOffsetY + mBoard->mY + aWideScreenOffsetY, mRotation, aScaleX, aScaleY);
             TodBltMatrix(&gProj, aImage, aTransform, gProj.mClipRect, Color::White, gProj.mDrawMode, aSrcRect);

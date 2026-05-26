@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3169;
+inline constexpr uint32_t NETPLAY_VERSION = 3170;
 
 enum EventType : uint8_t {
     EVENT_NULL,
@@ -110,6 +110,7 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_GRIDITEM_ADDLADDER,
     EVENT_SERVER_BOARD_GRIDITEM_ADDCRATER,
     EVENT_SERVER_BOARD_GRIDITEM_ADDMOUND,
+    EVENT_SERVER_BOARD_GRIDITEM_ADDPOLE,
 
     EVENT_SERVER_BOARD_PLANT_LAUNCHCOUNTER,                // 同步生产植物如向日葵、阳光菇的生产发光
     EVENT_SERVER_BOARD_PLANT_SHOOTER_LAUNCH,               // 播放杨桃、三线射手的开火动画
@@ -298,6 +299,10 @@ struct U16U16U8_Event : BaseEvent {
     uint16_t data1;
     uint16_t data2;
     uint8_t data3;
+};
+
+struct U16x4_Event : BaseEvent {
+    uint16_t data[4];
 };
 
 struct U16x6_Event : BaseEvent {

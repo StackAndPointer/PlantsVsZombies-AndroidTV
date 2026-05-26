@@ -447,6 +447,9 @@ public:
     ZombieID ZombieGetID(Zombie *theZombie) {
         return reinterpret_cast<ZombieID (*)(Board *, Zombie *)>(Board_ZombieGetIDAddr)(this, theZombie);
     }
+    GridItemID GridItemGetID(GridItem *theGridItem) {
+        return GridItemID(mGridItems.DataArrayGetID(theGridItem));
+    }
     void SetDanceMode(bool theEnableDance) {
         reinterpret_cast<void (*)(Board *, bool)>(Board_SetDanceModeAddr)(this, theEnableDance);
     }
@@ -601,8 +604,6 @@ public:
     int GetSeedPacketPositionX(int thePacketIndex, int theSeedBankIndex, bool thePlayerIndex);
     Coin *AddCoin(int theX, int theY, CoinType theCoinType, CoinMotion theCoinMotion);
     bool TakeDeathMoney(int theAmount);
-    GridItem *AddAGraveStone(int theGridX, int theGridY);
-    GridItem *AddAMound(int theGridX, int theGridY, int theMoundLevel);
     bool TakeSunMoney(int theAmount, int thePlayer);
     void ShuffleButtonDown(SeedPacket *theSeedPacket);
     bool CanAddGraveStoneAt(int theGridX, int theGridY);
@@ -615,6 +616,10 @@ public:
     GridItem *AddALadder_Origin(int theGridX, int theGridY);
     GridItem *AddACrater(int theGridX, int theGridY);
     GridItem *AddACrater_Origin(int theGridX, int theGridY);
+    GridItem *AddAGraveStone(int theGridX, int theGridY);
+    GridItem *AddAMound(int theGridX, int theGridY, int theMoundLevel);
+    GridItem *AddAPole(int theX, int theY, int theGridY);
+    GridItem *AddAPole_Origin(int theX, int theY, int theGridY);
     ZombieType PickGraveRisingZombieTypeMP(int theMoundLevel);
     static bool IsZombieTypeSpawnedOnly(ZombieType theZombieType);
 

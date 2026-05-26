@@ -73,6 +73,10 @@ inline void AttachmentDetachCrossFadeParticleType(AttachmentID &theAttachmentID,
     reinterpret_cast<void (*)(AttachmentID &, ParticleEffect, const char *)>(AttachmentDetachCrossFadeParticleTypeAddr)(theAttachmentID, theParticleEffect, theCrossFadeName);
 }
 
+inline void AttachmentReanimTypeDie(AttachmentID &theAttachmentID, ReanimationType theReanimationType) {
+    reinterpret_cast<void (*)(AttachmentID &, ReanimationType)>(AttachmentReanimTypeDieAddr)(theAttachmentID, theReanimationType);
+}
+
 inline Reanimation *FindReanimAttachment(AttachmentID &theAttachmentID) {
     return reinterpret_cast<Reanimation *(*)(AttachmentID &)>(FindReanimAttachmentAddr)(theAttachmentID);
 }

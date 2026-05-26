@@ -125,6 +125,9 @@ void GridItem::DrawGridItem(Graphics *g) {
         DrawBurialMound(g);
         return;
     }
+    if (mGridItemType == GridItemType::GRIDITEM_POLE) {
+        return;
+    }
 
     old_GridItem_DrawGridItem(this, g);
 
@@ -710,6 +713,9 @@ void GridItem::DrawMPTarget(Graphics *g) {
 }
 
 Rect GridItem::GetItemRect() {
+    if (mGridItemType == GridItemType::GRIDITEM_POLE) {
+        return Rect(int(mPosX), int(mPosY), 30, 160);
+    }
     return Rect(mBoard->GridToPixelX(mGridX, mGridY), mBoard->GridToPixelY(mGridX, mGridY), 63, 80);
 }
 

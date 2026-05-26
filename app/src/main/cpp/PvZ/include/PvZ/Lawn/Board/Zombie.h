@@ -68,6 +68,7 @@ enum ZombieAttackType {
     ATTACKTYPE_DRIVE_OVER,
     ATTACKTYPE_VAULT,
     ATTACKTYPE_LADDER,
+    ATTACKTYPE_POLE,
 };
 
 enum ZombieParts {
@@ -98,6 +99,7 @@ public:
 };
 
 class Coin;
+class GridItem;
 class Plant;
 class Reanimation;
 class TodParticleSystem;
@@ -251,8 +253,8 @@ public:
     void DrawDancerReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos) {
         reinterpret_cast<void (*)(Zombie *, Sexy::Graphics *, ZombieDrawPosition &)>(Zombie_DrawDancerReanimAddr)(this, g, theDrawPos);
     }
-    void PlayDeathAnim(unsigned int theDamageFlags) {
-        reinterpret_cast<void (*)(Zombie *, unsigned int)>(Zombie_PlayDeathAnimAddr)(this, theDamageFlags);
+    void DropShield(unsigned int theDamageFlags) {
+        reinterpret_cast<void (*)(Zombie *, unsigned int)>(Zombie_DropShieldAddr)(this, theDamageFlags);
     }
     void DrawBobsledReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos, bool theBeforeZombie) {
         reinterpret_cast<void (*)(Zombie *, Sexy::Graphics *, ZombieDrawPosition &, bool)>(Zombie_DrawBobsledReanimAddr)(this, g, theDrawPos, theBeforeZombie);
@@ -375,6 +377,9 @@ public:
     void JacksonDie();
     void UpdateZombieJackInTheBox();
     void UpdateZombiePolevaulter();
+    GridItem *FindPoleTarget();
+    Plant *FindGigaPolevaulterTarget();
+    void UpdateGigaPolevaulter();
     void UpdateZombieGargantuar();
     void ZombieImpThrown(Zombie *theThrowerZombie, float theOffsetDistance);
     void ZombieImpKicked(float theKickingDistance);
@@ -482,6 +487,7 @@ public:
     void UpdateZombieCatapult();
     void BungeeLanding();
     void UpdateLadder();
+    void PlayDeathAnim(unsigned int theDamageFlags);
 
 protected:
     void _constructor() {

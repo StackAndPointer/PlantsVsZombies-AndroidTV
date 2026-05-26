@@ -176,6 +176,19 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
             aReanim.Update();
             aReanim.Draw(&aMemoryGraphics);
             gExtendedZombieImages[aExtendedIndex] = aMemoryImage;
+        } else if (theZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
+            Reanimation aReanim;
+            aReanim.ReanimationInitializeType(aPosX, aPosY, aZombieDef.mReanimationType);
+            aReanim.PlayReanim("anim_walk", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
+            aReanim.AssignRenderGroupToPrefix("anim_pole1", RENDER_GROUP_HIDDEN);
+            aReanim.AssignRenderGroupToPrefix("anim_pole1_2", RENDER_GROUP_HIDDEN);
+            aReanim.AssignRenderGroupToPrefix("anim_pole2", RENDER_GROUP_HIDDEN);
+            aReanim.AssignRenderGroupToPrefix("anim_pole2_2", RENDER_GROUP_HIDDEN);
+            aReanim.AssignRenderGroupToPrefix("anim_pole3", RENDER_GROUP_HIDDEN);
+            aReanim.AssignRenderGroupToPrefix("anim_pole3_2", RENDER_GROUP_HIDDEN);
+            aReanim.Update();
+            aReanim.Draw(&aMemoryGraphics);
+            gExtendedZombieImages[aExtendedIndex] = aMemoryImage;
         }
         return aMemoryImage;
     }

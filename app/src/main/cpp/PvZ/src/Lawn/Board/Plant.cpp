@@ -1351,6 +1351,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_SNORKEL:
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
         case SeedType::SEED_ZOMBIE_JALAPENO_HEAD:
+        case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
             return 125;
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:
@@ -1405,6 +1406,7 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
             case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
             case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
             case SeedType::SEED_ZOMBIE_JACKSON:
+            case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
                 return 3000;
             case SeedType::SEED_ZOMBIE_NEWSPAPER:
             case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -1796,7 +1798,7 @@ void Plant::BurnRow(int theRow) {
 
     GridItem *aGridItem = nullptr;
     while (mBoard->IterateGridItems(aGridItem)) {
-        if (aGridItem->mGridY == theRow && aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER) {
+        if (aGridItem->mGridY == theRow && (aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER || aGridItem->mGridItemType == GridItemType::GRIDITEM_POLE)) {
             aGridItem->GridItemDie();
         }
     }

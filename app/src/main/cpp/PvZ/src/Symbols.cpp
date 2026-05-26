@@ -414,7 +414,9 @@ bool LoadGameMain() {
     Zombie_DropPoleAddr = libGameMain.GetSymbol("_ZN6Zombie8DropPoleEv");
     Zombie_DropFlagAddr = libGameMain.GetSymbol("_ZN6Zombie8DropFlagEv");
     Zombie_DropHelmAddr = libGameMain.GetSymbol("_ZN6Zombie8DropHelmEj");
+    Zombie_DropShieldAddr = libGameMain.GetSymbol("_ZN6Zombie10DropShieldEj");
     Zombie_BossSpawnAttackAddr = libGameMain.GetSymbol("_ZN6Zombie15BossSpawnAttackEv");
+    Zombie_BossDieAddr = libGameMain.GetSymbol("_ZN6Zombie7BossDieEv");
     Zombie_DrawBungeeCordAddr = libGameMain.GetSymbol("_ZN6Zombie14DrawBungeeCordEPN4Sexy8GraphicsEii");
     // Zombie_IsTangleKelpTargetAddr = libGameMain.GetSymbol("_ZN6Zombie18IsTanglekelpTargetEv");
     Zombie_IsTangleKelpTargetAddr = reinterpret_cast<void *>(gLibGameMainBaseAddr + ZOMBIE_ISTANGLEKELPTARGET_ADDR_RELATIVE + 1); // +1 for thumb
@@ -972,6 +974,7 @@ bool LoadGameMain() {
     AttachmentUpdateAndSetMatrixAddr = libGameMain.GetSymbol("_Z28AttachmentUpdateAndSetMatrixR12AttachmentIDRKN4Sexy15SexyTransform2DE");
     AttachParticleAddr = libGameMain.GetSymbol("_Z14AttachParticleR12AttachmentIDP17TodParticleSystemff");
     AttachmentDetachCrossFadeParticleTypeAddr = libGameMain.GetSymbol("_Z37AttachmentDetachCrossFadeParticleTypeR12AttachmentID14ParticleEffectPKc");
+    AttachmentReanimTypeDieAddr = libGameMain.GetSymbol("_Z23AttachmentReanimTypeDieR12AttachmentID15ReanimationType");
     FindReanimAttachmentAddr = libGameMain.GetSymbol("_Z20FindReanimAttachmentRK12AttachmentID");
     AttachmentUpdateAndMoveAddr = libGameMain.GetSymbol("_Z23AttachmentUpdateAndMoveR12AttachmentIDff");
 
@@ -1583,6 +1586,7 @@ Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_POLEVAULTER_OUTERARM_UPPER2 = *libGameMa
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_BALLOON_OUTERARM_UPPER2 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy43IMAGE_REANIM_ZOMBIE_BALLOON_OUTERARM_UPPER2E");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_IMP_ARM1_BONE = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy33IMAGE_REANIM_ZOMBIE_IMP_ARM1_BONEE");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_IMP_ARM2 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy28IMAGE_REANIM_ZOMBIE_IMP_ARM2E");
+Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_OUTERARM_HAND = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy33IMAGE_REANIM_ZOMBIE_OUTERARM_HANDE");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_BOBSLED_OUTERARM_UPPER2 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy43IMAGE_REANIM_ZOMBIE_BOBSLED_OUTERARM_UPPER2E");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_JACKBOX_OUTERARM_LOWER2 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy43IMAGE_REANIM_ZOMBIE_JACKBOX_OUTERARM_LOWER2E");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_SNORKLE_OUTERARM_UPPER2 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy43IMAGE_REANIM_ZOMBIE_SNORKLE_OUTERARM_UPPER2E");
@@ -1928,7 +1932,6 @@ Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_LADDER_1 = *libGameMain.GetSymbol<Sexy::
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_LADDER_5 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy28IMAGE_REANIM_ZOMBIE_LADDER_5E");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_MUSTACHE2 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy29IMAGE_REANIM_ZOMBIE_MUSTACHE2E");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_MUSTACHE3 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy29IMAGE_REANIM_ZOMBIE_MUSTACHE3E");
-Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_OUTERARM_HAND = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy33IMAGE_REANIM_ZOMBIE_OUTERARM_HANDE");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_PAPER_LEFTARM_LOWER = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy39IMAGE_REANIM_ZOMBIE_PAPER_LEFTARM_LOWERE");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_PAPER_MADHEAD = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy33IMAGE_REANIM_ZOMBIE_PAPER_MADHEADE");
 Sexy::Image *&Sexy::IMAGE_REANIM_ZOMBIE_POGO_STICK2DAMAGE1 = *libGameMain.GetSymbol<Sexy::Image *>("_ZN4Sexy38IMAGE_REANIM_ZOMBIE_POGO_STICK2DAMAGE1E");

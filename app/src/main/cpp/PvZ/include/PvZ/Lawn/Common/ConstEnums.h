@@ -687,6 +687,9 @@ enum GridItemType {
     GRIDITEM_IZOMBIE_BRAIN,
     GRIDITEM_MP_BURIAL_MOUND = 13,
     GRIDITEM_MP_TARGET_ZOMBIE = 14,
+    // extended begin
+    GRIDITEM_POLE
+    // extended end
 };
 enum GridItemState {
     GRIDITEM_STATE_NORMAL = 0,
@@ -974,6 +977,10 @@ enum ProjectileType {
     PROJECTILE_BUTTER = 12,     // 黄油
     PROJECTILE_ZOMBIE_PEA = 13, // 僵尸豌豆
     NUM_PROJECTILES = 14,
+    // extended begin
+    PROJECTILE_ZOMBIE_POLE = 14,
+    NUM_EXTENDED_PROJECTILES
+    // extended end
 };
 enum ReanimationType {
     REANIM_NONE = -1,
@@ -1121,6 +1128,7 @@ enum ReanimationType {
     REANIM_SUPER_FAN_IMP,
     REANIM_JACKSON,
     REANIM_BACKUP_JACKSON,
+    REANIM_GIGA_POLEVAULTER,
     EXTENDED_NUM_REANIMS,
 };
 enum ReanimLoopType {
@@ -1285,6 +1293,7 @@ enum SeedType { // 直接从WP复制过来的，怀疑其中有错误，因为TV
     SEED_ZOMBIE_GIGA_FOOTBALL,
     SEED_ZOMBIE_SUPER_FAN_IMP,
     SEED_ZOMBIE_JACKSON,
+    SEED_ZOMBIE_GIGA_POLEVAULTER,
     // extended end
     NUM_ZOMBIE_SEED_IN_CHOOSER,
     // extended begin
@@ -1532,6 +1541,10 @@ enum ZombiePhase {
     PHASE_FOOTBALL_CHARGING,
     PHASE_FOOTBALL_TACKLING,
     PHASE_FOOTBALL_KICKING,
+    PHASE_POLEVAULTER_THROW,
+    PHASE_POLEVAULTER_PICK,
+    PHASE_POLEVAULTER_TAKE,
+    PHASE_POLEVAULTER_PREPARE,
     // extended end
 };
 enum ZombieType {
@@ -1578,6 +1591,7 @@ enum ZombieType {
     ZOMBIE_SUPER_FAN_IMP,
     ZOMBIE_JACKSON,
     ZOMBIE_BACKUP_JACKSON,
+    ZOMBIE_GIGA_POLEVAULTER,
     EXTENDED_NUM_ZOMBIE_TYPES,
     // extended end
 };

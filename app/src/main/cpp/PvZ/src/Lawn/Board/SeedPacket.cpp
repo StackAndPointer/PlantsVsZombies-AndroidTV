@@ -435,6 +435,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
             theDrawScale = 0.5;
             break;
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
+        case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
             offsetY = -12.0;
             offsetX = -8.0;
             theDrawScale = 0.35;

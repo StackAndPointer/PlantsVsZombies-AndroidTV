@@ -1664,6 +1664,11 @@ void Board::processServerEvent(const BaseEvent *event) {
             mound->mIsSpecialGrave = true;
             mound->mVSGraveStoneHealth = 350 + 70 * (moundLevel + 1);
         } break;
+        case EVENT_SERVER_BOARD_GRIDITEM_ADDPOLE: {
+            auto *eventAddPole = static_cast<const U16x4_Event *>(event);
+            GridItem *pole = AddAPole_Origin(eventAddPole->data[0], eventAddPole->data[1], eventAddPole->data[2]);
+            serverGridItemIDMap[eventAddPole->data[3]] = uint16_t(mGridItems.DataArrayGetID(pole));
+        } break;
         case EVENT_SERVER_BOARD_PLANT_PINGPONG_ANIMATION: {
             auto *event1 = static_cast<const U16U16U16UNI32UNI32_Event *>(event);
             uint16_t clientPlantID;
@@ -2052,13 +2057,10 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aZombie->mPosX = eventPickSpeed->data5.f32;
 
                 // 撑杆僵尸落地
-                if (aZombie->mZombieType == ZOMBIE_POLEVAULTER && aZombie->mZombiePhase == PHASE_POLEVAULTER_IN_VAULT) {
+                if (aZombie->mZombiePhase == PHASE_POLEVAULTER_IN_VAULT) {
                     aZombie->mZombiePhase = PHASE_POLEVAULTER_POST_VAULT;
                     aZombie->mPosY = aZombie->GetPosYBasedOnRow(aZombie->mRow);
-                    aZombie->mZombieAttackRect.mX = 50;
-                    aZombie->mZombieAttackRect.mY = 0;
-                    aZombie->mZombieAttackRect.mWidth = 20;
-                    aZombie->mZombieAttackRect.mHeight = 115;
+                    aZombie->mZombieAttackRect = Rect(50, 0, 20, 115);
                     //                    aZombie->mZombieHeight = HEIGHT_ZOMBIE_NORMAL;
                     aZombie->StartWalkAnim(0);
                 }
@@ -2264,6 +2266,30 @@ void Board::processServerEvent(const BaseEvent *event) {
                         aZombie->PlayZombieReanim("anim_kick", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 20.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_FOOTBALL_WALKING || aZombie->mZombiePhase == ZombiePhase::PHASE_FOOTBALL_CHARGING
                                || aZombie->mZombiePhase == ZombiePhase::PHASE_FOOTBALL_PRE_CHARGE) {
+                        aZombie->StartWalkAnim(0);
+                    }
+                } else if (aZombie->mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
+                    aZombie->mSummonCounter = serverZombieSummonCounter;
+                    aZombie->mPhaseCounter = serverPhaseCounter;
+                    aZombie->mHasObject = aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PREPARE
+                        || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_THROW;
+                    if (aZombie->mHasObject) {
+                        aZombie->mZombieAttackRect = Rect(-29, 0, 70, 115);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_POST_VAULT || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PICK
+                               || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_TAKE || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT) {
+                        aZombie->mZombieAttackRect = Rect(50, 0, 20, 115);
+                    }
+
+                    if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_THROW) {
+                        aZombie->PlayZombieReanim("anim_throw", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PREPARE) {
+                        aZombie->PlayZombieReanim("anim_prepare", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PICK) {
+                        aZombie->StopEating();
+                        aZombie->PlayZombieReanim("anim_pick", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_TAKE) {
+                        aZombie->PlayZombieReanim("anim_take", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_POST_VAULT) {
                         aZombie->StartWalkAnim(0);
                     }
                 } else if (aZombie->mZombieType == ZombieType::ZOMBIE_JACKSON) {
@@ -5975,7 +6001,7 @@ int Board::KillAllZombiesInRadius_Custom(int theRow, int theX, int theY, int the
     int aGridY = PixelToGridYKeepOnBoard(theX, theY);
     GridItem *aGridItem = nullptr;
     while (IterateGridItems(aGridItem)) {
-        if (aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER) {
+        if (aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER || aGridItem->mGridItemType == GridItemType::GRIDITEM_POLE) {
             if (GridInRange(aGridItem->mGridX, aGridItem->mGridY, aGridX, aGridY, theRowRange, theRowRange)) {
                 aGridItem->GridItemDie();
             }
@@ -6197,6 +6223,36 @@ GridItem *Board::AddAMound(int theGridX, int theGridY, int theMoundLevel) {
     }
 
     return aMound;
+}
+
+GridItem *Board::AddAPole(int theX, int theY, int theGridY) {
+    if (gTcpConnected) {
+        return nullptr;
+    }
+
+    GridItem *aPole = AddAPole_Origin(theX, theY, theGridY);
+
+    if (gTcpClientSocket >= 0 && mApp->mGameScene == SCENE_PLAYING) {
+        U16x4_Event event = {{EventType::EVENT_SERVER_BOARD_GRIDITEM_ADDPOLE}, uint16_t(theX), uint16_t(theY), uint16_t(theGridY), uint16_t(mGridItems.DataArrayGetID(aPole))};
+        netplay::PutEvent(event);
+    }
+    return aPole;
+}
+
+GridItem *Board::AddAPole_Origin(int theX, int theY, int theGridY) {
+    GridItem *aPole = mGridItems.DataArrayAlloc();
+    aPole->mGridItemType = GridItemType::GRIDITEM_POLE;
+    int aRenderOrder = aPole->mRenderOrder = MakeRenderOrder(RenderLayer::RENDER_LAYER_PLANT, theY, 800);
+    aPole->mPosX = float(theX + 10);
+    aPole->mPosY = float(theY - 18);
+    aPole->mGridX = PixelToGridX(theX, theY);
+    aPole->mGridY = theGridY;
+    Reanimation *aReanim = mApp->AddReanimation(float(theX + 10), float(theY - 18), aRenderOrder, ReanimationType::REANIM_GIGA_POLEVAULTER);
+    if (aReanim) {
+        aReanim->PlayReanim("anim_pole_wobble", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+        aPole->mGridItemReanimID = mApp->ReanimationGetID(aReanim);
+    }
+    return aPole;
 }
 
 bool Board::TakeSunMoney(int theAmount, int thePlayer) {

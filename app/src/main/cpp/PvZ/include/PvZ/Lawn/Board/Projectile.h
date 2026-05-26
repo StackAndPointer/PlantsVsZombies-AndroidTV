@@ -35,6 +35,7 @@ public:
     int mDamage;
 };
 extern ProjectileDefinition gProjectileDefinition[NUM_PROJECTILES];
+extern ProjectileDefinition gExtendedProjectileDefinition[NUM_EXTENDED_PROJECTILES - NUM_PROJECTILES];
 
 class Projectile : public GameObject {
 public:
