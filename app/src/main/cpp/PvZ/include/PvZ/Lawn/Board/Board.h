@@ -692,7 +692,8 @@ inline int choiceSeedPacketIndex;
 inline SeedType choiceSeedType = SeedType::SEED_NONE;
 inline bool isImitaterSeed;
 inline bool setSeedPacket;
-inline Sexy::Rect mTouchVSShovelRect = {0, 85, 56, 56};
+inline Sexy::Rect mTouchVSShovelRect = {0, 90, 34, 56};
+
 inline bool hideCoverLayer;
 inline bool infiniteSun; // 无限阳光
 inline bool drawDebugText;

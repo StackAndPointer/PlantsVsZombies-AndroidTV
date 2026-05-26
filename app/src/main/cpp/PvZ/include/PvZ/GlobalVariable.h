@@ -190,6 +190,8 @@ struct AddonImages {
     Sexy::Image *IMAGE_REANIM_ZOMBIE_BACKUP_OUTERARM_UPPER2;
     Sexy::Image *IMAGE_REANIM_ZOMBIE_JACKSON_OUTERARM_HAND;
     Sexy::Image *IMAGE_REANIM_ZOMBIE_DANCER_INNERARM_HAND;
+    Sexy::Image *IMAGE_SHOVELBANK_VERTICAL;
+    Sexy::Image *IMAGE_SHOVEL_VERTICAL;
 } inline addonImages; // 此处是新增贴图的列表；
 
 struct AddonSounds {

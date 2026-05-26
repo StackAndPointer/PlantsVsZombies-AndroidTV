@@ -2271,7 +2271,7 @@ void Zombie::UpdateDamageStates(unsigned int theDamageFlags) {
             DieNoLoot();
         }
 
-        if (mBoard->GetAliveJacksonZombie() && CanRevived()) {
+        if (mApp->IsVSMode() && mBoard->GetAliveJacksonZombie() && CanRevived()) {
             mIsDeadFollowers = true;
             if (msDeadFollowers.size() >= 15) {
                 msDeadFollowers.erase(msDeadFollowers.begin());

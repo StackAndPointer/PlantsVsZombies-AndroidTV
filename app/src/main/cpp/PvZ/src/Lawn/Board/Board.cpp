@@ -3086,9 +3086,10 @@ void Board::DrawShovelButton(Sexy::Graphics *g, LawnApp *theApp) {
         // return;  原版游戏在此处就return了，所以对战中不绘制铲子按钮。
         if (keyboardMode)
             return;
-        TodDrawImageScaledF(g, Sexy::IMAGE_SHOVELBANK, mTouchVSShovelRect.mX, mTouchVSShovelRect.mY, 0.8f, 0.8f);
+        // 对战模式采用移动端铲子图标
+        TodDrawImageScaledF(g, addonImages.IMAGE_SHOVELBANK_VERTICAL, mTouchVSShovelRect.mX, mTouchVSShovelRect.mY, 0.8f, 0.8f);
         if (!requestDrawShovelInCursor)
-            TodDrawImageScaledF(g, Sexy::IMAGE_SHOVEL, -6, 78, 0.8f, 0.8f);
+            TodDrawImageScaledF(g, addonImages.IMAGE_SHOVEL_VERTICAL, mTouchVSShovelRect.mX - 3, mTouchVSShovelRect.mY - 3, 0.9f, 0.9f);
         return;
     }
 

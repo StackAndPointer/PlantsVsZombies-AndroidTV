@@ -196,6 +196,10 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_REANIM_ZOMBIE_BACKUP_OUTERARM_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_backup_outerarm_upper_bone2");
     addonImages.IMAGE_REANIM_ZOMBIE_JACKSON_OUTERARM_HAND = GetImageByFileName("reanim/zombie_jackson_outerarm_hand");
     addonImages.IMAGE_REANIM_ZOMBIE_DANCER_INNERARM_HAND = GetImageByFileName("reanim/zombie_dancer_innerarm_hand");
+    addonImages.IMAGE_SHOVELBANK_VERTICAL = GetImageByFileName("addonFiles/images/shovel_bank_vertical");
+    ;
+    addonImages.IMAGE_SHOVEL_VERTICAL = GetImageByFileName("addonFiles/images/shovel_vertical");
+    ;
 
     //    int xClip = 130;
     //    int yClip = 130;
