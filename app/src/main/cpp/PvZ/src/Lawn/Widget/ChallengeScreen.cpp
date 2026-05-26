@@ -514,6 +514,10 @@ void ChallengeScreen::AddedToManager(WidgetManager *theWidgetManager) {
     old_ChallengeScreen_AddedToManager(this, theWidgetManager);
 
     AddWidget(mBackButton);
+    if (gIsReplayMode) {
+        mBackButton->mDisabled = true;
+        mBackButton->mBtnNoDraw = true;
+    }
 }
 
 void ChallengeScreen::RemovedFromManager(WidgetManager *theWidgetManager) {
@@ -529,6 +533,9 @@ void ChallengeScreen::ButtonPress(int theButtonId) {
 
 void ChallengeScreen::ButtonDepress(int theId) {
     if (theId == ChallengeScreen::ChallengeScreen_Back) {
+        if (gIsReplayMode) {
+            return;
+        }
         mApp->KillChallengeScreen();
         mApp->DoBackToMain();
         return;
@@ -669,6 +676,9 @@ void ChallengeScreen::MouseUp(int x, int y) {
 }
 
 void ChallengeScreen::KeyDown(Sexy::KeyCode theKey) {
+    if (gIsReplayMode && (theKey == Sexy::KEYCODE_BACK || theKey == Sexy::KEYCODE_ESCAPE || theKey == Sexy::KEYCODE_GAMEPAD_B)) {
+        return;
+    }
     if (theKey == Sexy::KEYCODE_RETURN && mPageIndex == ChallengePage::CHALLENGE_PAGE_VS) {
         if (gTcpConnected) {
             U16_Event event = {{EventType::EVENT_CLIENT_CHALLENGESCREEN_SELECT_MODE}, uint16_t(mSelectedMode)};

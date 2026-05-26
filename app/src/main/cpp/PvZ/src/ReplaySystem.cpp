@@ -33,6 +33,8 @@ struct PlaybackState {
 
 std::vector<ReplayPacketRecord> gRecordedPackets;
 PlaybackState gPlaybackState;
+std::uint32_t gRecordStartTick = 0;
+bool gRecordStartTickReady = false;
 
 std::string BuildMetaText(const ReplayMetaInfo &meta) {
     return "host=" + meta.hostName + "\n" + "guest=" + meta.guestName + "\n" + "winner=" + meta.winnerName + "\n" + "map=" + meta.mapName + "\n" + "vs_background=" + std::to_string(meta.vsBackground)
@@ -80,6 +82,8 @@ std::string EscapePrintable(const char *src) {
 
 void replay::ResetRecorder() {
     gRecordedPackets.clear();
+    gRecordStartTick = 0;
+    gRecordStartTickReady = false;
 }
 
 void replay::RecordPacket(ReplayPacketDir dir, const std::byte *data, std::size_t len, std::uint32_t tick) {
@@ -91,7 +95,11 @@ void replay::RecordPacket(ReplayPacketDir dir, const std::byte *data, std::size_
     }
     ReplayPacketRecord record;
     record.dir = dir;
-    record.tick = tick;
+    if (!gRecordStartTickReady) {
+        gRecordStartTick = tick;
+        gRecordStartTickReady = true;
+    }
+    record.tick = tick - gRecordStartTick;
     record.data.assign(data, data + len);
     gRecordedPackets.push_back(std::move(record));
 }
