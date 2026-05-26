@@ -21,6 +21,7 @@
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
+#include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/CutScene.h"
 #include "PvZ/Lawn/System/Music.h"
 #include "PvZ/Lawn/System/TypingCheck.h"
@@ -889,6 +890,9 @@ int LawnApp::GetSeedsAvailable(bool theIsZombieChooser) {
 
 bool LawnApp::HasSeedType(SeedType theSeedType, bool theIsZombie) {
     if (IsVSMode()) {
+        if (Challenge::msVSShuffleMode) {
+            return true;
+        }
         if (theSeedType < NUM_ZOMBIE_SEED_IN_CHOOSER_VISIBLE) {
             return true;
         }
