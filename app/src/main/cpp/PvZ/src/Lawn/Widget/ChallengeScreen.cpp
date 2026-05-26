@@ -262,6 +262,12 @@ void ChallengeScreen::_constructor(LawnApp *theApp, ChallengePage thePage) {
         mTotalGameInPage = NUM_VS_MODES;
         Challenge::msVSShuffleMode = false;
         gChallengeScreenRequestState = 0;
+
+        mApp->TryHelpTextScreen(HelpTextPage::HELP_TEXT_PAGE_VS);
+    }
+
+    if (mPageIndex == ChallengePage::CHALLENGE_PAGE_COOP) {
+        mApp->TryHelpTextScreen(HelpTextPage::HELP_TEXT_PAGE_COOP);
     }
 }
 
@@ -484,8 +490,7 @@ void ChallengeScreen::Update() {
     old_ChallengeScreen_Update(this);
 
     if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS) {
-
-        if (mConnectDialog == nullptr && !gTcpConnected && gTcpClientSocket < 0) {
+        if (mConnectDialog == nullptr && mApp->mHelpTextScreen == nullptr && !gTcpConnected && gTcpClientSocket < 0) {
             mConnectDialog = new WaitForSecondPlayerDialog(mApp);
             mApp->AddDialog(mConnectDialog);
 

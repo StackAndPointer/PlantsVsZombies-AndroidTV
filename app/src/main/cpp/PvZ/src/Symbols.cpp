@@ -1140,7 +1140,7 @@ bool LoadGameMain() {
     FilterEffectDoLumSatAddr = libGameMain.GetSymbol("_Z20FilterEffectDoLumSatPN4Sexy11MemoryImageEff");
     FilterEffectDisposeForAppAddr = libGameMain.GetSymbol("_Z25FilterEffectDisposeForAppv");
     FilterEffectGetImageAddr = libGameMain.GetSymbol("_Z20FilterEffectGetImagePN4Sexy5ImageE12FilterEffect");
-    HelpTextScreen_HelpTextScreenAddr = libGameMain.GetSymbol("_ZN14HelpTextScreenC2EP7LawnAppi");
+    HelpTextScreen__constructorAddr = libGameMain.GetSymbol("_ZN14HelpTextScreenC2EP7LawnAppi");
     HelpTextScreen_AddedToManagerAddr = libGameMain.GetSymbol("_ZN14HelpTextScreen14AddedToManagerEPN4Sexy13WidgetManagerE");
     HelpTextScreen_RemovedFromManagerAddr = libGameMain.GetSymbol("_ZN14HelpTextScreen18RemovedFromManagerEPN4Sexy13WidgetManagerE");
     HelpTextScreen_UpdateAddr = libGameMain.GetSymbol("_ZN14HelpTextScreen6UpdateEv");

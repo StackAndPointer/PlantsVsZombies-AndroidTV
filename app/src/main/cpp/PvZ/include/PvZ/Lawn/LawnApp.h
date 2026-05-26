@@ -221,8 +221,8 @@ public:
     void HideHelpBarWidget() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_HideHelpBarWidgetAddr)(this);
     }
-    void ShowHelpTextScreen(int a) {
-        reinterpret_cast<void (*)(LawnApp *, int)>(LawnApp_ShowHelpTextScreenAddr)(this, a);
+    void ShowHelpTextScreen(HelpTextPage thePage) {
+        reinterpret_cast<void (*)(LawnApp *, int)>(LawnApp_ShowHelpTextScreenAddr)(this, thePage);
     }
     void CrazyDaveStopTalking() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_CrazyDaveStopTalkingAddr)(this);
@@ -318,7 +318,7 @@ public:
     void LoadLevelConfiguration(int a2, int a3);
     void LoadingThreadProc();
     bool IsChallengeWithoutSeedBank();
-    void TryHelpTextScreen(int theScreenPage);
+    void TryHelpTextScreen(HelpTextPage thePage);
     void KillSeedChooserScreen();
     bool IsIZombieLevel();
     bool IsWallnutBowlingLevel();

@@ -37,6 +37,20 @@ constexpr int prevPageButtonY = 318;
 GameButton *gHelpTextScreenCloseButton;
 } // namespace
 
+void HelpTextScreen::_constructor(LawnApp *theApp, HelpTextPage thePage) {
+    if (theApp->mBoard && theApp->IsVSMode()) {
+        thePage = HelpTextPage::HELP_TEXT_PAGE_VS;
+    }
+
+    if (theApp->mBoard && theApp->IsCoopMode()) {
+        thePage = HelpTextPage::HELP_TEXT_PAGE_COOP;
+    }
+
+    old_HelpTextScreen__constructor(this, theApp, thePage);
+    // 这个HelpTextScreen是全屏的，但触控事件并不会分发到此处，而是发给子控件。只有内容外侧的点击事件才能收到。
+
+    Resize(mX, mY, 4000, mHeight);
+}
 
 void HelpTextScreen_Update(HelpTextScreen *helpTextScreen) {
     if (gHelpTextScreenCloseButton == nullptr) {
@@ -51,21 +65,6 @@ void HelpTextScreen_Draw(HelpTextScreen *helpTextScreen, Sexy::Graphics *g) {
     old_HelpTextScreen_Draw(helpTextScreen, g);
     g->DrawImage(Sexy::IMAGE_ZEN_NEXTGARDEN, nextPageButtonX, nextPageButtonY);
     g->DrawImageMirror(Sexy::IMAGE_ZEN_NEXTGARDEN, prevPageButtonX, prevPageButtonY, true);
-}
-
-void HelpTextScreen_HelpTextScreen(HelpTextScreen *helpTextScreen, LawnApp *lawnApp, int pageIndex) {
-    if (lawnApp->mBoard && lawnApp->IsVSMode()) {
-        pageIndex = 2;
-    }
-
-    if (lawnApp->mBoard && lawnApp->IsCoopMode()) {
-        pageIndex = 3;
-    }
-
-    old_HelpTextScreen_HelpTextScreen(helpTextScreen, lawnApp, pageIndex);
-    // 这个HelpTextScreen是全屏的，但触控事件并不会分发到此处，而是发给子控件。只有内容外侧的点击事件才能收到。
-
-    helpTextScreen->Resize(helpTextScreen->mX, helpTextScreen->mY, 4000, helpTextScreen->mHeight);
 }
 
 void HelpTextScreen_AddedToManager(HelpTextScreen *helpTextScreen, WidgetManager *theWidgetNanager) {

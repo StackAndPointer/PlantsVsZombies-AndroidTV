@@ -1595,6 +1595,13 @@ enum ZombieType {
     EXTENDED_NUM_ZOMBIE_TYPES,
     // extended end
 };
+enum HelpTextPage {
+    HELP_TEXT_PAGE_PLAY,
+    HELP_TEXT_PAGE_CONTROL,
+    HELP_TEXT_PAGE_VS,
+    HELP_TEXT_PAGE_COOP,
+    HELP_TEXT_PAGE_HOUSE,
+};
 
 //////////////////////////////
 enum AttachmentID { ATTACHMENTID_NULL };

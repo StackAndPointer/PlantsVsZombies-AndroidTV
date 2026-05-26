@@ -29,7 +29,16 @@ public:
         reinterpret_cast<void (*)(HelpTextScreen *, Sexy::KeyCode)>(HelpTextScreen_KeyDownAddr)(this, theKey);
     }
 
+    HelpTextScreen(LawnApp *theApp, HelpTextPage thePage) {
+        _constructor(theApp, thePage);
+    }
+
     void MouseDown(int x, int y, int theClickCount);
+
+protected:
+    friend void InitHookFunction();
+
+    void _constructor(LawnApp *theApp, HelpTextPage thePage);
 };
 
 
@@ -37,7 +46,7 @@ inline void (*old_HelpTextScreen_Update)(HelpTextScreen *helpTextScreen);
 
 inline void (*old_HelpTextScreen_Draw)(HelpTextScreen *helpTextScreen, Sexy::Graphics *graphics);
 
-inline void (*old_HelpTextScreen_HelpTextScreen)(HelpTextScreen *helpTextScreen, LawnApp *lawnApp, int pageIndex);
+inline void (*old_HelpTextScreen__constructor)(HelpTextScreen *helpTextScreen, LawnApp *lawnApp, HelpTextPage pageIndex);
 
 inline void (*old_HelpTextScreen_AddedToManager)(HelpTextScreen *helpTextScreen, Sexy::WidgetManager *manager);
 
@@ -53,8 +62,6 @@ inline void (*old_HelpTextScreen_ButtonDepress)(HelpTextScreen *helpTextScreen, 
 void HelpTextScreen_Update(HelpTextScreen *helpTextScreen);
 
 void HelpTextScreen_Draw(HelpTextScreen *helpTextScreen, Sexy::Graphics *graphics);
-
-void HelpTextScreen_HelpTextScreen(HelpTextScreen *helpTextScreen, LawnApp *lawnApp, int pageIndex);
 
 void HelpTextScreen_AddedToManager(HelpTextScreen *helpTextScreen, Sexy::WidgetManager *theWidgetNanager);
 

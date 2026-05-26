@@ -668,8 +668,17 @@ void LawnApp::LoadLevelConfiguration(int a2, int a3) {
     old_LawnApp_LoadLevelConfiguration(this, a2, a3);
 }
 
-void LawnApp::TryHelpTextScreen(int theScreenPage) {
-    // 空函数替换，去除初次进入对战结盟模式时的操作提示。
+void LawnApp::TryHelpTextScreen(HelpTextPage thePage) {
+    // 初次进入对战、结盟模式或排行榜时展示帮助提示。
+    if (mPlayerInfo) {
+        bool &aHelpTextSeen = mPlayerInfo->mHelpTextSeen[thePage];
+        if (!aHelpTextSeen) {
+            aHelpTextSeen = true;
+            mPlayerInfo->SaveDetails();
+
+            ShowHelpTextScreen(thePage);
+        }
+    }
 }
 
 void LawnApp::_constructor() {

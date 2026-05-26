@@ -211,6 +211,8 @@ LeaderboardsWidget::LeaderboardsWidget(LawnApp *theApp) {
     mBackButton = aBackButton;
     mFocusedAchievementIndex = 0;
     mHighLightAchievement = false;
+
+    mApp->TryHelpTextScreen(HelpTextPage::HELP_TEXT_PAGE_HOUSE);
 }
 
 void LeaderboardsWidget::ButtonDepress(this LeaderboardsWidget &self, int id) {

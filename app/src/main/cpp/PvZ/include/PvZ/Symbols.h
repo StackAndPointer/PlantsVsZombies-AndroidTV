@@ -1140,7 +1140,7 @@ inline void *FilterEffectDoWhiteAddr;
 inline void *FilterEffectDoLumSatAddr;
 inline void *FilterEffectDisposeForAppAddr;
 inline void *FilterEffectGetImageAddr;
-inline void *HelpTextScreen_HelpTextScreenAddr;
+inline void *HelpTextScreen__constructorAddr;
 inline void *HelpTextScreen_AddedToManagerAddr;
 inline void *HelpTextScreen_UpdateAddr;
 inline void *HelpTextScreen_Delete2Addr;
