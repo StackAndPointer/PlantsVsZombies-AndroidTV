@@ -20,13 +20,17 @@
 #include "PvZ/Lawn/Widget/VSResultsMenu.h"
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
+#include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/NetPlay.h"
+#include "PvZ/ReplaySystem.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/TodLib/Common/TodCommon.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 
+#include <chrono>
+#include <ctime>
 #include <unistd.h>
 
 using namespace Sexy;
@@ -36,9 +40,31 @@ public:
     Sexy::Image *mImage;
 };
 
+static std::string BuildDeckText(const SeedType *seeds, int count) {
+    std::string s;
+    for (int i = 0; i < count; ++i) {
+        if (i > 0) {
+            s.push_back(',');
+        }
+        s += std::to_string(static_cast<int>(seeds[i]));
+    }
+    return s;
+}
+
+static const char *CampNameFromSide(int side) {
+    if (side == 0) {
+        return "Plant";
+    }
+    if (side == 1) {
+        return "Zombie";
+    }
+    return "Unknown";
+}
+
 
 void VSResultsMenu::_constructor() {
     old_VSResultsMenu_Constructor(this);
+    mIsReplaySession = gIsReplayMode;
     gVSResultRequestState = -1;
     gNetDelayNow = 0; // 清除旧的延时数据
 
@@ -53,6 +79,10 @@ void VSResultsMenu::_constructor() {
     //    (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(0, 205, 0);
     //    mBackButton->Resize(800, 520, 160, 50);
     //    AddWidget(mBackButton);
+}
+
+void VSResultsMenu::AddedToManager(Sexy::WidgetManager *manager) {
+    old_VSResultsMenu_AddedToManager(this, manager);
 }
 
 void VSResultsMenu::processClientEvent(const BaseEvent *event) {
@@ -73,6 +103,8 @@ void VSResultsMenu::processServerEvent(const BaseEvent *event) {
     LOG_DEBUG("TYPE:{}", (int)event->type);
     switch (event->type) {
         case EVENT_SERVER_VSRESULT_BUTTON_DEPRESS: {
+            replay::ResetRecorder();
+            LOG_INFO("[REPLAY] reset recorder on recv EVENT_SERVER_VSRESULT_BUTTON_DEPRESS");
             auto *event1 = static_cast<const U8_Event *>(event);
             int anId = event1->data;
             mResultsButtonId = anId;
@@ -83,9 +115,35 @@ void VSResultsMenu::processServerEvent(const BaseEvent *event) {
     }
 }
 
+void VSResultsMenu::InitFromBoard(class Board *board) {
+
+    mBoardMainCounter = board->mMainCounter;
+    mBoardBackground = Challenge::msVSShuffleMode ? BackgroundType(-1) : board->mBackground;
+    int aSeedNum = board->mSeedBank[0]->mNumPackets;
+    for (int i = 1; i < aSeedNum; ++i) {
+        mPlantSeeds[i - 1] = board->mSeedBank[0]->mSeedPackets[i].mPacketType;
+        mZombieSeeds[i - 1] = board->mSeedBank[1]->mSeedPackets[i].mPacketType;
+    }
+    reinterpret_cast<void (*)(VSResultsMenu *, Board *)>(VSResultsMenu_InitFromBoardAddr)(this, board);
+}
+
 void VSResultsMenu::Update() {
-    // 记录当前游戏状态
+    //    if (mIsReplaySession) {
+    //        return;
+    //    }
     old_VSResultsMenu_Update(this);
+}
+
+void VSResultsMenu::HideReplayButton(bool forceHide) {
+    Sexy::Widget *saveBtn = FindWidget(VSResultsMenu_Save_Replay);
+    if (saveBtn == nullptr) {
+        return;
+    }
+    const bool connected = (gTcpConnected || gTcpClientSocket >= 0);
+    if (forceHide || !connected || mIsReplaySession) {
+        saveBtn->SetVisible(false);
+        saveBtn->mDisabled = true;
+    }
 }
 
 void VSResultsMenu::OnExit() {
@@ -107,13 +165,76 @@ void VSResultsMenu::ButtonDepress(int theId) {
     if (mIsFading)
         return;
 
+    if (theId == VSResultsMenu_Save_Replay) {
+        if (mIsReplaySession) {
+            LOG_INFO("[REPLAY] ignore save replay in replay session");
+            return;
+        }
+        ReplayMetaInfo meta;
+        const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        std::tm localTm{};
+        localtime_r(&now, &localTm);
+        char timeText[32]{};
+        std::strftime(timeText, sizeof(timeText), "%Y-%m-%d %H:%M", &localTm);
+        meta.hostName = (gServerHostName[0] != '\0') ? gServerHostName : gLawnApp->mPlayerInfo->mName;
+        meta.guestName = (gSecondPlayerName[0] != '\0') ? gSecondPlayerName : "Guest";
+        int winnerSide = -1;
+        int hostCampSide = -1;
+        int guestCampSide = -1;
+        for (int slot = 0; slot < 2; ++slot) {
+            const int sideInSlot = mSides[slot];
+            if (sideInSlot < 0 || sideInSlot > 1) {
+                continue;
+            }
+            const int this76Side = unk2[sideInSlot];
+            if (int *playerRecord = GetPlayerRecord((unsigned int)this76Side)) {
+                if (winnerSide == -1 && (playerRecord[0] == 0 || playerRecord[0] == 1)) {
+                    winnerSide = playerRecord[0];
+                }
+            }
+            if (this76Side == 0) {
+                hostCampSide = sideInSlot;
+            } else if (this76Side == 1) {
+                guestCampSide = sideInSlot;
+            }
+        }
+        meta.hostCamp = CampNameFromSide(hostCampSide);
+        meta.guestCamp = CampNameFromSide(guestCampSide);
+        if (winnerSide == hostCampSide) {
+            meta.winnerName = meta.hostName;
+        } else if (winnerSide == guestCampSide) {
+            meta.winnerName = meta.guestName;
+        } else {
+            meta.winnerName = "Unknown";
+        }
+        meta.mapName = StrFormat("VSBG_%d", int(mBoardBackground));
+        meta.vsBackground = int(mBoardBackground);
+        meta.durationTicks = mBoardMainCounter > 0 ? mBoardMainCounter : replay::EstimateRecordedDurationTicks();
+        meta.plantDeck = BuildDeckText(mPlantSeeds, 6);
+        meta.zombieDeck = BuildDeckText(mZombieSeeds, 6);
+        meta.createdAt = timeText;
+        meta.fileName = StrFormat("replay_%lld_%s_vs_%s.rpl", static_cast<long long>(now), meta.hostName.c_str(), meta.guestName.c_str());
+        for (char &c : meta.fileName) {
+            if (c == ' ' || c == '/' || c == '\\' || c == ':') {
+                c = '_';
+            }
+        }
+        const bool saved = replay::SaveCurrentMatchReplay(meta);
+        LOG_INFO("[REPLAY] save button clicked, saved={}, file={}", saved, meta.fileName);
+        if (saved && gLawnApp != nullptr) {
+            HideReplayButton(true);
+            mDrawReplaySaved = true;
+        }
+        return;
+    }
+
     //    if (theId == VSResultsMenu::VSResultsMenu_Back) {
     //        mResultsButtonId = theId;
     //        OnExit();
     //        return;
     //    }
 
-    if (gIsServerModeSpectator && (gTcpConnected || gTcpServerSocket >= 0 || gTcpClientSocket >= 0) && theId == VSResultsMenu::VSResultsMenu_Quit_VS) {
+    if ((gIsServerModeSpectator || gIsReplayMode) && (gTcpConnected || gTcpServerSocket >= 0 || gTcpClientSocket >= 0) && theId == VSResultsMenu::VSResultsMenu_Quit_VS) {
         if (gTcpServerSocket >= 0) {
             shutdown(gTcpServerSocket, SHUT_RDWR);
             close(gTcpServerSocket);
@@ -129,6 +250,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
         gIsServerModeNetplay = false;
         gServerModeTransport = ServerModeTransport::NONE;
         gIsServerModeSpectator = false;
+        gIsReplayMode = false;
         gSecondPlayerName[0] = '\0';
         gServerHostName[0] = '\0';
         netplay::ClearSendBuffer();
@@ -153,6 +275,10 @@ void VSResultsMenu::ButtonDepress(int theId) {
     }
 
     if (gTcpClientSocket >= 0) {
+        if (theId == VSResultsMenu::VSResultsMenu_Play_Again || theId == VSResultsMenu::VSResultsMenu_Quit_VS) {
+            replay::ResetRecorder();
+            LOG_INFO("[REPLAY] reset recorder on send EVENT_SERVER_VSRESULT_BUTTON_DEPRESS id={}", theId);
+        }
         U8_Event event = {{EventType::EVENT_SERVER_VSRESULT_BUTTON_DEPRESS}, uint8_t(theId)};
         netplay::PutEvent(event);
     }
@@ -165,7 +291,7 @@ void VSResultsMenu::Draw(Graphics *g) {
     old_VSResultsMenu_Draw(this, g);
 
     // 观战者不绘制这些
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
 
@@ -173,27 +299,60 @@ void VSResultsMenu::Draw(Graphics *g) {
         mCheckboxController->DrawCheckboxLabel(g);
     }
 
-    if (gTcpConnected) {
-        switch (gVSResultRequestState) {
-            case VSResultsMenu::VSResultsMenu_Play_Again:
-                TodDrawString(g, "[VS_RESULT_REMIND_HOST_PLAY_AGAIN]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
-                break;
-            default:
-                break;
+    if (mDrawReplaySaved) {
+        TodDrawString(g, "[REPLAY_SAVED]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
+    } else {
+        if (gTcpConnected) {
+            switch (gVSResultRequestState) {
+                case VSResultsMenu::VSResultsMenu_Play_Again:
+                    TodDrawString(g, "[VS_RESULT_REMIND_HOST_PLAY_AGAIN]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
+                    break;
+                default:
+                    break;
+            }
         }
-    }
 
-    if (gTcpClientSocket >= 0) {
-        switch (gVSResultRequestState) {
-            case VSResultsMenu::VSResultsMenu_Play_Again:
-                TodDrawString(g, "[VS_RESULT_OPPONENT_REQUEST_PLAY_AGAIN]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
-                break;
-            default:
-                break;
+        if (gTcpClientSocket >= 0) {
+            switch (gVSResultRequestState) {
+                case VSResultsMenu::VSResultsMenu_Play_Again:
+                    TodDrawString(g, "[VS_RESULT_OPPONENT_REQUEST_PLAY_AGAIN]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
 
+void VSResultsMenu::ShowReplayButton() {
+    if (mIsReplaySession) {
+        return;
+    }
+
+    GameButton *mQuitButton = (GameButton *)FindWidget(VSResultsMenu_Quit_VS);
+    if (mQuitButton == nullptr) {
+        return;
+    }
+    mSaveReplayButton = MakeButton(VSResultsMenu_Save_Replay, this, this, "[SAVE_REPLAY]");
+    mSaveReplayButton->mDrawStoneButton = false;
+    mSaveReplayButton->mButtonImage = mQuitButton->mButtonImage;
+    mSaveReplayButton->mOverImage = mQuitButton->mOverImage;
+    mSaveReplayButton->mDownImage = mQuitButton->mDownImage;
+
+
+    if (mSaveReplayButton != nullptr) {
+        //            mSaveReplayButton->mTextOffsetX = -2;
+        //            mSaveReplayButton->mTextOffsetY = -4;
+        //            mSaveReplayButton->mTextDownOffsetX = 1;
+        //            mSaveReplayButton->mTextDownOffsetY = 1;
+        mSaveReplayButton->SetFont(Sexy::FONT_DWARVENTODCRAFT24);
+        (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
+        (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
+        mSaveReplayButton->mLabelJustify = 2;
+        mSaveReplayButton->GameButton::Resize(-60, mQuitButton->mY, mQuitButton->mWidth, mQuitButton->mHeight);
+        AddWidget(mSaveReplayButton);
+    }
+}
 
 void VSResultsMenu::DrawInfoBox(Sexy::Graphics *a2, int a3) {
     Sexy::Widget *slotWidget = FindWidget(a3 + 2);
@@ -214,10 +373,15 @@ void VSResultsMenu::DrawInfoBox(Sexy::Graphics *a2, int a3) {
     int *playerRecord = GetPlayerRecord((unsigned int)this76Side);
     DefaultProfileMgr *profileMgr = gLawnApp->mProfileMgr;
     PlayerInfo *profileObj = gLawnApp->mPlayerInfo;
-    if (profileMgr != nullptr) {
-        profileObj = profileMgr->GetProfile(profileObj->mName, this76Side);
-    }
-    if (playerRecord == nullptr || profileObj == nullptr) {
+    if (!mIsReplaySession) {
+        if (profileMgr != nullptr) {
+            profileObj = profileMgr->GetProfile(profileObj->mName, this76Side);
+        }
+        if (playerRecord == nullptr || profileObj == nullptr) {
+            a2->PopState();
+            return;
+        }
+    } else if (playerRecord == nullptr) {
         a2->PopState();
         return;
     }
@@ -228,20 +392,25 @@ void VSResultsMenu::DrawInfoBox(Sexy::Graphics *a2, int a3) {
     a2->DrawImage(isZombieSlot ? Sexy::IMAGE_VS_INFO_BOX_ZOMBIES_OVERLAY : Sexy::IMAGE_VS_INFO_BOX_PLANTS_OVERLAY, 0, 0);
     pvzstl::string playerFmt = TodStringTranslate("[PLAYER_FMT]");
     pvzstl::string playerLabel = StrFormat(playerFmt.c_str(), a3 + 1);
-    if ((gTcpConnected || gTcpClientSocket >= 0) && gSecondPlayerName[0] != '\0') {
-        const char *hostName = (gServerHostName[0] != '\0') ? gServerHostName : gLawnApp->mPlayerInfo->mName;
-        const char *guestName = gSecondPlayerName;
+    const char *replayHostName = (gReplayHostName[0] != '\0') ? gReplayHostName : gServerHostName;
+    const char *replayGuestName = (gReplayGuestName[0] != '\0') ? gReplayGuestName : gSecondPlayerName;
+    if ((gTcpConnected || gTcpClientSocket >= 0 || mIsReplaySession) && ((mIsReplaySession && replayGuestName[0] != '\0') || (!mIsReplaySession && gSecondPlayerName[0] != '\0'))) {
+        const char *hostName =
+            mIsReplaySession ? ((replayHostName[0] != '\0') ? replayHostName : gLawnApp->mPlayerInfo->mName) : ((gServerHostName[0] != '\0') ? gServerHostName : gLawnApp->mPlayerInfo->mName);
+        const char *guestName = mIsReplaySession ? replayGuestName : gSecondPlayerName;
         playerLabel = (this76Side == 0) ? hostName : guestName;
     }
 
     a2->SetColor(Sexy::Color::White);
     a2->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
     a2->DrawString(playerLabel, 42, 44);
-    int winStreak = playerRecord[3];
-    profileObj->mWinStreak = winStreak;
-    if (winStreak > 1) {
-        pvzstl::string streakFmt = TodStringTranslate("[WIN_STREAK_FMT]");
-        a2->DrawString(StrFormat(streakFmt.c_str(), winStreak), 263, 78);
+    if (!mIsReplaySession) {
+        int winStreak = playerRecord[3];
+        profileObj->mWinStreak = winStreak;
+        if (winStreak > 1) {
+            pvzstl::string streakFmt = TodStringTranslate("[WIN_STREAK_FMT]");
+            a2->DrawString(StrFormat(streakFmt.c_str(), winStreak), 263, 78);
+        }
     }
     float trophyX = unk3[0];
     float trophyY = unk3[1];
@@ -266,28 +435,36 @@ void VSResultsMenu::DrawInfoBox(Sexy::Graphics *a2, int a3) {
             sparkle->Draw(a2);
         }
     }
-    float plantTrophyX = (winnerSide == -1) ? 117.0f : 192.0f;
-    int plantWins = playerRecord[1];
-    if (plantWins > 0) {
-        float step = 196.0f / (float)plantWins;
-        if (step > 52.0f) {
-            step = 52.0f;
+    if (!mIsReplaySession) {
+        float plantTrophyX = (winnerSide == -1) ? 117.0f : 192.0f;
+        int plantWins = playerRecord[1];
+        if (plantWins > 0) {
+            float step = 196.0f / (float)plantWins;
+            if (step > 52.0f) {
+                step = 52.0f;
+            }
+            for (int i = 0; i < plantWins; i++) {
+                a2->DrawImage(Sexy::IMAGE_MP_PLANT_TROPHY, (int)plantTrophyX, 82, 40, 40);
+                plantTrophyX += step;
+            }
         }
-        for (int i = 0; i < plantWins; i++) {
-            a2->DrawImage(Sexy::IMAGE_MP_PLANT_TROPHY, (int)plantTrophyX, 82, 40, 40);
-            plantTrophyX += step;
+        float zombieTrophyX = (winnerSide == -1) ? 117.0f : 192.0f;
+        int zombieWins = playerRecord[2];
+        if (zombieWins > 0) {
+            float step = 196.0f / (float)zombieWins;
+            if (step > 52.0f) {
+                step = 52.0f;
+            }
+            for (int i = 0; i < zombieWins; i++) {
+                a2->DrawImage(Sexy::IMAGE_MP_ZOMBIE_TROPHY, (int)zombieTrophyX, 124, 40, 40);
+                zombieTrophyX += step;
+            }
         }
-    }
-    float zombieTrophyX = (winnerSide == -1) ? 117.0f : 192.0f;
-    int zombieWins = playerRecord[2];
-    if (zombieWins > 0) {
-        float step = 196.0f / (float)zombieWins;
-        if (step > 52.0f) {
-            step = 52.0f;
-        }
-        for (int i = 0; i < zombieWins; i++) {
-            a2->DrawImage(Sexy::IMAGE_MP_ZOMBIE_TROPHY, (int)zombieTrophyX, 124, 40, 40);
-            zombieTrophyX += step;
+    } else {
+        if (winnerSide == 0) {
+            a2->DrawImage(Sexy::IMAGE_MP_PLANT_TROPHY, 192, 82, 40, 40);
+        } else if (winnerSide == 1) {
+            a2->DrawImage(Sexy::IMAGE_MP_ZOMBIE_TROPHY, 192, 124, 40, 40);
         }
     }
     a2->PopState();

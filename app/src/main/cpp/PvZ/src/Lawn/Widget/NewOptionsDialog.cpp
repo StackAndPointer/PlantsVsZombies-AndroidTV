@@ -28,7 +28,7 @@
 
 void NewOptionsDialog::ButtonDepress(int buttonId) {
     if (buttonId == 5 && (gTcpConnected || gTcpClientSocket >= 0)) {
-        if (gIsServerModeSpectator) {
+        if (gIsServerModeSpectator || gIsReplayMode) {
             mApp->PlaySample(Sexy::SOUND_BUZZER);
             return;
         }

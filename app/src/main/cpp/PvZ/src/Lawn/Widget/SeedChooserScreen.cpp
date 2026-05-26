@@ -581,14 +581,14 @@ void SeedChooserScreen::ClickedSeedInBank(ChosenSeed *theChosenSeed, unsigned in
 }
 
 void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     old_SeedChooserScreen_OnKeyDown(this, theKey, thePlayerIndex);
 }
 
 void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerIndex, unsigned int theModifierFlag) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     // 修复结盟2P无法选择模仿者
@@ -914,7 +914,7 @@ void SeedChooserScreen::ButtonPress(int theId) {
 }
 
 void SeedChooserScreen::ButtonDepress(int theId) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     if (mApp->IsVSMode() && !IsLocalChooserInputAllowed(this)) {
@@ -1101,7 +1101,7 @@ SeedType SeedChooserScreen::GetZombieIndexBySeedType(SeedType theSeedType) {
 }
 
 void SeedChooserScreen::MouseMove(int x, int y) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     if (mApp->IsVSMode() && !IsLocalChooserInputAllowed(this)) {
@@ -1149,7 +1149,7 @@ void SeedChooserScreen::MouseMove(int x, int y) {
 }
 
 void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     NormalizeLocalPoint(this, x, y);
@@ -1287,7 +1287,7 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
 }
 
 void SeedChooserScreen::MouseDrag(int x, int y) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     if (mApp->IsVSMode() && !IsLocalChooserInputAllowed(this)) {
@@ -1369,7 +1369,7 @@ void SeedChooserScreen::MouseDrag(int x, int y) {
 }
 
 void SeedChooserScreen::MouseUp(int x, int y) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         if (gSeedChooserTouchOwner == this) {
             gSeedChooserTouchState = SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_NONE;
             gSeedChooserTouchOwner = nullptr;
@@ -1758,14 +1758,19 @@ void SeedChooserScreen::Draw(Graphics *g) {
 
             // 联机光标上绘制双方玩家昵称
             char *firstPlayerName = mBoard->mApp->mPlayerInfo->mName;
-            if (gTcpConnected || gTcpClientSocket >= 0) {
+            if (gTcpConnected || gTcpClientSocket >= 0 || gIsReplayMode) {
                 const bool localIsClient = gTcpConnected;
                 const bool hasServerHostName = (gServerHostName[0] != '\0');
                 const bool hasSecondPlayerName = (gSecondPlayerName[0] != '\0');
+                const bool hasReplayHostName = (gReplayHostName[0] != '\0');
+                const bool hasReplayGuestName = (gReplayGuestName[0] != '\0');
 
                 const char *hostName = nullptr;
                 const char *guestName = nullptr;
-                if (hasServerHostName || gIsServerModeSpectator) {
+                if (gIsReplayMode) {
+                    hostName = hasReplayHostName ? gReplayHostName : (hasServerHostName ? gServerHostName : "Host");
+                    guestName = hasReplayGuestName ? gReplayGuestName : (hasSecondPlayerName ? gSecondPlayerName : "Guest");
+                } else if (hasServerHostName || gIsServerModeSpectator) {
                     hostName = hasServerHostName ? gServerHostName : "Host";
                     guestName = hasSecondPlayerName ? gSecondPlayerName : "Guest";
                 } else if (hasSecondPlayerName) {

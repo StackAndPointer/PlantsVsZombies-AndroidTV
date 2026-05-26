@@ -80,7 +80,7 @@ void VSSetupMenu::DrawOverlay(Graphics *g) {
         TodDrawString(g, "[VS_PICK_BATTLES]", 350, 110, Sexy::FONT_DWARVENTODCRAFT18, Color::White, DrawStringJustification::DS_ALIGN_LEFT);
     }
 
-    if (!gIsServerModeSpectator && drawTipArrowAlphaCounter > 200) {
+    if (!(gIsServerModeSpectator || gIsReplayMode) && drawTipArrowAlphaCounter > 200) {
         int aAlpha = TodAnimateCurve(0, 100, drawTipArrowAlphaCounter % 100, 50, 255, TodCurves::CURVE_BOUNCE);
         g->SetColorizeImages(true);
         g->SetColor(Color(255, 255, 255, aAlpha));
@@ -101,7 +101,7 @@ void VSSetupMenu::DrawOverlay(Graphics *g) {
         g->SetColorizeImages(false);
     }
 
-    if (!gIsServerModeSpectator && gVSSetupRequestState != 0 && mState != VSSetupState::VS_SETUP_STATE_CUSTOM_BATTLE) {
+    if (!(gIsServerModeSpectator || gIsReplayMode) && gVSSetupRequestState != 0 && mState != VSSetupState::VS_SETUP_STATE_CUSTOM_BATTLE) {
 
         // ======================
         // 我是 guest：已提醒房主...
@@ -241,7 +241,7 @@ void VSSetupMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
 }
 
 void VSSetupMenu::MouseDown(int x, int y, int theCount) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     if (mState == VS_SETUP_STATE_SIDES) {
@@ -267,7 +267,7 @@ void VSSetupMenu::MouseDown(int x, int y, int theCount) {
 }
 
 void VSSetupMenu::MouseDrag(int x, int y) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     if (touchingOnWhichController == 1) {
@@ -293,7 +293,7 @@ void VSSetupMenu::MouseDrag(int x, int y) {
 }
 
 void VSSetupMenu::MouseUp(int x, int y, int theCount) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
 
@@ -841,6 +841,10 @@ void VSSetupMenu::ButtonPress(int theId) {
 }
 
 void VSSetupMenu::ButtonDepress(int theId) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
+        LOG_INFO("[VSSETUP] ignore local ButtonDepress in read-only mode id={}", theId);
+        return;
+    }
     if (gVSSetupRequestState == theId) {
         gVSSetupRequestState = 0;
     }

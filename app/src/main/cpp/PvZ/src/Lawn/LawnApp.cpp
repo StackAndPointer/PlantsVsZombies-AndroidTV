@@ -33,6 +33,7 @@
 #include "PvZ/Lawn/Widget/VSResultsMenu.h"
 #include "PvZ/Lawn/Widget/VSSetupMenu.h"
 #include "PvZ/Lawn/Widget/WaitForSecondPlayerDialog.h"
+#include "PvZ/ReplaySystem.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonWidget.h"
 #include "PvZ/SexyAppFramework/Widget/Dialog.h"
@@ -264,6 +265,9 @@ void LawnApp::ClearSecondPlayer() {
     gIsServerModeNetplay = false;
     gServerModeTransport = ServerModeTransport::NONE;
     gIsServerModeSpectator = false;
+    gIsReplayMode = false;
+    gReplayHostName[0] = '\0';
+    gReplayGuestName[0] = '\0';
     if (gTcpConnected) {
         close(gTcpServerSocket);
         gTcpServerSocket = -1;
@@ -288,6 +292,8 @@ void LawnApp::ClearSecondPlayer() {
     ResetNetDelayState();
     clientRecvBuffer.clear();
     serverRecvBuffer.clear();
+    replay::ResetRecorder();
+    replay::StopPlayback();
     old_LawnApp_ClearSecondPlayer(this);
 }
 
@@ -308,7 +314,7 @@ void LawnApp::DoSettingsDialog(bool theIsModal) {
 
 void LawnApp::DoNewOptions(bool theFromGameSelector, unsigned int a3) {
     old_LawnApp_DoNewOptions(this, theFromGameSelector, a3);
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         if (auto *dialog = GetDialog(Dialogs::DIALOG_NEWOPTIONS)) {
 
             if (auto *concedeButton = dialog->FindWidget(5)) {
@@ -351,6 +357,7 @@ int LawnApp::GamepadToPlayerIndex(unsigned int thePlayerIndex) {
 
 
 void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
+    replay::RecordPacket(ReplayPacketDir::InboundClient, buf, bufSize, static_cast<std::uint32_t>(gNetPingNowTick));
     clientRecvBuffer.append_range(std::views::counted(buf, bufSize));
     size_t offset = 0;
 
@@ -412,6 +419,7 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
 }
 
 void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
+    replay::RecordPacket(ReplayPacketDir::InboundServer, buf, bufSize, static_cast<std::uint32_t>(gNetPingNowTick));
     serverRecvBuffer.append_range(std::views::counted(buf, bufSize));
     size_t offset = 0;
 
@@ -446,7 +454,7 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
             }
         } else if (event->type >= EVENT_CLIENT_BOARD_TOUCH_DOWN && event->type < NUM_EVENT_BOARD) {
             if (mBoard != nullptr) {
-                const bool spectatorClientTouch = gIsServerModeSpectator
+                const bool spectatorClientTouch = (gIsServerModeSpectator || gIsReplayMode)
                     && (event->type == EVENT_CLIENT_BOARD_TOUCH_DOWN || event->type == EVENT_CLIENT_BOARD_TOUCH_DRAG || event->type == EVENT_CLIENT_BOARD_TOUCH_UP
                         || event->type == EVENT_CLIENT_BOARD_PAUSE || event->type == EVENT_CLIENT_BOARD_CONCEDE);
                 if (spectatorClientTouch) {
@@ -458,7 +466,7 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
             }
         } else if (event->type >= EVENT_SERVER_VSSETUPMENU_BUTTON_DEPRESS && event->type < NUM_EVENT_VSSETUPMENU) {
             if (mVSSetupMenu != nullptr) {
-                const bool spectatorClientVsSetupEvent = gIsServerModeSpectator
+                const bool spectatorClientVsSetupEvent = (gIsServerModeSpectator || gIsReplayMode)
                     && (event->type == EVENT_CLIENT_VSSETUPMENU_MOVE_CONTROLLER || event->type == EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED || event->type == EVENT_CLIENT_SEEDCHOOSER_BAN_SEED
                         || event->type == EVENT_CLIENT_SEEDCHOOSER_BUTTON_DEPRESS);
                 if (spectatorClientVsSetupEvent) {
@@ -489,11 +497,14 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
 
 
 void LawnApp::UpdateFrames() {
-    if (gTcpClientSocket >= 0 || gTcpConnected) {
+    if (gTcpClientSocket >= 0 || gTcpConnected || replay::IsPlaybackActive()) {
         ++gNetPingNowTick;
         TickNetDelayAwaitingPong();
-        SendPeriodicNetPing();
+        if (!replay::IsPlaybackActive()) {
+            SendPeriodicNetPing();
+        }
     }
+    replay::TickPlayback();
 
     std::byte buf[1024];
 
@@ -515,6 +526,9 @@ void LawnApp::UpdateFrames() {
                 serverRecvBuffer.clear();
                 netplay::ClearSendBuffer();
                 ResetNetDelayState();
+                if (mVSResultsMenu != nullptr) {
+                    mVSResultsMenu->HideReplayButton(true);
+                }
                 if (!GetDialog(DIALOG_WAIT_FOR_SECOND_PLAYER)) {
                     if (gTcpListenSocket >= 0) {
                         close(gTcpListenSocket);
@@ -570,6 +584,9 @@ void LawnApp::UpdateFrames() {
                 serverRecvBuffer.clear();
                 netplay::ClearSendBuffer();
                 ResetNetDelayState();
+                if (mVSResultsMenu != nullptr) {
+                    mVSResultsMenu->HideReplayButton(true);
+                }
                 LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[CONNECTION_CLOSED]", "[REENTER_ROOM]", "[DIALOG_BUTTON_OK]", "", 3);
                 break;
             } else {
@@ -1204,6 +1221,10 @@ void LawnApp::ShowVSResultsScreen() {
     if (gIsServerModeNetplay) {
         mVSResultsMenu->mCheckboxController = new VSResultsCheckboxController();
         mVSResultsMenu->mCheckboxController->InitCheckboxWidget(mVSResultsMenu);
+    }
+    const bool connected = (gTcpConnected || gTcpClientSocket >= 0);
+    if (connected) {
+        mVSResultsMenu->ShowReplayButton();
     }
 }
 

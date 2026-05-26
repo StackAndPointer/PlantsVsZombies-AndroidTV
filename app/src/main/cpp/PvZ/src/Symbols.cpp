@@ -785,6 +785,7 @@ bool LoadGameMain() {
     VSResultsMenu_DrawAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu4DrawEPN4Sexy8GraphicsE");
     VSResultsMenu_DrawOverlayAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu11DrawOverlayEPN4Sexy8GraphicsE");
     VSResultsMenu_DrawInfoBoxAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu11DrawInfoBoxEPN4Sexy8GraphicsEi");
+    VSResultsMenu_AddedToManagerAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidget14AddedToManagerEPNS_13WidgetManagerE");
     VSResultsMenu_ButtonDepressAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu13ButtonDepressEi");
     VSResultsMenu_InitFromBoardAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu13InitFromBoardEP5Board");
     VSResultsMenu_GetPlayerRecordAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu15GetPlayerRecordEj");
@@ -1108,6 +1109,7 @@ bool LoadGameMain() {
     Sexy_MenuWidget_DrawAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidget4DrawEPNS_8GraphicsE");
     Sexy_MenuWidget_ExitAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidget4ExitEv");
     Sexy_Widget_DeferOverlayAddr = libGameMain.GetSymbol("_ZN4Sexy6Widget12DeferOverlayEi");
+    Sexy_Widget_SetColorAddr = libGameMain.GetSymbol("_ZN4Sexy6Widget8SetColorEiRKNS_5ColorE");
     Sexy_SexyMatrix3_SexyMatrix3Addr = libGameMain.GetSymbol("_ZN4Sexy11SexyMatrix3C2Ev");
 
 

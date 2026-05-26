@@ -385,7 +385,13 @@ void ChallengeScreen::Draw(Sexy::Graphics *g) {
 
         Color aColor = Color(0, 205, 0, 255);
 
-        if (gIsServerModeSpectator) {
+        if (gIsReplayMode) {
+            if (gNetDelayNow == 0) {
+                TodDrawString(g, "[REPLAY]", 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
+            } else {
+                TodDrawString(g, StrFormat("[REPLAY] %dms", gNetDelayNow * 10), 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
+            }
+        } else if (gIsServerModeSpectator) {
 
             if (gNetDelayNow == 0) {
                 pvzstl::string status = TodStringTranslate(gIsServerModeSpectator ? "[SPECTATE]" : "[VS_STATUS_IN_ROOM]");
@@ -411,7 +417,7 @@ void ChallengeScreen::Draw(Sexy::Graphics *g) {
             }
         }
 
-        if (!gIsServerModeSpectator && gChallengeScreenRequestState != 0) {
+        if (!gIsServerModeSpectator && !gIsReplayMode && gChallengeScreenRequestState != 0) {
             // ======================
             // 我是 guest：已提醒房主...
             // (gTcpConnected == true 代表我作为 client 连接到 host)
@@ -562,7 +568,7 @@ constexpr int mPageBottom = 555;
 } // namespace
 
 void ChallengeScreen::MouseDown(int x, int y, int theClickCount) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     if (y > mPageBottom || y < mPageTop) {
@@ -587,7 +593,7 @@ void ChallengeScreen::MouseDown(int x, int y, int theClickCount) {
 }
 
 void ChallengeScreen::MouseDrag(int x, int y) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     if (gTouchOutSide)
@@ -612,7 +618,7 @@ void ChallengeScreen::MouseDrag(int x, int y) {
 }
 
 void ChallengeScreen::MouseUp(int x, int y) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         gTouchOutSide = false;
         gChallengeItemMoved = false;
         return;

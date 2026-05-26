@@ -20,6 +20,8 @@
 #ifndef PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H
 #define PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H
 
+#include "PvZ/Lawn/Board/Board.h"
+#include "PvZ/Lawn/Board/SeedBank.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/Common/LawnCommon.h"
 #include "PvZ/Lawn/LawnApp.h"
@@ -39,6 +41,7 @@ public:
         VSResultsMenu_Play_Again = 0,
         VSResultsMenu_Quit_VS = 1,
         VSResultsMenu_Back,
+        VSResultsMenu_Save_Replay = 1200,
     };
 
     static int (&msPlayerRecords)[2][5];
@@ -53,14 +56,24 @@ public:
     ParticleSystemID mSparkleParticleID; // 82
     ParticleSystemID mSmokeParticleID;   // 83
     int mUpdateCounter;                  // 84
+    int mBoardMainCounter = 0;
+    BackgroundType mBoardBackground = BackgroundType::BACKGROUND_1_DAY;
+    SeedType mPlantSeeds[6] = {SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE};
+    SeedType mZombieSeeds[6] = {SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE};
+    bool mIsReplaySession = false;
+    bool mDrawReplaySaved = false;
     class VSResultsCheckboxController *mCheckboxController = nullptr;
     NewLawnButton *mBackButton = nullptr;
+    GameButton *mSaveReplayButton = nullptr;
+
 
     void Update();
     void OnExit();
     void ButtonDepress(int theId);
     void Draw(Sexy::Graphics *g);
     void DrawInfoBox(Sexy::Graphics *a2, int a3);
+    void HideReplayButton(bool forceHide);
+    void AddedToManager(Sexy::WidgetManager *manager);
 
     void processClientEvent(const BaseEvent *event);
     void processServerEvent(const BaseEvent *event);
@@ -70,12 +83,11 @@ public:
     }
     ~VSResultsMenu() = delete;
 
-    void InitFromBoard(class Board *board) {
-        reinterpret_cast<void (*)(VSResultsMenu *, Board *)>(VSResultsMenu_InitFromBoardAddr)(this, board);
-    }
+    void InitFromBoard(class Board *board);
     int *GetPlayerRecord(unsigned int playerIndex) {
         return reinterpret_cast<int *(*)(VSResultsMenu *, unsigned int)>(VSResultsMenu_GetPlayerRecordAddr)(this, playerIndex);
     }
+    void ShowReplayButton();
 
 protected:
     friend void InitHookFunction();
@@ -152,5 +164,8 @@ inline void (*old_VSResultsMenu_Draw)(VSResultsMenu *, Sexy::Graphics *);
 inline void (*old_VSResultsMenu_DrawInfoBox)(VSResultsMenu *a, Sexy::Graphics *a2, int a3);
 
 inline void (*old_VSResultsMenu_Constructor)(VSResultsMenu *);
+
+inline void (*old_VSResultsMenu_AddedToManager)(VSResultsMenu *, Sexy::WidgetManager *);
+
 
 #endif // PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H

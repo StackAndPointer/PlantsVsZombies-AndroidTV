@@ -505,10 +505,10 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
         return;
     }
     // 联机光标上绘制双方玩家昵称
-    if (gTcpConnected || gTcpClientSocket >= 0) {
-        const char *hostName = (gServerHostName[0] != '\0') ? gServerHostName : mBoard->mApp->mPlayerInfo->mName;
-        const char *guestName = (gSecondPlayerName[0] != '\0') ? gSecondPlayerName : "Guest";
-        if (mPlayerIndex1 == 0 && gSecondPlayerName[0] != '\0') {
+    if (gTcpConnected || gTcpClientSocket >= 0 || gIsReplayMode) {
+        const char *hostName = gIsReplayMode ? ((gReplayHostName[0] != '\0') ? gReplayHostName : gServerHostName) : ((gServerHostName[0] != '\0') ? gServerHostName : mBoard->mApp->mPlayerInfo->mName);
+        const char *guestName = gIsReplayMode ? ((gReplayGuestName[0] != '\0') ? gReplayGuestName : gSecondPlayerName) : ((gSecondPlayerName[0] != '\0') ? gSecondPlayerName : "Guest");
+        if (mPlayerIndex1 == 0 && guestName[0] != '\0') {
             Image *tmp1 = Sexy::IMAGE_CURSOR_P1_TEXT;
             Sexy::IMAGE_CURSOR_P1_TEXT = IMAGE_BLANK;
             old_GamepadControls_Draw(this, g);
@@ -518,7 +518,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
             Sexy::IMAGE_CURSOR_P1_TEXT = tmp1;
             return;
         }
-        if (mPlayerIndex1 == 1 && gSecondPlayerName[0] != '\0') {
+        if (mPlayerIndex1 == 1 && guestName[0] != '\0') {
             Image *tmp = Sexy::IMAGE_CURSOR_P2_TEXT;
             Sexy::IMAGE_CURSOR_P2_TEXT = IMAGE_BLANK;
             old_GamepadControls_Draw(this, g);
@@ -539,7 +539,8 @@ void GamepadControls::Update(float a2) {
     int aGridCenterPosX = mBoard->GridToPixelX(aGridX, aGridY) + mBoard->GridCellWidth(aGridX, aGridY) / 2;
     int aGridCenterPosY = mBoard->GridToPixelY(aGridX, aGridY) + mBoard->GridCellHeight(aGridX, aGridY) / 2;
     // 键盘双人模式 平滑移动光标
-    if (isKeyboardTwoPlayerMode) {
+    const bool readOnlyReplayOrSpectate = (gIsReplayMode || gIsServerModeSpectator);
+    if (isKeyboardTwoPlayerMode && !readOnlyReplayOrSpectate) {
         int aGamepadIndex = mGameObject->mApp->PlayerToGamepadIndex(mPlayerIndex1);
         if (aGamepadIndex == 0) {
             mGamepadVelocityLeftX = gGamepadP1VelX;
@@ -562,7 +563,7 @@ void GamepadControls::Update(float a2) {
         }
     }
 
-    if (positionAutoFix && !anApp->IsWhackAZombieLevel() && anApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM && gTcpServerSocket == -1) {
+    if (!readOnlyReplayOrSpectate && positionAutoFix && !anApp->IsWhackAZombieLevel() && anApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM && gTcpServerSocket == -1) {
         if (this == mBoard->mGamepadControls[0] && gPlayerIndex != TouchPlayerIndex::TOUCHPLAYER_PLAYER1 && gPlayerIndexSecond != TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             mCursorPositionX += (aGridCenterPosX - mCursorPositionX) / 10;
             mCursorPositionY += (aGridCenterPosY - mCursorPositionY) / 10;

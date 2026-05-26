@@ -21,6 +21,7 @@
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/ReplaySystem.h"
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -71,6 +72,7 @@ static std::string UrlEncode(std::string_view s) {
 
 void netplay::details::PutEventData(const std::byte *data, std::size_t n) {
     sendBuffer.append_range(std::views::counted(data, n));
+    replay::RecordPacket(ReplayPacketDir::Outbound, data, n, static_cast<std::uint32_t>(gNetPingNowTick));
 }
 
 bool netplay::FlushSendBuffer(int socket) {

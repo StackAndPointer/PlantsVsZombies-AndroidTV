@@ -788,6 +788,7 @@ inline void *VSResultsMenu_DrawAddr;
 inline void *VSResultsMenu_DrawOverlayAddr;
 inline void *VSResultsMenu_DrawInfoBoxAddr;
 inline void *VSResultsMenu_ButtonDepressAddr;
+inline void *VSResultsMenu_AddedToManagerAddr;
 inline void *VSResultsMenu_InitFromBoardAddr;
 inline void *VSResultsMenu_GetPlayerRecordAddr;
 
@@ -1110,6 +1111,7 @@ inline void *Sexy_WidgetContainer_MarkDirtyAddr;
 inline void *Sexy_MenuWidget_DrawAddr;
 inline void *Sexy_MenuWidget_ExitAddr;
 inline void *Sexy_Widget_DeferOverlayAddr;
+inline void *Sexy_Widget_SetColorAddr;
 inline void *Sexy_SexyMatrix3_SexyMatrix3Addr;
 inline void *Sexy_ButtonWidget__constructorAddr;
 inline void *Sexy_ButtonWidget__destructorAddr;

@@ -47,7 +47,8 @@ public:
     TextLayout mTextLayout; // 74 ~ 157
     int unkMem1[9];         // 158 ~ 166
     Insets mInsets;         // 167 ~ 170
-    int unkMems2[2];        // 171 ~ 172
+    int mLabelJustify;      // 171
+    int unkMems172;         // 172
     Image *mButtonImage;    // 173
     Image *mOverImage;      // 174
     Image *mDownImage;      // 175

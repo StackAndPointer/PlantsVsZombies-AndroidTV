@@ -1437,7 +1437,7 @@ void Board::processClientEvent(const BaseEvent *event) {
     switch (event->type) {
         case EVENT_CLIENT_BOARD_TOUCH_DOWN: {
             auto *event1 = static_cast<const I16I16_Event *>(event);
-            if (gIsServerModeSpectator) {
+            if (gIsServerModeSpectator || gIsReplayMode) {
                 GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
                 SeedBank *clientSeedBank = clientGamepadControls ? clientGamepadControls->GetSeedBank() : nullptr;
                 bool inClientSeedBank = clientSeedBank != nullptr && clientSeedBank->ContainsPoint(event1->data1, event1->data2);
@@ -1455,7 +1455,7 @@ void Board::processClientEvent(const BaseEvent *event) {
         } break;
         case EVENT_CLIENT_BOARD_TOUCH_DRAG: {
             auto *event1 = static_cast<const I16I16_Event *>(event);
-            if (gIsServerModeSpectator) {
+            if (gIsServerModeSpectator || gIsReplayMode) {
                 ClientMouseDragLocal(event1->data1, event1->data2);
                 break;
             }
@@ -1466,7 +1466,7 @@ void Board::processClientEvent(const BaseEvent *event) {
         } break;
         case EVENT_CLIENT_BOARD_TOUCH_UP: {
             auto *event1 = static_cast<const I16I16_Event *>(event);
-            if (gIsServerModeSpectator) {
+            if (gIsServerModeSpectator || gIsReplayMode) {
                 ClientMouseUpLocal(event1->data1, event1->data2);
                 break;
             }
@@ -3162,7 +3162,13 @@ void Board::Draw(Sexy::Graphics *g) {
     if (mApp->IsVSMode()) {
         Color aColor = Color(0, 205, 0, 255);
 
-        if (gTcpConnected) {
+        if (gIsReplayMode) {
+            if (gNetDelayNow == 0) {
+                TodDrawString(g, "[REPLAY]", 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
+            } else {
+                TodDrawString(g, StrFormat("[REPLAY] %dms", gNetDelayNow * 10), 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
+            }
+        } else if (gTcpConnected) {
             if (gNetDelayNow == 0) {
                 pvzstl::string status = TodStringTranslate(gIsServerModeSpectator ? "[SPECTATE]" : "[VS_STATUS_IN_ROOM]");
                 TodDrawString(g, GetServerModeTransportSuffix() + std::move(status), 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
@@ -3219,7 +3225,7 @@ void Board::Pause(bool thePause) {
     LOG_DEBUG("Pause={}, remoteSync={}", thePause, gPauseSyncFromRemote);
 
     // Spectator is read-only: block any local pause/resume attempts.
-    if (gIsServerModeSpectator && !gPauseSyncFromRemote) {
+    if ((gIsServerModeSpectator || gIsReplayMode) && !gPauseSyncFromRemote) {
         LOG_DEBUG("Pause blocked for spectator");
         return;
     }
@@ -3657,7 +3663,7 @@ void Board::ClientMouseUpLocal(int x, int y) {
 
 // 触控落下手指在此处理
 void Board::MouseDown(int x, int y, int theClickCount) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
 
@@ -4074,7 +4080,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
 }
 
 void Board::MouseDrag(int x, int y) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     // Drag函数仅仅负责移动光标即可
@@ -4276,7 +4282,7 @@ void Board::__MouseDrag(int x, int y) {
 }
 
 void Board::MouseUp(int x, int y, int theClickCount) {
-    if (gIsServerModeSpectator) {
+    if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
     if (mApp->mGameMode != GAMEMODE_MP_VS) {
@@ -5147,7 +5153,7 @@ void Board::UpdateButtons() {
     }
 
     if (mApp->IsVSMode()) {
-        const bool spectatorReadOnly = gIsServerModeSpectator;
+        const bool spectatorReadOnly = gIsServerModeSpectator || gIsReplayMode;
         gBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
         gBoardMenuButton->mDisabled = spectatorReadOnly;
     } else {
@@ -5168,7 +5174,7 @@ void Board::UpdateButtons() {
 
 
 void Board::ButtonDepress(int theId) {
-    if (gIsServerModeSpectator && theId == 1000) {
+    if ((gIsServerModeSpectator || gIsReplayMode) && theId == 1000) {
         // Spectator cannot open pause/options menu.
         return;
     }

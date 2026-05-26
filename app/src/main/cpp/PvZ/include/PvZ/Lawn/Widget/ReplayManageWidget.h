@@ -19,9 +19,11 @@ public:
     ~ReplayManageWidget();
 
     void Draw(Sexy::Graphics *g);
+    void StartReplayByIndex(int index);
 
-private:
+public:
     LawnApp *mApp;
+    Sexy::ButtonListener *mButtonListener;
     ScrollWidget *mScrollWidget;
     ReplayListContentWidget *mScrollContent;
     GameButton *mCloseButton;

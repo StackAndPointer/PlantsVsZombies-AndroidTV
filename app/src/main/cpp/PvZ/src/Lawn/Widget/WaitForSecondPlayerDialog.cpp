@@ -598,7 +598,7 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
             } else if (mServerSpectating) {
                 mRightButton->SetLabel("[CLIENT]");
             } else if (inServerListMode) {
-                mRightButton->SetLabel("[Replay]");
+                mRightButton->SetLabel("[REPLAY_MANAGE]");
             } else {
                 mRightButton->SetLabel("[CREATE_ROOM_BUTTON]");
             }
@@ -1401,6 +1401,7 @@ void WaitForSecondPlayerDialog::processServerEvent(const BaseEvent *event) {
         default:
             break;
     }
+    const bool connected = (gTcpConnected || gTcpClientSocket >= 0);
 }
 
 

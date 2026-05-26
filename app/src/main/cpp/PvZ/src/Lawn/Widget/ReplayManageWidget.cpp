@@ -5,16 +5,41 @@
 #include "PvZ/Lawn/Widget/ReplayManageWidget.h"
 #include "Homura/HookUtils.h"
 #include "Homura/Logger.h"
+#include "PvZ/GlobalVariable.h"
+#include "PvZ/Lawn/Board/SeedPacket.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
+#include "PvZ/Lawn/Widget/WaitForSecondPlayerDialog.h"
+#include "PvZ/NetPlay.h"
+#include "PvZ/ReplaySystem.h"
 #include "PvZ/TodLib/Common/TodCommon.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 
 #include <array>
 #include <cassert>
 #include <cstring>
+#include <sstream>
+#include <vector>
 
 using namespace Sexy;
+
+namespace {
+constexpr int kReplayRowHeight = 140;
+
+std::vector<SeedType> ParseDeck(const std::string &text) {
+    std::vector<SeedType> out;
+    std::stringstream ss(text);
+    std::string token;
+    while (std::getline(ss, token, ',')) {
+        if (token.empty()) {
+            continue;
+        }
+        int v = std::atoi(token.c_str());
+        out.push_back(static_cast<SeedType>(v));
+    }
+    return out;
+}
+} // namespace
 
 
 void *gReplayManageWidgetVTable[122];
@@ -22,35 +47,16 @@ void *gReplayListContentWidgetVTable[122];
 
 class ReplayListContentWidget : public Widget {
 public:
-    struct ReplayItem {
-        const char *title;
-        const char *meta;
-    };
-    static constexpr ReplayItem kSamples[] = {
-        {"[Demo] Roof Endless Wave 40", "2026-05-20 21:38  |  16m 42s  |  Hard"},
-        {"[Demo] Pool VS Counterpush", "2026-05-21 19:03  |  08m 15s  |  P2P"},
-        {"[Demo] Speedrun Day Any%", "2026-05-24 13:27  |  05m 49s  |  No Pause"},
-        {"[Demo] Last Stand Economy", "2026-05-25 09:12  |  11m 06s  |  Replay"},
-        {"[Demo] Survival Fog Drill", "2026-05-25 23:41  |  09m 31s  |  Relay"},
-        {"[Demo] Roof Endless Wave 40", "2026-05-20 21:38  |  16m 42s  |  Hard"},
-        {"[Demo] Pool VS Counterpush", "2026-05-21 19:03  |  08m 15s  |  P2P"},
-        {"[Demo] Speedrun Day Any%", "2026-05-24 13:27  |  05m 49s  |  No Pause"},
-        {"[Demo] Last Stand Economy", "2026-05-25 09:12  |  11m 06s  |  Replay"},
-        {"[Demo] Survival Fog Drill", "2026-05-25 23:41  |  09m 31s  |  Relay"},
-        {"[Demo] Roof Endless Wave 40", "2026-05-20 21:38  |  16m 42s  |  Hard"},
-        {"[Demo] Pool VS Counterpush", "2026-05-21 19:03  |  08m 15s  |  P2P"},
-        {"[Demo] Speedrun Day Any%", "2026-05-24 13:27  |  05m 49s  |  No Pause"},
-        {"[Demo] Last Stand Economy", "2026-05-25 09:12  |  11m 06s  |  Replay"},
-        {"[Demo] Survival Fog Drill", "2026-05-25 23:41  |  09m 31s  |  Relay"},
-    };
+    ReplayManageWidget *mOwner = nullptr;
+    std::vector<ReplayMetaInfo> mReplays;
 
 public:
     int mTotalItems;
 
 public:
-    ReplayListContentWidget() {
+    explicit ReplayListContentWidget(ReplayManageWidget *owner) {
+        mOwner = owner;
         Init();
-        //        Resize(0, 0, 800, 600);
     }
 
     ~ReplayListContentWidget() {
@@ -58,22 +64,109 @@ public:
     }
 
     void Draw(Graphics *g) {
-
-
-        //        g->SetColor(Color(25, 25, 25, 220));
-        //        g->FillRect(Rect(0, 0, mWidth, mHeight));
-
         int y = 0;
-        for (const auto &item : kSamples) {
-            //            g->SetColor(Color(45, 45, 45, 255));
-            //            g->FillRect(Rect(16, y, mWidth - 32, 78));
-            //            g->SetColor(Color(80, 80, 80, 255));
-            //            g->DrawRect(Rect(16, y, mWidth - 32, 78));
+        for (const auto &item : mReplays) {
+            const int rowTop = y;
+            const int rowMidY = rowTop + kReplayRowHeight / 2;
+            const int centerX = mWidth / 2;
+            const int sideMargin = 200;
+            const int leftNameX = sideMargin;
+            const int leftDeckX = sideMargin;
+            const int rightDeckX = mWidth - sideMargin - (6 * 50);
+            const int rightDeckRightmostX = mWidth - sideMargin - 50;
+            const int rightNameX = mWidth - sideMargin;
+            const int secs = item.durationTicks / 100;
+            const int mm = secs / 60;
+            const int ss = secs % 60;
+            const char *plantPlayer = "Unknown";
+            const char *zombiePlayer = "Unknown";
+            if (item.hostCamp == "Plant") {
+                plantPlayer = item.hostName.c_str();
+                zombiePlayer = item.guestName.c_str();
+            } else if (item.hostCamp == "Zombie") {
+                plantPlayer = item.guestName.c_str();
+                zombiePlayer = item.hostName.c_str();
+            }
+            const bool versionMismatch = item.netplayVersion != NETPLAY_VERSION;
+            bool plantWin = item.winnerName == plantPlayer;
+            bool zombieWin = item.winnerName == zombiePlayer;
 
-            TodDrawString(g, item.title, 32, y + 30, FONT_DWARVENTODCRAFT18, Color(255, 244, 130), DrawStringJustification::DS_ALIGN_LEFT);
-            TodDrawString(g, item.meta, 32, y + 56, FONT_HOUSEOFTERROR16, Color(220, 220, 220), DrawStringJustification::DS_ALIGN_LEFT);
-            y += 90;
+            TodDrawString(g, plantPlayer, leftNameX, rowTop + 26, FONT_DWARVENTODCRAFT18, Color(170, 255, 170), DrawStringJustification::DS_ALIGN_LEFT);
+            TodDrawString(g, zombiePlayer, rightNameX, rowTop + 26, FONT_DWARVENTODCRAFT18, Color(255, 170, 170), DrawStringJustification::DS_ALIGN_RIGHT);
+
+            const pvzstl::string timeText = StrFormat(TodStringTranslate("[REPLAY_TIME_FMT]").c_str(), item.createdAt.c_str(), mm, ss);
+
+            pvzstl::string bgText;
+            switch (item.vsBackground) {
+                case 0:
+                    bgText = TodStringTranslate("[MP_VS_DAY]");
+                    break;
+                case 1:
+                    bgText = TodStringTranslate("[MP_VS_NIGHT]");
+                    break;
+                case 2:
+                    bgText = TodStringTranslate("[MP_VS_POOL_DAY]");
+                    break;
+                case 3:
+                    bgText = TodStringTranslate("[MP_VS_POOL_NIGHT]");
+                    break;
+                case 4:
+                    bgText = TodStringTranslate("[MP_VS_ROOF]");
+                    break;
+                case -1:
+                    bgText = TodStringTranslate("[MP_VS_SHUFFLE_MODE]");
+                    break;
+                default:
+                    bgText = "Unknown";
+                    break;
+            };
+            TodDrawString(g, timeText, centerX, rowTop + 35, FONT_DWARVENTODCRAFT18, Color(255, 244, 130), DrawStringJustification::DS_ALIGN_CENTER);
+            TodDrawString(g, bgText, centerX, rowTop + 62, FONT_HOUSEOFTERROR16, Color(220, 220, 220), DrawStringJustification::DS_ALIGN_CENTER);
+            if (plantWin) {
+                g->DrawImage(IMAGE_MP_PLANT_TROPHY, centerX - 30, rowMidY - 10, 60, 60);
+            } else if (zombieWin) {
+                g->DrawImage(IMAGE_MP_ZOMBIE_TROPHY, centerX - 30, rowMidY - 10, 60, 60);
+            }
+            if (versionMismatch) {
+                TodDrawString(g, "[REPLAY_ERROR_VERSION]", centerX, rowTop + 124, FONT_HOUSEOFTERROR16, Color(255, 120, 120), DrawStringJustification::DS_ALIGN_CENTER);
+            }
+
+            const auto plantDeck = ParseDeck(item.plantDeck);
+            const auto zombieDeck = ParseDeck(item.zombieDeck);
+            int seedX = leftDeckX;
+            for (SeedType st : plantDeck) {
+                if (st != SEED_NONE) {
+                    DrawSeedPacket(g, (float)seedX, (float)(rowTop + 48), st, SeedType::SEED_NONE, 0.0f, 255, false, false, false, true);
+                    seedX += 50;
+                }
+            }
+            seedX = rightDeckRightmostX;
+            for (auto it = zombieDeck.rbegin(); it != zombieDeck.rend(); ++it) {
+                SeedType st = *it;
+                if (st != SEED_NONE) {
+                    DrawSeedPacket(g, (float)seedX, (float)(rowTop + 48), st, SeedType::SEED_NONE, 0.0f, 255, false, false, true, true);
+                    seedX -= 50;
+                }
+            }
+            y += kReplayRowHeight;
         }
+    }
+
+    void MouseDown(int x, int y, int theClickCount) {
+        (void)x;
+        (void)theClickCount;
+        const int index = y / kReplayRowHeight;
+        if (index < 0 || index >= static_cast<int>(mReplays.size()) || mOwner == nullptr) {
+            LOG_WARN("[REPLAY] invalid click y={}, idx={}, count={}", y, index, (int)mReplays.size());
+            return;
+        }
+        const ReplayMetaInfo &item = mReplays[index];
+        if (item.netplayVersion != NETPLAY_VERSION) {
+            mOwner->mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[REPLAY]", "[REPLAY_ERROR_VERSION_TEXT]", "[DIALOG_BUTTON_OK]", "", 3);
+            return;
+        }
+        LOG_INFO("[REPLAY] click list index={} file={}", index, mReplays[index].fileName);
+        mOwner->StartReplayByIndex(index);
     }
 
 private:
@@ -84,11 +177,14 @@ private:
             size_t kVTableBytes = sizeof(void *) * std::size(gReplayListContentWidgetVTable);
             std::memcpy(gReplayListContentWidgetVTable, vTable, sizeof(void *) * std::size(gReplayListContentWidgetVTable));
             homura::HookVirtualFunc(gReplayListContentWidgetVTable, 36, &ReplayListContentWidget::Draw, nullptr);
+            homura::HookVirtualFunc(gReplayListContentWidgetVTable, 78, &ReplayListContentWidget::MouseDown, nullptr);
             uninitialized = false;
         }
 
         vTable = reinterpret_cast<int *>(gReplayListContentWidgetVTable);
-        mTotalItems = std::size(kSamples);
+        mReplays = replay::ListReplayFiles();
+        mTotalItems = static_cast<int>(mReplays.size());
+        LOG_INFO("[REPLAY] list loaded count={}", mTotalItems);
     }
 };
 
@@ -105,6 +201,7 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
     vTable = reinterpret_cast<int *>(gReplayManageWidgetVTable);
 
     mApp = app;
+    mButtonListener = buttonListener;
     Resize(LawnApp::FULLSCREEN_RECT.mX, LawnApp::FULLSCREEN_RECT.mY, LawnApp::FULLSCREEN_RECT.mWidth, LawnApp::FULLSCREEN_RECT.mHeight);
     mClip = true;
 
@@ -113,8 +210,8 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
     mScrollWidget->SetScrollMode(ScrollWidget::ScrollMode::Vertical);
     mScrollWidget->EnableBounce(false);
     AddWidget(mScrollWidget);
-    mScrollContent = new ReplayListContentWidget();
-    mScrollContent->Resize(0, 0, mScrollWidget->mWidth, mScrollContent->mTotalItems * 90);
+    mScrollContent = new ReplayListContentWidget(this);
+    mScrollContent->Resize(0, 0, mScrollWidget->mWidth, mScrollContent->mTotalItems * kReplayRowHeight);
 
     mScrollWidget->AddWidget(mScrollContent);
     mScrollWidget->ScrollToMin(false);
@@ -131,5 +228,33 @@ ReplayManageWidget::~ReplayManageWidget() {
 
 void ReplayManageWidget::Draw(Graphics *g) {
     g->DrawImage(mZombieBackground ? IMAGE_ALMANAC_ZOMBIEBACK : IMAGE_ALMANAC_PLANTBACK, 0, 0);
-    TodDrawString(g, "[Replay Manager]", 640, 110, FONT_DWARVENTODCRAFT24, Color(255, 248, 195), DrawStringJustification::DS_ALIGN_CENTER);
+    TodDrawString(g, "[REPLAY_MANAGE]", 640, 110, FONT_DWARVENTODCRAFT24, Color(255, 248, 195), DrawStringJustification::DS_ALIGN_CENTER);
+}
+
+void ReplayManageWidget::StartReplayByIndex(int index) {
+    auto list = replay::ListReplayFiles();
+    if (index < 0 || index >= static_cast<int>(list.size())) {
+        LOG_ERROR("[REPLAY] start failed invalid index={} size={}", index, (int)list.size());
+        return;
+    }
+    const ReplayMetaInfo &item = list[index];
+    if (!replay::BeginPlaybackFromFile(item.filePath)) {
+        LOG_ERROR("[REPLAY] begin playback failed file={}", item.filePath);
+        return;
+    }
+    gIsServerModeNetplay = true;
+    gServerModeTransport = ServerModeTransport::RELAY;
+    gIsServerModeSpectator = false;
+    gIsReplayMode = true;
+    LOG_INFO("[REPLAY] start playback success file={}", item.filePath);
+
+    if (auto *dialog = static_cast<WaitForSecondPlayerDialog *>(mApp->GetDialog(DIALOG_WAIT_FOR_SECOND_PLAYER))) {
+        LOG_INFO("[REPLAY] closing replay manager via WaitForSecondPlayerDialog");
+        dialog->CloseReplayManageWidget();
+        dialog->LawnDialog::ButtonDepress(1000);
+        return;
+    }
+
+
+    LOG_WARN("[REPLAY] close self skipped: dialog and parent are null");
 }

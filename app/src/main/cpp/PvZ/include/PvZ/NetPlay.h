@@ -373,6 +373,8 @@ inline std::string gIfname;
 
 inline char gSecondPlayerName[32];
 inline char gServerHostName[32];
+inline char gReplayHostName[32];
+inline char gReplayGuestName[32];
 inline bool gMetricsHostSendNameAllowed = true;
 
 // 客户端需要

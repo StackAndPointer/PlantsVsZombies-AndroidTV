@@ -70,6 +70,9 @@ public:
     void DeferOverlay(int thePriority = 0) {
         reinterpret_cast<void (*)(Widget *, int)>(Sexy_Widget_DeferOverlayAddr)(this, thePriority);
     }
+    void SetColor(int index, const Color theColor) {
+        reinterpret_cast<void (*)(Widget *, int, const Color)>(Sexy_Widget_SetColorAddr)(this, index, theColor);
+    }
 
     void MarkDirty();
     void AddWidget(Widget *theWidget);
