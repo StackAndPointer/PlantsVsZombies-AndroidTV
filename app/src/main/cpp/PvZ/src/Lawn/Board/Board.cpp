@@ -6178,7 +6178,7 @@ GridItem *Board::AddAMound(int theGridX, int theGridY, int theMoundLevel) {
     aMound->mGridY = theGridY;
     aMound->mGridItemType = GridItemType::GRIDITEM_MP_BURIAL_MOUND;
     aMound->mGridItemCounter = -Rand(50);
-    aMound->mSummonCounter = RandRangeInt(300, 1500);
+    aMound->mSummonCounter = RandRangeInt(1000, 1500);
     aMound->mRenderOrder = MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, theGridY, 3);
 
     if (mApp->IsVSMode()) {

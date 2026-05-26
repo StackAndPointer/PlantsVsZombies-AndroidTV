@@ -202,7 +202,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             mZombieRect = Rect(50, 0, 57, 115);
             ReanimShowPrefix("anim_hair", RENDER_GROUP_HIDDEN);
             mHelmType = HelmType::HELMTYPE_GIGA_FOOTBALL;
-            mHelmHealth = 900;
+            mHelmHealth = 1100;
             mAnimTicksPerFrame = 6;
             mVariant = false;
             if (IsOnBoard()) {

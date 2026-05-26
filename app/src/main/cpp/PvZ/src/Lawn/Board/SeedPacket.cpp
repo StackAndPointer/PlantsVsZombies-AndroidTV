@@ -185,8 +185,16 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
         bool aIsBalancePatch = VSSetupAddonWidget::msBalancePatchMode;
         bool aIsStageNight = mBoard->StageIsNight();
         switch (theSeedType) {
+            case SEED_PUFFSHROOM:
+            case SEED_ZOMBIE_NORMAL:
+                if (aIsBalancePatch) {
+                    mRefreshTime = 1000;
+                    mRefreshing = true;
+                    mActive = false;
+                }
+                break;
             case SEED_SUNSHROOM:
-                if (aIsBalancePatch || aIsStageNight) { // 清除阳光菇的初始冷却
+                if (aIsStageNight) { // 清除阳光菇的初始冷却
                     mRefreshTime = 0;
                     mRefreshing = false;
                     mActive = true;
