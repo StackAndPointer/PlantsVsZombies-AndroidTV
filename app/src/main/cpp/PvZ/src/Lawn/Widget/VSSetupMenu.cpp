@@ -240,6 +240,146 @@ void VSSetupMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
     }
 }
 
+void VSSetupMenu::GameButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theModifierFlag) {
+    int state = mState;
+
+    if (state != VS_SETUP_STATE_CUSTOM_BATTLE) {
+        switch (theButton) {
+            case Sexy::GAMEPAD_BUTTON_LEFT:
+            case Sexy::GAMEPAD_BUTTON_DPAD_LEFT: {
+                if (state != VS_SETUP_STATE_SIDES) {
+                    return;
+                }
+
+                bool side = mControllerIndex[0] != thePlayerIndex;
+                if (mControllerIndex[side] != thePlayerIndex || mSideLocked[side]) {
+                    return;
+                }
+
+                if (mSides[side] == VS_SIDE_NONE) {
+                    mSides[side] = VS_SIDE_PLANT;
+                } else if (mSides[side] == VS_SIDE_ZOMBIE) {
+                    mSides[side] = VS_SIDE_NONE;
+                }
+                return;
+            }
+
+            case Sexy::GAMEPAD_BUTTON_RIGHT:
+            case Sexy::GAMEPAD_BUTTON_DPAD_RIGHT: {
+                if (state != VS_SETUP_STATE_SIDES) {
+                    return;
+                }
+
+                bool side = mControllerIndex[0] != thePlayerIndex;
+                if (mControllerIndex[side] != thePlayerIndex || mSideLocked[side]) {
+                    return;
+                }
+
+                if (mSides[side] == VS_SIDE_NONE) {
+                    mSides[side] = VS_SIDE_ZOMBIE;
+                } else if (mSides[side] == VS_SIDE_PLANT) {
+                    mSides[side] = VS_SIDE_NONE;
+                }
+                return;
+            }
+
+            case Sexy::GAMEPAD_BUTTON_A: {
+                if (state != VS_SETUP_STATE_SIDES) {
+                    return;
+                }
+
+                bool side = mControllerIndex[0] != thePlayerIndex;
+                if (mControllerIndex[side] != thePlayerIndex) {
+                    return;
+                }
+
+                VSSide selectedSide = mSides[side];
+                if (selectedSide == VS_SIDE_NONE) {
+                    return;
+                }
+
+                if (selectedSide == mSides[!side] && mSideLocked[!side]) {
+                    mApp->PlaySample(Sexy::SOUND_BUZZER);
+                    return;
+                }
+
+                mSideLocked[side] = true;
+                if (mSideLocked[0] && mSideLocked[1]) {
+                    GoToState(VS_SETUP_STATE_SELECT_BATTLE);
+                }
+                return;
+            }
+
+            case Sexy::GAMEPAD_BUTTON_B:
+                break;
+
+            default:
+                return;
+        }
+    }
+
+    if (theButton == Sexy::GAMEPAD_BUTTON_B) {
+        if (mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[CONFIRM_VS_CHOOSE_SEED_BACK_HEADER]", "[CONFIRM_VS_CHOOSE_SEED_BACK_BODY]", "[DIALOG_BUTTON_OK]", "[DIALOG_BUTTON_CANCEL]", 1) != 1000) {
+            return;
+        }
+
+        switch (state) {
+            case VS_SETUP_STATE_CONTROLLERS:
+                CloseVSSetup(true);
+                mApp->KillBoard();
+                mApp->ShowGameSelector();
+                return;
+
+            case VS_SETUP_STATE_SIDES: {
+                bool side = mControllerIndex[0] != thePlayerIndex;
+                if (mControllerIndex[side] != thePlayerIndex) {
+                    return;
+                }
+
+                if (mSideLocked[side]) {
+                    mSideLocked[side] = false;
+                } else {
+                    CloseVSSetup(true);
+                    mApp->KillBoard();
+                    mApp->ShowGameSelector();
+                }
+                return;
+            }
+
+            case VS_SETUP_STATE_SELECT_BATTLE:
+                GoToState(VS_SETUP_STATE_SIDES);
+                return;
+
+            case VS_SETUP_STATE_CUSTOM_BATTLE: {
+                bool side = mControllerIndex[0] != thePlayerIndex;
+                if (mControllerIndex[side] != thePlayerIndex) {
+                    return;
+                }
+
+                if (mSides[side] != VS_SIDE_NONE) {
+                    mSideLocked[side] = true;
+                }
+
+                mApp->KillSeedChooserScreen();
+                mApp->KillZombieChooserScreen();
+                GoToState(VS_SETUP_STATE_SELECT_BATTLE);
+                return;
+            }
+
+            default:
+                return;
+        }
+    }
+
+    int player = mApp->GamepadToPlayerIndex(thePlayerIndex);
+    VSSide side = mSides[player];
+    if (side == VS_SIDE_ZOMBIE) {
+        mApp->mZombieChooserScreen->GameButtonDown(theButton, thePlayerIndex, theModifierFlag);
+    } else if (side == VS_SIDE_PLANT) {
+        mApp->mSeedChooserScreen->GameButtonDown(theButton, thePlayerIndex, theModifierFlag);
+    }
+}
+
 void VSSetupMenu::MouseDown(int x, int y, int theCount) {
     if (gIsServerModeSpectator || gIsReplayMode) {
         return;
@@ -311,8 +451,8 @@ void VSSetupMenu::MouseUp(int x, int y, int theCount) {
             resolvedSideP1 = mSides[0];
         }
         mSides[0] = resolvedSideP1;
+        mSideLocked[0] = (mSides[0] != VS_SIDE_NONE);
         aControllerWidgetP1->Move(GetControllerSideAnchorX(mSides[0]), aControllerWidgetP1->mY);
-        GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
         if (gTcpClientSocket >= 0) {
             U8U8_Event event = {{EventType::EVENT_SERVER_VSSETUPMENU_SET_SIDE}, 0, mSides[0] == -1 ? uint8_t(2) : uint8_t(mSides[0])};
             netplay::PutEvent(event);
@@ -328,22 +468,23 @@ void VSSetupMenu::MouseUp(int x, int y, int theCount) {
         VSSide aSideP2 = aControllerWidgetP2->mX > 400 ? VS_SIDE_ZOMBIE : aControllerWidgetP2->mX > 250 ? VS_SIDE_NONE : VS_SIDE_PLANT;
 
         if (aSideP2 == mSides[1]) {
-            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
+            mSideLocked[1] = (mSides[1] != VS_SIDE_NONE);
         }
         if (gTcpServerSocket >= 0) {
             U8_Event event = {{EventType::EVENT_CLIENT_VSSETUPMENU_REQUEST_SIDE}, aSideP2 == VS_SIDE_NONE ? uint8_t(2) : uint8_t(aSideP2)};
             netplay::PutEvent(event);
         } else {
             mSides[1] = aSideP2;
+            mSideLocked[1] = (mSides[1] != VS_SIDE_NONE);
             aControllerWidgetP2->Move(GetControllerSideAnchorX(mSides[1]), aControllerWidgetP2->mY);
-            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
             is2PControllerMoving = false;
         }
     }
     touchingOnWhichController = 0;
     if (handledControllerMouseUp && mState == VS_SETUP_STATE_SIDES && mSides[0] != VS_SIDE_NONE && mSides[1] != VS_SIDE_NONE && mSides[0] != mSides[1]) {
-        GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
-        GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
+        mSideLocked[0] = true;
+        mSideLocked[1] = true;
+        GoToState(VS_SETUP_STATE_SELECT_BATTLE);
     }
 }
 
@@ -578,10 +719,10 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
 
             Sexy::Widget *controllerWidget = FindWidget(8);
             mSides[1] = resolvedSide;
+            mSideLocked[1] = (mSides[1] != VS_SIDE_NONE);
             if (controllerWidget != nullptr) {
                 controllerWidget->Move(GetControllerSideAnchorX(mSides[1]), controllerWidget->mY);
             }
-            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
             is2PControllerMoving = false;
             if (gTcpClientSocket >= 0) {
                 uint8_t sideData = (resolvedSide == VS_SIDE_NONE) ? 2 : uint8_t(resolvedSide);
@@ -589,8 +730,9 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 netplay::PutEvent(syncEvent);
             }
             if (mSides[0] != VS_SIDE_NONE && mSides[1] != VS_SIDE_NONE && mSides[0] != mSides[1]) {
-                GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
-                GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
+                mSideLocked[0] = true;
+                mSideLocked[1] = true;
+                GoToState(VS_SETUP_STATE_SELECT_BATTLE);
             }
         } break;
         default:
@@ -706,19 +848,20 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
                 break;
             }
             mSides[sideSlot] = aSide;
+            mSideLocked[sideSlot] = (mSides[sideSlot] != VS_SIDE_NONE);
             Sexy::Widget *controllerWidget = FindWidget(sideSlot == 0 ? 7 : 8);
             if (controllerWidget != nullptr) {
                 controllerWidget->Move(GetControllerSideAnchorX(mSides[sideSlot]), controllerWidget->mY);
             }
-            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, sideSlot, 0);
             if (sideSlot == 0) {
                 is1PControllerMoving = false;
             } else {
                 is2PControllerMoving = false;
             }
             if (mSides[0] != VS_SIDE_NONE && mSides[1] != VS_SIDE_NONE && mSides[0] != mSides[1]) {
-                GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
-                GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
+                mSideLocked[0] = true;
+                mSideLocked[1] = true;
+                GoToState(VS_SETUP_STATE_SELECT_BATTLE);
             }
         } break;
         case EVENT_SERVER_VSSETUP_ADDON_BUTTON_INIT: {
@@ -1039,6 +1182,7 @@ void VSSetupMenu::ButtonDepress_Origin(int theId) {
 //         }
 //     }
 // }
+
 
 void VSSetupMenu::CloseVSSetup(bool theShowGameSelector) {
     //    PickBackgroundImmediately();
