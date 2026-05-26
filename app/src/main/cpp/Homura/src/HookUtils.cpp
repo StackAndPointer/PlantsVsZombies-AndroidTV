@@ -68,7 +68,9 @@ bool homura::details::HookVirtualFuncImpl(void *vTableSymbol, std::size_t index,
     }
     *funcPtrAddr = newFunc;
 
-    SetProtection(std::uintptr_t(funcPtrAddr), sizeof(funcPtrAddr), PROT_READ);
+    // Keep writable after patching: our custom vtables may share a page,
+    // forcing RO here can unexpectedly make sibling tables/object memory RO.
+    SetProtection(std::uintptr_t(funcPtrAddr), sizeof(funcPtrAddr), PROT_READ | PROT_WRITE);
     return true;
 }
 

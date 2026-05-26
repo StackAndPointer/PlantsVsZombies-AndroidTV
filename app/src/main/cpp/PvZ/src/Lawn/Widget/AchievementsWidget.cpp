@@ -30,16 +30,36 @@
 
 using namespace Sexy;
 
+namespace {
+long NowMs() {
+    timeval tp;
+    gettimeofday(&tp, nullptr);
+    return tp.tv_sec * 1000L + tp.tv_usec / 1000L;
+}
+
+int GetMinScrollY() {
+    return 720 + MAIN_MENU_HEIGHT - (ACHIEVEMENT_HOLE_LENGTH + 1) * addonImages.hole->mHeight;
+}
+
+int GetMaxScrollY() {
+    return MAIN_MENU_HEIGHT;
+}
+
+int ClampScrollY(int y) {
+    return std::clamp(y, GetMinScrollY(), GetMaxScrollY());
+}
+} // namespace
+
 AchievementsWidget::AchievementsWidget(LawnApp *theApp) {
     reinterpret_cast<void (*)(MaskHelpWidget *, LawnApp *)>(MaskHelpWidget_MaskHelpWidgetAddr)(reinterpret_cast<MaskHelpWidget *>(this), theApp);
     mApp = theApp;
-    mMouseDownY = 0;
-    mLastDownY = 0;
-    mLastDownY1 = 0;
-    mLastTimeMs = 0;
-    mLastTimeMs1 = 0;
-    mVelocity = 0.0f;
+    mDragStartPointerScreenY = 0;
+    mDragStartWidgetY = 0;
+    mLastPointerScreenY = 0;
+    mLastSampleTimeMs = 0;
+    mVelocityPxPerSec = 0.0f;
     mAccY = 0.0f;
+    mIsDragging = false;
     mIsScrolling = false;
 }
 
@@ -111,57 +131,86 @@ void AchievementsWidget::Draw(Graphics *g) {
 void AchievementsWidget::MouseDown(int x, int y, int theClickCount) {
     (void)x;
     (void)theClickCount;
+    if (gAchievementState != SHOWING)
+        return;
+    mIsDragging = true;
     mIsScrolling = false;
-    mMouseDownY = y;
-    mLastDownY = y;
-    mLastDownY1 = mLastDownY;
-    timeval tp;
-    gettimeofday(&tp, nullptr);
-    mLastTimeMs = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-    mLastTimeMs1 = mLastTimeMs;
+    mVelocityPxPerSec = 0.0f;
+    mDragStartPointerScreenY = mY + y;
+    mDragStartWidgetY = mY;
+    mLastPointerScreenY = mDragStartPointerScreenY;
+    mAccY = static_cast<float>(mY);
+    mLastSampleTimeMs = NowMs();
 }
 
 void AchievementsWidget::MouseDrag(int x, int y) {
     (void)x;
-    if (gAchievementState != SHOWING)
+    if (gAchievementState != SHOWING || !mIsDragging)
         return;
-    int theNewY = std::clamp(mY + (y - mMouseDownY), 720 + MAIN_MENU_HEIGHT - (ACHIEVEMENT_HOLE_LENGTH + 1) * addonImages.hole->mHeight, MAIN_MENU_HEIGHT);
+    const int pointerScreenY = mY + y;
+    const int totalDrag = pointerScreenY - mDragStartPointerScreenY;
+    const int theNewY = ClampScrollY(mDragStartWidgetY + totalDrag);
     Move(mX, theNewY);
-    mLastDownY1 = mLastDownY;
-    mLastDownY = y;
-    timeval tp;
-    gettimeofday(&tp, nullptr);
-    mLastTimeMs1 = mLastTimeMs;
-    mLastTimeMs = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+    mAccY = static_cast<float>(theNewY);
+
+    const long nowMs = NowMs();
+    const long dtMs = nowMs - mLastSampleTimeMs;
+    if (dtMs > 0) {
+        const float sampleVelocity = static_cast<float>(pointerScreenY - mLastPointerScreenY) * 1000.0f / static_cast<float>(dtMs);
+        mVelocityPxPerSec = mVelocityPxPerSec * 0.75f + sampleVelocity * 0.25f;
+    }
+    mLastPointerScreenY = pointerScreenY;
+    mLastSampleTimeMs = nowMs;
 }
 
 void AchievementsWidget::MouseUp(int x, int y) {
     (void)x;
-    (void)y;
-    timeval tp;
-    gettimeofday(&tp, nullptr);
-    long currentTimeMs = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-    long deltaT = currentTimeMs - mLastTimeMs;
-    int deltaX = mLastDownY - mMouseDownY;
-    if (deltaT == 0) {
-        deltaT = currentTimeMs - mLastTimeMs1;
-        deltaX = mLastDownY1 - mMouseDownY;
+    if (!mIsDragging)
+        return;
+    mIsDragging = false;
+    const int pointerScreenY = mY + y;
+    const long nowMs = NowMs();
+    const long dtMs = nowMs - mLastSampleTimeMs;
+    if (dtMs > 0) {
+        const float releaseVelocity = static_cast<float>(pointerScreenY - mLastPointerScreenY) * 1000.0f / static_cast<float>(dtMs);
+        mVelocityPxPerSec = mVelocityPxPerSec * 0.6f + releaseVelocity * 0.4f;
     }
-    if (deltaX != 0 && deltaT != 0) {
+
+    constexpr float kMinFlingSpeedPxPerSec = 90.0f;
+    constexpr float kMaxFlingSpeedPxPerSec = 4800.0f;
+    mVelocityPxPerSec = std::clamp(mVelocityPxPerSec, -kMaxFlingSpeedPxPerSec, kMaxFlingSpeedPxPerSec);
+
+    if (std::fabs(mVelocityPxPerSec) >= kMinFlingSpeedPxPerSec) {
         mIsScrolling = true;
-        mVelocity = 5.0f * deltaX / deltaT;
+        mAccY = static_cast<float>(mY);
+    } else {
+        mIsScrolling = false;
+        mVelocityPxPerSec = 0.0f;
     }
-    mLastTimeMs = currentTimeMs;
 }
 
 void AchievementsWidget::Update() {
-    // 实现滚动
-    if (mIsScrolling) {
-        int theNewY = std::clamp<int>(mY + mVelocity, 720 + MAIN_MENU_HEIGHT - (ACHIEVEMENT_HOLE_LENGTH + 1) * addonImages.hole->mHeight, MAIN_MENU_HEIGHT);
+    if (mIsScrolling && !mIsDragging) {
+        constexpr float kFrameDtSec = 1.0f / 60.0f;
+        constexpr float kDecelerationPxPerSec2 = 3400.0f;
+        const float decel = kDecelerationPxPerSec2 * kFrameDtSec;
+        if (mVelocityPxPerSec > 0.0f) {
+            mVelocityPxPerSec = std::max(0.0f, mVelocityPxPerSec - decel);
+        } else if (mVelocityPxPerSec < 0.0f) {
+            mVelocityPxPerSec = std::min(0.0f, mVelocityPxPerSec + decel);
+        }
+
+        mAccY += mVelocityPxPerSec * kFrameDtSec;
+        int theNewY = ClampScrollY(static_cast<int>(std::lround(mAccY)));
+        mAccY = static_cast<float>(theNewY);
         Move(mX, theNewY);
-        mVelocity *= 0.96f;
-        if (std::fabs(mVelocity) < 1.0f) {
+
+        if ((theNewY == GetMinScrollY() && mVelocityPxPerSec < 0.0f) || (theNewY == GetMaxScrollY() && mVelocityPxPerSec > 0.0f)) {
             mIsScrolling = false;
+            mVelocityPxPerSec = 0.0f;
+        } else if (std::fabs(mVelocityPxPerSec) < 10.0f) {
+            mIsScrolling = false;
+            mVelocityPxPerSec = 0.0f;
         }
     }
     MarkDirty();

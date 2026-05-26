@@ -40,6 +40,9 @@ public:
     Widget *GetWidgetAt(int x, int y, int *theWidgetX, int *theWidgetY) {
         return reinterpret_cast<Widget *(*)(WidgetManager *, int, int, int *, int *)>(Sexy_WidgetManager_GetWidgetAtAddr)(this, x, y, theWidgetX, theWidgetY);
     }
+    int GetWidgetFlags() {
+        return reinterpret_cast<int (*)(WidgetManager *)>(Sexy_WidgetManager_GetWidgetFlagsAddr)(this);
+    }
 
     void MouseDown(int x, int y, int theClickCount);
     void MouseDrag(int x, int y);

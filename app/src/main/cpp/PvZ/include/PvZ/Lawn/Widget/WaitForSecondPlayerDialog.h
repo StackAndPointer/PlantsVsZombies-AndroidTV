@@ -23,6 +23,7 @@
 #include <cstdint>
 
 #include "PvZ/Lawn/Widget/LawnDialog.h"
+#include "PvZ/Lawn/Widget/ReplayManageWidget.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/SexyAppFramework/Misc/GamepadButtons.h"
 #include "PvZ/Symbols.h"
@@ -61,6 +62,7 @@ public:
         WaitForSecondPlayerDialog_Back = 1001,
         WaitForSecondPlayerDialog_Left = 1002,
         WaitForSecondPlayerDialog_Right = 1003,
+        WaitForSecondPlayerDialog_ReplayClose = 1100,
     };
 
     bool m2PJoined;
@@ -77,6 +79,7 @@ public:
     GameButton *mRightButton;
     bool mIsCreatingRoom;
     bool mIsJoiningRoom;
+    ReplayManageWidget *mReplayManageWidget;
 
     int mSelectedServerIndex;
 
@@ -196,6 +199,8 @@ public:
 
     // 弹输入框（可复用一个函数，用不同 title）
     void ShowTextInput(const char *title, const char *hint);
+    void OpenReplayManageWidget();
+    void CloseReplayManageWidget();
 
     void GameButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theModifierFlag) {
         reinterpret_cast<void (*)(WaitForSecondPlayerDialog *, Sexy::GamepadButton, int, unsigned int)>(WaitForSecondPlayerDialog_GameButtonDownAddr)(this, theButton, thePlayerIndex, theModifierFlag);

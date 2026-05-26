@@ -65,6 +65,9 @@ public:
     void AddWidget(Widget *theWidget) { // vTable + 24
         reinterpret_cast<void (*)(WidgetContainer *, Widget *)>(Sexy_WidgetContainer_AddWidgetAddr)(this, theWidget);
     }
+    Widget *GetWidgetAtHelper(int x, int y, int theFlags, bool *found, int *theWidgetX, int *theWidgetY) {
+        return reinterpret_cast<Widget *(*)(WidgetContainer *, int, int, int, bool *, int *, int *)>(Sexy_WidgetContainer_GetWidgetAtHelperAddr)(this, x, y, theFlags, found, theWidgetX, theWidgetY);
+    }
     void RemoveWidget(Widget *theWidget) { // vTable + 28
         reinterpret_cast<void (*)(WidgetContainer *, Widget *)>(Sexy_WidgetContainer_RemoveWidgetAddr)(this, theWidget);
     }

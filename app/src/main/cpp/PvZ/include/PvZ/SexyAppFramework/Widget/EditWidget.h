@@ -29,6 +29,11 @@ class EditListener;
 
 class EditWidget : public Widget {};
 
+inline int (*old_EditWidget_SetEditText)(int *self, int *text);
+int EditWidget_SetEditText(int *self, int *text);
+inline int (*old_EditWidget_ProcessKey)(EditWidget *self, int keyCode, unsigned int modifiers);
+int EditWidget_ProcessKey(EditWidget *self, int keyCode, unsigned int modifiers);
+
 } // namespace Sexy
 
 #endif // PVZ_SEXYAPPFRAMEWORK_WIDGET_EDIT_WIDGET_H

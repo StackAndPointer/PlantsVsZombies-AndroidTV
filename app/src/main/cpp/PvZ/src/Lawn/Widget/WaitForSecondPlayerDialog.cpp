@@ -466,6 +466,9 @@ bool WaitForSecondPlayerDialog::ServerHostRoomLocked() const {
 }
 
 void WaitForSecondPlayerDialog::SetMode(UIMode mode) {
+    if (mReplayManageWidget != nullptr) {
+        CloseReplayManageWidget();
+    }
     if (mode != mUIMode && mode != UIMode::MODE3_SERVER && ServerHostRoomLocked()) {
         RefreshButtons();
         return;
@@ -594,6 +597,8 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
                 mRightButton->SetLabel("[SPECTATE]");
             } else if (mServerSpectating) {
                 mRightButton->SetLabel("[CLIENT]");
+            } else if (inServerListMode) {
+                mRightButton->SetLabel("[Replay]");
             } else {
                 mRightButton->SetLabel("[CREATE_ROOM_BUTTON]");
             }
@@ -655,6 +660,8 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
                 mRightButton->mDisabled = !Mode3CanSwitchGuestToSpectator(this);
             } else if (mServerSpectating) {
                 mRightButton->mDisabled = !Mode3CanSwitchSpectatorToGuest(this);
+            } else if (inServerListMode) {
+                mRightButton->mDisabled = false;
             } else {
                 mRightButton->mDisabled = !canCreateIdle;
             }
@@ -681,6 +688,23 @@ void WaitForSecondPlayerDialog::ShowTextInput(const char *titleKey, const char *
     env->DeleteLocalRef(jHint);
     env->DeleteLocalRef(jInitial);
     env->DeleteLocalRef(viewCls);
+}
+
+void WaitForSecondPlayerDialog::OpenReplayManageWidget() {
+    if (mReplayManageWidget != nullptr) {
+        return;
+    }
+    mReplayManageWidget = new ReplayManageWidget(mApp, this);
+    AddWidget(mReplayManageWidget);
+}
+
+void WaitForSecondPlayerDialog::CloseReplayManageWidget() {
+    if (mReplayManageWidget == nullptr) {
+        return;
+    }
+    RemoveWidget(mReplayManageWidget);
+    delete mReplayManageWidget;
+    mReplayManageWidget = nullptr;
 }
 
 void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
@@ -727,6 +751,7 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     InitUdpScanSocket();
     mIsCreatingRoom = false;
     mIsJoiningRoom = false;
+    mReplayManageWidget = nullptr;
 
     mSelectedServerIndex = 0;
     mUseManualTarget = false;
@@ -810,6 +835,7 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
 }
 
 void WaitForSecondPlayerDialog::_destructor() {
+    CloseReplayManageWidget();
     ServerDisconnect("dialog destroy");
     old_WaitForSecondPlayerDialog_Delete(this);
 }
@@ -2097,6 +2123,10 @@ void WaitForSecondPlayerDialog::ButtonDepress_Thunk(this ButtonListener &self, i
                     if (aDialog->mServerGameStarting) {
                         return;
                     }
+                    if (!aDialog->mServerConnected && !aDialog->mServerConnecting && !aDialog->mServerHosting && !aDialog->mServerJoined && !aDialog->mServerSpectating) {
+                        aDialog->OpenReplayManageWidget();
+                        return;
+                    }
                     if (!aDialog->mServerConnected) {
                         return;
                     }
@@ -2113,6 +2143,9 @@ void WaitForSecondPlayerDialog::ButtonDepress_Thunk(this ButtonListener &self, i
                     return;
             }
             break;
+        case WaitForSecondPlayerDialog::WaitForSecondPlayerDialog_ReplayClose:
+            aDialog->CloseReplayManageWidget();
+            return;
         default:
             break;
     }

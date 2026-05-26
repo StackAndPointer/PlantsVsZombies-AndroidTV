@@ -70,13 +70,13 @@ class Graphics;
 class AchievementsWidget : public Sexy::Widget, public Sexy::ButtonListener {
 public:
     LawnApp *mApp; // 65
-    int mMouseDownY;
-    int mLastDownY;
-    int mLastDownY1;
-    long mLastTimeMs;
-    long mLastTimeMs1;
-    float mVelocity;
+    int mDragStartPointerScreenY;
+    int mDragStartWidgetY;
+    int mLastPointerScreenY;
+    long mLastSampleTimeMs;
+    float mVelocityPxPerSec;
     float mAccY;
+    bool mIsDragging;
     bool mIsScrolling;
 
     AchievementsWidget(LawnApp *theApp);
