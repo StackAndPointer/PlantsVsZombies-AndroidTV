@@ -24,6 +24,5 @@ jobs:
       - name: Run clang-format style check
         uses: jidicula/clang-format-action@v4.18.0
         with:
-          clang-format-version: 21
           check-path: app/src/main/cpp
           exclude-regex: (ThirdParty)

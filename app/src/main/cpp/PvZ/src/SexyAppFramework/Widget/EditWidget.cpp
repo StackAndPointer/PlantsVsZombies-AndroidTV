@@ -1,10 +1,6 @@
 #include "PvZ/SexyAppFramework/Widget/EditWidget.h"
 #include "PvZ/Symbols.h"
 
-int Sexy::EditWidget_SetEditText(int *self, int *text) {
-    return old_EditWidget_SetEditText(self, text);
-}
-
 namespace {
 
 constexpr int kTextFieldIndex = 66; // this + 264
@@ -52,13 +48,13 @@ static void SyncEditSink(Sexy::EditWidget *self) {
 
 } // namespace
 
-int Sexy::EditWidget_ProcessKey(EditWidget *self, int keyCode, unsigned int modifiers) {
-    int *data = reinterpret_cast<int *>(self);
+int Sexy::EditWidget::ProcessKey(KeyCode theKey, int theChar) {
+    int *data = reinterpret_cast<int *>(this);
     int oldLen = GetStdStringLen(data, kTextFieldIndex);
     int oldCursor = data[kCursorIndex];
     int oldSelection = data[kSelectionIndex];
 
-    int ret = old_EditWidget_ProcessKey(self, keyCode, modifiers);
+    int ret = old_Sexy_EditWidget_ProcessKey(this, theKey, theChar);
 
     int newLen = GetStdStringLen(data, kTextFieldIndex);
     int newCursor = data[kCursorIndex];
@@ -67,7 +63,7 @@ int Sexy::EditWidget_ProcessKey(EditWidget *self, int keyCode, unsigned int modi
     bool changed = oldLen != newLen || oldCursor != newCursor || oldSelection != newSelection;
     if (ret && changed) {
         // Keep IME/native edit sink state aligned with EditWidget local buffer.
-        SyncEditSink(self);
+        SyncEditSink(this);
     }
 
     return ret;

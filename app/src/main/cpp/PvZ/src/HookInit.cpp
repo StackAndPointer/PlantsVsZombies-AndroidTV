@@ -549,8 +549,7 @@ void InitHookFunction() {
     homura::HookFunc(MessageWidget_DrawAddr, &CustomMessageWidget::Draw, &old_MessageWidget_Draw);
 
     homura::HookFunc(Sexy_ExtractLoadingSoundsResourcesAddr, &Sexy::ExtractLoadingSoundsResources, &old_Sexy_ExtractLoadingSoundsResources);
-    homura::HookFunc(EditWidget_SetEditTextAddr, &Sexy::EditWidget_SetEditText, &Sexy::old_EditWidget_SetEditText);
-    homura::HookFunc(EditWidget_ProcessKeyAddr, &Sexy::EditWidget_ProcessKey, &Sexy::old_EditWidget_ProcessKey);
+    homura::HookFunc(Sexy_EditWidget_ProcessKeyAddr, &Sexy::EditWidget::ProcessKey, &old_Sexy_EditWidget_ProcessKey);
     // homura::HookFunc(Sexy_ScrollbarWidget_MouseDownAddr, Sexy_ScrollbarWidget_MouseDown, nullptr);
 
     homura::HookFunc(CustomScrollbarWidget_RemoveScrollButtonsAddr, &Sexy::CustomScrollbarWidget::RemoveScrollButtons, nullptr);

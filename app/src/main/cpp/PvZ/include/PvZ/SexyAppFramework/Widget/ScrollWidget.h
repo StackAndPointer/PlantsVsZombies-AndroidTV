@@ -24,19 +24,19 @@
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 #include <list>
 
-constexpr float SCROLL_TARGET_THRESHOLD_NORM = 0.01f;
-constexpr float SCROLL_VELOCITY_THRESHOLD_NORM = 0.0001f;
-constexpr float SCROLL_DEVIATION_DAMPING = 0.5f;
-constexpr float SCROLL_SPRINGBACK_TENSION = 0.1f;
-constexpr float SCROLL_VELOCITY_FILTER_WINDOW = 0.1f;
-constexpr float SCROLL_VELOCITY_DAMPING = 0.975f;
-constexpr float SCROLL_VELOCITY_DEVIATION_DAMPING = 0.85f;
-constexpr float SCROLL_DRAG_THRESHOLD = 4.0f;
-constexpr float SCROLL_PAGE_FLICK_THRESHOLD = 40.0f;
-constexpr int SCROLL_TAP_DELAY_TICKS = 10;
-constexpr int SCROLL_INDICATORS_FLASH_TICKS = 100;
-constexpr float SCROLL_INDICATORS_FADE_IN_RATE = 0.05f;
-constexpr float SCROLL_INDICATORS_FADE_OUT_RATE = 0.02f;
+inline constexpr float SCROLL_TARGET_THRESHOLD_NORM = 0.01f;
+inline constexpr float SCROLL_VELOCITY_THRESHOLD_NORM = 0.0001f;
+inline constexpr float SCROLL_DEVIATION_DAMPING = 0.5f;
+inline constexpr float SCROLL_SPRINGBACK_TENSION = 0.1f;
+inline constexpr float SCROLL_VELOCITY_FILTER_WINDOW = 0.1f;
+inline constexpr float SCROLL_VELOCITY_DAMPING = 0.975f;
+inline constexpr float SCROLL_VELOCITY_DEVIATION_DAMPING = 0.85f;
+inline constexpr float SCROLL_DRAG_THRESHOLD = 4.0f;
+inline constexpr float SCROLL_PAGE_FLICK_THRESHOLD = 40.0f;
+inline constexpr int SCROLL_TAP_DELAY_TICKS = 10;
+inline constexpr int SCROLL_INDICATORS_FLASH_TICKS = 100;
+inline constexpr float SCROLL_INDICATORS_FADE_IN_RATE = 0.05f;
+inline constexpr float SCROLL_INDICATORS_FADE_OUT_RATE = 0.02f;
 
 // class PageControl : public Sexy::Widget {
 // protected:
@@ -165,7 +165,6 @@ protected:
     void _destructor();
 };
 
-static void *gScrollWidget_vTable[122];
-// static void* gScrollWidget_vTable[122];
+inline void *gScrollWidget_vTable[122];
 
 #endif // PVZ_LAWN_WIDGET_SCROLL_WIDGET_H

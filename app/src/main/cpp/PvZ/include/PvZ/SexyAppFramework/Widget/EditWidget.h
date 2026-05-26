@@ -22,18 +22,24 @@
 
 #include "Widget.h"
 
+#include "PvZ/STL/string.h"
+
 namespace Sexy {
 
 class Font;
 class EditListener;
 
-class EditWidget : public Widget {};
+class EditWidget : public Widget {
+public:
+    int SetEditText(const pvzstl::string &theText) {
+        return reinterpret_cast<int (*)(EditWidget *, const pvzstl::string &)>(Sexy_EditWidget_SetEditTextAddr)(this, theText);
+    }
 
-inline int (*old_EditWidget_SetEditText)(int *self, int *text);
-int EditWidget_SetEditText(int *self, int *text);
-inline int (*old_EditWidget_ProcessKey)(EditWidget *self, int keyCode, unsigned int modifiers);
-int EditWidget_ProcessKey(EditWidget *self, int keyCode, unsigned int modifiers);
+    int ProcessKey(KeyCode theKey, int theChar);
+};
 
 } // namespace Sexy
+
+inline int (*old_Sexy_EditWidget_ProcessKey)(Sexy::EditWidget *self, Sexy::KeyCode theKey, int theChar);
 
 #endif // PVZ_SEXYAPPFRAMEWORK_WIDGET_EDIT_WIDGET_H

@@ -955,9 +955,9 @@ bool LoadGameMain() {
     Sexy_ScrollbarWidget_ScrollbarWidgetAddr = libGameMain.GetSymbol("_ZN4Sexy15ScrollbarWidgetC2EiPNS_14ScrollListenerE");
     Sexy_ScrollbarWidget_SetMaxValueAddr = libGameMain.GetSymbol("_ZN4Sexy15ScrollbarWidget11SetMaxValueEd");
     CustomScrollbarWidget_RemoveScrollButtonsAddr = libGameMain.GetSymbol("_ZN21CustomScrollbarWidget19RemoveScrollButtonsEv");
-    EditWidget_SetEditTextAddr = libGameMain.GetSymbol("_ZN4Sexy10EditWidget11SetEditTextERKSbIiSt11char_traitsIiESaIiEE");
-    EditWidget_ProcessKeyAddr = libGameMain.GetSymbol("_ZN4Sexy10EditWidget10ProcessKeyENS_7KeyCodeEi");
-    EditWidget_UpdateEditTextAddr = libGameMain.GetSymbol("_ZN4Sexy10EditWidget14UpdateEditTextEv");
+    Sexy_EditWidget_SetEditTextAddr = libGameMain.GetSymbol("_ZN4Sexy10EditWidget11SetEditTextERKSbIiSt11char_traitsIiESaIiEE");
+    Sexy_EditWidget_ProcessKeyAddr = libGameMain.GetSymbol("_ZN4Sexy10EditWidget10ProcessKeyENS_7KeyCodeEi");
+    Sexy_EditWidget_UpdateEditTextAddr = libGameMain.GetSymbol("_ZN4Sexy10EditWidget14UpdateEditTextEv");
     Sexy_ExtractLoadingSoundsResourcesAddr = libGameMain.GetSymbol("_ZN4Sexy29ExtractLoadingSoundsResourcesEPNS_15ResourceManagerE");
     ImitaterDialog_ImitaterDialogAddr = libGameMain.GetSymbol("_ZN14ImitaterDialogC2Ei");
     ImitaterDialog_SeedHitTestAddr = libGameMain.GetSymbol("_ZN14ImitaterDialog11SeedHitTestEii");
