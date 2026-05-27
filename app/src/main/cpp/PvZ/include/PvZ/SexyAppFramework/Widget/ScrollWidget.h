@@ -110,12 +110,8 @@ public:
     int mPageCountHorizontal;
     int mPageCountVertical;
 
-    ScrollWidget() {
-        _constructor();
-    }
-    /* virtual */ ~ScrollWidget() {
-        _destructor();
-    }
+    ScrollWidget();
+    /* virtual */ ~ScrollWidget();
 
     void Init();
     /* virtual */ void Draw(Graphics *g);
@@ -167,7 +163,6 @@ public:
     void CacheDerivedValues();
 
 protected:
-    void _constructor();
     void _destructor();
     void _destructor2();
 };

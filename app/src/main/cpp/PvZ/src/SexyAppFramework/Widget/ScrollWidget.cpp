@@ -31,7 +31,7 @@
 #include <mutex>
 #include <sstream>
 
-void Sexy::ScrollWidget::_constructor() {
+Sexy::ScrollWidget::ScrollWidget() {
     Widget::_constructor();
 
     static void *sScrollWidget_vTable[122];
@@ -53,6 +53,11 @@ void Sexy::ScrollWidget::_constructor() {
     vTable = reinterpret_cast<int *>(sScrollWidget_vTable);
 
     Init();
+}
+
+Sexy::ScrollWidget::~ScrollWidget() {
+    // 不调用自身的 _destructor, 否则会重复析构子对象
+    Widget::_destructor();
 }
 
 void Sexy::ScrollWidget::_destructor() {
