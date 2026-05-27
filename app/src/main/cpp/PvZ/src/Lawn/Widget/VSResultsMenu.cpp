@@ -113,8 +113,6 @@ void VSResultsMenu::processServerEvent(const BaseEvent *event) {
     LOG_DEBUG("TYPE:{}", (int)event->type);
     switch (event->type) {
         case EVENT_SERVER_VSRESULT_BUTTON_DEPRESS: {
-            replay::ResetRecorder();
-            LOG_INFO("[REPLAY] reset recorder on recv EVENT_SERVER_VSRESULT_BUTTON_DEPRESS");
             auto *event1 = static_cast<const U8_Event *>(event);
             int anId = event1->data;
             mResultsButtonId = anId;
@@ -276,10 +274,6 @@ void VSResultsMenu::ButtonDepress(int theId) {
     }
 
     if (gTcpClientSocket >= 0) {
-        if (theId == VSResultsMenu::VSResultsMenu_Play_Again || theId == VSResultsMenu::VSResultsMenu_Quit_VS || theId == VSResultsMenu::VSResultsMenu_Back) {
-            replay::ResetRecorder();
-            LOG_INFO("[REPLAY] reset recorder on send EVENT_SERVER_VSRESULT_BUTTON_DEPRESS id={}", theId);
-        }
         U8_Event event = {{EventType::EVENT_SERVER_VSRESULT_BUTTON_DEPRESS}, uint8_t(theId)};
         netplay::PutEvent(event);
     }

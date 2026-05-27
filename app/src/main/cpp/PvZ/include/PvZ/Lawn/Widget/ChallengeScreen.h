@@ -40,7 +40,7 @@ inline constexpr int NUM_VS_MODES(GAMEMODE_MP_VS_SHUFFLE_MODE - GAMEMODE_MP_VS_D
 
 class NewLawnButton;
 class ChallengeScreen : public Sexy::Widget, public Sexy::ButtonListener {
-private:
+public:
     enum {
         ChallengeScreen_Back = 100,
         ChallengeScreen_Mode = 200,

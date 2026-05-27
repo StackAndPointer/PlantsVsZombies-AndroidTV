@@ -6,8 +6,10 @@
 #include "Homura/HookUtils.h"
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
+#include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/SeedPacket.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/Widget/ChallengeScreen.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/Lawn/Widget/WaitForSecondPlayerDialog.h"
 #include "PvZ/NetPlay.h"
@@ -252,9 +254,32 @@ void ReplayManageWidget::StartReplayByIndex(int index) {
         LOG_INFO("[REPLAY] closing replay manager via WaitForSecondPlayerDialog");
         dialog->CloseReplayManageWidget();
         dialog->LawnDialog::ButtonDepress(1000);
-        return;
     }
 
+    switch (item.vsBackground) {
+        case 0:
+            gVSBackground = BackgroundType::BACKGROUND_1_DAY;
+            break;
+        case 1:
+            gVSBackground = BackgroundType::BACKGROUND_2_NIGHT;
+            break;
+        case 2:
+            gVSBackground = BackgroundType::BACKGROUND_3_POOL;
+            break;
+        case 3:
+            gVSBackground = BackgroundType::BACKGROUND_4_FOG;
+            break;
+        case 4:
+            gVSBackground = BackgroundType::BACKGROUND_5_ROOF;
+            break;
+        case -1:
+            gVSBackground = BackgroundType::BACKGROUND_1_DAY;
+            Challenge::msVSShuffleMode = true;
+            break;
+        default:
+            break;
+    }
 
-    LOG_WARN("[REPLAY] close self skipped: dialog and parent are null");
+    mApp->KillChallengeScreen();
+    mApp->PreNewGame(GAMEMODE_MP_VS, false);
 }
