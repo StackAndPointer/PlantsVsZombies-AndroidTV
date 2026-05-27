@@ -20,6 +20,8 @@
 #ifndef HOMURA_HOOKUTILS_H
 #define HOMURA_HOOKUTILS_H
 
+#include "Homura/MemberUtils.h"
+
 #include <cstddef>
 #include <cstdint>
 
@@ -29,9 +31,6 @@
 namespace homura {
 
 namespace details {
-    struct CppMemFuncPtr;
-    void CheckVirtualFunc(const CppMemFuncPtr *ptr);
-
     void HookFuncImpl(void *symbol, void *newFunc, void **oldFuncAddr);
     bool HookVirtualFuncImpl(void *vTableSymbol, std::size_t index, void *newFunc, void **oldFuncAddr);
     bool HookPltFuncImpl(std::string_view libName, std::uintptr_t offset, void *newFunc, void **oldFuncAddr);

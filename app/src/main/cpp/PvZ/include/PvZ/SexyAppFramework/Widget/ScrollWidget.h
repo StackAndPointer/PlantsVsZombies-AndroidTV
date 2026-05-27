@@ -110,11 +110,13 @@ public:
     int mPageCountHorizontal;
     int mPageCountVertical;
 
-    ScrollWidget();
-    /*virtual */ ~ScrollWidget();
+    ScrollWidget() {
+        _constructor();
+    }
+    /*virtual */ ~ScrollWidget() {
+        _destructor();
+    }
 
-    void Init();
-    void destructSelf();
     /*virtual */ void Draw(Sexy::Graphics *g);
     /*virtual */ void Update();
     void SetScrollMode(ScrollWidget::ScrollMode mode);
@@ -164,9 +166,9 @@ public:
     void CacheDerivedValues();
 
 protected:
+    void _constructor();
     void _destructor();
+    void _destructor2();
 };
-
-inline void *gScrollWidget_vTable[122];
 
 #endif // PVZ_LAWN_WIDGET_SCROLL_WIDGET_H

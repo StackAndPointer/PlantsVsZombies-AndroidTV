@@ -22,52 +22,36 @@
 #include "Homura/Logger.h"
 #include "Homura/MemberUtils.h"
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
-#include <algorithm>
+
 #include <cassert>
 #include <cmath>
 #include <cstring>
+
+#include <algorithm>
+#include <mutex>
 #include <sstream>
 
 using namespace Sexy;
 
-
-ScrollWidget::ScrollWidget() {
-    Init();
-}
-
-ScrollWidget::~ScrollWidget() {
-    _destructor();
-}
-
-void ScrollWidget::_destructor() {
-    Widget::_destructor();
-}
-
-void ScrollWidget::destructSelf() {
-    delete this;
-}
-
-void ScrollWidget::Init() {
+void ScrollWidget::_constructor() {
     Widget::_constructor();
 
-    static bool uninitialized = true;
-    if (uninitialized) {
-
-        std::memcpy(gScrollWidget_vTable, vTable, sizeof(void *) * std::size(gScrollWidget_vTable));
-        // homura::HookVirtualFunc(gScrollWidget_vTable, 0, &ScrollWidget::_destructor, nullptr);
-        // homura::HookVirtualFunc(gScrollWidget_vTable, 1, &ScrollWidget::destructSelf, nullptr);
-        homura::HookVirtualFunc(gScrollWidget_vTable, 31, &ScrollWidget::Update, nullptr);
-        homura::HookVirtualFunc(gScrollWidget_vTable, 36, &ScrollWidget::Draw, nullptr);
-        homura::HookVirtualFunc(gScrollWidget_vTable, 6, &ScrollWidget::AddWidget, nullptr);
-        homura::HookVirtualFunc(gScrollWidget_vTable, 7, &ScrollWidget::RemoveWidget, nullptr);
-        homura::HookVirtualFunc(gScrollWidget_vTable, 50, &ScrollWidget::Resize, nullptr);
-        homura::HookVirtualFunc(gScrollWidget_vTable, 76, &ScrollWidget::MouseDown, nullptr);
-        homura::HookVirtualFunc(gScrollWidget_vTable, 79, &ScrollWidget::MouseUp, nullptr);
-        homura::HookVirtualFunc(gScrollWidget_vTable, 81, &ScrollWidget::MouseDrag, nullptr);
-        uninitialized = false;
-    }
-    vTable = reinterpret_cast<int *>(gScrollWidget_vTable);
-
+    static void *sScrollWidget_vTable[122];
+    static std::once_flag vtableInitFlag;
+    std::call_once(vtableInitFlag, [this] {
+        std::memcpy(sScrollWidget_vTable, vTable, sizeof(sScrollWidget_vTable));
+        sScrollWidget_vTable[0] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::_destructor);
+        sScrollWidget_vTable[1] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::_destructor2);
+        sScrollWidget_vTable[31] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::Update);
+        sScrollWidget_vTable[36] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::Draw);
+        sScrollWidget_vTable[6] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::AddWidget);
+        sScrollWidget_vTable[7] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::RemoveWidget);
+        sScrollWidget_vTable[50] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::Resize);
+        sScrollWidget_vTable[76] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::MouseDown);
+        sScrollWidget_vTable[79] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::MouseUp);
+        sScrollWidget_vTable[81] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::MouseDrag);
+    });
+    vTable = reinterpret_cast<int *>(sScrollWidget_vTable);
 
     mClient = nullptr;
     mClientDownDispatched = false;
@@ -89,6 +73,15 @@ void ScrollWidget::Init() {
     mScrollOffset = CGPoint(0.0f, 0.0f);
     mScrollVelocity = CGPoint(0.0f, 0.0f);
     mClip = true;
+}
+
+void ScrollWidget::_destructor() {
+    Widget::_destructor();
+}
+
+void ScrollWidget::_destructor2() {
+    _destructor();
+    ::operator delete(this);
 }
 
 void ScrollWidget::SetScrollMode(ScrollWidget::ScrollMode mode) {

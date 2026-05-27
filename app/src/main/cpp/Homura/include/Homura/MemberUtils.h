@@ -150,6 +150,20 @@ Ret CallVirtualFunc(T *thiz, std::convertible_to<Args> auto &&...args) {
     return vtable[I](thiz, std::forward<decltype(args)>(args)...);
 }
 
+
+namespace details {
+    struct CppMemFuncPtr;
+    void CheckVirtualFunc(const CppMemFuncPtr *ptr);
+} // namespace details
+
+template <typename T, typename Ret, typename... Args, typename FuncPtr = Ret (*)(T *, Args...)>
+FuncPtr ExtractMemFuncPtr(Ret (T::*memFuncPtr)(Args...)) {
+#ifdef PVZ_DEBUG
+    details::CheckVirtualFunc(reinterpret_cast<details::CppMemFuncPtr *>(&memFuncPtr));
+#endif
+    return reinterpret_cast<FuncPtr &>(memFuncPtr);
+}
+
 } // namespace homura
 
 #endif // HOMURA_MEMBERUTILS_H
