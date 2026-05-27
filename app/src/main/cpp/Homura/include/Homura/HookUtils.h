@@ -64,10 +64,7 @@ void HookFunc(void *symbol, R (*newFunc)(Args...), std::add_pointer_t<decltype(n
  */
 template <typename R, typename T, typename... Args>
 void HookFunc(void *symbol, R (T::*newFunc)(Args...), std::type_identity_t<R (**)(T *, Args...)> oldFuncAddr) {
-#ifdef PVZ_DEBUG
-    details::CheckVirtualFunc(reinterpret_cast<details::CppMemFuncPtr *>(&newFunc));
-#endif
-    details::HookFuncImpl(symbol, reinterpret_cast<void *&>(newFunc), reinterpret_cast<void **>(oldFuncAddr));
+    details::HookFuncImpl(symbol, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
 }
 
 /**
@@ -104,10 +101,7 @@ bool HookVirtualFunc(void *vTableSymbol, std::size_t index, R (*newFunc)(Args...
  */
 template <typename R, typename T, typename... Args>
 bool HookVirtualFunc(void *vTableSymbol, std::size_t index, R (T::*newFunc)(Args...), std::type_identity_t<R (**)(T *, Args...)> oldFuncAddr) {
-#ifdef PVZ_DEBUG
-    details::CheckVirtualFunc(reinterpret_cast<details::CppMemFuncPtr *>(&newFunc));
-#endif
-    return details::HookVirtualFuncImpl(vTableSymbol, index, reinterpret_cast<void *&>(newFunc), reinterpret_cast<void **>(oldFuncAddr));
+    return details::HookVirtualFuncImpl(vTableSymbol, index, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
 }
 
 /**
