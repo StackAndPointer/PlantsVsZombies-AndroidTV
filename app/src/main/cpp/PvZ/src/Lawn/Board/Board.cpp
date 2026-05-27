@@ -3090,17 +3090,17 @@ void Board::DrawButterButton(Sexy::Graphics *g, LawnApp *theApp) {
 void Board::DrawShovelButton(Sexy::Graphics *g, LawnApp *theApp) {
     // 实现玩家拿着铲子时不在ShovelBank中绘制铲子、实现在对战模式中添加铲子按钮
 
-    //    if (theApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-    //        // LOGD("%d %d",rect[0],rect[1]);
-    //        // return;  原版游戏在此处就return了，所以对战中不绘制铲子按钮。
-    //        if (keyboardMode)
-    //            return;
-    //        // 对战模式采用移动端铲子图标
-    //        TodDrawImageScaledF(g, addonImages.IMAGE_SHOVELBANK_VERTICAL, mTouchVSShovelRect.mX, mTouchVSShovelRect.mY, 0.8f, 0.8f);
-    //        if (!requestDrawShovelInCursor)
-    //            TodDrawImageScaledF(g, addonImages.IMAGE_SHOVEL_VERTICAL, mTouchVSShovelRect.mX - 3, mTouchVSShovelRect.mY - 3, 0.9f, 0.9f);
-    //        return;
-    //    }
+    if (theApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+        // LOGD("%d %d",rect[0],rect[1]);
+        // return;  原版游戏在此处就return了，所以对战中不绘制铲子按钮。
+        if (keyboardMode)
+            return;
+        // 对战模式采用移动端铲子图标
+        TodDrawImageScaledF(g, addonImages.IMAGE_SHOVELBANK_VERTICAL, mTouchVSShovelRect.mX, mTouchVSShovelRect.mY, 0.8f, 0.8f);
+        if (!requestDrawShovelInCursor)
+            TodDrawImageScaledF(g, addonImages.IMAGE_SHOVEL_VERTICAL, mTouchVSShovelRect.mX - 3, mTouchVSShovelRect.mY - 3, 0.9f, 0.9f);
+        return;
+    }
 
     float tmp = g->mTransY;
     Rect rect = GetShovelButtonRect();

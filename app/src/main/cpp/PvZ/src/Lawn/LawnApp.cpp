@@ -44,6 +44,7 @@
 
 #include <unistd.h>
 
+#include <algorithm>
 #include <limits>
 #include <ranges>
 
@@ -1260,11 +1261,18 @@ void LawnApp::KillVSResultsScreen() {
 }
 
 void LawnApp::PreNewGame(GameMode theGameMode, bool theLookForSavedGame) {
-    clientRecvBuffer.clear();
-    serverRecvBuffer.clear();
-    netplay::ClearSendBuffer();
+    // Best-effort flush queued outbound events before resetting recorder.
+    LOG_DEBUG("0");
+    if (gTcpClientSocket >= 0) {
+        netplay::FlushSendBuffer(gTcpClientSocket);
+    } else if (gTcpConnected && gTcpServerSocket >= 0) {
+        netplay::FlushSendBuffer(gTcpServerSocket);
+    }
+    LOG_DEBUG("1");
     replay::ResetRecorder();
+    LOG_DEBUG("2");
     old_LawnApp_PreNewGame(this, theGameMode, theLookForSavedGame);
+    LOG_DEBUG("3");
 }
 
 void LawnApp::NewGame() {

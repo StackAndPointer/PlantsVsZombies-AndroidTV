@@ -729,7 +729,7 @@ void ChallengeScreen::KeyDown_Origin(Sexy::KeyCode theKey) {
             }
         }
     }
-
+    LOG_DEBUG("IN");
     old_ChallengeScreen_KeyDown(this, theKey);
 }
 
@@ -756,12 +756,43 @@ void ChallengeScreen::processServerEvent(const BaseEvent *event) {
         case EVENT_SERVER_CHALLENGESCREEN_BUTTON_DEPRESS: {
             auto *eventBtnDepress = static_cast<const U16_Event *>(event);
             int theId = eventBtnDepress->data;
+            LOG_DEBUG("theId:{}", theId);
             if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(theId)) {
                 LOG_WARN("[ChallengeScreen] ignore invalid VS button depress mode={}", theId);
                 break;
             }
             mSelectedMode = GameMode(theId);
-            KeyDown_Origin(Sexy::KEYCODE_RETURN);
+            LOG_DEBUG("before");
+            if (gChallengeScreenRequestState == mSelectedMode) {
+                gChallengeScreenRequestState = 0;
+            }
+
+            switch (mSelectedMode) {
+                case GAMEMODE_MP_VS_DAY:
+                    gVSBackground = BackgroundType::BACKGROUND_1_DAY;
+                    break;
+                case GAMEMODE_MP_VS_NIGHT:
+                    gVSBackground = BackgroundType::BACKGROUND_2_NIGHT;
+                    break;
+                case GAMEMODE_MP_VS_POOL_DAY:
+                    gVSBackground = BackgroundType::BACKGROUND_3_POOL;
+                    break;
+                case GAMEMODE_MP_VS_POOL_NIGHT:
+                    gVSBackground = BackgroundType::BACKGROUND_4_FOG;
+                    break;
+                case GAMEMODE_MP_VS_ROOF:
+                    gVSBackground = BackgroundType::BACKGROUND_5_ROOF;
+                    break;
+                case GAMEMODE_MP_VS_SHUFFLE_MODE:
+                    gVSBackground = BackgroundType::BACKGROUND_1_DAY;
+                    Challenge::msVSShuffleMode = true;
+                    break;
+                default:
+                    break;
+            }
+            mApp->KillChallengeScreen();
+            mApp->PreNewGame(GAMEMODE_MP_VS, false);
+            LOG_DEBUG("after");
         } break;
         case EVENT_SERVER_CHALLENGESCREEN_SELECT_MODE: {
             auto *event1 = static_cast<const U16_Event *>(event);
