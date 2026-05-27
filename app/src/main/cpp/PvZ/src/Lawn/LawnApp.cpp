@@ -1247,6 +1247,11 @@ void LawnApp::KillVSResultsScreen() {
             delete mVSResultsMenu->mCheckboxController;
             mVSResultsMenu->mCheckboxController = nullptr;
         }
+        if (mVSResultsMenu->mSaveReplayButton != nullptr) {
+            mVSResultsMenu->RemoveWidget(mVSResultsMenu->mSaveReplayButton);
+            delete mVSResultsMenu->mSaveReplayButton;
+            mVSResultsMenu->mSaveReplayButton = nullptr;
+        }
         if (!mVSResultsMenu->mIsFading) {
             mWidgetManager->RemoveWidget(mVSResultsMenu);
             SafeDeleteWidget(mVSResultsMenu);

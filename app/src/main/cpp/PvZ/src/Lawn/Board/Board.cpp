@@ -3090,17 +3090,17 @@ void Board::DrawButterButton(Sexy::Graphics *g, LawnApp *theApp) {
 void Board::DrawShovelButton(Sexy::Graphics *g, LawnApp *theApp) {
     // 实现玩家拿着铲子时不在ShovelBank中绘制铲子、实现在对战模式中添加铲子按钮
 
-    if (theApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-        // LOGD("%d %d",rect[0],rect[1]);
-        // return;  原版游戏在此处就return了，所以对战中不绘制铲子按钮。
-        if (keyboardMode)
-            return;
-        // 对战模式采用移动端铲子图标
-        TodDrawImageScaledF(g, addonImages.IMAGE_SHOVELBANK_VERTICAL, mTouchVSShovelRect.mX, mTouchVSShovelRect.mY, 0.8f, 0.8f);
-        if (!requestDrawShovelInCursor)
-            TodDrawImageScaledF(g, addonImages.IMAGE_SHOVEL_VERTICAL, mTouchVSShovelRect.mX - 3, mTouchVSShovelRect.mY - 3, 0.9f, 0.9f);
-        return;
-    }
+    //    if (theApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+    //        // LOGD("%d %d",rect[0],rect[1]);
+    //        // return;  原版游戏在此处就return了，所以对战中不绘制铲子按钮。
+    //        if (keyboardMode)
+    //            return;
+    //        // 对战模式采用移动端铲子图标
+    //        TodDrawImageScaledF(g, addonImages.IMAGE_SHOVELBANK_VERTICAL, mTouchVSShovelRect.mX, mTouchVSShovelRect.mY, 0.8f, 0.8f);
+    //        if (!requestDrawShovelInCursor)
+    //            TodDrawImageScaledF(g, addonImages.IMAGE_SHOVEL_VERTICAL, mTouchVSShovelRect.mX - 3, mTouchVSShovelRect.mY - 3, 0.9f, 0.9f);
+    //        return;
+    //    }
 
     float tmp = g->mTransY;
     Rect rect = GetShovelButtonRect();
@@ -3538,6 +3538,282 @@ void Board::MouseMove(int x, int y) {
     // gamepadControls1->mCursorPositionX = x;
     // gamepadControls1->mCursorPositionY = y;
     // }
+}
+
+void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerIndex) {
+    CursorObject *cursor = mCursorObject[thePlayerIndex];
+    GamepadControls *gamepad;
+    SeedBank *seedBank;
+    if (mApp->IsVSMode()) {
+        gamepad = mGamepadControls[0]->mIsZombie ? mGamepadControls[1] : mGamepadControls[0];
+        seedBank = mSeedBank[0]->mIsZombie ? mSeedBank[1] : mSeedBank[0];
+    } else {
+        gamepad = mGamepadControls[thePlayerIndex];
+        seedBank = gamepad->GetSeedBank();
+    }
+
+
+    if (theClickCount < 0) {
+        RefreshSeedPacketFromCursor(thePlayerIndex);
+        mApp->PlayFoley(FoleyType::FOLEY_DROP);
+        return;
+    }
+
+    if (mApp->IsIZombieLevel() || (mApp->mGameMode == GameMode::GAMEMODE_MULTI_PLAYER && thePlayerIndex > 0)) {
+        HitResult hitResult = {};
+        mChallenge->MouseDown(x, y, theClickCount, &hitResult, thePlayerIndex);
+        return;
+    }
+
+    SeedType plantingSeedType = GetSeedTypeInCursor(thePlayerIndex);
+    int gridX = PixelToGridX(x, y);
+    int gridY = PixelToGridY(x, y);
+    if (gridX < 0 || gridX >= MAX_GRID_SIZE_X || gridY < 0 || gridY >= MAX_GRID_SIZE_Y) {
+        RefreshSeedPacketFromCursor(thePlayerIndex);
+        mApp->PlayFoley(FoleyType::FOLEY_DROP);
+        return;
+    }
+
+    PlantingReason reason = CanPlantAt(gridX, gridY, plantingSeedType);
+    if (reason != PlantingReason::PLANTING_OK) {
+        if (reason == PlantingReason::PLANTING_ONLY_ON_GRAVES) {
+            DisplayAdvice("[ADVICE_GRAVEBUSTERS_ON_GRAVES]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_GRAVEBUSTERS_ON_GRAVES);
+        } else if (plantingSeedType == SeedType::SEED_LILYPAD && reason == PlantingReason::PLANTING_ONLY_IN_POOL) {
+            DisplayAdvice("[ADVICE_LILYPAD_ON_WATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_LILYPAD_ON_WATER);
+        } else if (plantingSeedType == SeedType::SEED_TANGLEKELP && reason == PlantingReason::PLANTING_ONLY_IN_POOL) {
+            DisplayAdvice("[ADVICE_TANGLEKELP_ON_WATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_TANGLEKELP_ON_WATER);
+        } else if (plantingSeedType == SeedType::SEED_SEASHROOM && reason == PlantingReason::PLANTING_ONLY_IN_POOL) {
+            DisplayAdvice("[ADVICE_SEASHROOM_ON_WATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_SEASHROOM_ON_WATER);
+        } else if (reason == PlantingReason::PLANTING_ONLY_ON_GROUND) {
+            DisplayAdvice("[ADVICE_POTATO_MINE_ON_LILY]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_POTATOE_MINE_ON_LILY);
+        } else if (reason == PlantingReason::PLANTING_NOT_PASSED_LINE) {
+            DisplayAdvice("[ADVICE_NOT_PASSED_LINE]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NOT_PASSED_LINE);
+        } else if (reason == PlantingReason::PLANTING_NEEDS_UPGRADE) {
+            switch (plantingSeedType) {
+                case SeedType::SEED_GATLINGPEA:
+                    DisplayAdvice("[ADVICE_ONLY_ON_REPEATERS]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_REPEATERS);
+                    break;
+                case SeedType::SEED_TWINSUNFLOWER:
+                    DisplayAdvice("[ADVICE_ONLY_ON_SUNFLOWER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_SUNFLOWER);
+                    break;
+                case SeedType::SEED_GLOOMSHROOM:
+                    DisplayAdvice("[ADVICE_ONLY_ON_FUMESHROOM]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_FUMESHROOM);
+                    break;
+                case SeedType::SEED_CATTAIL:
+                    DisplayAdvice("[ADVICE_ONLY_ON_LILYPAD]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_LILYPAD);
+                    break;
+                case SeedType::SEED_WINTERMELON:
+                    DisplayAdvice("[ADVICE_ONLY_ON_MELONPULT]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_MELONPULT);
+                    break;
+                case SeedType::SEED_GOLD_MAGNET:
+                    DisplayAdvice("[ADVICE_ONLY_ON_MAGNETSHROOM]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_MAGNETSHROOM);
+                    break;
+                case SeedType::SEED_SPIKEROCK:
+                    DisplayAdvice("[ADVICE_ONLY_ON_SPIKEWEED]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_SPIKEWEED);
+                    break;
+                case SeedType::SEED_COBCANNON:
+                    DisplayAdvice("[ADVICE_ONLY_ON_KERNELPULT]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_KERNELPULT);
+                    break;
+                default:
+                    break;
+            }
+        } else if (reason == PlantingReason::PLANTING_NOT_ON_ART) {
+            DisplayAdvice("[ADVICE_WRONG_ART_TYPE]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_WRONG_ART_TYPE);
+        } else if (reason == PlantingReason::PLANTING_NEEDS_POT) {
+            if (mApp->IsFirstTimeAdventureMode() && mLevel == 41) {
+                DisplayAdvice("[ADVICE_PLANT_NEED_POT1]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NEED_POT);
+            } else {
+                DisplayAdvice("[ADVICE_PLANT_NEED_POT2]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NEED_POT);
+            }
+        } else if (reason == PlantingReason::PLANTING_NOT_ON_GRAVE) {
+            DisplayAdvice("[ADVICE_PLANT_NOT_ON_GRAVE]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NOT_ON_GRAVE);
+        } else if (reason == PlantingReason::PLANTING_NOT_ON_CRATER) {
+            if (IsPoolSquare(gridX, gridY)) {
+                DisplayAdvice("[ADVICE_CANT_PLANT_THERE]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_CANT_PLANT_THERE);
+            } else {
+                DisplayAdvice("[ADVICE_PLANT_NOT_ON_CRATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NOT_ON_CRATER);
+            }
+        } else if (reason == PlantingReason::PLANTING_NOT_ON_WATER) {
+            if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN && mApp->mZenGarden->mGardenType == GARDEN_AQUARIUM) {
+                DisplayAdvice("[ZEN_ONLY_AQUATIC_PLANTS]", MessageStyle::MESSAGE_STYLE_HINT_TALL_FAST, AdviceType::ADVICE_NONE);
+            } else if (plantingSeedType == SeedType::SEED_POTATOMINE) {
+                DisplayAdvice("[ADVICE_POTATO_MINE_ON_LILY]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_POTATOE_MINE_ON_LILY);
+            } else {
+                DisplayAdvice("[ADVICE_PLANT_NOT_ON_WATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NOT_ON_WATER);
+            }
+        } else if (reason == PlantingReason::PLANTING_NEEDS_GROUND) {
+            DisplayAdvice("[ADVICE_PLANTING_NEEDS_GROUND]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANTING_NEEDS_GROUND);
+        } else if (reason == PlantingReason::PLANTING_NEEDS_SLEEPING) {
+            DisplayAdvice("[ADVICE_PLANTING_NEED_SLEEPING]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANTING_NEED_SLEEPING);
+        }
+
+        if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE || mApp->IsWhackAZombieLevel()) {
+            RefreshSeedPacketFromCursor(thePlayerIndex);
+            mApp->PlayFoley(FoleyType::FOLEY_DROP);
+        }
+        return;
+    }
+
+    ClearAdvice(AdviceType::ADVICE_PLANTING_NEED_SLEEPING);
+    ClearAdvice(AdviceType::ADVICE_CANT_PLANT_THERE);
+    ClearAdvice(AdviceType::ADVICE_PLANTING_NEEDS_GROUND);
+    ClearAdvice(AdviceType::ADVICE_PLANT_NOT_ON_WATER);
+    ClearAdvice(AdviceType::ADVICE_PLANT_NOT_ON_CRATER);
+    ClearAdvice(AdviceType::ADVICE_PLANT_NOT_ON_GRAVE);
+    ClearAdvice(AdviceType::ADVICE_PLANT_NEED_POT);
+    ClearAdvice(AdviceType::ADVICE_PLANT_WRONG_ART_TYPE);
+    ClearAdvice(AdviceType::ADVICE_PLANT_ONLY_ON_LILYPAD);
+    ClearAdvice(AdviceType::ADVICE_PLANT_ONLY_ON_MAGNETSHROOM);
+    ClearAdvice(AdviceType::ADVICE_PLANT_ONLY_ON_FUMESHROOM);
+    ClearAdvice(AdviceType::ADVICE_PLANT_ONLY_ON_KERNELPULT);
+    ClearAdvice(AdviceType::ADVICE_PLANT_ONLY_ON_SUNFLOWER);
+    ClearAdvice(AdviceType::ADVICE_PLANT_ONLY_ON_SPIKEWEED);
+    ClearAdvice(AdviceType::ADVICE_PLANT_ONLY_ON_MELONPULT);
+    ClearAdvice(AdviceType::ADVICE_PLANT_ONLY_ON_REPEATERS);
+    ClearAdvice(AdviceType::ADVICE_PLANT_NOT_PASSED_LINE);
+    ClearAdvice(AdviceType::ADVICE_PLANT_GRAVEBUSTERS_ON_GRAVES);
+    ClearAdvice(AdviceType::ADVICE_PLANT_LILYPAD_ON_WATER);
+    ClearAdvice(AdviceType::ADVICE_PLANT_TANGLEKELP_ON_WATER);
+    ClearAdvice(AdviceType::ADVICE_PLANT_SEASHROOM_ON_WATER);
+    ClearAdvice(AdviceType::ADVICE_PLANT_POTATOE_MINE_ON_LILY);
+    ClearAdvice(AdviceType::ADVICE_SURVIVE_FLAGS);
+
+    if (!mApp->mEasyPlantingCheat && cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK && !HasConveyorBeltSeedBank(thePlayerIndex)) {
+        if (!TakeSunMoney(GetCurrentPlantCost(plantingSeedType, SeedType::SEED_NONE), thePlayerIndex)) {
+            return;
+        }
+    }
+
+    bool isAwake = false;
+    int wakeUpCounter = 0;
+    PlantsOnLawn plantOnLawn = {};
+    GetPlantsOnLawn(gridX, gridY, &plantOnLawn);
+    Plant *normalPlant = plantOnLawn.mNormalPlant;
+    Plant *pumpkinPlant = plantOnLawn.mPumpkinPlant;
+    if (normalPlant != nullptr && normalPlant->IsUpgradableTo(plantingSeedType)) {
+        if (plantingSeedType == SeedType::SEED_GLOOMSHROOM) {
+            isAwake = !normalPlant->mIsAsleep;
+            wakeUpCounter = normalPlant->mWakeUpCounter;
+        }
+        normalPlant->Die();
+    }
+    if ((plantingSeedType == SeedType::SEED_WALLNUT || plantingSeedType == SeedType::SEED_TALLNUT) && normalPlant != nullptr) {
+        if (normalPlant->mSeedType == plantingSeedType) {
+            normalPlant->Die();
+        }
+    }
+    if (plantingSeedType == SeedType::SEED_PUMPKINSHELL && pumpkinPlant != nullptr) {
+        if (pumpkinPlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
+            pumpkinPlant->Die();
+        }
+    }
+    if (plantingSeedType == SeedType::SEED_COBCANNON) {
+        Plant *rightPlant = GetTopPlantAt(gridX + 1, gridY, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
+        if (rightPlant != nullptr) {
+            rightPlant->Die();
+        }
+    }
+    if (plantingSeedType == SeedType::SEED_CATTAIL) {
+        if (plantOnLawn.mUnderPlant != nullptr) {
+            plantOnLawn.mUnderPlant->Die();
+        }
+        if (normalPlant != nullptr) {
+            normalPlant->Die();
+        }
+    }
+
+    if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE) {
+        mApp->mZenGarden->MovePlant(cursor->mGlovePlantID, gridX, gridY);
+    } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_WHEEL_BARROW) {
+        mApp->mZenGarden->MouseDownWithFullWheelBarrow(x, y);
+    } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
+        AddPlant(gridX, gridY, cursor->mType, cursor->mImitaterType, thePlayerIndex, true);
+        if (cursor->mCoinID != nullptr) {
+            cursor->mCoinID->Die();
+            cursor->mCoinID = nullptr;
+        }
+    } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK) {
+        Plant *plant = AddPlant(gridX, gridY, cursor->mType, cursor->mImitaterType, thePlayerIndex, true);
+        if (plant != nullptr) {
+            if (isAwake) {
+                plant->SetSleeping(false);
+            } else {
+                plant->mWakeUpCounter = wakeUpCounter;
+            }
+        }
+        seedBank->mSeedPackets[gamepad->mSelectedSeedIndex].Deactivate();
+        seedBank->mSeedPackets[gamepad->mSelectedSeedIndex].WasPlanted(thePlayerIndex);
+    } else {
+        return;
+    }
+
+    if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_COLUMN) {
+        for (int row = 0; row < MAX_GRID_SIZE_Y; ++row) {
+            if (row == gridY || CanPlantAt(gridX, row, plantingSeedType) != PlantingReason::PLANTING_OK) {
+                continue;
+            }
+            if (plantingSeedType == SeedType::SEED_WALLNUT || plantingSeedType == SeedType::SEED_TALLNUT) {
+                Plant *rowNormalPlant = GetTopPlantAt(gridX, row, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
+                if (rowNormalPlant != nullptr && rowNormalPlant->mSeedType == plantingSeedType) {
+                    rowNormalPlant->Die();
+                }
+            }
+            if (plantingSeedType == SeedType::SEED_PUMPKINSHELL) {
+                Plant *rowPumpkinPlant = GetTopPlantAt(gridX, row, PlantPriority::TOPPLANT_ONLY_PUMPKIN);
+                if (rowPumpkinPlant != nullptr && rowPumpkinPlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
+                    rowPumpkinPlant->Die();
+                }
+            }
+            AddPlant(gridX, row, cursor->mType, cursor->mImitaterType, thePlayerIndex, true);
+        }
+    }
+
+    auto countSunFlowers = [this]() {
+        int count = 0;
+        Plant *plant = nullptr;
+        while (IteratePlants(plant)) {
+            if (plant->mSeedType == SeedType::SEED_SUNFLOWER) {
+                ++count;
+            }
+        }
+        return count;
+    };
+
+    if (thePlayerIndex == 0 && mTutorialState == TutorialState::TUTORIAL_LEVEL_1_PLANT_PEASHOOTER) {
+        SetTutorialState((int)mPlants.mSize >= 2 ? TutorialState::TUTORIAL_LEVEL_1_COMPLETED : TutorialState::TUTORIAL_LEVEL_1_REFRESH_PEASHOOTER);
+    } else if (thePlayerIndex == 0 && mTutorialState == TutorialState::TUTORIAL_LEVEL_2_PLANT_SUNFLOWER) {
+        int sunFlowerCount = countSunFlowers();
+        if (plantingSeedType == SeedType::SEED_SUNFLOWER && sunFlowerCount == 2) {
+            DisplayAdvice("[ADVICE_MORE_SUNFLOWERS]", MessageStyle::MESSAGE_STYLE_TUTORIAL_LEVEL2, AdviceType::ADVICE_NONE);
+            if (!mSeedBank[0]->mSeedPackets[1].CanPickUp()) {
+                SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_REFRESH_SUNFLOWER);
+            } else {
+                SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_PICK_UP_SUNFLOWER);
+            }
+        } else if (sunFlowerCount >= 3) {
+            SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_COMPLETED);
+        } else if (!mSeedBank[0]->mSeedPackets[1].CanPickUp()) {
+            SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_REFRESH_SUNFLOWER);
+        } else {
+            SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_PICK_UP_SUNFLOWER);
+        }
+    } else if (thePlayerIndex == 0 && mTutorialState == TutorialState::TUTORIAL_MORESUN_PLANT_SUNFLOWER) {
+        if (countSunFlowers() >= 3) {
+            SetTutorialState(TutorialState::TUTORIAL_MORESUN_COMPLETED);
+            DisplayAdvice("[ADVICE_PLANT_SUNFLOWER5]", MessageStyle::MESSAGE_STYLE_TUTORIAL_LATER, AdviceType::ADVICE_PLANT_SUNFLOWER5);
+            mTutorialTimer = -1;
+        } else if (!mSeedBank[0]->mSeedPackets[1].CanPickUp()) {
+            SetTutorialState(TutorialState::TUTORIAL_MORESUN_REFRESH_SUNFLOWER);
+        } else {
+            SetTutorialState(TutorialState::TUTORIAL_MORESUN_PICK_UP_SUNFLOWER);
+        }
+    }
+
+    if (mApp->IsWallnutBowlingLevel()) {
+        mApp->PlaySample(SOUND_BOWLING);
+    }
+
+    ClearCursor(thePlayerIndex);
 }
 
 bool Board::MouseHitTest(int x, int y, HitResult *theHitResult, bool thePlayerIndex) {
@@ -4270,6 +4546,9 @@ void Board::__MouseDrag(int x, int y) {
         return;
     }
 
+    mTouchLastX = x;
+    mTouchLastY = y;
+
     if (mTouchState != TouchState::TOUCHSTATE_SEED_BANK && mTouchState != TouchState::TOUCHSTATE_ZEN_GARDEN_TOOLS) {
         if (x > 770)
             x = 770;
@@ -4291,8 +4570,6 @@ void Board::__MouseDrag(int x, int y) {
             mGamepadControls[1]->mCursorPositionY = y;
         }
     }
-    mTouchLastX = x;
-    mTouchLastY = y;
 }
 
 void Board::MouseUp(int x, int y, int theClickCount) {
@@ -4319,7 +4596,6 @@ void Board::MouseUp(int x, int y, int theClickCount) {
     }
 }
 void Board::__MouseUp(int x, int y, int theClickCount) {
-
     old_Board_MouseUp(this, x, y, theClickCount);
     if (mTouchState != TouchState::TOUCHSTATE_NONE && mSendKeyWhenTouchUp) {
         SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
@@ -4955,6 +5231,9 @@ void Board::MouseDragSecond(int x, int y) {
         return;
     }
 
+    gTouchLastXSecond = x;
+    gTouchLastYSecond = y;
+
     if (gTouchStateSecond != TouchState::TOUCHSTATE_SEED_BANK) {
         if (x > 770)
             x = 770;
@@ -4970,9 +5249,6 @@ void Board::MouseDragSecond(int x, int y) {
             mGamepadControls[1]->mCursorPositionY = y;
         }
     }
-
-    gTouchLastXSecond = x;
-    gTouchLastYSecond = y;
 }
 
 
@@ -6265,6 +6541,7 @@ GridItem *Board::AddAPole_Origin(int theX, int theY, int theGridY) {
 }
 
 bool Board::TakeSunMoney(int theAmount, int thePlayer) {
+    LOG_DEBUG("{} {}", theAmount, thePlayer);
     bool result = old_Board_TakeSunMoney(this, theAmount, thePlayer);
     if (gTcpClientSocket >= 0) {
         I16_Event event = {{EventType::EVENT_SERVER_BOARD_TAKE_SUNMONEY}, int16_t(mSunMoney1)};

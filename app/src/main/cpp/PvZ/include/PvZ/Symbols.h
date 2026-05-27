@@ -977,6 +977,8 @@ inline void *ZenGarden_IsStinkyHighOnChocolateAddr;
 inline void *ZenGarden_OpenStoreAddr;
 inline void *ZenGarden_GetPottedPlantInWheelbarrowAddr;
 inline void *ZenGarden_DrawPottedPlantAddr;
+inline void *ZenGarden_MovePlantAddr;
+inline void *ZenGarden_MouseDownWithFullWheelBarrowAddr;
 inline void *PlantFlowerPotHeightOffsetAddr;
 
 

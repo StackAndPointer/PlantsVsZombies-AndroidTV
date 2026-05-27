@@ -1080,170 +1080,170 @@ void GamepadControls::DrawPreview(Sexy::Graphics *g) {
 }
 
 void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int unk) {
+
+    if (!mGameObject->mApp->IsVSMode() || theButton != Sexy::GamepadButton::GAMEPAD_BUTTON_A) {
+        return old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
+    }
+
     SeedBank *aSeedBank = GetSeedBank();
     SeedPacket *aSeedPacket = &aSeedBank->mSeedPackets[mSelectedSeedIndex];
     SeedType aPacketType = aSeedPacket->mPacketType;
     int aPacketCost = mBoard->GetCurrentPlantCost(aSeedPacket->mPacketType, SeedType::SEED_NONE);
-    if (mGameObject->mApp->IsVSMode() && theButton == Sexy::GamepadButton::GAMEPAD_BUTTON_A) {
-        if (mIsZombie) {
-            int aGridX = mBoard->PixelToGridXKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
-            int aGridY = mBoard->PixelToGridYKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
+    int aGridX = mBoard->PixelToGridXKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
+    int aGridY = mBoard->PixelToGridYKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
+    if (mIsZombie) {
 
-            if (!mBoard->CanTakeDeathMoney(aPacketCost) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK
-                || mBoard->HasLevelAwardDropped()) {
-                bool isClientGamepadControl = mPlayerIndex2 == 1;
-                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
-                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
-                    netplay::PutEvent(event);
-                } else {
-                    mGameObject->mApp->PlaySample(SOUND_BUZZER);
-                }
-                return;
+        if (!mBoard->CanTakeDeathMoney(aPacketCost) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK || mBoard->HasLevelAwardDropped()) {
+            bool isClientGamepadControl = mPlayerIndex2 == 1;
+            if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
+                netplay::PutEvent(event);
+            } else {
+                mGameObject->mApp->PlaySample(SOUND_BUZZER);
             }
+            return;
+        }
 
 
-            if (aPacketType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE) {
-                std::vector<SeedType> aPlantSeeds, aZombieSeeds;
-                PickShuffleSeeds(mGameObject->mApp, aPlantSeeds, aZombieSeeds, true);
-                if (!aZombieSeeds.empty()) {
-                    for (int aPacketIndex = 1; aPacketIndex <= aZombieSeeds.size(); ++aPacketIndex) {
-                        SeedType aSeedType = aZombieSeeds[aPacketIndex - 1];
-                        aSeedBank->mSeedPackets[aPacketIndex].SetPacketType(aSeedType, SeedType::SEED_NONE);
-                    }
-                }
-                mBoard->TakeDeathMoney(aPacketCost);
-                aSeedPacket->Deactivate();
-                aSeedPacket->WasPlanted(mPlayerIndex2);
-                return;
-            }
-
-            if (mBoard->HasLevelAwardDropped() || (mBoard->mChallenge->IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode <= 1 && Challenge::IsMPResourceProducer(aSeedPacket->mPacketType))
-                || mBoard->mChallenge->ISMPSeedSuddenDeathDisabled(aSeedBank->mIsZombie, aPacketType)) {
-                bool isClientGamepadControl = mPlayerIndex2 == 1;
-                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
-                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
-                    netplay::PutEvent(event);
-                } else {
-                    mGameObject->mApp->PlaySample(SOUND_BUZZER);
-                }
-                return;
-            }
-
-            if (aPacketType == SeedType::SEED_ZOMBIE_MOUND) {
-                GridItem *aGraveStone = mBoard->GetGraveStoneAt(aGridX, aGridY);
-                GridItem *aMound = mBoard->GetMoundAt(aGridX, aGridY);
-
-                int aTargetLevel = -1;
-                GridItem *aTargetGridItem = nullptr;
-
-                if (aGraveStone) {
-                    aTargetLevel = 0;
-                    aTargetGridItem = aGraveStone;
-                } else if (aMound && aMound->mMoundLevel < 4) {
-                    aTargetLevel = aMound->mMoundLevel + 1;
-                    aTargetGridItem = aMound;
-                }
-
-                if (aTargetLevel >= 0 && mBoard->TakeDeathMoney(aPacketCost)) {
-                    GridItem *aUpgradeMound = mBoard->AddAMound(aGridX, aGridY, aTargetLevel);
-                    if (aUpgradeMound) {
-                        aUpgradeMound->mIsSpecialGrave = true;
-                        aUpgradeMound->mVSGraveStoneHealth = 350 + 70 * (aTargetLevel + 1);
-                    }
-
-                    if (aTargetGridItem) {
-                        aTargetGridItem->GridItemDie();
-                    }
-
-                    aSeedPacket->Deactivate();
-                    aSeedPacket->WasPlanted(mPlayerIndex1);
-                    mGamepadState = MOVEMENT_STATE_NORMAL;
+        if (aPacketType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE) {
+            std::vector<SeedType> aPlantSeeds, aZombieSeeds;
+            PickShuffleSeeds(mGameObject->mApp, aPlantSeeds, aZombieSeeds, true);
+            if (!aZombieSeeds.empty()) {
+                for (int aPacketIndex = 1; aPacketIndex <= aZombieSeeds.size(); ++aPacketIndex) {
+                    SeedType aSeedType = aZombieSeeds[aPacketIndex - 1];
+                    aSeedBank->mSeedPackets[aPacketIndex].SetPacketType(aSeedType, SeedType::SEED_NONE);
                 }
             }
+            mBoard->TakeDeathMoney(aPacketCost);
+            aSeedPacket->Deactivate();
+            aSeedPacket->WasPlanted(mPlayerIndex2);
+            return;
+        }
 
-            if (aPacketType == SeedType::SEED_ZOMBIE_GRAVESTONE) {
-                if (mBoard->CanAddGraveStoneAt(aGridX, aGridY) && mBoard->TakeDeathMoney(aPacketCost)) {
-                    GridItem *aGraveStone = mBoard->AddAGraveStone(aGridX, aGridY);
-                    aGraveStone->mIsSpecialGrave = false;
-                    aGraveStone->mVSGraveStoneHealth = 350;
-                    aSeedPacket->Deactivate();
-                    aSeedPacket->WasPlanted(mPlayerIndex1);
-                    mGamepadState = MOVEMENT_STATE_NORMAL;
-                }
+        if (mBoard->HasLevelAwardDropped() || (mBoard->mChallenge->IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode <= 1 && Challenge::IsMPResourceProducer(aSeedPacket->mPacketType))
+            || mBoard->mChallenge->ISMPSeedSuddenDeathDisabled(aSeedBank->mIsZombie, aPacketType)) {
+            bool isClientGamepadControl = mPlayerIndex2 == 1;
+            if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
+                netplay::PutEvent(event);
+            } else {
+                mGameObject->mApp->PlaySample(SOUND_BUZZER);
+            }
+            return;
+        }
+
+        if (aPacketType == SeedType::SEED_ZOMBIE_MOUND) {
+            GridItem *aGraveStone = mBoard->GetGraveStoneAt(aGridX, aGridY);
+            GridItem *aMound = mBoard->GetMoundAt(aGridX, aGridY);
+
+            int aTargetLevel = -1;
+            GridItem *aTargetGridItem = nullptr;
+
+            if (aGraveStone) {
+                aTargetLevel = 0;
+                aTargetGridItem = aGraveStone;
+            } else if (aMound && aMound->mMoundLevel < 4) {
+                aTargetLevel = aMound->mMoundLevel + 1;
+                aTargetGridItem = aMound;
             }
 
-            ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(aPacketType);
-            if (aZombieType != ZombieType::ZOMBIE_INVALID && mBoard->TakeDeathMoney(aPacketCost)) {
-                if (aZombieType == ZombieType::ZOMBIE_BUNGEE) {
-                    Zombie *aBungeeZombie = mBoard->AddZombieInRow(aZombieType, aGridY, 0, false);
-                    aBungeeZombie->mTargetCol = aGridX;
-                    aBungeeZombie->SetRow(aGridY);
-                    aBungeeZombie->mPosX = float(mBoard->GridToPixelX(aGridX, aGridY));
-                    aBungeeZombie->mPosY = aBungeeZombie->GetPosYBasedOnRow(aGridY);
-                    aBungeeZombie->mRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, aGridY, 7);
-                } else if (aZombieType == ZombieType::ZOMBIE_FLAG) {
-                    mBoard->DisplayAdviceAgain("[ADVICE_HUGE_WAVE]", MessageStyle::MESSAGE_STYLE_HUGE_WAVE, AdviceType::ADVICE_HUGE_WAVE);
-                    mBoard->SpawnZombieWave();
-                } else if (Challenge::IsMPZombieTypeAddInRow(aZombieType) || mBoard->mPlantRow[aGridY] == PlantRowType::PLANTROW_POOL) {
-                    mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, true);
-                } else {
-                    Zombie *aZombie = mBoard->AddZombie(aZombieType, Zombie::ZOMBIE_WAVE_VS, false);
-                    if (aZombie) {
-                        if (mBoard->StageHasRoof()) {
-                            Zombie *aBungeeZombie = mBoard->AddZombie(ZombieType::ZOMBIE_BUNGEE, Zombie::ZOMBIE_WAVE_VS, false);
-                            aBungeeZombie->BungeeDropZombie(aZombie, aGridX, aGridY);
-                        } else {
-                            aZombie->RiseFromGrave(aGridX, aGridY);
-                        }
-                    }
+            if (aTargetLevel >= 0 && mBoard->TakeDeathMoney(aPacketCost)) {
+                GridItem *aUpgradeMound = mBoard->AddAMound(aGridX, aGridY, aTargetLevel);
+                if (aUpgradeMound) {
+                    aUpgradeMound->mIsSpecialGrave = true;
+                    aUpgradeMound->mVSGraveStoneHealth = 350 + 70 * (aTargetLevel + 1);
+                }
+
+                if (aTargetGridItem) {
+                    aTargetGridItem->GridItemDie();
                 }
 
                 aSeedPacket->Deactivate();
-                aSeedPacket->WasPlanted(mPlayerIndex2);
+                aSeedPacket->WasPlanted(mPlayerIndex1);
                 mGamepadState = MOVEMENT_STATE_NORMAL;
                 return;
             }
-        } else {
-            int aGridX = mBoard->PixelToGridXKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
-            int aGridY = mBoard->PixelToGridYKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
+        }
 
-            if (!mBoard->CanTakeSunMoney(aPacketCost, 0) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK
-                || mBoard->HasLevelAwardDropped()) {
-                // 优化玩家体验：不执行旧函数，使未成功种下的卡槽不会退回未选取状态
-                //                old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
-                bool isClientGamepadControl = mPlayerIndex2 == 1;
-                if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
-                    U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
-                    netplay::PutEvent(event);
-                } else {
-                    mGameObject->mApp->PlaySample(SOUND_BUZZER);
-                }
-                return;
-            }
-
-            if (aPacketType < SeedType::NUM_SEED_TYPES) {
-                // TODO: 重写旧函数，以在客机种植失败时告知客机播放BUZZER,而非主机播放BUZZER
-                old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
-                return;
-            }
-
-            if (aPacketType == SEED_BEGHOULED_BUTTON_SHUFFLE) {
-                std::vector<SeedType> aPlantSeeds, aZombieSeeds;
-                PickShuffleSeeds(mGameObject->mApp, aPlantSeeds, aZombieSeeds, false);
-                if (!aPlantSeeds.empty()) {
-                    for (int aPacketIndex = 1; aPacketIndex <= aPlantSeeds.size(); ++aPacketIndex) {
-                        SeedType aSeedType = aPlantSeeds[aPacketIndex - 1];
-                        aSeedBank->mSeedPackets[aPacketIndex].SetPacketType(aSeedType, SeedType::SEED_NONE);
-                    }
-                }
-                mBoard->TakeSunMoney(aPacketCost, 0);
+        if (aPacketType == SeedType::SEED_ZOMBIE_GRAVESTONE) {
+            if (mBoard->CanAddGraveStoneAt(aGridX, aGridY) && mBoard->TakeDeathMoney(aPacketCost)) {
+                GridItem *aGraveStone = mBoard->AddAGraveStone(aGridX, aGridY);
+                aGraveStone->mIsSpecialGrave = false;
+                aGraveStone->mVSGraveStoneHealth = 350;
                 aSeedPacket->Deactivate();
                 aSeedPacket->WasPlanted(mPlayerIndex1);
+                mGamepadState = MOVEMENT_STATE_NORMAL;
+                return;
             }
         }
-    }
 
-    old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
+        ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(aPacketType);
+        if (aZombieType != ZombieType::ZOMBIE_INVALID && mBoard->TakeDeathMoney(aPacketCost)) {
+            if (aZombieType == ZombieType::ZOMBIE_BUNGEE) {
+                Zombie *aBungeeZombie = mBoard->AddZombieInRow(aZombieType, aGridY, 0, false);
+                aBungeeZombie->mTargetCol = aGridX;
+                aBungeeZombie->SetRow(aGridY);
+                aBungeeZombie->mPosX = float(mBoard->GridToPixelX(aGridX, aGridY));
+                aBungeeZombie->mPosY = aBungeeZombie->GetPosYBasedOnRow(aGridY);
+                aBungeeZombie->mRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, aGridY, 7);
+            } else if (aZombieType == ZombieType::ZOMBIE_FLAG) {
+                mBoard->DisplayAdviceAgain("[ADVICE_HUGE_WAVE]", MessageStyle::MESSAGE_STYLE_HUGE_WAVE, AdviceType::ADVICE_HUGE_WAVE);
+                mBoard->SpawnZombieWave();
+            } else if (Challenge::IsMPZombieTypeAddInRow(aZombieType) || mBoard->mPlantRow[aGridY] == PlantRowType::PLANTROW_POOL) {
+                mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, true);
+            } else {
+                Zombie *aZombie = mBoard->AddZombie(aZombieType, Zombie::ZOMBIE_WAVE_VS, false);
+                if (aZombie) {
+                    if (mBoard->StageHasRoof()) {
+                        Zombie *aBungeeZombie = mBoard->AddZombie(ZombieType::ZOMBIE_BUNGEE, Zombie::ZOMBIE_WAVE_VS, false);
+                        aBungeeZombie->BungeeDropZombie(aZombie, aGridX, aGridY);
+                    } else {
+                        aZombie->RiseFromGrave(aGridX, aGridY);
+                    }
+                }
+            }
+
+            aSeedPacket->Deactivate();
+            aSeedPacket->WasPlanted(mPlayerIndex2);
+            mGamepadState = MOVEMENT_STATE_NORMAL;
+            return;
+        }
+    } else {
+        if (!mBoard->CanTakeSunMoney(aPacketCost, 0) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK || mBoard->HasLevelAwardDropped()) {
+            // 优化玩家体验：不执行旧函数，使未成功种下的卡槽不会退回未选取状态
+            //                old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
+            bool isClientGamepadControl = mPlayerIndex2 == 1;
+            if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+                U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
+                netplay::PutEvent(event);
+            } else {
+                mGameObject->mApp->PlaySample(SOUND_BUZZER);
+            }
+            return;
+        }
+
+        if (aPacketType < SeedType::NUM_SEED_TYPES) {
+            LOG_DEBUG("before MouseDownWithPlant {}", mPlayerIndex1);
+            mBoard->MouseDownWithPlant(mCursorPositionX, mCursorPositionY, 1, mPlayerIndex1);
+            mBoard->ClearCursor(mPlayerIndex1);
+            mGamepadState = MOVEMENT_STATE_NORMAL;
+            return;
+        }
+
+        if (aPacketType == SEED_BEGHOULED_BUTTON_SHUFFLE) {
+            std::vector<SeedType> aPlantSeeds, aZombieSeeds;
+            PickShuffleSeeds(mGameObject->mApp, aPlantSeeds, aZombieSeeds, false);
+            if (!aPlantSeeds.empty()) {
+                for (int aPacketIndex = 1; aPacketIndex <= aPlantSeeds.size(); ++aPacketIndex) {
+                    SeedType aSeedType = aPlantSeeds[aPacketIndex - 1];
+                    aSeedBank->mSeedPackets[aPacketIndex].SetPacketType(aSeedType, SeedType::SEED_NONE);
+                }
+            }
+            mBoard->TakeSunMoney(aPacketCost, 0);
+            aSeedPacket->Deactivate();
+            aSeedPacket->WasPlanted(mPlayerIndex1);
+        }
+    }
 }
 
 void ZenGardenControls::Update(float a2) {

@@ -913,6 +913,8 @@ bool LoadGameMain() {
     ZenGarden_OpenStoreAddr = libGameMain.GetSymbol("_ZN9ZenGarden9OpenStoreEv");
     ZenGarden_GetPottedPlantInWheelbarrowAddr = libGameMain.GetSymbol("_ZN9ZenGarden27GetPottedPlantInWheelbarrowEv");
     ZenGarden_DrawPottedPlantAddr = libGameMain.GetSymbol("_ZN9ZenGarden15DrawPottedPlantEPN4Sexy8GraphicsEffP11PottedPlantfb");
+    ZenGarden_MovePlantAddr = libGameMain.GetSymbol("_ZN9ZenGarden9MovePlantEP5Plantii");
+    ZenGarden_MouseDownWithFullWheelBarrowAddr = libGameMain.GetSymbol("_ZN9ZenGarden28MouseDownWithFullWheelBarrowEii");
     PlantFlowerPotHeightOffsetAddr = libGameMain.GetSymbol("_Z26PlantFlowerPotHeightOffset8SeedTypef");
 
 

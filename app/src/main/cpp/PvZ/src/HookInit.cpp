@@ -109,6 +109,7 @@ void InitHookFunction() {
 
 
     homura::HookFunc(Board_DrawAddr, &Board::Draw, &old_Board_Draw);
+    homura::HookFunc(Board_MouseDownWithPlantAddr, &Board::MouseDownWithPlant, &old_Board_MouseDownWithPlant);
     homura::HookFunc(Board_UpdateAddr, &Board::Update, &old_Board_Update);
     homura::HookFunc(Board_BoardAddr, &Board::_constructor, &old_Board_Board);
     homura::HookFunc(Board__destructorAddr, &Board::_destructor, &old_Board__destructor);

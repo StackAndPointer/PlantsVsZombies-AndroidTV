@@ -26,6 +26,7 @@
 
 class LawnApp;
 class Board;
+class Plant;
 class PottedPlant;
 class GridItem;
 class SpecialGridPlacement {
@@ -53,6 +54,12 @@ public:
     }
     void DrawPottedPlant(Sexy::Graphics *g, float x, float y, PottedPlant *thePottedPlant, float theScale, bool theDrawPot) {
         reinterpret_cast<void (*)(ZenGarden *, Sexy::Graphics *, float, float, PottedPlant *, float, bool)>(ZenGarden_DrawPottedPlantAddr)(this, g, x, y, thePottedPlant, theScale, theDrawPot);
+    }
+    void MovePlant(Plant *thePlant, int theGridX, int theGridY) {
+        reinterpret_cast<void (*)(ZenGarden *, Plant *, int, int)>(ZenGarden_MovePlantAddr)(this, thePlant, theGridX, theGridY);
+    }
+    void MouseDownWithFullWheelBarrow(int x, int y) {
+        reinterpret_cast<void (*)(ZenGarden *, int, int)>(ZenGarden_MouseDownWithFullWheelBarrowAddr)(this, x, y);
     }
 
     SpecialGridPlacement *GetSpecialGridPlacements(int &theCount);

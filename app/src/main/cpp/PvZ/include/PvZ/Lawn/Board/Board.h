@@ -387,9 +387,7 @@ public:
     Zombie *ZombieGet(ZombieID theZombieID) {
         return mZombies.DataArrayGet((uint32_t)theZombieID);
     }
-    void MouseDownWithPlant(int x, int y, int theClickCount) {
-        reinterpret_cast<void (*)(Board *, int, int, int)>(Board_MouseDownWithPlantAddr)(this, x, y, theClickCount);
-    }
+    void MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerIndex);
     bool CanInteractWithBoardButtons() {
         return reinterpret_cast<bool (*)(Board *)>(Board_CanInteractWithBoardButtonsAddr)(this);
     }
@@ -788,6 +786,7 @@ inline void (*old_Board_MouseUp)(Board *board, int a2, int a3, int a4);
 inline void (*old_Board_MouseDrag)(Board *board, int x, int y);
 
 inline void (*old_Board_MouseDown)(Board *board, int x, int y, int theClickCount);
+inline void (*old_Board_MouseDownWithPlant)(Board *board, int x, int y, int theClickCount, int thePlayerIndex);
 
 inline void (*old_Board_MouseMove)(Board *board, int x, int y);
 
