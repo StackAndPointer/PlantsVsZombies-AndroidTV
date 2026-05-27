@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "PvZ/SexyAppFramework/Widget/ScrollWidget.h"
+#include "PvZ/SexyAppFramework/Widget/ScrollWidget.hpp"
 #include "Homura/HookUtils.h"
 #include "Homura/Logger.h"
 #include "Homura/MemberUtils.h"

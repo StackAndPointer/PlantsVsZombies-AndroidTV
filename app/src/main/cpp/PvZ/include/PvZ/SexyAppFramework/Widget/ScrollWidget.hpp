@@ -20,6 +20,8 @@
 #ifndef PVZ_LAWN_WIDGET_SCROLL_WIDGET_H
 #define PVZ_LAWN_WIDGET_SCROLL_WIDGET_H
 
+// Note: 本文件可能被识别为 ObjC 代码, 故使用 '.hpp' 后缀
+
 #include "PvZ/SexyAppFramework/Misc/Point.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 #include <list>
