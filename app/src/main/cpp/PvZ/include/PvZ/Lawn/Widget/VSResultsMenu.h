@@ -35,12 +35,17 @@
 
 #include <cstddef>
 
+inline constexpr int BUTTON_LABEL_WRAP_CENTER = 2;
+inline constexpr int BUTTON_Y = 472;
+inline constexpr int BUTTON_WIDTH = 205;
+inline constexpr int BUTTON_HEIGHT = 96;
+
 class VSResultsMenu : public Sexy::MenuWidget {
 public:
     enum {
         VSResultsMenu_Play_Again = 0,
         VSResultsMenu_Quit_VS = 1,
-        VSResultsMenu_Back,
+        VSResultsMenu_Back = 9,
         VSResultsMenu_Save_Replay = 1200,
     };
 
@@ -63,9 +68,17 @@ public:
     bool mIsReplaySession = false;
     bool mDrawReplaySaved = false;
     class VSResultsCheckboxController *mCheckboxController = nullptr;
-    NewLawnButton *mBackButton = nullptr;
+    GameButton *mBackButton = nullptr;
     GameButton *mSaveReplayButton = nullptr;
 
+    int *GetPlayerRecord(unsigned int playerIndex) {
+        return reinterpret_cast<int *(*)(VSResultsMenu *, unsigned int)>(VSResultsMenu_GetPlayerRecordAddr)(this, playerIndex);
+    }
+
+    VSResultsMenu() {
+        _constructor();
+    }
+    ~VSResultsMenu() = delete;
 
     void Update();
     void OnExit();
@@ -73,26 +86,18 @@ public:
     void Draw(Sexy::Graphics *g);
     void DrawInfoBox(Sexy::Graphics *a2, int a3);
     void HideReplayButton(bool forceHide);
-    void AddedToManager(Sexy::WidgetManager *manager);
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void InitFromBoard(class Board *board);
+    void ShowReplayButton();
 
     void processClientEvent(const BaseEvent *event);
     void processServerEvent(const BaseEvent *event);
-
-    VSResultsMenu() {
-        _constructor();
-    }
-    ~VSResultsMenu() = delete;
-
-    void InitFromBoard(class Board *board);
-    int *GetPlayerRecord(unsigned int playerIndex) {
-        return reinterpret_cast<int *(*)(VSResultsMenu *, unsigned int)>(VSResultsMenu_GetPlayerRecordAddr)(this, playerIndex);
-    }
-    void ShowReplayButton();
 
 protected:
     friend void InitHookFunction();
 
     void _constructor();
+    void _destructor();
 };
 
 class VSResultsCheckboxController final : public Sexy::CheckboxListener {
@@ -124,7 +129,7 @@ public:
             return;
         }
         mSendPlayerNameCheckbox = MakeNewCheckbox(VSResultsMenu_Send_Player_Name, this, mParentMenu, false);
-        mSendPlayerNameCheckbox->Resize(640, 500, 175, 50);
+        mSendPlayerNameCheckbox->Resize(-60, 580, 175, 50);
         mSendPlayerNameCheckbox->SetChecked(gLawnApp->mPlayerInfo->mVSResultsSendPlayerName, false);
         mParentMenu->AddWidget(mSendPlayerNameCheckbox);
     }
@@ -167,5 +172,6 @@ inline void (*old_VSResultsMenu_Constructor)(VSResultsMenu *);
 
 inline void (*old_VSResultsMenu_AddedToManager)(VSResultsMenu *, Sexy::WidgetManager *);
 
+inline void (*old_VSResultsMenu_Destructor)(VSResultsMenu *);
 
 #endif // PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H

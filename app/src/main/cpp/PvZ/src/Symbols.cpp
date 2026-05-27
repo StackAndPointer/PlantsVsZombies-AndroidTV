@@ -780,12 +780,13 @@ bool LoadGameMain() {
 
 
     VSResultsMenu_UpdateAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu6UpdateEv");
-    VSResultsMenu_VSResultsMenuAddr = libGameMain.GetSymbol("_ZN13VSResultsMenuC2Ev");
+    VSResultsMenu__constructorAddr = libGameMain.GetSymbol("_ZN13VSResultsMenuC2Ev");
+    VSResultsMenu__destructorAddr = libGameMain.GetSymbol("_ZN13VSResultsMenuD2Ev");
     VSResultsMenu_OnExitAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu6OnExitEv");
     VSResultsMenu_DrawAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu4DrawEPN4Sexy8GraphicsE");
     VSResultsMenu_DrawOverlayAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu11DrawOverlayEPN4Sexy8GraphicsE");
     VSResultsMenu_DrawInfoBoxAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu11DrawInfoBoxEPN4Sexy8GraphicsEi");
-    VSResultsMenu_AddedToManagerAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidget14AddedToManagerEPNS_13WidgetManagerE");
+    VSResultsMenu_AddedToManagerAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu14AddedToManagerEPN4Sexy13WidgetManagerE");
     VSResultsMenu_ButtonDepressAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu13ButtonDepressEi");
     VSResultsMenu_InitFromBoardAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu13InitFromBoardEP5Board");
     VSResultsMenu_GetPlayerRecordAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu15GetPlayerRecordEj");

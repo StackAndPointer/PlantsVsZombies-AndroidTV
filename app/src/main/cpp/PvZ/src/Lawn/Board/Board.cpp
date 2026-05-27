@@ -78,9 +78,6 @@ bool gPauseSyncFromRemote = false;
 void Board::_constructor(LawnApp *theApp) {
     old_Board_Board(this, theApp);
 
-    delete gBoardMenuButton;
-    delete gBoardStoreButton;
-
     pvzstl::string str = (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || theApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) ? "[MAIN_MENU_BUTTON]" : "[MENU_BUTTON]";
     gBoardMenuButton = MakeButton(1000, this, this, str);
     gBoardMenuButton->Resize(705, -3, 120, 80);
@@ -121,7 +118,19 @@ void Board::_constructor(LawnApp *theApp) {
 }
 
 void Board::_destructor() {
+    delete gBoardMenuButton;
+    delete gBoardStoreButton;
+    gBoardMenuButton = nullptr;
+    gBoardStoreButton = nullptr;
+
     old_Board__destructor(this);
+}
+
+void Board::RemovedFromManager(WidgetManager *theManager) {
+    RemoveWidget(gBoardMenuButton);
+    RemoveWidget(gBoardStoreButton);
+
+    old_Board_RemovedFromManager(this, theManager);
 }
 
 void Board::InitLevel() {
@@ -5100,20 +5109,6 @@ void Board::StartLevel() {
         }
     }
     old_Board_StartLevel(this);
-}
-
-
-void Board::RemovedFromManager(WidgetManager *theManager) {
-    RemoveWidget(gBoardMenuButton);
-    RemoveWidget(gBoardStoreButton);
-    gBoardMenuButton->~GameButton();
-    // operator delete (gBoardMenuButton);
-    gBoardStoreButton->~GameButton();
-    // operator delete (gBoardStoreButton);
-    gBoardMenuButton = nullptr;
-    gBoardStoreButton = nullptr;
-
-    old_Board_RemovedFromManager(this, theManager);
 }
 
 void Board::UpdateButtons() {

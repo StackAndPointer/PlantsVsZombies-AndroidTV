@@ -68,21 +68,31 @@ void VSResultsMenu::_constructor() {
     gVSResultRequestState = -1;
     gNetDelayNow = 0; // 清除旧的延时数据
 
-    // TODO: 新增返回模式选择按钮
-    //    mBackButton = MakeNewButton(
-    //        VSResultsMenu::VSResultsMenu_Back, this, this, "[CLOSE]", nullptr, Sexy::IMAGE_SEEDCHOOSER_BUTTON_DISABLED, Sexy::IMAGE_SEEDCHOOSER_BUTTON_GLOW, Sexy::IMAGE_SEEDCHOOSER_BUTTON_GLOW);
-    //    mBackButton->mTextOffsetX = -2;
-    //    mBackButton->mTextOffsetY = -4;
-    //    mBackButton->mTextDownOffsetX = 1;
-    //    mBackButton->mTextDownOffsetY = 1;
-    //    mBackButton->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
-    //    (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(0, 205, 0);
-    //    mBackButton->Resize(800, 520, 160, 50);
-    //    AddWidget(mBackButton);
+    mBackButton = MakeButton(VSResultsMenu::VSResultsMenu_Back, this, this, "[BACK_TO_MODE_SELECT]");
+    mBackButton->mDrawStoneButton = false;
+    mBackButton->mButtonImage = addonImages.VS_Button;
+    mBackButton->mOverImage = addonImages.VS_Button_selected;
+    mBackButton->mDownImage = addonImages.VS_Button_selected;
+    mBackButton->SetFont(FONT_DWARVENTODCRAFT24);
+    (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
+    (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
+    mBackButton->mLabelJustify = BUTTON_LABEL_WRAP_CENTER;
+    mBackButton->Resize(660, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
 }
 
-void VSResultsMenu::AddedToManager(Sexy::WidgetManager *manager) {
-    old_VSResultsMenu_AddedToManager(this, manager);
+void VSResultsMenu::_destructor() {
+    //    if (mBackButton) {
+    //        RemoveWidget(mBackButton);
+    //    }
+    //    delete mBackButton;
+
+    old_VSResultsMenu_Destructor(this);
+}
+
+void VSResultsMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
+    old_VSResultsMenu_AddedToManager(this, theWidgetManager);
+
+    AddWidget(mBackButton);
 }
 
 void VSResultsMenu::processClientEvent(const BaseEvent *event) {
@@ -116,7 +126,6 @@ void VSResultsMenu::processServerEvent(const BaseEvent *event) {
 }
 
 void VSResultsMenu::InitFromBoard(class Board *board) {
-
     mBoardMainCounter = board->mMainCounter;
     mBoardBackground = Challenge::msVSShuffleMode ? BackgroundType(-1) : board->mBackground;
     int aSeedNum = board->mSeedBank[0]->mNumPackets;
@@ -151,13 +160,11 @@ void VSResultsMenu::OnExit() {
         gLawnApp->ShowMainMenuScreen();
         gLawnApp->KillVSResultsScreen();
     } else if (mResultsButtonId == VSResultsMenu_Play_Again) {
-        //        gLawnApp->PreNewGame(GameMode::GAMEMODE_MP_VS, false);
-        // 改为返回关卡选择页面
-        gLawnApp->ShowChallengeScreen(ChallengePage::CHALLENGE_PAGE_VS);
+        gLawnApp->PreNewGame(GameMode::GAMEMODE_MP_VS, false);
         gLawnApp->KillVSResultsScreen();
     } else if (mResultsButtonId == VSResultsMenu_Back) {
-        //        gLawnApp->ShowChallengeScreen(ChallengePage::CHALLENGE_PAGE_VS);
-        //        gLawnApp->KillVSResultsScreen();
+        gLawnApp->ShowChallengeScreen(ChallengePage::CHALLENGE_PAGE_VS);
+        gLawnApp->KillVSResultsScreen();
     }
 }
 
@@ -228,12 +235,6 @@ void VSResultsMenu::ButtonDepress(int theId) {
         return;
     }
 
-    //    if (theId == VSResultsMenu::VSResultsMenu_Back) {
-    //        mResultsButtonId = theId;
-    //        OnExit();
-    //        return;
-    //    }
-
     if ((gIsServerModeSpectator || gIsReplayMode) && (gTcpConnected || gTcpServerSocket >= 0 || gTcpClientSocket >= 0) && theId == VSResultsMenu::VSResultsMenu_Quit_VS) {
         if (gTcpServerSocket >= 0) {
             shutdown(gTcpServerSocket, SHUT_RDWR);
@@ -267,7 +268,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
     }
 
     if (gTcpConnected) {
-        // 客户端点击再来一局
+        // 客户端点击再来一局或返回模式选择
         U8_Event event = {{EventType::EVENT_CLIENT_VSRESULT_BUTTON_DEPRESS}, uint8_t(theId)};
         netplay::PutEvent(event);
         gVSResultRequestState = theId;
@@ -275,7 +276,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
     }
 
     if (gTcpClientSocket >= 0) {
-        if (theId == VSResultsMenu::VSResultsMenu_Play_Again || theId == VSResultsMenu::VSResultsMenu_Quit_VS) {
+        if (theId == VSResultsMenu::VSResultsMenu_Play_Again || theId == VSResultsMenu::VSResultsMenu_Quit_VS || theId == VSResultsMenu::VSResultsMenu_Back) {
             replay::ResetRecorder();
             LOG_INFO("[REPLAY] reset recorder on send EVENT_SERVER_VSRESULT_BUTTON_DEPRESS id={}", theId);
         }
@@ -307,6 +308,9 @@ void VSResultsMenu::Draw(Graphics *g) {
                 case VSResultsMenu::VSResultsMenu_Play_Again:
                     TodDrawString(g, "[VS_RESULT_REMIND_HOST_PLAY_AGAIN]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
                     break;
+                case VSResultsMenu::VSResultsMenu_Back:
+                    TodDrawString(g, "[VS_RESULT_REMIND_HOST_BACK_TO_MODE_SELECT]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
+                    break;
                 default:
                     break;
             }
@@ -316,6 +320,9 @@ void VSResultsMenu::Draw(Graphics *g) {
             switch (gVSResultRequestState) {
                 case VSResultsMenu::VSResultsMenu_Play_Again:
                     TodDrawString(g, "[VS_RESULT_OPPONENT_REQUEST_PLAY_AGAIN]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
+                    break;
+                case VSResultsMenu::VSResultsMenu_Back:
+                    TodDrawString(g, "[VS_RESULT_OPPONENT_REQUEST_BACK_TO_MODE_SELECT]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
                     break;
                 default:
                     break;
@@ -329,15 +336,11 @@ void VSResultsMenu::ShowReplayButton() {
         return;
     }
 
-    GameButton *mQuitButton = (GameButton *)FindWidget(VSResultsMenu_Quit_VS);
-    if (mQuitButton == nullptr) {
-        return;
-    }
     mSaveReplayButton = MakeButton(VSResultsMenu_Save_Replay, this, this, "[SAVE_REPLAY]");
     mSaveReplayButton->mDrawStoneButton = false;
-    mSaveReplayButton->mButtonImage = mQuitButton->mButtonImage;
-    mSaveReplayButton->mOverImage = mQuitButton->mOverImage;
-    mSaveReplayButton->mDownImage = mQuitButton->mDownImage;
+    mSaveReplayButton->mButtonImage = addonImages.VS_Button;
+    mSaveReplayButton->mOverImage = addonImages.VS_Button_selected;
+    mSaveReplayButton->mDownImage = addonImages.VS_Button_selected;
 
 
     if (mSaveReplayButton != nullptr) {
@@ -348,8 +351,8 @@ void VSResultsMenu::ShowReplayButton() {
         mSaveReplayButton->SetFont(Sexy::FONT_DWARVENTODCRAFT24);
         (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
         (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
-        mSaveReplayButton->mLabelJustify = 2;
-        mSaveReplayButton->GameButton::Resize(-60, mQuitButton->mY, mQuitButton->mWidth, mQuitButton->mHeight);
+        mSaveReplayButton->mLabelJustify = BUTTON_LABEL_WRAP_CENTER;
+        mSaveReplayButton->GameButton::Resize(-60, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
         AddWidget(mSaveReplayButton);
     }
 }

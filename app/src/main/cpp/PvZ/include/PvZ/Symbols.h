@@ -781,7 +781,8 @@ inline void *VSSetupMenu_PickRandomPlantsAddr;
 inline void *VSSetupMenu_OnPlayerPickedSeedAddr;
 
 
-inline void *VSResultsMenu_VSResultsMenuAddr;
+inline void *VSResultsMenu__constructorAddr;
+inline void *VSResultsMenu__destructorAddr;
 inline void *VSResultsMenu_UpdateAddr;
 inline void *VSResultsMenu_OnExitAddr;
 inline void *VSResultsMenu_DrawAddr;
