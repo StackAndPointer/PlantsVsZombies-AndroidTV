@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "PvZ/SexyAppFramework/Widget/ScrollWidget.hpp"
+#include "PvZ/SexyAppFramework/Widget/ScrollWidget.h"
 #include "Homura/HookUtils.h"
 #include "Homura/Logger.h"
 #include "Homura/MemberUtils.h"
@@ -31,15 +31,14 @@
 #include <mutex>
 #include <sstream>
 
-using namespace Sexy;
-
-void ScrollWidget::_constructor() {
+void Sexy::ScrollWidget::_constructor() {
     Widget::_constructor();
 
     static void *sScrollWidget_vTable[122];
     static std::once_flag vtableInitFlag;
     std::call_once(vtableInitFlag, [this] {
         std::memcpy(sScrollWidget_vTable, vTable, sizeof(sScrollWidget_vTable));
+
         sScrollWidget_vTable[0] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::_destructor);
         sScrollWidget_vTable[1] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::_destructor2);
         sScrollWidget_vTable[31] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::Update);
@@ -53,12 +52,26 @@ void ScrollWidget::_constructor() {
     });
     vTable = reinterpret_cast<int *>(sScrollWidget_vTable);
 
+    Init();
+}
+
+void Sexy::ScrollWidget::_destructor() {
+    mOverlays.~vector();
+    Widget::_destructor();
+}
+
+void Sexy::ScrollWidget::_destructor2() {
+    _destructor();
+    ::operator delete(this);
+}
+
+void Sexy::ScrollWidget::Init() {
     mClient = nullptr;
     mClientDownDispatched = false;
     mDeferredMouseDownMagicCode = 0;
     mClientLastDown = nullptr;
     mIndicatorsImage = nullptr;
-    mScrollMode = ScrollWidget::ScrollMode::Vertical;
+    mScrollMode = ScrollMode::Vertical;
     mScrollInsets = Insets(0, 0, 0, 0);
     mScrollTracking = false;
     mSeekScrollTarget = false;
@@ -70,58 +83,49 @@ void ScrollWidget::_constructor() {
     mBackgroundImage = nullptr;
     mFillBackground = false;
     mDrawOverlays = false;
-    mScrollOffset = CGPoint(0.0f, 0.0f);
-    mScrollVelocity = CGPoint(0.0f, 0.0f);
+    mScrollOffset = Sexy::FPoint(0.0f, 0.0f);
+    mScrollVelocity = Sexy::FPoint(0.0f, 0.0f);
     mClip = true;
 }
 
-void ScrollWidget::_destructor() {
-    Widget::_destructor();
-}
-
-void ScrollWidget::_destructor2() {
-    _destructor();
-    ::operator delete(this);
-}
-
-void ScrollWidget::SetScrollMode(ScrollWidget::ScrollMode mode) {
+void Sexy::ScrollWidget::SetScrollMode(ScrollWidget::ScrollMode mode) {
     mScrollMode = mode;
     CacheDerivedValues();
 }
 
-void ScrollWidget::SetScrollInsets(Insets &insets) {
+void Sexy::ScrollWidget::SetScrollInsets(Insets &insets) {
     mScrollInsets = insets;
     CacheDerivedValues();
 }
 
-void ScrollWidget::SetScrollOffset(CGPoint offset, bool animated) {
+void Sexy::ScrollWidget::SetScrollOffset(Sexy::FPoint offset, bool animated) {
     if (animated) {
         mScrollTarget = offset;
         mSeekScrollTarget = true;
         return;
     }
     mScrollOffset = offset;
-    mScrollVelocity = CGPoint(0.0f, 0.0f);
+    mScrollVelocity = Sexy::FPoint(0.0f, 0.0f);
     if (mClient != nullptr) {
         mClient->Move((int)mScrollOffset.mX, (int)mScrollOffset.mY);
     }
 }
 
-void ScrollWidget::ScrollToMin(bool animated) {
-    SetScrollOffset(CGPoint(mScrollInsets.mLeft, mScrollInsets.mTop), animated);
+void Sexy::ScrollWidget::ScrollToMin(bool animated) {
+    SetScrollOffset(Sexy::FPoint(mScrollInsets.mLeft, mScrollInsets.mTop), animated);
 }
 
-void ScrollWidget::ScrollToBottom(bool animated) {
-    SetScrollOffset(CGPoint(mScrollMin.mX, mScrollMin.mY), animated);
+void Sexy::ScrollWidget::ScrollToBottom(bool animated) {
+    SetScrollOffset(Sexy::FPoint(mScrollMin.mX, mScrollMin.mY), animated);
 }
 
-void ScrollWidget::ScrollToPoint(CGPoint &point, bool animated) {
+void Sexy::ScrollWidget::ScrollToPoint(Sexy::FPoint &point, bool animated) {
     if (!mIsDown) {
-        SetScrollOffset(CGPoint(-point.mX, -point.mY), animated);
+        SetScrollOffset(Sexy::FPoint(-point.mX, -point.mY), animated);
     }
 }
 
-void ScrollWidget::ScrollRectIntoView(Rect &rect, bool animated) {
+void Sexy::ScrollWidget::ScrollRectIntoView(Rect &rect, bool animated) {
     if (!mIsDown) {
         float num = rect.mX + rect.mWidth;
         float num2 = rect.mY + rect.mHeight;
@@ -129,19 +133,19 @@ void ScrollWidget::ScrollRectIntoView(Rect &rect, bool animated) {
         float num4 = std::max(std::min(0.0f, mScrollMin.mY), (float)-rect.mY);
         float num5 = std::min(mScrollMax.mX, (float)mWidth - num);
         float num6 = std::min(mScrollMax.mY, (float)mHeight - num2);
-        SetScrollOffset(CGPoint(std::min(num5, std::max(num3, mScrollOffset.mX)), std::min(num6, std::max(num4, mScrollOffset.mY))), animated);
+        SetScrollOffset(Sexy::FPoint(std::min(num5, std::max(num3, mScrollOffset.mX)), std::min(num6, std::max(num4, mScrollOffset.mY))), animated);
     }
 }
 
-void ScrollWidget::EnableBounce(bool enable) {
+void Sexy::ScrollWidget::EnableBounce(bool enable) {
     mBounceEnabled = enable;
 }
 
-void ScrollWidget::EnablePaging(bool enable) {
+void Sexy::ScrollWidget::EnablePaging(bool enable) {
     // mPagingEnabled = enable;
 }
 
-void ScrollWidget::EnableIndicators(Image *indicatorsImage) {
+void Sexy::ScrollWidget::EnableIndicators(Image *indicatorsImage) {
     // mIndicatorsImage = indicatorsImage;
     // mIndicatorsEnabled = (nullptr != indicatorsImage);
     // if (mIndicatorsEnabled)
@@ -161,28 +165,28 @@ void ScrollWidget::EnableIndicators(Image *indicatorsImage) {
     // }
 }
 
-void ScrollWidget::SetIndicatorsInsets(Insets &insets) {
+void Sexy::ScrollWidget::SetIndicatorsInsets(Insets &insets) {
     mIndicatorsInsets = insets;
 }
 
-void ScrollWidget::FlashIndicators() {
+void Sexy::ScrollWidget::FlashIndicators() {
     mIndicatorsFlashTimer = SCROLL_INDICATORS_FLASH_TICKS;
 }
 
-void ScrollWidget::SetPageHorizontal(int page, bool animated) {
+void Sexy::ScrollWidget::SetPageHorizontal(int page, bool animated) {
     SetPage(page, mCurrentPageVertical, animated);
 }
 
-void ScrollWidget::SetPageVertical(int page, bool animated) {
+void Sexy::ScrollWidget::SetPageVertical(int page, bool animated) {
     SetPage(mCurrentPageHorizontal, page, animated);
 }
 
-void ScrollWidget::SetPage(int hpage, int vpage, bool animated) {
+void Sexy::ScrollWidget::SetPage(int hpage, int vpage, bool animated) {
     // if (mPagingEnabled)
     // {
     //     mCurrentPageHorizontal = std::max(0, std::min(hpage, mPageCountHorizontal - 1));
     //     mCurrentPageVertical = std::max(0, std::min(vpage, mPageCountVertical - 1));
-    //     SetScrollOffset(CGPoint
+    //     SetScrollOffset(Sexy::FPoint
     //     (
     //         mScrollInsets.mLeft - mCurrentPageHorizontal * mPageSize.mX,
     //         mScrollInsets.mTop - mCurrentPageVertical * mPageSize.mY
@@ -190,41 +194,41 @@ void ScrollWidget::SetPage(int hpage, int vpage, bool animated) {
     // }
 }
 
-int ScrollWidget::GetPageHorizontal() {
+int Sexy::ScrollWidget::GetPageHorizontal() {
     return mCurrentPageHorizontal;
 }
 
-int ScrollWidget::GetPageVertical() {
+int Sexy::ScrollWidget::GetPageVertical() {
     return mCurrentPageVertical;
 }
 
-void ScrollWidget::SetBackgroundImage(Image *image) {
+void Sexy::ScrollWidget::SetBackgroundImage(Image *image) {
     mBackgroundImage = image;
 }
 
-void ScrollWidget::EnableBackgroundFill(bool enable) {
+void Sexy::ScrollWidget::EnableBackgroundFill(bool enable) {
     mFillBackground = enable;
 }
 
-void ScrollWidget::AddOverlayImage(Image *image, CGPoint &offset) {
+void Sexy::ScrollWidget::AddOverlayImage(Image *image, Sexy::FPoint &offset) {
     mDrawOverlays = true;
-    for (ScrollWidgetOverlay *overlay : mOverlays) {
+    for (auto &overlay : mOverlays) {
         if (overlay->image == image) {
             overlay->offset = offset;
             return;
         }
     }
-    ScrollWidgetOverlay *overlay2 = new ScrollWidgetOverlay();
+    auto overlay2 = std::make_unique<Overlay>();
     overlay2->image = image;
     overlay2->offset = offset;
-    mOverlays.push_back(overlay2);
+    mOverlays.push_back(std::move(overlay2));
 }
 
-void ScrollWidget::EnableOverlays(bool enable) {
+void Sexy::ScrollWidget::EnableOverlays(bool enable) {
     mDrawOverlays = enable;
 }
 
-void ScrollWidget::AddWidget(Widget *theWidget) {
+void Sexy::ScrollWidget::AddWidget(Widget *theWidget) {
     if (mClient == nullptr) {
         mClient = theWidget;
         Widget *widget = mClient;
@@ -235,14 +239,14 @@ void ScrollWidget::AddWidget(Widget *theWidget) {
     }
 }
 
-void ScrollWidget::RemoveWidget(Widget *theWidget) {
+void Sexy::ScrollWidget::RemoveWidget(Widget *theWidget) {
     if (theWidget == mClient) {
         mClient = nullptr;
     }
     WidgetContainer::RemoveWidget(theWidget);
 }
 
-void ScrollWidget::Resize(int x, int y, int width, int height) {
+void Sexy::ScrollWidget::Resize(int x, int y, int width, int height) {
     Widget::Resize(x, y, width, height);
     // if (mIndicatorsProxy != nullptr)
     // {
@@ -251,14 +255,14 @@ void ScrollWidget::Resize(int x, int y, int width, int height) {
     CacheDerivedValues();
 }
 
-void ScrollWidget::ClientSizeChanged() {
+void Sexy::ScrollWidget::ClientSizeChanged() {
     if (mClient != nullptr) {
         CacheDerivedValues();
     }
 }
 
-void ScrollWidget::MouseDown(int x, int y, int theMagicCode) {
-    _Touch touch = _Touch();
+void Sexy::ScrollWidget::MouseDown(int x, int y, int theMagicCode) {
+    Touch touch = Touch();
     touch.location.mX = x;
     touch.location.mY = y;
     touch.timestamp = (double)mUpdateCnt / 120.0;
@@ -276,8 +280,8 @@ void ScrollWidget::MouseDown(int x, int y, int theMagicCode) {
     //                 mListener->ScrollTargetInterrupted(this);
     //             }
     //         }
-    //         mScrollTouchReference = CGPoint(x, y);
-    //         mScrollOffsetReference = CGPoint(mClient->mX, mClient->mY);
+    //         mScrollTouchReference = Sexy::FPoint(x, y);
+    //         mScrollOffsetReference = Sexy::FPoint(mClient->mX, mClient->mY);
     //         mScrollOffset = mScrollOffsetReference;
     //         //mScrollLastTimestamp = touch.timestamp;
     //         mScrollTracking = false;
@@ -289,8 +293,8 @@ void ScrollWidget::MouseDown(int x, int y, int theMagicCode) {
     //     }
 }
 
-void ScrollWidget::MouseUp(int x, int y, int theMagicCode) {
-    _Touch touch = _Touch();
+void Sexy::ScrollWidget::MouseUp(int x, int y, int theMagicCode) {
+    Touch touch = Touch();
     touch.location.mX = x;
     touch.location.mY = y;
     touch.timestamp = (double)mUpdateCnt / 120.0;
@@ -317,26 +321,26 @@ void ScrollWidget::MouseUp(int x, int y, int theMagicCode) {
     //     }
 }
 
-void ScrollWidget::MouseDrag(int x, int y) {
-    _Touch touch = _Touch();
+void Sexy::ScrollWidget::MouseDrag(int x, int y) {
+    Touch touch = Touch();
     touch.location.mX = x;
     touch.location.mY = y;
     touch.timestamp = (double)mUpdateCnt / 120.0;
     TouchMoved(touch);
-    //     CGPoint a(x, y);
-    //     CGPoint point = a - mScrollTouchReference;
+    //     Sexy::FPoint a(x, y);
+    //     Sexy::FPoint point = a - mScrollTouchReference;
     //     if (mClient != nullptr)
     //     {
     //         if (clientAllowsScroll)
     //         {
     //             if (!mScrollTracking
-    //                 && (mScrollPractical & ScrollWidget::ScrollMode::Horizontal) != ScrollWidget::ScrollMode::Disabled
+    //                 && (mScrollPractical & ScrollMode::Horizontal) != ScrollMode::Disabled
     //                 && std::abs(point.mX) > 4.0f)
     //             {
     //                 mScrollTracking = true;
     //             }
     //             if (!mScrollTracking
-    //                 && (mScrollPractical & ScrollWidget::ScrollMode::Vertical) != ScrollWidget::ScrollMode::Disabled
+    //                 && (mScrollPractical & ScrollMode::Vertical) != ScrollMode::Disabled
     //                 && std::abs(point.mY) > 4.0f)
     //             {
     //                 mScrollTracking = true;
@@ -350,10 +354,10 @@ void ScrollWidget::MouseDrag(int x, int y) {
     //     }
     //     if (mScrollTracking)
     //     {
-    //         // _Touch touch = new _Touch();
+    //         // Touch touch = new Touch();
     //         // touch.location.mX = x;
     //         // touch.location.mY = y;
-    //         TouchMotion(CGPoint(x, y), (double)mUpdateCnt / 120.0);
+    //         TouchMotion(Sexy::FPoint(x, y), (double)mUpdateCnt / 120.0);
     //         return;
     //     }
     //     if (mClientLastDown != nullptr)
@@ -380,7 +384,7 @@ void ScrollWidget::MouseDrag(int x, int y) {
 }
 
 
-void ScrollWidget::TouchBegan(_Touch touch, int theMagicCode) {
+void Sexy::ScrollWidget::TouchBegan(Touch touch, int theMagicCode) {
     if (mClient != nullptr) {
         clientAllowsScroll = true;
         if (mSeekScrollTarget) {
@@ -389,8 +393,8 @@ void ScrollWidget::TouchBegan(_Touch touch, int theMagicCode) {
             //                mListener->ScrollTargetInterrupted(this);
             //            }
         }
-        mScrollTouchReference = CGPoint(touch.location.mX, touch.location.mY);
-        mScrollOffsetReference = CGPoint(mClient->mX, mClient->mY);
+        mScrollTouchReference = Sexy::FPoint(touch.location.mX, touch.location.mY);
+        mScrollOffsetReference = Sexy::FPoint(mClient->mX, mClient->mY);
         mScrollOffset = mScrollOffsetReference;
         mScrollLastTimestamp = touch.timestamp;
         mScrollTracking = false;
@@ -401,8 +405,8 @@ void ScrollWidget::TouchBegan(_Touch touch, int theMagicCode) {
     }
 }
 
-void ScrollWidget::TouchMoved(_Touch touch) {
-    CGPoint cgpoint = CGPoint(touch.location.mX, touch.location.mY) - mScrollTouchReference;
+void Sexy::ScrollWidget::TouchMoved(Touch touch) {
+    Sexy::FPoint cgpoint = Sexy::FPoint(touch.location.mX, touch.location.mY) - mScrollTouchReference;
     if (mClient != nullptr) {
         if (clientAllowsScroll && !mScrollTracking && (std::abs(cgpoint.mX) > SCROLL_DRAG_THRESHOLD || std::abs(cgpoint.mY) > SCROLL_DRAG_THRESHOLD)) {
             mScrollTracking = true;
@@ -440,7 +444,7 @@ void ScrollWidget::TouchMoved(_Touch touch) {
     }
 }
 
-void ScrollWidget::TouchEnded(_Touch touch, int theMagicCode) {
+void Sexy::ScrollWidget::TouchEnded(Touch touch, int theMagicCode) {
     if (mScrollTracking) {
         TouchMotion(touch);
         mScrollTracking = false;
@@ -466,10 +470,10 @@ void ScrollWidget::TouchEnded(_Touch touch, int theMagicCode) {
 }
 
 
-void ScrollWidget::TouchMotion(_Touch touch) {
-    CGPoint cgpoint = CGPoint(touch.location.mX, touch.location.mY) - mScrollTouchReference;
-    CGPoint cgpoint2 = mScrollOffset;
-    if ((mScrollPractical & ScrollWidget::ScrollMode::Horizontal) != ScrollWidget::ScrollMode::Disabled) {
+void Sexy::ScrollWidget::TouchMotion(Touch touch) {
+    Sexy::FPoint cgpoint = Sexy::FPoint(touch.location.mX, touch.location.mY) - mScrollTouchReference;
+    Sexy::FPoint cgpoint2 = mScrollOffset;
+    if ((mScrollPractical & ScrollMode::Horizontal) != ScrollMode::Disabled) {
         cgpoint2.mX = mScrollOffsetReference.mX + cgpoint.mX;
         float x = mScrollMin.mX;
         float x2 = mScrollMax.mX;
@@ -489,7 +493,7 @@ void ScrollWidget::TouchMotion(_Touch touch) {
             }
         }
     }
-    if ((mScrollPractical & ScrollWidget::ScrollMode::Vertical) != ScrollWidget::ScrollMode::Disabled) {
+    if ((mScrollPractical & ScrollMode::Vertical) != ScrollMode::Disabled) {
         cgpoint2.mY = mScrollOffsetReference.mY + cgpoint.mY;
         float y = mScrollMin.mY;
         float y2 = mScrollMax.mY;
@@ -514,14 +518,14 @@ void ScrollWidget::TouchMotion(_Touch touch) {
     mClient->Move((int)mScrollOffset.mX, (int)mScrollOffset.mY);
 }
 
-// void ScrollWidget::MouseWheel(int theDelta)
+// void Sexy::ScrollWidget::MouseWheel(int theDelta)
 // {
-//     if ((mScrollPractical & ScrollWidget::ScrollMode::Vertical) != ScrollWidget::ScrollMode::Disabled)
+//     if ((mScrollPractical & ScrollMode::Vertical) != ScrollMode::Disabled)
 //     {
 //         //mScrollOffset.mY += theDelta;
 //         mScrollVelocity.mY += theDelta * 1.4f;
 //     }
-//     else if ((mScrollPractical & ScrollWidget::ScrollMode::Horizontal) != ScrollWidget::ScrollMode::Disabled)
+//     else if ((mScrollPractical & ScrollMode::Horizontal) != ScrollMode::Disabled)
 //     {
 //         //mScrollOffset.mX += theDelta;
 //         mScrollVelocity.mX += theDelta * 1.4f;
@@ -533,7 +537,7 @@ void ScrollWidget::TouchMotion(_Touch touch) {
 //     //oldTouchTime = touch.timestamp;
 // }
 
-void ScrollWidget::Update() {
+void Sexy::ScrollWidget::Update() {
     mUpdateCnt++;
 
     DoScrollUpdate();
@@ -541,14 +545,14 @@ void ScrollWidget::Update() {
     DoScrollUpdate();
 }
 
-float CGPointNorm(CGPoint v) {
+float CGPointNorm(Sexy::FPoint v) {
     return v.mX * v.mX + v.mY * v.mY;
 }
-CGPoint CGPointAddScaled(CGPoint augend, CGPoint addend, float factor) {
-    return CGPoint(augend.mX + addend.mX * factor, augend.mY + addend.mY * factor);
+Sexy::FPoint CGPointAddScaled(Sexy::FPoint augend, Sexy::FPoint addend, float factor) {
+    return Sexy::FPoint(augend.mX + addend.mX * factor, augend.mY + addend.mY * factor);
 }
 
-void ScrollWidget::DoScrollUpdate() {
+void Sexy::ScrollWidget::DoScrollUpdate() {
     if (mVisible && !mDisabled) {
         if (mIsDown) {
             mIndicatorsFlashTimer = SCROLL_INDICATORS_FLASH_TICKS;
@@ -573,11 +577,11 @@ void ScrollWidget::DoScrollUpdate() {
             }
             float num6 = CGPointNorm(mScrollVelocity);
             if (num6 < 0.0001f) {
-                mScrollVelocity = CGPoint(0.0f, 0.0f);
+                mScrollVelocity = Sexy::FPoint(0.0f, 0.0f);
             } else {
                 bool flag = mScrollOffset.mX < num || mScrollOffset.mX >= num3;
                 bool flag2 = mScrollOffset.mY < num2 || mScrollOffset.mY >= num4;
-                CGPoint multiplier = CGPoint();
+                Sexy::FPoint multiplier = Sexy::FPoint();
                 multiplier.mX = (flag ? 0.85f : 0.975f);
                 multiplier.mY = (flag2 ? 0.85f : 0.975f);
                 mScrollOffset = CGPointAddScaled(mScrollOffset, mScrollVelocity, 0.01f);
@@ -634,7 +638,7 @@ void ScrollWidget::DoScrollUpdate() {
     }
 }
 
-void ScrollWidget::DrawHorizontalStretchableImage(Graphics *g, Image *image, Rect &destRect) {
+void Sexy::ScrollWidget::DrawHorizontalStretchableImage(Graphics *g, Image *image, Rect &destRect) {
     int width = image->GetWidth();
     int height = image->GetHeight();
     Rect theSrcRect(0, 0, (width - 1) / 2, height);
@@ -647,7 +651,7 @@ void ScrollWidget::DrawHorizontalStretchableImage(Graphics *g, Image *image, Rec
     g->DrawImage(image, destRect.mX + destRect.mWidth - theSrcRect3.mWidth, theY, theSrcRect3);
 }
 
-void ScrollWidget::DrawVerticalStretchableImage(Graphics *g, Image *image, Rect &destRect) {
+void Sexy::ScrollWidget::DrawVerticalStretchableImage(Graphics *g, Image *image, Rect &destRect) {
     int width = image->GetWidth();
     int height = image->GetHeight();
     Rect theSrcRect(0, 0, width, (height - 1) / 2);
@@ -660,7 +664,7 @@ void ScrollWidget::DrawVerticalStretchableImage(Graphics *g, Image *image, Rect 
     g->DrawImage(image, theX, destRect.mY + destRect.mHeight - theSrcRect3.mHeight, theSrcRect3);
 }
 
-void ScrollWidget::Draw(Graphics *g) {
+void Sexy::ScrollWidget::Draw(Graphics *g) {
     if (mBackgroundImage) {
         g->DrawImage(mBackgroundImage, 0, 0);
         return;
@@ -673,7 +677,7 @@ void ScrollWidget::Draw(Graphics *g) {
     }
 }
 
-// void ScrollWidget::DrawProxyWidget(Graphics* g, ProxyWidget* proxyWidget)
+// void Sexy::ScrollWidget::DrawProxyWidget(Graphics* g, ProxyWidget* proxyWidget)
 // {
 //     Color color = new Color(255, 255, 255, (int)(255f * mIndicatorsOpacity));
 //     if (color.A != 0)
@@ -683,10 +687,10 @@ void ScrollWidget::Draw(Graphics *g) {
 //         Insets insets = mIndicatorsInsets;
 //         g->SetColor(color);
 //         g->SetColorizeImages(true);
-//         if ((mScrollPractical & ScrollWidget::ScrollMode::Horizontal) != ScrollWidget::ScrollMode::Disabled)
+//         if ((mScrollPractical & ScrollMode::Horizontal) != ScrollMode::Disabled)
 //         {
 //             float num = mWidth / (float)mClient->Width();
-//             int num2 = mWidth - insets.mLeft - insets.mRight - (((mScrollMode & ScrollWidget::ScrollMode::Vertical) != ScrollWidget::ScrollMode::Disabled) ? width : 0);
+//             int num2 = mWidth - insets.mLeft - insets.mRight - (((mScrollMode & ScrollMode::Vertical) != ScrollMode::Disabled) ? width : 0);
 //             int num3 = (int)(num2 * num);
 //             int num4 = num2 - num3;
 //             float num5 = std::min(0, mWidth - mClient->mWidth - mScrollInsets.mRight);
@@ -703,10 +707,10 @@ void ScrollWidget::Draw(Graphics *g) {
 //             destRect.mHeight = height;
 //             ScrollWidget->DrawHorizontalStretchableImage(g, mIndicatorsImage, destRect);
 //         }
-//         if ((mScrollPractical & ScrollWidget::ScrollMode::Vertical) != ScrollWidget::ScrollMode::Disabled)
+//         if ((mScrollPractical & ScrollMode::Vertical) != ScrollMode::Disabled)
 //         {
 //             float num10 = mHeight / (float)mClient->Height();
-//             int num11 = mHeight - insets.mTop - insets.mBottom - (((mScrollMode & ScrollWidget::ScrollMode::Horizontal) != ScrollWidget::ScrollMode::Disabled) ? height : 0);
+//             int num11 = mHeight - insets.mTop - insets.mBottom - (((mScrollMode & ScrollMode::Horizontal) != ScrollMode::Disabled) ? height : 0);
 //             int num12 = (int)(num11 * num10);
 //             int num13 = num11 - num12;
 //             float num14 = std::min(0, mHeight - mClient->mHeight - mScrollInsets.mBottom);
@@ -734,13 +738,13 @@ void ScrollWidget::Draw(Graphics *g) {
 //     }
 // }
 
-void ScrollWidget::SnapToPage() {
-    CGPoint point = CGPoint(mScrollInsets.mLeft + mPageSize.mX / 2.0f, mScrollInsets.mTop + mPageSize.mY / 2.0f) - mScrollOffset;
+void Sexy::ScrollWidget::SnapToPage() {
+    Sexy::FPoint point = Sexy::FPoint(mScrollInsets.mLeft + mPageSize.mX / 2.0f, mScrollInsets.mTop + mPageSize.mY / 2.0f) - mScrollOffset;
     int num = (int)std::floor(point.mX / mPageSize.mX);
     int num2 = (int)std::floor(point.mY / mPageSize.mY);
     num = std::max(0, std::min(num, mPageCountHorizontal - 1));
     num2 = std::max(0, std::min(num2, mPageCountVertical - 1));
-    CGPoint point2 = CGPoint();
+    Sexy::FPoint point2 = Sexy::FPoint();
     point2.mX = mScrollInsets.mLeft - num * mPageSize.mX;
     point2.mY = mScrollInsets.mTop - num2 * mPageSize.mY;
     if (mScrollVelocity.mX > 40.0f && point2.mX < mScrollOffset.mX) {
@@ -756,7 +760,7 @@ void ScrollWidget::SnapToPage() {
     SetPage(num, num2, true);
 }
 
-Widget *ScrollWidget::GetClientWidgetAt(int x, int y) {
+Sexy::Widget *Sexy::ScrollWidget::GetClientWidgetAt(int x, int y) {
     int num = (int)x - mClient->mX;
     int num2 = (int)y - mClient->mY;
     int theFlags = 16 | mWidgetManager->GetWidgetFlags();
@@ -789,7 +793,7 @@ Widget *ScrollWidget::GetClientWidgetAt(int x, int y) {
     return widgetAtHelper;
 }
 
-Widget *ScrollWidget::GetClientWidgetAt(_Touch touch) {
+Sexy::Widget *Sexy::ScrollWidget::GetClientWidgetAt(Touch touch) {
     int num = (int)touch.location.mX - mClient->mX;
     int num2 = (int)touch.location.mY - mClient->mY;
     int theFlags = 16 | mWidgetManager->GetWidgetFlags();
@@ -820,16 +824,16 @@ Widget *ScrollWidget::GetClientWidgetAt(_Touch touch) {
     return widgetAtHelper;
 }
 
-CGPoint &ScrollWidget::GetScrollOffset() {
+Sexy::FPoint &Sexy::ScrollWidget::GetScrollOffset() {
     return mScrollOffset;
 }
 
-void ScrollWidget::SetScrollOffset(float x, float y) {
+void Sexy::ScrollWidget::SetScrollOffset(float x, float y) {
     mScrollOffset.mX = x;
     mScrollOffset.mY = y;
 }
 
-void ScrollWidget::CacheDerivedValues() {
+void Sexy::ScrollWidget::CacheDerivedValues() {
     if (mClient != nullptr) {
         mScrollMin.mX = mWidth - mClient->mWidth - mScrollInsets.mRight;
         mScrollMin.mY = mHeight - mClient->mHeight - mScrollInsets.mBottom;
@@ -839,6 +843,6 @@ void ScrollWidget::CacheDerivedValues() {
         mScrollPractical = (ScrollWidget::ScrollMode)(mScrollMode & num);
     } else {
         mScrollMin.mX = (mScrollMax.mX = (mScrollMin.mY = (mScrollMax.mY = 0.0f)));
-        mScrollPractical = ScrollWidget::ScrollMode::Disabled;
+        mScrollPractical = ScrollMode::Disabled;
     }
 }

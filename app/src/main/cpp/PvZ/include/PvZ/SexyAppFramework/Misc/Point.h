@@ -89,7 +89,7 @@ public:
 };
 
 using Point = TPoint<int>;
-using FPoint = TPoint<double>;
+using FPoint = TPoint<float>;
 
 } // namespace Sexy
 

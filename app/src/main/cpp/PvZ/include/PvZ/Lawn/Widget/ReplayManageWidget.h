@@ -6,7 +6,7 @@
 #define PVZ_LAWN_WIDGET_REPLAY_MANAGE_WIDGET_H
 
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
-#include "PvZ/SexyAppFramework/Widget/ScrollWidget.hpp"
+#include "PvZ/SexyAppFramework/Widget/ScrollWidget.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 
 class GameButton;
@@ -24,7 +24,7 @@ public:
 public:
     LawnApp *mApp;
     Sexy::ButtonListener *mButtonListener;
-    ScrollWidget *mScrollWidget;
+    Sexy::ScrollWidget *mScrollWidget;
     ReplayListContentWidget *mScrollContent;
     GameButton *mCloseButton;
     bool mZombieBackground;
