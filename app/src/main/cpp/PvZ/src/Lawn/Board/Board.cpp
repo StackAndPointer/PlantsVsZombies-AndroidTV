@@ -5456,23 +5456,25 @@ void Board::UpdateButtons() {
         gGamePlayerIndex = -1;
     }
 
-    if (mApp->IsVSMode()) {
-        const bool spectatorReadOnly = gIsServerModeSpectator;
-        gBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
-        gBoardMenuButton->mDisabled = spectatorReadOnly;
-    } else {
-        if (mApp->mGameScene == GameScenes::SCENE_PLAYING) {
-            gBoardMenuButton->mBtnNoDraw = false;
-            gBoardMenuButton->mDisabled = false;
+    if (gBoardMenuButton != nullptr) {
+        if (mApp->IsVSMode()) {
+            const bool spectatorReadOnly = gIsServerModeSpectator;
+            gBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
+            gBoardMenuButton->mDisabled = spectatorReadOnly;
         } else {
+            if (mApp->mGameScene == GameScenes::SCENE_PLAYING) {
+                gBoardMenuButton->mBtnNoDraw = false;
+                gBoardMenuButton->mDisabled = false;
+            } else {
+                gBoardMenuButton->mBtnNoDraw = true;
+                gBoardMenuButton->mDisabled = true;
+            }
+        }
+
+        if (mBoardFadeOutCounter > 0) {
             gBoardMenuButton->mBtnNoDraw = true;
             gBoardMenuButton->mDisabled = true;
         }
-    }
-
-    if (mBoardFadeOutCounter > 0) {
-        gBoardMenuButton->mBtnNoDraw = true;
-        gBoardMenuButton->mDisabled = true;
     }
 }
 
