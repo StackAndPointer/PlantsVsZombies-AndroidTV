@@ -756,13 +756,11 @@ void ChallengeScreen::processServerEvent(const BaseEvent *event) {
         case EVENT_SERVER_CHALLENGESCREEN_BUTTON_DEPRESS: {
             auto *eventBtnDepress = static_cast<const U16_Event *>(event);
             int theId = eventBtnDepress->data;
-            LOG_DEBUG("theId:{}", theId);
             if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(theId)) {
                 LOG_WARN("[ChallengeScreen] ignore invalid VS button depress mode={}", theId);
                 break;
             }
             mSelectedMode = GameMode(theId);
-            LOG_DEBUG("before");
             if (gChallengeScreenRequestState == mSelectedMode) {
                 gChallengeScreenRequestState = 0;
             }
@@ -792,7 +790,6 @@ void ChallengeScreen::processServerEvent(const BaseEvent *event) {
             }
             mApp->KillChallengeScreen();
             mApp->PreNewGame(GAMEMODE_MP_VS, false);
-            LOG_DEBUG("after");
         } break;
         case EVENT_SERVER_CHALLENGESCREEN_SELECT_MODE: {
             auto *event1 = static_cast<const U16_Event *>(event);

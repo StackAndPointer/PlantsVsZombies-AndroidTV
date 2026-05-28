@@ -1259,22 +1259,24 @@ void Zombie::UpdateZombiePolevaulter() {
         Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
 
         bool aJumpEnds = false;
-        if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
-            Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
-            if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
-                mApp->PlayFoley(FoleyType::FOLEY_BONK);
-                aJumpEnds = true;
-                mApp->AddTodParticle(aPlant->mX + 60, aPlant->mY - 20, mRenderOrder + 1, ParticleEffect::PARTICLE_TALL_NUT_BLOCK);
+        if (!gTcpConnected) {
+            if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
+                Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
+                if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
+                    mApp->PlayFoley(FoleyType::FOLEY_BONK);
+                    aJumpEnds = true;
+                    mApp->AddTodParticle(aPlant->mX + 60, aPlant->mY - 20, mRenderOrder + 1, ParticleEffect::PARTICLE_TALL_NUT_BLOCK);
 
-                mZombieHeight = ZombieHeight::HEIGHT_FALLING;
-                mPosX = aPlant->mX;
-                mPosY -= 30.0f;
+                    mZombieHeight = ZombieHeight::HEIGHT_FALLING;
+                    mPosX = aPlant->mX;
+                    mPosY -= 30.0f;
+                }
             }
-        }
 
-        if (aBodyReanim->mLoopCount > 0) {
-            aJumpEnds = true;
-            mPosX -= 150.0f;
+            if (aBodyReanim->mLoopCount > 0) {
+                aJumpEnds = true;
+                mPosX -= 150.0f;
+            }
         }
         if (aBodyReanim->ShouldTriggerTimedEvent(0.2f)) {
             mApp->PlayFoley(FoleyType::FOLEY_GRASSSTEP);
@@ -1328,12 +1330,11 @@ void Zombie::UpdateZombieDolphinRider() {
     switch (mZombiePhase) {
         case ZombiePhase::PHASE_DOLPHIN_WALKING:
             if (!aWalkingBackwards && mX >= 701 && mX <= 720) {
-                if (isRemoteClient) {
-                    return;
-                }
                 mZombiePhase = ZombiePhase::PHASE_DOLPHIN_INTO_POOL;
                 PlayZombieReanim("anim_jumpinpool", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 16.0f);
-                syncDolphinPhaseCounter();
+                if (!isRemoteClient) {
+                    syncDolphinPhaseCounter();
+                }
             }
             break;
 
@@ -1346,7 +1347,7 @@ void Zombie::UpdateZombieDolphinRider() {
                 mApp->PlayFoley(FoleyType::FOLEY_ZOMBIE_ENTERING_WATER);
             }
 
-            if (aBodyReanim->mLoopCount > 0) {
+            if (!isRemoteClient && aBodyReanim->mLoopCount > 0) {
                 mZombiePhase = ZombiePhase::PHASE_DOLPHIN_RIDING;
                 mInPool = true;
                 mZombieAttackRect = Rect(-29, 0, 70, 115);
@@ -1367,8 +1368,8 @@ void Zombie::UpdateZombieDolphinRider() {
                 mAltitude = -40.0f;
                 PoolSplash(false);
                 PlayZombieReanim("anim_walkdolphin", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
-                PickRandomSpeed();
                 syncDolphinPhaseCounter();
+                PickRandomSpeed();
                 return;
             }
 
@@ -1390,7 +1391,7 @@ void Zombie::UpdateZombieDolphinRider() {
             Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
             mAltitude = TodAnimateCurveFloat(120, 0, mPhaseCounter, 0.0f, 10.0f, TodCurves::CURVE_LINEAR);
 
-            if (aBodyReanim->ShouldTriggerTimedEvent(0.3f)) {
+            if (!isRemoteClient && aBodyReanim->ShouldTriggerTimedEvent(0.3f)) {
                 Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
                 if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
                     mApp->PlayFoley(FoleyType::FOLEY_BONK);
@@ -1418,7 +1419,7 @@ void Zombie::UpdateZombieDolphinRider() {
                 return;
             }
 
-            if (aBodyReanim->mLoopCount > 0) {
+            if (!isRemoteClient && aBodyReanim->mLoopCount > 0) {
                 mAltitude = 0.0f;
                 mPosX -= 94.0f;
                 mZombiePhase = ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL;
@@ -1433,6 +1434,9 @@ void Zombie::UpdateZombieDolphinRider() {
 
         case ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL:
             if ((mX > 10 && (mX <= 680 || !aWalkingBackwards)) || (mX <= 10 && aWalkingBackwards)) {
+                return;
+            }
+            if (isRemoteClient) {
                 return;
             }
 
@@ -1580,22 +1584,24 @@ void Zombie::UpdateGigaPolevaulter() {
         Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
 
         bool aJumpEnds = false;
-        if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
-            Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
-            if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
-                mApp->PlayFoley(FoleyType::FOLEY_BONK);
-                aJumpEnds = true;
-                mApp->AddTodParticle(aPlant->mX + 60, aPlant->mY - 20, mRenderOrder + 1, ParticleEffect::PARTICLE_TALL_NUT_BLOCK);
+        if (!gTcpConnected) {
+            if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
+                Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
+                if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
+                    mApp->PlayFoley(FoleyType::FOLEY_BONK);
+                    aJumpEnds = true;
+                    mApp->AddTodParticle(aPlant->mX + 60, aPlant->mY - 20, mRenderOrder + 1, ParticleEffect::PARTICLE_TALL_NUT_BLOCK);
 
-                mZombieHeight = ZombieHeight::HEIGHT_FALLING;
-                mPosX = aPlant->mX;
-                mPosY -= 30.0f;
+                    mZombieHeight = ZombieHeight::HEIGHT_FALLING;
+                    mPosX = aPlant->mX;
+                    mPosY -= 30.0f;
+                }
             }
-        }
 
-        if (aBodyReanim->mLoopCount > 0) {
-            aJumpEnds = true;
-            mPosX -= 150.0f;
+            if (aBodyReanim->mLoopCount > 0) {
+                aJumpEnds = true;
+                mPosX -= 150.0f;
+            }
         }
         if (aBodyReanim->ShouldTriggerTimedEvent(0.2f)) {
             mApp->PlayFoley(FoleyType::FOLEY_GRASSSTEP);

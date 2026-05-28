@@ -2063,27 +2063,18 @@ void Board::processServerEvent(const BaseEvent *event) {
                 uint16_t anAnimTicks = eventPickSpeed->data2;
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
                 aZombie->ApplySyncedSpeed(aVelX, short(anAnimTicks));
-                aZombie->mPosX = eventPickSpeed->data5.f32;
+                float syncedPosX = eventPickSpeed->data5.f32;
+                if (aZombie->mZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER) {
+                    LOG_DEBUG("{} {} {}", aZombie->mPosX, syncedPosX, (int)aZombie->mZombiePhase);
+                }
+                // During jump-into-pool transition, keep local X progression and don't force-resync X.
+                aZombie->mPosX = syncedPosX;
+
 
                 // 撑杆僵尸落地
-                if (aZombie->mZombiePhase == PHASE_POLEVAULTER_IN_VAULT) {
-                    aZombie->mZombiePhase = PHASE_POLEVAULTER_POST_VAULT;
-                    aZombie->mPosY = aZombie->GetPosYBasedOnRow(aZombie->mRow);
-                    aZombie->mZombieAttackRect = Rect(50, 0, 20, 115);
-                    //                    aZombie->mZombieHeight = HEIGHT_ZOMBIE_NORMAL;
-                    aZombie->StartWalkAnim(0);
-                }
+                // polevaulter landing is authoritative from EVENT_SERVER_BOARD_ZOMBIE_POLEVAULTER_POST_VAULT
 
-                // 海豚僵尸落地
-                if (aZombie->mZombiePhase == PHASE_DOLPHIN_IN_JUMP) {
-                    aZombie->mZombiePhase = ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL;
-                    aZombie->mZombieAttackRect = Rect(30, 0, 30, 115);
-                    aZombie->mZombieRect = Rect(20, 0, 42, 115);
-                    aZombie->mUnk95 = 0;
-                    aZombie->mPosY = aZombie->GetPosYBasedOnRow(aZombie->mRow);
-                    //                    aZombie->mZombieHeight = HEIGHT_ZOMBIE_NORMAL;
-                    aZombie->StartWalkAnim(0);
-                }
+                // dolphin rider phase transition is authoritative from EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER
             }
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_BOBSLED_PICK_SPEED: {
@@ -2164,6 +2155,11 @@ void Board::processServerEvent(const BaseEvent *event) {
             if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
                 aZombie->mPosY = event1->data2.f32;
+                aZombie->mY = int(aZombie->mPosY);
+                aZombie->mZombiePhase = PHASE_POLEVAULTER_POST_VAULT;
+                aZombie->mZombieAttackRect = Rect(50, 0, 20, 115);
+                aZombie->mZombieHeight = HEIGHT_ZOMBIE_NORMAL;
+                aZombie->StartWalkAnim(0);
             }
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_POLEVAULTER_IN_VAULT: {
@@ -2342,9 +2338,11 @@ void Board::processServerEvent(const BaseEvent *event) {
                         aZombie->PlayZombieReanim("anim_jumpinpool", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 16.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING) {
                         aZombie->mInPool = true;
+                        aZombie->mPosX -= 70.0f;
                         aZombie->mZombieAttackRect = Rect(-29, 0, 70, 115);
                         aZombie->PlayZombieReanim("anim_ride", ReanimLoopType::REANIM_LOOP_FULL_LAST_FRAME, 0, 12.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP) {
+                        aZombie->mVelX = 0.5f;
                         aZombie->PlayZombieReanim("anim_dolphinjump", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 10.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL) {
                         aZombie->mZombieAttackRect = Rect(30, 0, 30, 115);
