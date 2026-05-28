@@ -26,7 +26,7 @@ namespace Sexy {
 
 class WidgetAnimator {
 public:
-    int *vTable;            // 0
+    void **vTable;          // 0
     int unk[2];             // 1 ~ 2
     Widget *mWidget;        // 3
     int mUpdateCounter;     // 4

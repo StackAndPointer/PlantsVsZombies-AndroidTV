@@ -61,7 +61,7 @@ public:
 
 class PlayerInfo {
 public:
-    int *vTable;                                                // 0
+    void **vTable;                                              // 0
     int unk1;                                                   // 1
     int *mProFileMgr;                                           // 2
     int unk2;                                                   // 3

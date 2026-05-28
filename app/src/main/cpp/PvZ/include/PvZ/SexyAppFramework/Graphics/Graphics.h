@@ -55,7 +55,7 @@ public:
         DRAWMODE_ADDITIVE = 1,
     };
 
-    int *vTable;                  // 0
+    void **vTable;                // 0
     Image *mDestImage;            // 1
     float mTransX;                // 2
     float mTransY;                // 3

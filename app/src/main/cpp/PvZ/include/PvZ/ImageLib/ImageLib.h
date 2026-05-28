@@ -26,7 +26,7 @@ namespace ImageLib {
 
 class Image {
 public:
-    int *vTable;         // 0
+    void **vTable;       // 0
     int mWidth;          // 1
     int mHeight;         // 2
     unsigned int *mBits; // 3

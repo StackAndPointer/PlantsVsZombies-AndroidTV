@@ -34,7 +34,7 @@ class SexyMatrix3;
 
 class Image {
 public:
-    int *vTable;           // 0
+    void **vTable;         // 0
     int placeHolder[2];    // 1 ~ 2
     bool unkBool;          // 12
     int unkMmWidthems1[2]; // 4 ~ 5

@@ -34,7 +34,7 @@ class Widget;
 
 class WidgetContainer {
 public:
-    int *vTable;                   // 0
+    void **vTable;                 // 0
     int mWidgetsUnk[5];            // 1 ~ 5
     WidgetManager *mWidgetManager; // 6
     WidgetContainer *mParent;      // 7

@@ -71,7 +71,7 @@ enum MusicDrumsState {
 
 class Music { // 加载XBOX版xm格式音乐时用。优：音质好、有鼓点。缺：鼓点BUG多，xm格式难以修改
 public:
-    int *vTable;                           // 0
+    void **vTable;                         // 0
     int unkMems[3];                        // 1 ~ 3
     LawnApp *mApp;                         // 4
     Sexy::MusicInterface *mMusicInterface; // 5

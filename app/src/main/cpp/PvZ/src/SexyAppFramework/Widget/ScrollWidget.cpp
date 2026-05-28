@@ -46,7 +46,7 @@ Sexy::ScrollWidget::ScrollWidget() {
         sScrollWidget_vTable[79] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::MouseUp);
         sScrollWidget_vTable[81] = (void *)homura::ExtractMemFuncPtr(&ScrollWidget::MouseDrag);
     });
-    vTable = reinterpret_cast<int *>(sScrollWidget_vTable);
+    vTable = sScrollWidget_vTable;
 
     Init();
 }

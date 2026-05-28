@@ -79,7 +79,7 @@ public:
             sReplayListContentWidgetVTable[36] = (void *)homura::ExtractMemFuncPtr(&ReplayListContentWidget::Draw);
             sReplayListContentWidgetVTable[78] = (void *)homura::ExtractMemFuncPtr(&ReplayListContentWidget::MouseDown);
         });
-        vTable = reinterpret_cast<int *>(sReplayListContentWidgetVTable);
+        vTable = sReplayListContentWidgetVTable;
 
         mOwner = owner;
         mReplays = replay::ListReplayFiles();
@@ -219,7 +219,7 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
         sReplayManageWidgetVTable[1] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::_destructor2);
         sReplayManageWidgetVTable[36] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::Draw);
     });
-    vTable = reinterpret_cast<int *>(sReplayManageWidgetVTable);
+    vTable = sReplayManageWidgetVTable;
 
     mApp = app;
     mButtonListener = buttonListener;

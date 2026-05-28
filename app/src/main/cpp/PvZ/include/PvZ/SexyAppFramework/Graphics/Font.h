@@ -31,7 +31,7 @@ class Graphics;
 
 class Font {
 public:
-    int *vTable;
+    void **vTable;
     int mAscent;
     int mAscentPadding;
     int mHeight;

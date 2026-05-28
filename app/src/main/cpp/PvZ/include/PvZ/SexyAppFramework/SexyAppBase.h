@@ -41,7 +41,7 @@ class Dialog;
 
 class SexyAppBase {
 public:
-    int *vTable;                            // 0
+    void **vTable;                          // 0
     int unkMem1_1[18];                      // 1 ~ 18
     int mWidth;                             // 19
     int mHeight;                            // 20

@@ -36,7 +36,7 @@ class Graphics;
 
 class MessageWidget {
 public:
-    int *vTable;                                    // 0
+    void **vTable;                                  // 0
     int unk[3];                                     // 1 ~ 3
     LawnApp *mApp;                                  // 4
     char mLabel[128];                               // 5 ~ 36

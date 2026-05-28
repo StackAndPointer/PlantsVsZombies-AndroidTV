@@ -28,7 +28,7 @@ namespace Sexy {
 
 class ProfileMgr {
 public:
-    int *vTable;                // 0
+    void **vTable;              // 0
     int *mProfileEventListener; // 1
 };
 

@@ -29,7 +29,7 @@ class Board;
 
 class GameObject {
 public:
-    int *vTable;        // 0
+    void **vTable;      // 0
     int placeHolder[3]; // 1 ~ 3
     LawnApp *mApp;      // 4
     Board *mBoard;      // 5

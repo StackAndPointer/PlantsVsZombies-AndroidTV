@@ -5795,55 +5795,34 @@ int Board::GetNumSeedsInBank(bool isZombieBank) {
     return old_Board_GetNumSeedsInBank(this, isZombieBank);
 }
 
-int Board::GetSeedPacketPositionX(int thePacketIndex, int theSeedBankIndex, bool thePlayerIndex) {
-    int aNumPackets = mSeedBank[0]->mNumPackets;
-    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-        if (aNumPackets == 6) {
-            return thePlayerIndex ? 59 * thePacketIndex + 15 : 59 * thePacketIndex + 85;
-        } else if (aNumPackets == 7) {
-            return thePlayerIndex ? 51 * thePacketIndex + 11 : 51 * thePacketIndex + 79;
-        }
-    }
-
-    int **v4;                     // r2
-    int aOffsetX;                 // r7
-    int aSeedBank;                // r6
-    int aHasConveyorBeltSeedBank; // r0
-
-    v4 = &vTable + theSeedBankIndex;
-    if (thePlayerIndex)
-        aOffsetX = -70;
-    else
-        aOffsetX = 0;
-    aSeedBank = v4[131][13];
-    if (mApp->IsSlotMachineLevel())
+int Board::GetSeedPacketPositionX(int thePacketIndex, int theSeedBankIndex, bool isZombiePlayer) {
+    if (mApp->IsSlotMachineLevel()) {
         return 59 * thePacketIndex + 247;
-    aHasConveyorBeltSeedBank = HasConveyorBeltSeedBank(0);
-    if (aHasConveyorBeltSeedBank) {
-        if (mApp->IsCoopMode())
-            return 50 * thePacketIndex + 10;
-        else
-            return 50 * thePacketIndex + 91;
-    } else if (aSeedBank <= 6) {
-        return 59 * thePacketIndex + 85 + aOffsetX;
-    } else if (aSeedBank == 7) {
-        return 59 * thePacketIndex + 85;
-    } else if (aSeedBank == 8) {
-        return 54 * thePacketIndex + 81;
-    } else {
-        if (aSeedBank == 9)
-            aHasConveyorBeltSeedBank = 52;
-        else
-            thePacketIndex *= 3;
-        if (aSeedBank == 9)
-            aHasConveyorBeltSeedBank *= thePacketIndex;
-        else
-            thePacketIndex *= 17;
-        if (aSeedBank == 9)
-            return aHasConveyorBeltSeedBank + 80;
-        else
-            return thePacketIndex + 79;
     }
+    if (HasConveyorBeltSeedBank(0)) {
+        if (mApp->IsCoopMode()) {
+            return 50 * thePacketIndex + 10;
+        }
+        return 50 * thePacketIndex + 91;
+    }
+
+    const int aNumPackets = mSeedBank[theSeedBankIndex]->mNumPackets;
+    if (aNumPackets <= 6) {
+        return 59 * thePacketIndex + 85 + (isZombiePlayer ? -70 : 0);
+    }
+    if (aNumPackets == 7) {
+        if (mApp->IsVSMode()) {
+            return 51 * thePacketIndex + 79 + (isZombiePlayer ? -68 : 0); // 额外卡槽
+        }
+        return 59 * thePacketIndex + 85;
+    }
+    if (aNumPackets == 8) {
+        return 54 * thePacketIndex + 81;
+    }
+    if (aNumPackets == 9) {
+        return 52 * thePacketIndex + 80;
+    }
+    return 51 * thePacketIndex + 79;
 }
 
 void Board::RemoveParticleByType(ParticleEffect theEffectType) {

@@ -67,7 +67,7 @@ public:
     static int &gVSWinMode;
     static int &gVSSuddenDeathMode;
 
-    int *vTable;                                            // 0
+    void **vTable;                                          // 0
     int unk1[3];                                            // 1 ~ 3
     LawnApp *mApp;                                          // 4
     Board *mBoard;                                          // 5

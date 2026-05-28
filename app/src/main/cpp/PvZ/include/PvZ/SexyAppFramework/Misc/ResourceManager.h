@@ -38,7 +38,7 @@ protected:
     };
 
     struct BaseRes {
-        int *vTable;       // 0
+        void **vTable;     // 0
         ResType mType;     // 1
         int *mResourceRef; // 2
         int unk[8];        // 3 ~ 10

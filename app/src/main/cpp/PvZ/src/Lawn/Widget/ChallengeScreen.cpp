@@ -165,7 +165,7 @@ void ChallengeScreen::_constructor(LawnApp *theApp, ChallengePage thePage) {
     //
     //        auto vtableAddr = reinterpret_cast<uintptr_t>(vTableForChallengeScreenAddr);
     //        uintptr_t vptrAddr = vtableAddr + 8;
-    //        vTable = reinterpret_cast<int*>(vptrAddr);
+    //        vTable = reinterpret_cast<void**>(vptrAddr);
     //        uintptr_t vptrButtonListenerAddr = vtableAddr + 512;
     //        ButtonListener::mVTable = reinterpret_cast<VTable *>(vptrButtonListenerAddr);
     //

@@ -56,7 +56,7 @@ public:
 
 class TodParticleSystem {
 public:
-    int *vTable;                             // 0
+    void **vTable;                           // 0
     int unk1[3];                             // 1 ~ 3
     ParticleEffect mEffectType;              // 4
     TodParticleDefinition *mParticleDef;     // 5

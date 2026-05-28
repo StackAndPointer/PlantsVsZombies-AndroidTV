@@ -599,7 +599,7 @@ public:
     void DrawHammerButton(Sexy::Graphics *g, LawnApp *theApp);
     void DrawButterButton(Sexy::Graphics *g, LawnApp *theApp);
     void Draw(Sexy::Graphics *g);
-    int GetSeedPacketPositionX(int thePacketIndex, int theSeedBankIndex, bool thePlayerIndex);
+    int GetSeedPacketPositionX(int thePacketIndex, int theSeedBankIndex, bool isZombiePlayer);
     Coin *AddCoin(int theX, int theY, CoinType theCoinType, CoinMotion theCoinMotion);
     bool TakeDeathMoney(int theAmount);
     bool TakeSunMoney(int theAmount, int thePlayer);
