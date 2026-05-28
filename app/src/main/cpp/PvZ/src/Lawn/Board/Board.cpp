@@ -1236,7 +1236,6 @@ void Board::DrawFog(Sexy::Graphics *g) {
     }
 
     if (mApp->IsVSMode()) {
-
         // 对战模式只在中间三列绘制
         Image *aImageFog = mApp->Is3DAccelerated() ? Sexy::IMAGE_FOG : Sexy::IMAGE_FOG_SOFTWARE;
         bool aVsCenterFogOnly = mApp->IsVSMode();
@@ -1260,9 +1259,6 @@ void Board::DrawFog(Sexy::Graphics *g) {
                         aFadeAmount = mGridCelFog[aRightSampleX][y];
                     }
                     aSampleX = aCenterSampleX;
-                    if (aFadeAmount == 0) {
-                        aFadeAmount = 255;
-                    }
                 }
                 if (aFadeAmount == 0) {
                     continue;
