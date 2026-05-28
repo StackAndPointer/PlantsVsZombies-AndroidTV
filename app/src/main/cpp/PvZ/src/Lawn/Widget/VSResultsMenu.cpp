@@ -123,7 +123,7 @@ void VSResultsMenu::processServerEvent(const BaseEvent *event) {
     }
 }
 
-void VSResultsMenu::InitFromBoard(class Board *board) {
+void VSResultsMenu::InitFromBoard(Board *board) {
     mBoardMainCounter = board->mMainCounter;
     mBoardBackground = Challenge::msVSShuffleMode ? BackgroundType(-1) : board->mBackground;
     int aSeedNum = board->mSeedBank[0]->mNumPackets;
@@ -131,7 +131,7 @@ void VSResultsMenu::InitFromBoard(class Board *board) {
         mPlantSeeds[i - 1] = board->mSeedBank[0]->mSeedPackets[i].mPacketType;
         mZombieSeeds[i - 1] = board->mSeedBank[1]->mSeedPackets[i].mPacketType;
     }
-    reinterpret_cast<void (*)(VSResultsMenu *, Board *)>(VSResultsMenu_InitFromBoardAddr)(this, board);
+    old_VSResultsMenu_InitFromBoard(this, board);
 }
 
 void VSResultsMenu::Update() {

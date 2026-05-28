@@ -87,7 +87,7 @@ public:
     void DrawInfoBox(Sexy::Graphics *a2, int a3);
     void HideReplayButton(bool forceHide);
     void AddedToManager(Sexy::WidgetManager *theWidgetManager);
-    void InitFromBoard(class Board *board);
+    void InitFromBoard(Board *board);
     void ShowReplayButton();
 
     void processClientEvent(const BaseEvent *event);
@@ -173,5 +173,7 @@ inline void (*old_VSResultsMenu_Constructor)(VSResultsMenu *);
 inline void (*old_VSResultsMenu_AddedToManager)(VSResultsMenu *, Sexy::WidgetManager *);
 
 inline void (*old_VSResultsMenu_Destructor)(VSResultsMenu *);
+
+inline void (*old_VSResultsMenu_InitFromBoard)(VSResultsMenu *, Board *);
 
 #endif // PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H

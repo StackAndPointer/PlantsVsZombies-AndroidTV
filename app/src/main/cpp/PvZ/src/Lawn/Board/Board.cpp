@@ -2073,6 +2073,17 @@ void Board::processServerEvent(const BaseEvent *event) {
                     //                    aZombie->mZombieHeight = HEIGHT_ZOMBIE_NORMAL;
                     aZombie->StartWalkAnim(0);
                 }
+
+                // 海豚僵尸落地
+                if (aZombie->mZombiePhase == PHASE_DOLPHIN_IN_JUMP) {
+                    aZombie->mZombiePhase = ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL;
+                    aZombie->mZombieAttackRect = Rect(30, 0, 30, 115);
+                    aZombie->mZombieRect = Rect(20, 0, 42, 115);
+                    aZombie->mUnk95 = 0;
+                    aZombie->mPosY = aZombie->GetPosYBasedOnRow(aZombie->mRow);
+                    //                    aZombie->mZombieHeight = HEIGHT_ZOMBIE_NORMAL;
+                    aZombie->StartWalkAnim(0);
+                }
             }
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_BOBSLED_PICK_SPEED: {
@@ -2325,6 +2336,29 @@ void Board::processServerEvent(const BaseEvent *event) {
                         } else if (aZombie->mSummonCounter == 1) {
                             aZombie->ReanimShowTrack("Zombie_catapult_basketball4", -1);
                         }
+                    }
+                } else if (aZombie->mZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER) {
+                    if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_INTO_POOL) {
+                        aZombie->PlayZombieReanim("anim_jumpinpool", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 16.0f);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING) {
+                        aZombie->mInPool = true;
+                        aZombie->mZombieAttackRect = Rect(-29, 0, 70, 115);
+                        aZombie->PlayZombieReanim("anim_ride", ReanimLoopType::REANIM_LOOP_FULL_LAST_FRAME, 0, 12.0f);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP) {
+                        aZombie->PlayZombieReanim("anim_dolphinjump", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 10.0f);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL) {
+                        aZombie->mZombieAttackRect = Rect(30, 0, 30, 115);
+                        aZombie->mZombieRect = Rect(20, 0, 42, 115);
+                        aZombie->mUnk95 = 0;
+                        aZombie->StartWalkAnim(0);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING_WITHOUT_DOLPHIN) {
+                        aZombie->mZombieHeight = ZombieHeight::HEIGHT_OUT_OF_POOL;
+                        aZombie->mAltitude = -40.0f;
+                        aZombie->PlayZombieReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING) {
+                        aZombie->mZombieHeight = ZombieHeight::HEIGHT_OUT_OF_POOL;
+                        aZombie->mAltitude = -40.0f;
+                        aZombie->PlayZombieReanim("anim_walkdolphin", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
                     }
                 }
             }

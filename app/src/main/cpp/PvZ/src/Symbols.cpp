@@ -397,6 +397,7 @@ bool LoadGameMain() {
     Zombie_UpdateZombieImpAddr = libGameMain.GetSymbol("_ZN6Zombie15UpdateZombieImpEv");
     Zombie_UpdateZombieJackInTheBoxAddr = libGameMain.GetSymbol("_ZN6Zombie24UpdateZombieJackInTheBoxEv");
     Zombie_UpdateZombiePolevaulterAddr = libGameMain.GetSymbol("_ZN6Zombie23UpdateZombiePolevaulterEv");
+    Zombie_UpdateZombieDolphinRiderAddr = libGameMain.GetSymbol("_ZN6Zombie24UpdateZombieDolphinRiderEv");
     Zombie_UpdateZombieGargantuarAddr = libGameMain.GetSymbol("_ZN6Zombie22UpdateZombieGargantuarEv");
     Zombie_UpdateZombiePeaHeadAddr = libGameMain.GetSymbol("_ZN6Zombie19UpdateZombiePeaHeadEv");
     Zombie_UpdateZombieGatlingHeadAddr = libGameMain.GetSymbol("_ZN6Zombie23UpdateZombieGatlingHeadEv");

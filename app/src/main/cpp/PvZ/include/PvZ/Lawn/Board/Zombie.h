@@ -200,7 +200,7 @@ public:
     int mUnk94;                                       // 94
     int mUnk95;                                       // 95
     int mUnk96;                                       // 96
-    // 大小96个整数
+    // 大小97个整数
 
     void RemoveColdEffects() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_RemoveColdEffectsAddr)(this);
@@ -475,6 +475,7 @@ public:
     bool ZombieNotWalking();
     bool IsMovingAtChilledSpeed();
     void UpdateZombieWalking();
+    void UpdateZombieDolphinRider();
     ZombiePhase GetDancerPhase();
     ZombieID SummonBackupDancer(int theRow, int thePosX);
     void SummonBackupDancers();

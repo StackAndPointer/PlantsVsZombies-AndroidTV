@@ -1306,6 +1306,150 @@ void Zombie::UpdateZombiePolevaulter() {
     }
 }
 
+void Zombie::UpdateZombieDolphinRider() {
+    if (IsTangleKelpTarget()) {
+        return;
+    }
+
+    bool isRemoteClient = mApp->IsVSMode() && gTcpConnected;
+    auto syncDolphinPhaseCounter = [this]() {
+        if (gTcpClientSocket >= 0) {
+            U8U8U16U16_Event event{};
+            event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER;
+            event.data1 = uint8_t(mZombiePhase);
+            event.data2 = uint8_t(mSummonCounter);
+            event.data3 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+            event.data4 = uint16_t(mPhaseCounter);
+            netplay::PutEvent(event);
+        }
+    };
+
+    bool aWalkingBackwards = IsWalkingBackwards();
+    switch (mZombiePhase) {
+        case ZombiePhase::PHASE_DOLPHIN_WALKING:
+            if (!aWalkingBackwards && mX >= 701 && mX <= 720) {
+                if (isRemoteClient) {
+                    return;
+                }
+                mZombiePhase = ZombiePhase::PHASE_DOLPHIN_INTO_POOL;
+                PlayZombieReanim("anim_jumpinpool", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 16.0f);
+                syncDolphinPhaseCounter();
+            }
+            break;
+
+        case ZombiePhase::PHASE_DOLPHIN_INTO_POOL: {
+            Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+            if (aBodyReanim->ShouldTriggerTimedEvent(0.56f)) {
+                Reanimation *aSplash = mApp->AddReanimation(mX - 83.0f, mY + 73.0f, mRenderOrder + 1, ReanimationType::REANIM_SPLASH);
+                aSplash->OverrideScale(1.2f, 0.8f);
+                mApp->AddTodParticle(mX - 46.0f, mY + 115.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_PLANTING_POOL);
+                mApp->PlayFoley(FoleyType::FOLEY_ZOMBIE_ENTERING_WATER);
+            }
+
+            if (aBodyReanim->mLoopCount > 0) {
+                mZombiePhase = ZombiePhase::PHASE_DOLPHIN_RIDING;
+                mInPool = true;
+                mZombieAttackRect = Rect(-29, 0, 70, 115);
+                mPosX -= 70.0f;
+                PlayZombieReanim("anim_ride", ReanimLoopType::REANIM_LOOP_FULL_LAST_FRAME, 0, 12.0f);
+                syncDolphinPhaseCounter();
+            }
+            break;
+        }
+
+        case ZombiePhase::PHASE_DOLPHIN_RIDING:
+            if (mX <= 10) {
+                if (isRemoteClient) {
+                    return;
+                }
+                mZombieHeight = ZombieHeight::HEIGHT_OUT_OF_POOL;
+                mZombiePhase = ZombiePhase::PHASE_DOLPHIN_WALKING;
+                mAltitude = -40.0f;
+                PoolSplash(false);
+                PlayZombieReanim("anim_walkdolphin", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
+                PickRandomSpeed();
+                syncDolphinPhaseCounter();
+                return;
+            }
+
+            if (mHasHead && !IsTangleKelpTarget() && FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT)) {
+                if (isRemoteClient) {
+                    return;
+                }
+                mApp->PlayFoley(FoleyType::FOLEY_DOLPHIN_BEFORE_JUMPING);
+                mApp->PlayFoley(FoleyType::FOLEY_PLANT_WATER);
+                mVelX = 0.5f;
+                mPhaseCounter = 120;
+                mZombiePhase = ZombiePhase::PHASE_DOLPHIN_IN_JUMP;
+                PlayZombieReanim("anim_dolphinjump", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 10.0f);
+                syncDolphinPhaseCounter();
+            }
+            break;
+
+        case ZombiePhase::PHASE_DOLPHIN_IN_JUMP: {
+            Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+            mAltitude = TodAnimateCurveFloat(120, 0, mPhaseCounter, 0.0f, 10.0f, TodCurves::CURVE_LINEAR);
+
+            if (aBodyReanim->ShouldTriggerTimedEvent(0.3f)) {
+                Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
+                if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
+                    mApp->PlayFoley(FoleyType::FOLEY_BONK);
+                    mApp->AddTodParticle(aPlant->mX + 60.0f, aPlant->mY - 20.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_TALL_NUT_BLOCK);
+                    mZombieHeight = ZombieHeight::HEIGHT_FALLING;
+                    mAltitude = 30.0f;
+                    mPosX = aPlant->mX + 25.0f;
+
+                    mZombiePhase = ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL;
+                    mZombieAttackRect = Rect(30, 0, 30, 115);
+                    mZombieRect = Rect(20, 0, 42, 115);
+                    mUnk95 = 0;
+                    StartWalkAnim(0);
+                    syncDolphinPhaseCounter();
+                    return;
+                }
+            }
+
+            if (aBodyReanim->ShouldTriggerTimedEvent(0.49f)) {
+                Reanimation *aSplash = mApp->AddReanimation(mX - 63.0f, mY + 73.0f, mRenderOrder + 1, ReanimationType::REANIM_SPLASH);
+                aSplash->OverrideScale(1.2f, 0.8f);
+                mApp->AddTodParticle(mX - 26.0f, mY + 115.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_PLANTING_POOL);
+                mApp->PlayFoley(FoleyType::FOLEY_ZOMBIE_ENTERING_WATER);
+                mVelX = 0.0f;
+                return;
+            }
+
+            if (aBodyReanim->mLoopCount > 0) {
+                mAltitude = 0.0f;
+                mPosX -= 94.0f;
+                mZombiePhase = ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL;
+                mZombieAttackRect = Rect(30, 0, 30, 115);
+                mZombieRect = Rect(20, 0, 42, 115);
+                mUnk95 = 0;
+                StartWalkAnim(0);
+                syncDolphinPhaseCounter();
+            }
+            break;
+        }
+
+        case ZombiePhase::PHASE_DOLPHIN_WALKING_IN_POOL:
+            if ((mX > 10 && (mX <= 680 || !aWalkingBackwards)) || (mX <= 10 && aWalkingBackwards)) {
+                return;
+            }
+
+            mZombieHeight = ZombieHeight::HEIGHT_OUT_OF_POOL;
+            mZombiePhase = ZombiePhase::PHASE_DOLPHIN_WALKING_WITHOUT_DOLPHIN;
+            mAltitude = -40.0f;
+            PoolSplash(false);
+            PlayZombieReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
+            PickRandomSpeed();
+            syncDolphinPhaseCounter();
+            return;
+
+        default:
+            return;
+    }
+}
+
 GridItem *Zombie::FindPoleTarget() {
     if (mMindControlled || mSummonCounter >= 3) {
         return nullptr;

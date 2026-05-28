@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2023-2026  PvZ TV Touch Team
  *
  * This file is part of PlantsVsZombies-AndroidTV.
@@ -1358,7 +1358,11 @@ void WaitForSecondPlayerDialog::processClientEvent(const BaseEvent *event) {
     switch (event->type) {
         case EVENT_CLIENT_WAITFORSECONDPALYER_PLAYER_NAME: {
             auto *nameEvent = static_cast<const CHARx32_Event *>(event);
-            strncpy(gSecondPlayerName, nameEvent->chars, sizeof(gSecondPlayerName) - 1);
+            const char *localName = (mApp && mApp->mPlayerInfo && mApp->mPlayerInfo->mName) ? mApp->mPlayerInfo->mName : "";
+            std::strncpy(gServerHostName, localName, sizeof(gServerHostName) - 1);
+            gServerHostName[sizeof(gServerHostName) - 1] = '\0';
+            std::strncpy(gSecondPlayerName, nameEvent->chars, sizeof(gSecondPlayerName) - 1);
+            gSecondPlayerName[sizeof(gSecondPlayerName) - 1] = '\0';
 
             CHARx32_Event nameEventReply{};
             nameEventReply.type = EVENT_SERVER_WAITFORSECONDPALYER_PLAYER_NAME;
@@ -1391,7 +1395,11 @@ void WaitForSecondPlayerDialog::processServerEvent(const BaseEvent *event) {
         } break;
         case EVENT_SERVER_WAITFORSECONDPALYER_PLAYER_NAME: {
             auto *nameEvent = static_cast<const CHARx32_Event *>(event);
-            strncpy(gSecondPlayerName, nameEvent->chars, sizeof(gSecondPlayerName) - 1);
+            const char *localName = (mApp && mApp->mPlayerInfo && mApp->mPlayerInfo->mName) ? mApp->mPlayerInfo->mName : "";
+            std::strncpy(gServerHostName, nameEvent->chars, sizeof(gServerHostName) - 1);
+            gServerHostName[sizeof(gServerHostName) - 1] = '\0';
+            std::strncpy(gSecondPlayerName, localName, sizeof(gSecondPlayerName) - 1);
+            gSecondPlayerName[sizeof(gSecondPlayerName) - 1] = '\0';
         } break;
         case EVENT_WAITFORSECONDPALYER_START_GAME:
             //            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
@@ -1523,6 +1531,11 @@ bool WaitForSecondPlayerDialog::GetActiveBroadcast(sockaddr_in &out_bcast, std::
 
 
 void WaitForSecondPlayerDialog::CreateRoom() {
+    const char *localName = (mApp && mApp->mPlayerInfo && mApp->mPlayerInfo->mName) ? mApp->mPlayerInfo->mName : "";
+    std::strncpy(gServerHostName, localName, sizeof(gServerHostName) - 1);
+    gServerHostName[sizeof(gServerHostName) - 1] = '\0';
+    gSecondPlayerName[0] = '\0';
+
     // 1) 创建TCP监听socket
     gTcpListenSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (gTcpListenSocket < 0) {
@@ -1659,6 +1672,7 @@ void WaitForSecondPlayerDialog::LeaveRoom() {
     mManualIp[0] = '\0';
     mManualPort = 0;
     gSecondPlayerName[0] = '\0';
+    gServerHostName[0] = '\0';
 }
 
 void WaitForSecondPlayerDialog::UdpBroadcastRoom() {
