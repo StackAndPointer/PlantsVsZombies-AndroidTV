@@ -107,6 +107,15 @@ void GridItem::GridItemDie() {
         }
     }
 
+    if (mGridItemType == GridItemType::GRIDITEM_POLE) {
+        ZombieID aRelatedZombieID = *reinterpret_cast<ZombieID *>(&mZombieType);
+        Zombie *aZombie = mBoard->ZombieTryToGet(aRelatedZombieID);
+        if (aZombie) {
+            GridItemID &aRelatedPoleID = *reinterpret_cast<GridItemID *>(&aZombie->mRelatedZombieID);
+            aRelatedPoleID = GridItemID::GRIDITEMID_NULL;
+        }
+    }
+
     Reanimation *aGridItemReanim = mApp->ReanimationTryToGet(mGridItemReanimID);
     if (aGridItemReanim) {
         aGridItemReanim->ReanimationDie();
@@ -296,6 +305,9 @@ void GridItem::Update() {
     if (mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND) {
         UpdateBurialMound();
     }
+    if (mGridItemType == GridItemType::GRIDITEM_POLE) {
+        UpdatePole();
+    }
 
     if ((mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND) && mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
         Reanimation *aGridItemReanim = mApp->ReanimationTryToGet(mGridItemReanimID);
@@ -439,6 +451,29 @@ void GridItem::UpdateBurialMound() {
                 netplay::PutEvent(event);
             }
         }
+    }
+}
+
+void GridItem::UpdatePole() {
+    ZombieID &aRelatedZombieID = *reinterpret_cast<ZombieID *>(&mZombieType);
+    if (aRelatedZombieID == ZombieID::ZOMBIEID_NULL) {
+        return;
+    }
+
+    Zombie *aRelatedZombie = mBoard->ZombieTryToGet(aRelatedZombieID);
+    if (aRelatedZombie == nullptr) {
+        aRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+        return;
+    }
+
+    GridItemID aRelatedPoleID = *reinterpret_cast<GridItemID *>(&aRelatedZombie->mRelatedZombieID);
+    GridItemID anId = mBoard->GridItemGetID(this);
+
+    bool canRelatedToZombie = aRelatedZombie->mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER && !aRelatedZombie->IsDeadOrDying() && aRelatedZombie->mHasHead
+        && (aRelatedZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PREPARE || aRelatedZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PICK);
+
+    if (!canRelatedToZombie || aRelatedPoleID != anId) {
+        aRelatedZombieID = ZombieID::ZOMBIEID_NULL;
     }
 }
 
@@ -662,6 +697,76 @@ void GridItem::DrawGraveStone(Graphics *g) {
     }
 }
 
+void GridItem::DrawBurialMound(Sexy::Graphics *g) {
+    if (mGridItemCounter <= 0)
+        return;
+
+    int aHeightPosition = TodAnimateCurve(0, 100, mGridItemCounter, 1000, 0, TodCurves::CURVE_EASE_IN_OUT);
+    int aGridCelLook = mBoard->mGridCelLook[mGridX][mGridY];
+    int aGridCelOffsetX = mBoard->mGridCelOffset[mGridX][mGridY][0];
+    int aGridCelOffsetY = mBoard->mGridCelOffset[mGridX][mGridY][1];
+    int aCelWidth = addonImages.burial_mound->GetCelWidth();
+    int aCelHeight = addonImages.burial_mound->GetCelHeight();
+    int aGraveCol = 0;
+    int aGraveRow;
+    if (mGridY == 0) {
+        aGraveRow = 1;
+    } else if (mGridItemState == GridItemState::GRIDITEM_STATE_GRAVESTONE_SPECIAL) {
+        aGraveRow = 0;
+    } else {
+        aGraveRow = 2 + aGridCelLook % 2;
+    }
+
+    int aVisibleHeight = TodAnimateCurve(0, 1000, aHeightPosition, aCelHeight, 0, TodCurves::CURVE_EASE_IN_OUT);
+    int aExtraBottomClip = TodAnimateCurve(0, 50, aHeightPosition, 0, 14, TodCurves::CURVE_EASE_IN_OUT);
+    int aVisibleHeightDirt = TodAnimateCurve(500, 1000, aHeightPosition, aCelHeight, 0, TodCurves::CURVE_EASE_IN_OUT);
+    int aExtraTopClip = 0;
+    //    Plant *aPlant = mBoard->GetTopPlantAt(mGridX, mGridY, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
+    //    if (aPlant && aPlant->mState == PlantState::STATE_GRAVEBUSTER_EATING) {
+    //        aExtraTopClip = TodAnimateCurveFloat(400, 0, aPlant->mStateCountdown, 10.0f, 40.0f, TodCurves::CURVE_LINEAR);
+    //    }
+
+    Rect aSrcRect(aCelWidth * aGraveCol, aCelHeight * aGraveRow + aExtraTopClip, aCelWidth, aVisibleHeight - aExtraBottomClip - aExtraTopClip);
+    Rect aSrcRectDirt(aCelWidth * aGraveCol, aCelHeight * aGraveRow, aCelWidth, aVisibleHeightDirt);
+    int x = mBoard->GridToPixelX(mGridX, mGridY) + aGridCelOffsetX - 4;
+    int y = mBoard->GridToPixelY(mGridX, mGridY) + aCelHeight + aGridCelOffsetY - 9;
+
+    if (mBoard->StageHasRoof()) {
+        aHeightPosition = TodAnimateCurve(0, 100, mGridItemCounter, 0, 1000, TodCurves::CURVE_EASE_IN_OUT);
+        aVisibleHeight = TodAnimateCurve(0, 1000, aHeightPosition, 0, aCelHeight, TodCurves::CURVE_EASE_IN_OUT);
+        aExtraBottomClip = 0;
+        aSrcRect = Rect(aCelWidth * aGraveCol, aCelHeight * aGraveRow + aExtraTopClip, aCelWidth, aVisibleHeight - aExtraTopClip);
+        aSrcRectDirt = Rect(aCelWidth * aGraveCol, aCelHeight * aGraveRow + (aCelHeight - aVisibleHeightDirt), aCelWidth, aVisibleHeightDirt);
+        int startYOffset = -200;
+        int endYOffset = aCelHeight + aGridCelOffsetY - 9;
+        int currentYOffset = TodAnimateCurve(0, 1000, aHeightPosition, startYOffset, endYOffset, TodCurves::CURVE_EASE_IN_OUT);
+        y = mBoard->GridToPixelY(mGridX, mGridY) + currentYOffset;
+    }
+
+    Reanimation *aReanim = mApp->ReanimationTryToGet(mGridItemReanimID);
+    if (aReanim) {
+        g->SetClipRect(x, y - aVisibleHeight + aExtraTopClip, 86, aVisibleHeight - aExtraBottomClip - aExtraTopClip);
+        aReanim->SetPosition(x, y - aVisibleHeight + aExtraTopClip);
+        aReanim->DrawRenderGroup(g, 0);
+        g->ClearClipRect();
+
+        bool isPlantRowPool = mBoard->mPlantRow[mGridY] == PlantRowType::PLANTROW_POOL;
+        Image *bottomImage = isPlantRowPool ? addonImages.zombie_duckytube_inwater : IMAGE_VS_STONE_DIRT; // 泳池绘制鸭子救生圈，草坪绘制泥土
+        int offsetX = 0, offsetY = 0;
+        if (isPlantRowPool) {
+            offsetX = -20;
+            offsetY = 40;
+        }
+
+        Rect aRectDirt(0, 0, bottomImage->mWidth, TodAnimateCurve(500, 1000, aHeightPosition, bottomImage->mHeight, 0, TodCurves::CURVE_EASE_IN_OUT));
+        if (!mBoard->StageHasRoof()) { // 屋顶不绘制墓碑底部贴图
+            g->DrawImage(bottomImage, x + offsetX, y - aVisibleHeightDirt + offsetY, aRectDirt);
+        }
+        aReanim->DrawRenderGroup(g, 1);
+        g->mClipRect = Rect(g->mClipRect.mX, g->mClipRect.mY, g->mClipRect.mWidth, g->mClipRect.mHeight);
+    }
+}
+
 void GridItem::AddGraveStoneParticles() {
     if (mBoard->StageHasRoof())
         return;
@@ -790,74 +895,5 @@ void GridItem::TakeDamgae(int theDamage, unsigned int theDamageFlags) {
             }
             aReanim->PlayReanim(animName, ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 4, 10.0f);
         }
-    }
-}
-void GridItem::DrawBurialMound(Sexy::Graphics *g) {
-    if (mGridItemCounter <= 0)
-        return;
-
-    int aHeightPosition = TodAnimateCurve(0, 100, mGridItemCounter, 1000, 0, TodCurves::CURVE_EASE_IN_OUT);
-    int aGridCelLook = mBoard->mGridCelLook[mGridX][mGridY];
-    int aGridCelOffsetX = mBoard->mGridCelOffset[mGridX][mGridY][0];
-    int aGridCelOffsetY = mBoard->mGridCelOffset[mGridX][mGridY][1];
-    int aCelWidth = addonImages.burial_mound->GetCelWidth();
-    int aCelHeight = addonImages.burial_mound->GetCelHeight();
-    int aGraveCol = 0;
-    int aGraveRow;
-    if (mGridY == 0) {
-        aGraveRow = 1;
-    } else if (mGridItemState == GridItemState::GRIDITEM_STATE_GRAVESTONE_SPECIAL) {
-        aGraveRow = 0;
-    } else {
-        aGraveRow = 2 + aGridCelLook % 2;
-    }
-
-    int aVisibleHeight = TodAnimateCurve(0, 1000, aHeightPosition, aCelHeight, 0, TodCurves::CURVE_EASE_IN_OUT);
-    int aExtraBottomClip = TodAnimateCurve(0, 50, aHeightPosition, 0, 14, TodCurves::CURVE_EASE_IN_OUT);
-    int aVisibleHeightDirt = TodAnimateCurve(500, 1000, aHeightPosition, aCelHeight, 0, TodCurves::CURVE_EASE_IN_OUT);
-    int aExtraTopClip = 0;
-    //    Plant *aPlant = mBoard->GetTopPlantAt(mGridX, mGridY, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
-    //    if (aPlant && aPlant->mState == PlantState::STATE_GRAVEBUSTER_EATING) {
-    //        aExtraTopClip = TodAnimateCurveFloat(400, 0, aPlant->mStateCountdown, 10.0f, 40.0f, TodCurves::CURVE_LINEAR);
-    //    }
-
-    Rect aSrcRect(aCelWidth * aGraveCol, aCelHeight * aGraveRow + aExtraTopClip, aCelWidth, aVisibleHeight - aExtraBottomClip - aExtraTopClip);
-    Rect aSrcRectDirt(aCelWidth * aGraveCol, aCelHeight * aGraveRow, aCelWidth, aVisibleHeightDirt);
-    int x = mBoard->GridToPixelX(mGridX, mGridY) + aGridCelOffsetX - 4;
-    int y = mBoard->GridToPixelY(mGridX, mGridY) + aCelHeight + aGridCelOffsetY - 9;
-
-    if (mBoard->StageHasRoof()) {
-        aHeightPosition = TodAnimateCurve(0, 100, mGridItemCounter, 0, 1000, TodCurves::CURVE_EASE_IN_OUT);
-        aVisibleHeight = TodAnimateCurve(0, 1000, aHeightPosition, 0, aCelHeight, TodCurves::CURVE_EASE_IN_OUT);
-        aExtraBottomClip = 0;
-        aSrcRect = Rect(aCelWidth * aGraveCol, aCelHeight * aGraveRow + aExtraTopClip, aCelWidth, aVisibleHeight - aExtraTopClip);
-        aSrcRectDirt = Rect(aCelWidth * aGraveCol, aCelHeight * aGraveRow + (aCelHeight - aVisibleHeightDirt), aCelWidth, aVisibleHeightDirt);
-        int startYOffset = -200;
-        int endYOffset = aCelHeight + aGridCelOffsetY - 9;
-        int currentYOffset = TodAnimateCurve(0, 1000, aHeightPosition, startYOffset, endYOffset, TodCurves::CURVE_EASE_IN_OUT);
-        y = mBoard->GridToPixelY(mGridX, mGridY) + currentYOffset;
-    }
-
-    Reanimation *aReanim = mApp->ReanimationTryToGet(mGridItemReanimID);
-    if (aReanim) {
-        g->SetClipRect(x, y - aVisibleHeight + aExtraTopClip, 86, aVisibleHeight - aExtraBottomClip - aExtraTopClip);
-        aReanim->SetPosition(x, y - aVisibleHeight + aExtraTopClip);
-        aReanim->DrawRenderGroup(g, 0);
-        g->ClearClipRect();
-
-        bool isPlantRowPool = mBoard->mPlantRow[mGridY] == PlantRowType::PLANTROW_POOL;
-        Image *bottomImage = isPlantRowPool ? addonImages.zombie_duckytube_inwater : IMAGE_VS_STONE_DIRT; // 泳池绘制鸭子救生圈，草坪绘制泥土
-        int offsetX = 0, offsetY = 0;
-        if (isPlantRowPool) {
-            offsetX = -20;
-            offsetY = 40;
-        }
-
-        Rect aRectDirt(0, 0, bottomImage->mWidth, TodAnimateCurve(500, 1000, aHeightPosition, bottomImage->mHeight, 0, TodCurves::CURVE_EASE_IN_OUT));
-        if (!mBoard->StageHasRoof()) { // 屋顶不绘制墓碑底部贴图
-            g->DrawImage(bottomImage, x + offsetX, y - aVisibleHeightDirt + offsetY, aRectDirt);
-        }
-        aReanim->DrawRenderGroup(g, 1);
-        g->mClipRect = Rect(g->mClipRect.mX, g->mClipRect.mY, g->mClipRect.mWidth, g->mClipRect.mHeight);
     }
 }

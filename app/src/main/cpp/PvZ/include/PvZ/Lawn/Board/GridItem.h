@@ -104,15 +104,16 @@ public:
     void Update();
     void UpdateScaryPot();
     void UpdateBurialMound();
+    void UpdatePole();
     int GetMoundUpgradeCost();
     void DrawStinky(Sexy::Graphics *g);
     void DrawSquirrel(Sexy::Graphics *g);
     void DrawCrater(Sexy::Graphics *g);
     void DrawGraveStone(Sexy::Graphics *g);
+    void DrawBurialMound(Sexy::Graphics *g);
     void AddGraveStoneParticles();
     void DrawMPTarget(Sexy::Graphics *g);
     void TakeDamgae(int theDamage, unsigned int theDamageFlags);
-    void DrawBurialMound(Sexy::Graphics *g);
     Sexy::Rect GetItemRect();
 
 protected:

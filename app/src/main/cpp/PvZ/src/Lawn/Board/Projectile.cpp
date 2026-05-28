@@ -52,7 +52,7 @@ ProjectileDefinition gProjectileDefinition[] = {
 };
 
 ProjectileDefinition gExtendedProjectileDefinition[] = {
-    {ProjectileType::PROJECTILE_ZOMBIE_POLE, 0, 1001},
+    {ProjectileType::PROJECTILE_ZOMBIE_POLE, 0, 2400},
 };
 
 void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
