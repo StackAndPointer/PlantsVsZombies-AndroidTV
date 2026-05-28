@@ -1460,45 +1460,75 @@ GridItem *Zombie::FindPoleTarget() {
     }
 
     Rect aAttackRect = mZombieAttackRect;
+
     if (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_POST_VAULT) {
         aAttackRect = Rect(30, 0, 30, 115);
     } else if (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT) {
         aAttackRect = Rect(30, 0, 40, 115);
     }
+
     ZombieDrawPosition aDrawPos{};
     GetDrawPos(aDrawPos);
+
     aAttackRect.Offset(mX, mY + aDrawPos.mBodyY);
+
     if (aDrawPos.mClipHeight > CLIP_HEIGHT_LIMIT) {
         aAttackRect.mHeight -= aDrawPos.mClipHeight;
     }
 
-    GridItem *aPole = nullptr;
     GridItem *aBestPole = nullptr;
-    int aBestDistance = 0;
-    while (mBoard->IterateGridItems(aPole)) {
-        if (aPole->mGridItemType == GridItemType::GRIDITEM_POLE && aPole->mGridY == mRow) {
+    int aBestDistance = INT_MAX;
 
-            bool aIsLockedByOtherGigaPoleVault = false;
-            Zombie *aZombie = nullptr;
-            uint32_t aPoleID = mBoard->mGridItems.DataArrayGetID(aPole);
-            while (mBoard->IterateZombies(aZombie)) {
-                if (!aZombie->mDead && aZombie->mZombieType == ZOMBIE_GIGA_POLEVAULTER && aZombie->mRelatedZombieID == aPoleID) {
-                    aIsLockedByOtherGigaPoleVault = true;
-                    break;
-                }
-            }
-            if (aIsLockedByOtherGigaPoleVault) {
+    GridItem *aPole = nullptr;
+    while (mBoard->IterateGridItems(aPole)) {
+        if (aPole->mGridItemType != GridItemType::GRIDITEM_POLE) {
+            continue;
+        }
+
+        if (aPole->mGridY != mRow) {
+            continue;
+        }
+
+        Rect aPoleRect = aPole->GetItemRect();
+
+        if (GetRectOverlap(aAttackRect, aPoleRect) < 0)
+            continue;
+
+        uint32_t aPoleID = mBoard->mGridItems.DataArrayGetID(aPole);
+
+        bool aIsLockedByOtherGigaPoleVault = false;
+
+        Zombie *aZombie = nullptr;
+        while (mBoard->IterateZombies(aZombie)) {
+            if (aZombie->mDead) {
                 continue;
             }
 
-            Rect aPoleRect = aPole->GetItemRect();
-            if (GetRectOverlap(aAttackRect, aPoleRect) >= 0) {
-                int aDistance = abs((int)aPole->mPosX - mX);
-                if (aBestPole == nullptr || aDistance < aBestDistance) {
-                    aBestDistance = aDistance;
-                    aBestPole = aPole;
-                }
+            if (aZombie == this) {
+                continue;
             }
+
+            if (aZombie->mZombieType != ZOMBIE_GIGA_POLEVAULTER) {
+                continue;
+            }
+
+            if (aZombie->mRelatedZombieID != aPoleID) {
+                continue;
+            }
+
+            aIsLockedByOtherGigaPoleVault = true;
+            break;
+        }
+
+        if (aIsLockedByOtherGigaPoleVault) {
+            continue;
+        }
+
+        int aDistance = std::abs(static_cast<int>(aPole->mPosX) - mX);
+
+        if (aDistance < aBestDistance) {
+            aBestDistance = aDistance;
+            aBestPole = aPole;
         }
     }
 
