@@ -1482,7 +1482,7 @@ GridItem *Zombie::FindPoleTarget() {
             Zombie *aZombie = nullptr;
             uint32_t aPoleID = mBoard->mGridItems.DataArrayGetID(aPole);
             while (mBoard->IterateZombies(aZombie)) {
-                if (aZombie->mZombieType == ZOMBIE_GIGA_POLEVAULTER && aZombie->mRelatedZombieID == aPoleID) {
+                if (!aZombie->mDead && aZombie->mZombieType == ZOMBIE_GIGA_POLEVAULTER && aZombie->mRelatedZombieID == aPoleID) {
                     aIsLockedByOtherGigaPoleVault = true;
                     break;
                 }
