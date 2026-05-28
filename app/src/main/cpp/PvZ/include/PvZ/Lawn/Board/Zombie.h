@@ -229,9 +229,10 @@ public:
     void GetTrackPosition(const char *theTrackName, float &thePosX, float &thePosY) {
         reinterpret_cast<void (*)(Zombie *, const char *, float &, float &)>(Zombie_GetTrackPositionAddr)(this, theTrackName, thePosX, thePosY);
     }
-    void UpdateAnimSpeed() {
-        reinterpret_cast<void (*)(Zombie *)>(Zombie_UpdateAnimSpeedAddr)(this);
+    void ApplyAnimRate(float theAnimRate) {
+        reinterpret_cast<void (*)(Zombie *, float)>(Zombie_ApplyAnimRateAddr)(this, theAnimRate);
     }
+    void UpdateAnimSpeed();
     void UpdateZombiePosition() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_UpdateZombiePositionAddr)(this);
     };

@@ -2293,14 +2293,14 @@ void Board::processServerEvent(const BaseEvent *event) {
                     }
 
                     if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_THROW) {
-                        aZombie->PlayZombieReanim("anim_throw", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+                        aZombie->PlayZombieReanim("anim_throw", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 36.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PREPARE) {
-                        aZombie->PlayZombieReanim("anim_prepare", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+                        aZombie->PlayZombieReanim("anim_prepare", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 40.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PICK) {
                         aZombie->StopEating();
                         aZombie->PlayZombieReanim("anim_pick", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_TAKE) {
-                        aZombie->PlayZombieReanim("anim_take", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+                        aZombie->PlayZombieReanim("anim_take", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 16.0f);
                     } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_POST_VAULT) {
                         aZombie->StartWalkAnim(0);
                     }
@@ -3260,11 +3260,11 @@ void Board::PauseFromSecondPlayer(bool thePause) {
 
 
 void Board::Pause(bool thePause) {
-    LOG_DEBUG("Pause={}, remoteSync={}", thePause, gPauseSyncFromRemote);
+    //    LOG_DEBUG("Pause={}, remoteSync={}", thePause, gPauseSyncFromRemote);
 
     // Spectator is read-only: block any local pause/resume attempts.
     if (gIsServerModeSpectator && !gPauseSyncFromRemote) {
-        LOG_DEBUG("Pause blocked for spectator");
+        //        LOG_DEBUG("Pause blocked for spectator");
         return;
     }
 
@@ -6550,7 +6550,7 @@ GridItem *Board::AddAPole_Origin(int theX, int theY, int theGridY) {
 }
 
 bool Board::TakeSunMoney(int theAmount, int thePlayer) {
-    LOG_DEBUG("{} {}", theAmount, thePlayer);
+    //    LOG_DEBUG("{} {}", theAmount, thePlayer);
     bool result = old_Board_TakeSunMoney(this, theAmount, thePlayer);
     if (gTcpClientSocket >= 0) {
         I16_Event event = {{EventType::EVENT_SERVER_BOARD_TAKE_SUNMONEY}, int16_t(mSunMoney1)};

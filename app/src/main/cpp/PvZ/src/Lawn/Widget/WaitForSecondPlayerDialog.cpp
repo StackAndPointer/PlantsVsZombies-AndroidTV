@@ -1441,7 +1441,7 @@ void WaitForSecondPlayerDialog::InitUdpScanSocket() {
         return;
     }
     CollectAllBroadcastTargets(gBroadcastTargets);
-    LOG_DEBUG("[UDP Scan] Listening on port {}", UDP_PORT);
+    //    LOG_DEBUG("[UDP Scan] Listening on port {}", UDP_PORT);
 }
 
 void WaitForSecondPlayerDialog::CloseUdpScanSocket() {

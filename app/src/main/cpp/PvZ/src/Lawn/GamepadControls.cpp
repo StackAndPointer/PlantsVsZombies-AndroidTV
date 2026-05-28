@@ -1223,7 +1223,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
         }
 
         if (aPacketType < SeedType::NUM_SEED_TYPES) {
-            LOG_DEBUG("before MouseDownWithPlant {}", mPlayerIndex1);
+            //            LOG_DEBUG("before MouseDownWithPlant {}", mPlayerIndex1);
             mBoard->MouseDownWithPlant(mCursorPositionX, mCursorPositionY, 1, mPlayerIndex1);
             mBoard->ClearCursor(mPlayerIndex1);
             mGamepadState = MOVEMENT_STATE_NORMAL;

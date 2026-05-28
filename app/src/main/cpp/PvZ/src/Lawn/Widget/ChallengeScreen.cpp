@@ -729,7 +729,7 @@ void ChallengeScreen::KeyDown_Origin(Sexy::KeyCode theKey) {
             }
         }
     }
-    LOG_DEBUG("IN");
+    //    LOG_DEBUG("IN");
     old_ChallengeScreen_KeyDown(this, theKey);
 }
 
