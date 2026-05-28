@@ -1,10 +1,25 @@
 ﻿/*
  * Copyright (C) 2023-2026  PvZ TV Touch Team
+ *
+ * This file is part of PlantsVsZombies-AndroidTV.
+ *
+ * PlantsVsZombies-AndroidTV is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * PlantsVsZombies-AndroidTV is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+ * Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include "PvZ/Lawn/Widget/ReplayManageWidget.h"
-#include "Homura/HookUtils.h"
 #include "Homura/Logger.h"
+#include "Homura/MemberUtils.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/SeedPacket.h"
@@ -14,12 +29,14 @@
 #include "PvZ/Lawn/Widget/WaitForSecondPlayerDialog.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/ReplaySystem.h"
+#include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
+#include "PvZ/SexyAppFramework/Widget/ScrollWidget.h"
 #include "PvZ/TodLib/Common/TodCommon.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 
-#include <array>
-#include <cassert>
 #include <cstring>
+
+#include <mutex>
 #include <sstream>
 #include <vector>
 
@@ -44,25 +61,35 @@ std::vector<SeedType> ParseDeck(const std::string &text) {
 } // namespace
 
 
-void *gReplayManageWidgetVTable[122];
-void *gReplayListContentWidgetVTable[122];
-
 class ReplayListContentWidget : public Widget {
 public:
-    ReplayManageWidget *mOwner = nullptr;
+    ReplayManageWidget *mOwner;
     std::vector<ReplayMetaInfo> mReplays;
-
-public:
     int mTotalItems;
 
-public:
     explicit ReplayListContentWidget(ReplayManageWidget *owner) {
+        Widget::_constructor();
+
+        static void *sReplayListContentWidgetVTable[122];
+        static std::once_flag vtableInitFlag;
+        std::call_once(vtableInitFlag, [this] {
+            std::memcpy(sReplayListContentWidgetVTable, vTable, sizeof(sReplayListContentWidgetVTable));
+            sReplayListContentWidgetVTable[0] = (void *)homura::ExtractMemFuncPtr(&ReplayListContentWidget::_destructor);
+            sReplayListContentWidgetVTable[1] = (void *)homura::ExtractMemFuncPtr(&ReplayListContentWidget::_destructor2);
+            sReplayListContentWidgetVTable[36] = (void *)homura::ExtractMemFuncPtr(&ReplayListContentWidget::Draw);
+            sReplayListContentWidgetVTable[78] = (void *)homura::ExtractMemFuncPtr(&ReplayListContentWidget::MouseDown);
+        });
+        vTable = reinterpret_cast<int *>(sReplayListContentWidgetVTable);
+
         mOwner = owner;
-        Init();
+        mReplays = replay::ListReplayFiles();
+        mTotalItems = static_cast<int>(mReplays.size());
+        LOG_INFO("[REPLAY] list loaded count={}", mTotalItems);
     }
 
     ~ReplayListContentWidget() {
-        _destructor();
+        // 不调用自身的 _destructor, 否则会重复析构子对象
+        Widget::_destructor();
     }
 
     void Draw(Graphics *g) {
@@ -155,8 +182,6 @@ public:
     }
 
     void MouseDown(int x, int y, int theClickCount) {
-        (void)x;
-        (void)theClickCount;
         const int index = y / kReplayRowHeight;
         if (index < 0 || index >= static_cast<int>(mReplays.size()) || mOwner == nullptr) {
             LOG_WARN("[REPLAY] invalid click y={}, idx={}, count={}", y, index, (int)mReplays.size());
@@ -171,36 +196,30 @@ public:
         mOwner->StartReplayByIndex(index);
     }
 
-private:
-    void Init() {
-        _constructor();
-        static bool uninitialized = true;
-        if (uninitialized) {
-            size_t kVTableBytes = sizeof(void *) * std::size(gReplayListContentWidgetVTable);
-            std::memcpy(gReplayListContentWidgetVTable, vTable, sizeof(void *) * std::size(gReplayListContentWidgetVTable));
-            homura::HookVirtualFunc(gReplayListContentWidgetVTable, 36, &ReplayListContentWidget::Draw, nullptr);
-            homura::HookVirtualFunc(gReplayListContentWidgetVTable, 78, &ReplayListContentWidget::MouseDown, nullptr);
-            uninitialized = false;
-        }
+protected:
+    void _destructor() {
+        mReplays.~vector();
+        Widget::_destructor();
+    }
 
-        vTable = reinterpret_cast<int *>(gReplayListContentWidgetVTable);
-        mReplays = replay::ListReplayFiles();
-        mTotalItems = static_cast<int>(mReplays.size());
-        LOG_INFO("[REPLAY] list loaded count={}", mTotalItems);
+    void _destructor2() {
+        delete this;
     }
 };
 
 
 ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListener) {
-    static bool uninitialized = true;
-    _constructor();
-    if (uninitialized) {
-        constexpr size_t kVTableBytes = sizeof(void *) * std::size(gReplayManageWidgetVTable);
-        std::memcpy(gReplayManageWidgetVTable, vTable, sizeof(void *) * std::size(gReplayManageWidgetVTable));
-        homura::HookVirtualFunc(gReplayManageWidgetVTable, 36, &ReplayManageWidget::Draw, nullptr);
-        uninitialized = false;
-    }
-    vTable = reinterpret_cast<int *>(gReplayManageWidgetVTable);
+    Widget::_constructor();
+
+    static void *sReplayManageWidgetVTable[122];
+    static std::once_flag vtableInitFlag;
+    std::call_once(vtableInitFlag, [this] {
+        std::memcpy(sReplayManageWidgetVTable, vTable, sizeof(sReplayManageWidgetVTable));
+        sReplayManageWidgetVTable[0] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::_destructor);
+        sReplayManageWidgetVTable[1] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::_destructor2);
+        sReplayManageWidgetVTable[36] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::Draw);
+    });
+    vTable = reinterpret_cast<int *>(sReplayManageWidgetVTable);
 
     mApp = app;
     mButtonListener = buttonListener;
@@ -226,6 +245,23 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
 
 ReplayManageWidget::~ReplayManageWidget() {
     _destructor();
+}
+
+void ReplayManageWidget::_destructor() {
+    RemoveWidget(mCloseButton);
+    mApp->SafeDeleteWidget(mCloseButton);
+
+    mScrollWidget->RemoveWidget(mScrollContent);
+    mApp->SafeDeleteWidget(mScrollContent);
+
+    RemoveWidget(mScrollWidget);
+    mApp->SafeDeleteWidget(mScrollWidget);
+
+    Widget::_destructor();
+}
+
+void ReplayManageWidget::_destructor2() {
+    delete this;
 }
 
 void ReplayManageWidget::Draw(Graphics *g) {

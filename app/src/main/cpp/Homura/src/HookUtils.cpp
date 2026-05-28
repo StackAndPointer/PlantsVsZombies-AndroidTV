@@ -46,8 +46,7 @@ bool homura::details::HookVirtualFuncImpl(void *vTableSymbol, std::size_t index,
     }
     *funcPtrAddr = newFunc;
 
-    /* Keep page writable */
-    // SetProtection(std::uintptr_t(funcPtrAddr), sizeof(funcPtrAddr), PROT_READ);
+    SetProtection(std::uintptr_t(funcPtrAddr), sizeof(funcPtrAddr), PROT_READ);
     return true;
 }
 
@@ -72,7 +71,6 @@ bool homura::details::HookPltFuncImpl(std::string_view libName, std::uintptr_t o
     }
     *funcPtrAddr = newFunc;
 
-    /* Keep page writable */
-    // SetProtection(std::uintptr_t(funcPtrAddr), sizeof(funcPtrAddr), PROT_READ);
+    SetProtection(std::uintptr_t(funcPtrAddr), sizeof(funcPtrAddr), PROT_READ);
     return true;
 }
