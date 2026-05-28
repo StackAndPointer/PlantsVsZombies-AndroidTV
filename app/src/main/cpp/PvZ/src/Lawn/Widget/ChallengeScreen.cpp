@@ -137,7 +137,7 @@ ChallengeDefinition gChallengeDefs[200] = {
     {GameMode::GAMEMODE_MP_VS, 1, ChallengePage::CHALLENGE_PAGE_VS, 0, 1, "[MP_VS_NIGHT]"},
     {GameMode::GAMEMODE_MP_VS, 2, ChallengePage::CHALLENGE_PAGE_VS, 0, 2, "[MP_VS_POOL_DAY]"},
     {GameMode::GAMEMODE_MP_VS, 3, ChallengePage::CHALLENGE_PAGE_VS, 0, 3, "[MP_VS_POOL_NIGHT]"},
-    {GameMode::GAMEMODE_MP_VS, 4, ChallengePage::CHALLENGE_PAGE_VS, 0, 4, "[MP_VS_ROOF]"},
+    {GameMode::GAMEMODE_MP_VS, 4, ChallengePage::CHALLENGE_PAGE_LIMBO, 0, 4, "[MP_VS_ROOF]"},
     {GameMode::GAMEMODE_MP_VS, 0, ChallengePage::CHALLENGE_PAGE_VS, 1, 0, "[MP_VS_SHUFFLE_MODE]"},
     {GameMode::GAMEMODE_MP_VS_UNKONWN, 18, ChallengePage::CHALLENGE_PAGE_LIMBO, 0, 2, ""},
     {GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY, 0, ChallengePage::CHALLENGE_PAGE_COOP, 0, 0, "[COOP_1]"},
@@ -259,7 +259,7 @@ void ChallengeScreen::_constructor(LawnApp *theApp, ChallengePage thePage) {
     }
 
     if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS) {
-        mTotalGameInPage = NUM_VS_MODES;
+        mTotalGameInPage = NUM_VS_MODES - 1;
         Challenge::msVSShuffleMode = false;
         gChallengeScreenRequestState = 0;
 
