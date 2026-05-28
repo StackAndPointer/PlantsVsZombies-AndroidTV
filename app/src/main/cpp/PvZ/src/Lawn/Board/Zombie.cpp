@@ -1477,6 +1477,20 @@ GridItem *Zombie::FindPoleTarget() {
     int aBestDistance = 0;
     while (mBoard->IterateGridItems(aPole)) {
         if (aPole->mGridItemType == GridItemType::GRIDITEM_POLE && aPole->mGridY == mRow) {
+
+            bool aIsLockedByOtherGigaPoleVault = false;
+            Zombie *aZombie = nullptr;
+            uint32_t aPoleID = mBoard->mGridItems.DataArrayGetID(aPole);
+            while (mBoard->IterateZombies(aZombie)) {
+                if (aZombie->mZombieType == ZOMBIE_GIGA_POLEVAULTER && aZombie->mRelatedZombieID == aPoleID) {
+                    aIsLockedByOtherGigaPoleVault = true;
+                    break;
+                }
+            }
+            if (aIsLockedByOtherGigaPoleVault) {
+                continue;
+            }
+
             Rect aPoleRect = aPole->GetItemRect();
             if (GetRectOverlap(aAttackRect, aPoleRect) >= 0) {
                 int aDistance = abs((int)aPole->mPosX - mX);
