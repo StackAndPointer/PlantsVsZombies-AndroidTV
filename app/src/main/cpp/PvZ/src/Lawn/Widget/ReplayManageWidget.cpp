@@ -209,7 +209,7 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
 
     mScrollWidget = new ScrollWidget();
     mScrollWidget->Resize(0, 150, mWidth, mHeight - 150);
-    mScrollWidget->SetScrollMode(ScrollWidget::ScrollMode::Vertical);
+    mScrollWidget->SetScrollMode(ScrollWidget::ScrollMode::SCROLL_VERTICAL);
     mScrollWidget->EnableBounce(false);
     AddWidget(mScrollWidget);
     mScrollContent = new ReplayListContentWidget(this);

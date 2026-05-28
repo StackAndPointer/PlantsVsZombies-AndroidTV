@@ -23,7 +23,6 @@
 #include "PvZ/SexyAppFramework/Misc/Point.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 
-#include <memory>
 #include <vector>
 
 namespace Sexy {
@@ -53,7 +52,16 @@ struct Touch {
 
 class ScrollWidget : public Widget {
 public:
-    enum ScrollMode { Disabled, Horizontal, Vertical, Both };
+    enum ScrollMode {
+        SCROLL_DISABLED,
+        SCROLL_HORIZONTAL,
+        SCROLL_VERTICAL,
+        SCROLL_BOTH,
+    };
+
+    enum Colors {
+        COLOR_BACKGROUND,
+    };
 
     class Overlay {
     public:
@@ -83,7 +91,7 @@ public:
     Image *mIndicatorsImage;
     Image *mBackgroundImage;
     bool mFillBackground;
-    std::vector<std::unique_ptr<Overlay>> mOverlays;
+    std::vector<Overlay> mOverlays;
     bool mDrawOverlays;
     ScrollMode mScrollMode;
     FPoint mScrollTouchReference;
@@ -116,17 +124,17 @@ public:
     void Init();
     /* virtual */ void Draw(Graphics *g);
     /* virtual */ void Update();
-    void SetScrollMode(ScrollWidget::ScrollMode mode);
-    void SetScrollInsets(Insets &insets);
+    void SetScrollMode(ScrollMode mode);
+    void SetScrollInsets(const Insets &insets);
     void SetScrollOffset(FPoint offset, bool animated);
     void ScrollToMin(bool animated);
     void ScrollToBottom(bool animated);
-    void ScrollToPoint(FPoint &point, bool animated);
-    void ScrollRectIntoView(Rect &rect, bool animated);
+    void ScrollToPoint(FPoint point, bool animated);
+    void ScrollRectIntoView(const Rect &rect, bool animated);
     void EnableBounce(bool enable);
     void EnablePaging(bool enable);
     void EnableIndicators(Image *indicatorsImage);
-    void SetIndicatorsInsets(Insets &insets);
+    void SetIndicatorsInsets(const Insets &insets);
     void FlashIndicators();
     void SetPageHorizontal(int page, bool animated);
     void SetPageVertical(int page, bool animated);
@@ -135,7 +143,7 @@ public:
     int GetPageVertical();
     void SetBackgroundImage(Image *image);
     void EnableBackgroundFill(bool enable);
-    void AddOverlayImage(Image *image, FPoint &offset);
+    void AddOverlayImage(Image *image, FPoint offset);
     void EnableOverlays(bool enable);
     /* virtual */ void AddWidget(Widget *theWidget);
     /* virtual */ void RemoveWidget(Widget *theWidget);
@@ -152,11 +160,10 @@ public:
 
     void TouchMotion(Touch touch);
     void DoScrollUpdate();
-    void DrawHorizontalStretchableImage(Graphics *g, Image *image, Rect &destRect);
-    void DrawVerticalStretchableImage(Graphics *g, Image *image, Rect &destRect);
+    void DrawHorizontalStretchableImage(Graphics *g, Image *image, const Rect &destRect);
+    void DrawVerticalStretchableImage(Graphics *g, Image *image, const Rect &destRect);
     // void DrawProxyWidget(Graphics* g, ProxyWidget* proxyWidget);
     void SnapToPage();
-    Widget *GetClientWidgetAt(int x, int y);
     Widget *GetClientWidgetAt(Touch touch);
     FPoint &GetScrollOffset();
     void SetScrollOffset(float x, float y);
