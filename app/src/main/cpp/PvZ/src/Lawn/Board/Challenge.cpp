@@ -181,8 +181,12 @@ void Challenge::Update() {
 }
 
 void Challenge::UpdateVSAddPlants() {
-    if (gTcpConnected)
+    if (gTcpConnected) {
         return;
+    }
+    if (gIsServerModeSpectator || gIsReplayMode) {
+        return;
+    }
 
     if (mBoard->StageHasPool() || mBoard->StageHasRoof()) {
         gVSAddUnderPlantsCounter--;
