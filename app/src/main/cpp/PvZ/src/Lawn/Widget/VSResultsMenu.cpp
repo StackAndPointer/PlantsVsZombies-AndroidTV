@@ -77,7 +77,7 @@ void VSResultsMenu::_constructor() {
     (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
     (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
     mBackButton->mLabelJustify = BUTTON_LABEL_WRAP_CENTER;
-    mBackButton->Resize(660, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+    mBackButton->Resize(-60, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
 }
 
 void VSResultsMenu::_destructor() {
@@ -346,7 +346,7 @@ void VSResultsMenu::ShowReplayButton() {
         (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
         (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
         mSaveReplayButton->mLabelJustify = BUTTON_LABEL_WRAP_CENTER;
-        mSaveReplayButton->GameButton::Resize(-60, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+        mSaveReplayButton->GameButton::Resize(660, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
         AddWidget(mSaveReplayButton);
     }
 }
