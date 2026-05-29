@@ -591,6 +591,10 @@ void Zombie::UpdateZombieFlyer() {
             } else {
                 if (mPhaseCounter <= 0 && mAltitude > 0) {
                     mAltitude--;
+                    if (mAltitude <= 0) {
+                        mAltitude = 0;
+                        PickRandomSpeed();
+                    }
                 }
             }
         }
