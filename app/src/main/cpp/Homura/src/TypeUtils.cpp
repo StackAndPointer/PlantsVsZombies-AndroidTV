@@ -17,18 +17,24 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HOMURA_PRAGMAUTILS_H
-#define HOMURA_PRAGMAUTILS_H
-
-#define HOMURA_STRINGIZE(x) #x
+#include "Homura/TypeUtils.h"
 
 #if defined(__GNUC__) || defined(__clang__)
-// https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
-#define DISABLE_WARNING_BEGIN(flag) _Pragma("GCC diagnostic push") _Pragma(HOMURA_STRINGIZE(GCC diagnostic ignored flag))
-#define DISABLE_WARNING_END _Pragma("GCC diagnostic pop")
-#else
-#define DISABLE_WARNING_BEGIN(flag)
-#define DISABLE_WARNING_END
+#include <cxxabi.h>
 #endif
 
-#endif // HOMURA_PRAGMAUTILS_H
+#include <cassert>
+#include <cstdlib>
+
+#include <memory>
+
+std::string homura::Demangle(const char *name) {
+    assert(name != nullptr);
+#if defined(__GNUC__) || defined(__clang__)
+    // https://itanium-cxx-abi.github.io/cxx-abi/abi.html#demangler
+    std::unique_ptr<char, decltype(&std::free)> res{abi::__cxa_demangle(name, nullptr, nullptr, nullptr), std::free};
+    return res ? res.get() : name;
+#else
+    return name;
+#endif
+}

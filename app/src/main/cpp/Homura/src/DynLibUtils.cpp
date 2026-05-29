@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "Homura/DynamicLibUtils.h"
+#include "Homura/DynLibUtils.h"
 #include "Homura/Logger.h"
 #include "Homura/StringUtils.h"
 

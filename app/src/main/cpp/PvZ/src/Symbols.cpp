@@ -18,7 +18,7 @@
  */
 
 #include "PvZ/Symbols.h"
-#include "Homura/DynamicLibUtils.h"
+#include "Homura/DynLibUtils.h"
 #include "Homura/Logger.h"
 #include "Homura/PragmaUtils.h"
 #include "PvZ/GlobalVariable.h"

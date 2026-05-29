@@ -22,8 +22,11 @@
 
 #include <concepts>
 #include <memory>
+#include <string>
 
 namespace homura {
+
+[[nodiscard]] std::string Demangle(const char *name);
 
 /**
  * @brief 用作未初始化存储的类模板

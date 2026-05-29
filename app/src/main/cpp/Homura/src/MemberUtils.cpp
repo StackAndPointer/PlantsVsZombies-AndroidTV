@@ -28,11 +28,11 @@ struct homura::details::CppMemFuncPtr {
 };
 
 void homura::details::CheckVirtualFunc(const CppMemFuncPtr *ptr) {
-#if !defined(_MSC_VER) || defined(__clang__)
+#if defined(__GNUC__) || defined(__clang__)
 
 #if defined(__arm__) || defined(__aarch64__)
-    // https://github.com/ARM-software/abi-aa/blob/main/cppabi32/cppabi32.rst#representation-of-pointer-to-member-function
-    // https://github.com/ARM-software/abi-aa/blob/main/cppabi64/cppabi64.rst#representation-of-pointer-to-member-function
+    // Arm-Thumb: https://github.com/ARM-software/abi-aa/blob/main/cppabi32/cppabi32.rst#representation-of-pointer-to-member-function
+    // AArch64: https://github.com/ARM-software/abi-aa/blob/main/cppabi64/cppabi64.rst#representation-of-pointer-to-member-function
     const bool isVirtual = ptr->adj & 1;
 #else
     const bool isVirtual = std::uintptr_t(ptr->ptr) & 1;
