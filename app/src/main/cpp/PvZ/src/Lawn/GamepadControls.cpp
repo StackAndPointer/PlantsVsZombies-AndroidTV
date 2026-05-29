@@ -1100,6 +1100,10 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 netplay::PutEvent(event);
             } else {
                 mGameObject->mApp->PlaySample(SOUND_BUZZER);
+                if (gTcpClientSocket >= 0) {
+                    U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_BUZZER)};
+                    netplay::PutEvent(event);
+                }
             }
             return;
         }
@@ -1128,6 +1132,10 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 netplay::PutEvent(event);
             } else {
                 mGameObject->mApp->PlaySample(SOUND_BUZZER);
+                if (gTcpClientSocket >= 0) {
+                    U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_BUZZER)};
+                    netplay::PutEvent(event);
+                }
             }
             return;
         }
@@ -1218,6 +1226,10 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 netplay::PutEvent(event);
             } else {
                 mGameObject->mApp->PlaySample(SOUND_BUZZER);
+                if (gTcpClientSocket >= 0) {
+                    U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_BUZZER)};
+                    netplay::PutEvent(event);
+                }
             }
             return;
         }

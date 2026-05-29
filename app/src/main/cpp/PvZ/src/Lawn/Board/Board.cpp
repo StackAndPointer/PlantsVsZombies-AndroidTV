@@ -1740,6 +1740,17 @@ void Board::processServerEvent(const BaseEvent *event) {
                     break;
             }
         } break;
+        case EVENT_SERVER_BOARD_PLAY_SOUND_SR: {
+            if (!(gIsServerModeSpectator || gIsReplayMode)) {
+                break;
+            }
+            auto *eventSound = static_cast<const U8U8_Event *>(event);
+            if (eventSound->data1 == 0) {
+                mApp->PlaySample(eventSound->data2);
+            } else if (eventSound->data1 == 1) {
+                mApp->PlayFoley(static_cast<FoleyType>(eventSound->data2));
+            }
+        } break;
         case EVENT_SERVER_BOARD_PLANT_DIE: {
             auto *eventPlantDie = static_cast<const U16_Event *>(event);
             uint16_t serverPlantID = eventPlantDie->data;
@@ -4101,6 +4112,10 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
                     netplay::PutEvent(event);
                 } else {
                     mApp->PlaySample(SOUND_SEEDLIFT);
+                    if (gTcpClientSocket >= 0) {
+                        U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_SEEDLIFT)};
+                        netplay::PutEvent(event);
+                    }
                 }
             } else if (currentSeedBankIndex == newSeedPacketIndex && mGameState == 7) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
@@ -4141,6 +4156,10 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
                     netplay::PutEvent(event);
                 } else {
                     mApp->PlaySample(SOUND_SEEDLIFT);
+                    if (gTcpClientSocket >= 0) {
+                        U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_SEEDLIFT)};
+                        netplay::PutEvent(event);
+                    }
                 }
             } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && mGameState_2P == 7) {
                 mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
@@ -4804,6 +4823,10 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                     netplay::PutEvent(event);
                 } else {
                     mApp->PlaySample(SOUND_SEEDLIFT);
+                    if (gTcpClientSocket >= 0) {
+                        U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_SEEDLIFT)};
+                        netplay::PutEvent(event);
+                    }
                 }
             } else if (currentSeedBankIndex == newSeedPacketIndex && mGameState == 7) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
@@ -4845,6 +4868,10 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                     netplay::PutEvent(event);
                 } else {
                     mApp->PlaySample(SOUND_SEEDLIFT);
+                    if (gTcpClientSocket >= 0) {
+                        U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_SEEDLIFT)};
+                        netplay::PutEvent(event);
+                    }
                 }
             } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && mGameState_2P == 7) {
                 mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;

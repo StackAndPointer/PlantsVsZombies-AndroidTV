@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3170;
+inline constexpr uint32_t NETPLAY_VERSION = 3171;
 
 enum EventType : uint8_t {
     EVENT_NULL,
@@ -163,6 +163,7 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_LAWNMOWER_START,
 
     EVENT_SERVER_BOARD_PLAY_SOUND, // 播放音效
+    EVENT_SERVER_BOARD_PLAY_SOUND_SR, // 仅供观战/回放解析的音效同步
 
     EVENT_SERVER_BOARD_TAKE_SUNMONEY,
     EVENT_SERVER_BOARD_TAKE_DEATHMONEY,
