@@ -6554,7 +6554,7 @@ GridItem *Board::AddAPole(int theX, int theY, int theGridY) {
     GridItem *aPole = AddAPole_Origin(theX, theY, theGridY);
 
     if (gTcpClientSocket >= 0 && mApp->mGameScene == SCENE_PLAYING) {
-        U16x4_Event event = {{EventType::EVENT_SERVER_BOARD_GRIDITEM_ADDPOLE}, uint16_t(theX), uint16_t(theY), uint16_t(theGridY), uint16_t(mGridItems.DataArrayGetID(aPole))};
+        U16x4_Event event = {{EventType::EVENT_SERVER_BOARD_GRIDITEM_ADDPOLE}, {uint16_t(theX), uint16_t(theY), uint16_t(theGridY), uint16_t(mGridItems.DataArrayGetID(aPole))}};
         netplay::PutEvent(event);
     }
     return aPole;

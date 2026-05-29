@@ -101,7 +101,7 @@ public:
             const int sideMargin = 200;
             const int leftNameX = sideMargin;
             const int leftDeckX = sideMargin;
-            const int rightDeckX = mWidth - sideMargin - (6 * 50);
+            [[maybe_unused]] const int rightDeckX = mWidth - sideMargin - (6 * 50);
             const int rightDeckRightmostX = mWidth - sideMargin - 50;
             const int rightNameX = mWidth - sideMargin;
             const int secs = item.durationTicks / 100;

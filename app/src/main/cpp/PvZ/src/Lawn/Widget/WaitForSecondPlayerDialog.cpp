@@ -1409,7 +1409,6 @@ void WaitForSecondPlayerDialog::processServerEvent(const BaseEvent *event) {
         default:
             break;
     }
-    const bool connected = (gTcpConnected || gTcpClientSocket >= 0);
 }
 
 
