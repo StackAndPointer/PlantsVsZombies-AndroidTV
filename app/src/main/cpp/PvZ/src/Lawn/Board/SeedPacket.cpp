@@ -241,7 +241,7 @@ void SeedPacket::SetNextRandomSeed() {
     if (Challenge::IsMPResourceProducer(mPacketType) || mPacketType == SEED_BEGHOULED_BUTTON_SHUFFLE || mPacketType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE)
         return;
 
-    if (gTcpConnected)
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
         return;
 
     SeedType seedType = SeedType::SEED_NONE;

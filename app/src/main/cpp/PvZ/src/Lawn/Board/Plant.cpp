@@ -626,7 +626,7 @@ void Plant::DoSpecial() {
     // 试图修复辣椒爆炸后反而在本行的末尾处产生冰道。失败。
 
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return;
 
         if (gTcpClientSocket >= 0) {
@@ -762,7 +762,7 @@ void Plant::CobCannonFire(int x, int y) {
 
 void Plant::Fire(Zombie *theTargetZombie, int theRow, PlantWeapon thePlantWeapon, GridItem *theTargetGridItem) {
     if (mApp->IsVSMode()) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return;
 
         if (gTcpClientSocket >= 0) {
@@ -1257,7 +1257,7 @@ GridItem *Plant::FindTargetGridItem(int theRow, PlantWeapon thePlantWeapon) {
 
 void Plant::Die() {
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return;
 
         if (gTcpClientSocket >= 0) {
@@ -1835,7 +1835,7 @@ bool Plant::MakesSun() {
 }
 
 void Plant::UpdateProductionPlant() {
-    if (mApp->mGameMode == GAMEMODE_MP_VS && (gTcpConnected || gTcpClientSocket >= 0)) {
+    if (mApp->mGameMode == GAMEMODE_MP_VS && (gTcpConnected || gTcpClientSocket >= 0 || gIsServerModeSpectator || gIsReplayMode)) {
         if (!IsInPlay()) {
             return;
         }
@@ -1865,7 +1865,7 @@ void Plant::UpdateProductionPlant() {
         if (mLaunchCounter <= 0)
         // 生产
         {
-            if (gTcpConnected) {
+            if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
                 return;
             }
             mLaunchCounter = RandRangeInt(mLaunchRate - 150, mLaunchRate);
@@ -2078,7 +2078,7 @@ void Plant::UpdateShooting() {
 
 void Plant::UpdateShooter() {
 
-    if (mApp->mGameMode == GAMEMODE_MP_VS && gTcpConnected) {
+    if (mApp->mGameMode == GAMEMODE_MP_VS && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
         return;
     }
 
@@ -2223,7 +2223,7 @@ void Plant::SyncAnimationToClient() {
 
 bool Plant::FindTargetAndFire(int theRow, PlantWeapon thePlantWeapon) {
     // 此函数用于在mLaunchCounter到0之后播放投手的投掷动画、豌豆的发射动画
-    if (gTcpConnected) {
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
         return false;
     }
 
@@ -2314,7 +2314,7 @@ void Plant::UpdateChomper() {
             } else if (doMiss) {
                 mState = PlantState::STATE_CHOMPER_BITING_MISSED;
             } else {
-                if (gTcpConnected)
+                if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
                     return;
 
                 if (gTcpClientSocket >= 0) {
@@ -2429,7 +2429,7 @@ void Plant::UpdateMagnetShroom() {
         }
 
         if (aClosestZombie) {
-            if (gTcpConnected)
+            if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
                 return;
 
             if (gTcpClientSocket >= 0) {
@@ -2464,7 +2464,7 @@ void Plant::UpdateMagnetShroom() {
         }
 
         if (aClosestLadder) {
-            if (gTcpConnected)
+            if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
                 return;
 
             if (gTcpClientSocket >= 0) {

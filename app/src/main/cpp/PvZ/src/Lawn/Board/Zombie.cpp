@@ -3532,7 +3532,7 @@ void Zombie::DieWithLoot() {
 
 void Zombie::DieNoLoot() {
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return;
 
         if (gTcpClientSocket >= 0) {
@@ -4869,7 +4869,7 @@ void Zombie::SetRow(int theRow) {
 
 void Zombie::StartMindControlled() {
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return;
 
         if (gTcpClientSocket >= 0) {
@@ -5780,7 +5780,7 @@ void Zombie::DropLoot() {
 }
 
 void Zombie::UpdateYuckyFace() {
-    if (mApp->mGameMode == GAMEMODE_MP_VS && (gTcpConnected || gTcpClientSocket >= 0)) {
+    if (mApp->mGameMode == GAMEMODE_MP_VS && (gTcpConnected || gTcpClientSocket >= 0 || gIsServerModeSpectator || gIsReplayMode)) {
         mYuckyFaceCounter++;
         // 20 < counter < 170 且还没有 yucky face 图时：停止吃并直接跳到 170
         if (mYuckyFaceCounter > 20 && mYuckyFaceCounter < 170 && !HasYuckyFaceImage()) {
@@ -5827,7 +5827,7 @@ void Zombie::UpdateYuckyFace() {
                 canGoUp = false;
             }
             // 客机不允许随机换行
-            if (gTcpConnected) {
+            if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
                 return;
             }
             if (canGoDown && !canGoUp) {
@@ -6046,7 +6046,7 @@ void Zombie::UpdateZombieCatapult() {
     };
 
     if (mZombiePhase == PHASE_CATAPULT_LAUNCHING) {
-        if (mApp->IsVSMode() && gTcpConnected) {
+        if (mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
             return;
         }
 
@@ -6087,7 +6087,7 @@ void Zombie::UpdateZombieCatapult() {
         return;
     }
 
-    if (mApp->IsVSMode() && gTcpConnected) {
+    if (mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
         return;
     }
 
@@ -6135,7 +6135,7 @@ void Zombie::UpdateLadder() {
     if (mZombiePhase == PHASE_LADDER_CARRYING && mZombieHeight == HEIGHT_ZOMBIE_NORMAL) {
         Plant *plant = FindPlantTarget(ATTACKTYPE_LADDER);
         if (plant != nullptr) {
-            if (mApp->IsVSMode() && gTcpConnected) {
+            if (mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
                 return;
             }
 
@@ -6155,7 +6155,7 @@ void Zombie::UpdateLadder() {
     } else if (mZombiePhase == PHASE_LADDER_PLACING) {
         Reanimation *reanimation = mApp->ReanimationTryToGet(mBodyReanimID);
         if (reanimation != nullptr && reanimation->mLoopCount > 0) {
-            if (mApp->IsVSMode() && gTcpConnected && mShieldType == SHIELDTYPE_LADDER) {
+            if (mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) && mShieldType == SHIELDTYPE_LADDER) {
                 return;
             }
 

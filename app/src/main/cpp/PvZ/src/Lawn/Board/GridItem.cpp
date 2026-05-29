@@ -45,7 +45,7 @@ void GridItem::_constructor() {
 
 void GridItem::GridItemDie() {
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return;
 
         if (gTcpClientSocket >= 0) {
@@ -343,7 +343,7 @@ void GridItem::Update() {
         }
 
         if (mLaunchCounter <= 0) { // 生产
-            if (gTcpConnected) {
+            if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
                 return;
             }
             mLaunchCounter = RandRangeInt(mLaunchRate - 150, mLaunchRate);
@@ -402,7 +402,7 @@ void GridItem::UpdateBurialMound() {
     if (mSummonCounter > 0) {
         --mSummonCounter;
 
-        if (gTcpConnected) {
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
             return;
         }
 

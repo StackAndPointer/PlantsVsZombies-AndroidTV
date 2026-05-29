@@ -700,7 +700,7 @@ Plant *Board::AddPlant(int theGridX, int theGridY, SeedType theSeedType, SeedTyp
     Plant *aPlant = AddPlant_Origin(theGridX, theGridY, theSeedType, theImitaterType, thePlayerIndex, theIsDoEffect);
 
     if (mApp->mGameMode == GAMEMODE_MP_VS && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return nullptr;
 
         if (gTcpClientSocket >= 0) {
@@ -812,7 +812,7 @@ Coin *Board::AddCoin(int theX, int theY, CoinType theCoinType, CoinMotion theCoi
         netplay::PutEvent(event);
     }
 
-    if (gTcpConnected)
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
         return nullptr;
     return old_Board_AddCoin(this, theX, theY, theCoinType, theCoinMotion);
 }
@@ -826,7 +826,7 @@ void Board::UpdateSunSpawning() {
         return;
     }
 
-    if (mApp->IsVSMode() && gTcpConnected) {
+    if (mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
         return;
     }
 
@@ -1341,7 +1341,7 @@ Zombie *Board::AddZombieInRow(ZombieType theZombieType, int theRow, int theFromW
     Zombie *aZombie = AddZombieInRow_Origin(theZombieType, theRow, theFromWave, theIsRustle);
 
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return nullptr;
 
         if (gTcpClientSocket >= 0) {
@@ -6388,7 +6388,7 @@ GridItem *Board::AddACrater_Origin(int theGridX, int theGridY) {
 }
 
 GridItem *Board::AddACrater(int theGridX, int theGridY) {
-    if (gTcpConnected) {
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
         return nullptr;
     }
 
@@ -6412,7 +6412,7 @@ GridItem *Board::AddALadder_Origin(int theGridX, int theGridY) {
 }
 
 GridItem *Board::AddALadder(int theGridX, int theGridY) {
-    if (gTcpConnected) {
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
         return nullptr;
     }
 
@@ -6520,7 +6520,7 @@ GridItem *Board::AddAMound(int theGridX, int theGridY, int theMoundLevel) {
 }
 
 GridItem *Board::AddAPole(int theX, int theY, int theGridY) {
-    if (gTcpConnected) {
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
         return nullptr;
     }
 
@@ -6583,7 +6583,7 @@ void Board::ShuffleButtonDown(SeedPacket *theSeedPacket) {
     if (!Challenge::msVSShuffleMode)
         return;
 
-    if (gTcpConnected)
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
         return;
 
     SeedType aPacketType = theSeedPacket->mPacketType;
@@ -6686,7 +6686,7 @@ void Board::DrawLevel(Graphics *g) {
 
 bool Board::CanAddBobSledMP() {
     // 客户端不允许私自召唤雪橇小队
-    if (gTcpConnected)
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
         return false;
 
     // 遍历 6 条车道
