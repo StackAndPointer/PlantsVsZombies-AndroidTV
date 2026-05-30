@@ -20,7 +20,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:targetClass="com.transmension.mobile.SetActivity"
-            android:targetPackage="com.trans.pvztv" />
+            android:targetPackage="${applicationId}" />
         <categories android:name="android.shortcut.conversation" />
         <capability-binding android:key="actions.intent.CREATE_MESSAGE" />
     </shortcut>
@@ -46,7 +46,7 @@
         <intent
             android:action="android.intent.action.VIEW"
             android:targetClass="com.transmension.mobile.MainActivity"
-            android:targetPackage="com.trans.pvztv" />
+            android:targetPackage="${applicationId}" />
         <categories android:name="android.shortcut.conversation" />
         <capability-binding android:key="actions.intent.CREATE_MESSAGE" />
     </shortcut>
