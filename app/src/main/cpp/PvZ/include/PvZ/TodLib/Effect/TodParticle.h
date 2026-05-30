@@ -88,6 +88,9 @@ public:
     void OverrideFrame(const char *theEmitterName, int theFrame) {
         reinterpret_cast<void (*)(TodParticleSystem *, const char *, int)>(TodParticleSystem_OverrideFrameAddr)(this, theEmitterName, theFrame);
     }
+    void OverrideScale(const char *theEmitterName, float theScale) {
+        reinterpret_cast<void (*)(TodParticleSystem *, const char *, float)>(TodParticleSystem_OverrideScaleAddr)(this, theEmitterName, theScale);
+    }
     void ParticleSystemDie() {
         reinterpret_cast<void (*)(TodParticleSystem *)>(TodParticleSystem_ParticleSystemDieAddr)(this);
     }

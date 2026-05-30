@@ -1129,6 +1129,7 @@ inline void *TodDrawStringMatrixAddr;
 inline void *TodParticleSystem_OverrideColorAddr;
 inline void *TodParticleSystem_OverrideImageAddr;
 inline void *TodParticleSystem_OverrideFrameAddr;
+inline void *TodParticleSystem_OverrideScaleAddr;
 inline void *TodParticleSystem_Delete2Addr;
 inline void *TodParticleSystem_ParticleSystemDieAddr;
 inline void *TodParticleSystem_UpdateAddr;

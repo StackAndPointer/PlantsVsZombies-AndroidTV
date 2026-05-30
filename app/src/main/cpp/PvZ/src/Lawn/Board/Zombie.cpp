@@ -215,6 +215,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             if (!IsOnBoard()) {
                 PlayZombieReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 12.0f);
             } else {
+                mZombiePhase = ZombiePhase::PHASE_IMP_PRE_RUN;
                 mTargetCol = RandRangeInt(0, 2);            // 自爆的位置
                 mTargetRow = mBoard->GridToPixelX(8, mRow); // 被伞弹回的落点
             }
@@ -829,7 +830,7 @@ void Zombie::UpdateSuperFanImp() {
             return;
 
         mZombiePhase = ZombiePhase::PHASE_IMP_POPPING;
-        PlayZombieReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+        PlayZombieReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
 
         if (gTcpClientSocket >= 0) {
             U16_Event event{};
@@ -4083,7 +4084,7 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
             if (mZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL) {
                 aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEFOOTBALLHEAD);
             } else if (mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
-                aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEIMPHEAD);
+                aParticle->OverrideImage(nullptr, addonImages.IMAGE_SUPERFAN_ZOMBIEIMPHEAD);
                 ReanimShowPrefix("Zombie_Ghost_Fans5", RENDER_GROUP_HIDDEN);
                 ReanimShowPrefix("Zombie_Ghost_Fans6b", RENDER_GROUP_HIDDEN);
                 ReanimShowPrefix("Zombie_Ghost_Fans6", RENDER_GROUP_HIDDEN);
@@ -4390,7 +4391,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_GIGA_FOOTBALL_LEFTARM_HAND);
                     break;
                 case ZombieType::ZOMBIE_SUPER_FAN_IMP:
-                    aParticle->OverrideImage(nullptr, IMAGE_REANIM_ZOMBIE_IMP_ARM2);
+                    ReanimShowTrack("Zombie_Ghost_Fans2", RENDER_GROUP_HIDDEN);
+                    ReanimShowTrack("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
+                    aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_SUPER_FAN_IMP_OUTARM_GLOVE);
+                    aParticle->OverrideScale(nullptr, 0.45f);
                     break;
                 case ZombieType::ZOMBIE_JACKSON:
                     ReanimShowTrack("Zombie_disco_outerarm_lower", RENDER_GROUP_HIDDEN);

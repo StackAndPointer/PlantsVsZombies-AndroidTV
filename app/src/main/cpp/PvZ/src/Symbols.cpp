@@ -1129,6 +1129,7 @@ bool LoadGameMain() {
     TodParticleSystem_OverrideColorAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem13OverrideColorEPKcRKN4Sexy5ColorE");
     TodParticleSystem_OverrideImageAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem13OverrideImageEPKcPN4Sexy5ImageE");
     TodParticleSystem_OverrideFrameAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem13OverrideFrameEPKci");
+    TodParticleSystem_OverrideScaleAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem13OverrideScaleEPKcf");
     TodParticleSystem_Delete2Addr = libGameMain.GetSymbol("_ZN17TodParticleSystemD2Ev");
     TodParticleSystem_ParticleSystemDieAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem17ParticleSystemDieEv");
     TodParticleSystem_UpdateAddr = libGameMain.GetSymbol("_ZN17TodParticleSystem6UpdateEv");
