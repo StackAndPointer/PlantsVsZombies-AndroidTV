@@ -1508,8 +1508,8 @@ static int GetVSCostBalanced(SeedType theSeedType) {
 static int GetVSCostShuffle(SeedType theSeedType) {
     int aCost = GetVSCostDefault(theSeedType);
     switch (theSeedType) {
-        case SeedType::SEED_ICESHROOM: // 75 -> 50
-                                       //        case SeedType::SEED_GRAVEBUSTER: // 75 -> 50
+        case SeedType::SEED_ICESHROOM:   // 75 -> 50
+        case SeedType::SEED_GRAVEBUSTER: // 75 -> 50
             return 50;
         case SeedType::SEED_TORCHWOOD:  // 125 -> 150
         case SeedType::SEED_DOOMSHROOM: // 125 -> 150
@@ -1529,23 +1529,21 @@ static int GetVSCostShuffle(SeedType theSeedType) {
 static int GetVSRefreshTimeBalanced(SeedType theSeedType) {
     int aRefreshTime = GetVSRefreshTimeDefault(theSeedType);
     switch (theSeedType) {
+        case SeedType::SEED_PEASHOOTER:             // 7.5 -> 15
+        case SeedType::SEED_SNOWPEA:                // 7.5 -> 15
+        case SeedType::SEED_REPEATER:               // 7.5 -> 15
+        case SeedType::SEED_SPLITPEA:               // 7.5 -> 15
+        case SeedType::SEED_KERNELPULT:             // 7.5 -> 15
+        case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX: // 30 -> 15
+        case SeedType::SEED_ZOMBIE_SNORKEL:         // 7.5 -> 15
+            return 1500;
         case SeedType::SEED_TORCHWOOD:            // 7.5 -> 30
         case SeedType::SEED_UMBRELLA:             // 7.5 -> 30
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER: // 7.5 -> 30
             return 3000;
-        case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX: // 30 -> 15
-        case SeedType::SEED_ZOMBIE_SNORKEL:         // 7.5 -> 15
-        case SeedType::SEED_ZOMBIE_PEA_HEAD:        // 7.5 -> 15
-            return 1500;
         case SeedType::SEED_PUMPKINSHELL: // 30 -> 60
                                           //        case SeedType::SEED_TALLNUT:      // 30 -> 60
             return 6000;
-        case SeedType::SEED_PEASHOOTER: // 7.5 -> 15
-        case SeedType::SEED_SNOWPEA:    // 7.5 -> 15
-        case SeedType::SEED_REPEATER:   // 7.5 -> 15
-        case SeedType::SEED_SPLITPEA:   // 7.5 -> 15
-        case SeedType::SEED_KERNELPULT: // 7.5 -> 15
-            return 1500;
         default:
             return aRefreshTime;
     }
