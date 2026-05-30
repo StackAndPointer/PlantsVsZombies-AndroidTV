@@ -108,10 +108,10 @@ void GridItem::GridItemDie() {
     }
 
     if (mGridItemType == GridItemType::GRIDITEM_POLE) {
-        ZombieID aRelatedZombieID = *reinterpret_cast<ZombieID *>(&mZombieType);
+        const ZombieID aRelatedZombieID = ZombieID(mZombieType);
         Zombie *aZombie = mBoard->ZombieTryToGet(aRelatedZombieID);
         if (aZombie) {
-            GridItemID &aRelatedPoleID = *reinterpret_cast<GridItemID *>(&aZombie->mRelatedZombieID);
+            GridItemID &aRelatedPoleID = reinterpret_cast<GridItemID &>(aZombie->mRelatedZombieID);
             aRelatedPoleID = GridItemID::GRIDITEMID_NULL;
         }
     }
@@ -455,7 +455,7 @@ void GridItem::UpdateBurialMound() {
 }
 
 void GridItem::UpdatePole() {
-    ZombieID &aRelatedZombieID = *reinterpret_cast<ZombieID *>(&mZombieType);
+    ZombieID &aRelatedZombieID = reinterpret_cast<ZombieID &>(mZombieType);
     if (aRelatedZombieID == ZombieID::ZOMBIEID_NULL) {
         return;
     }
@@ -466,8 +466,8 @@ void GridItem::UpdatePole() {
         return;
     }
 
-    GridItemID aRelatedPoleID = *reinterpret_cast<GridItemID *>(&aRelatedZombie->mRelatedZombieID);
-    GridItemID anId = mBoard->GridItemGetID(this);
+    const GridItemID aRelatedPoleID = GridItemID(aRelatedZombie->mRelatedZombieID);
+    const GridItemID anId = mBoard->GridItemGetID(this);
 
     bool canRelatedToZombie = aRelatedZombie->mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER && !aRelatedZombie->IsDeadOrDying() && aRelatedZombie->mHasHead
         && (aRelatedZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PREPARE || aRelatedZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PICK);

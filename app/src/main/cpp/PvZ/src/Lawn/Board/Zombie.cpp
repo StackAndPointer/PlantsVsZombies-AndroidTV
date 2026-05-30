@@ -1478,8 +1478,8 @@ GridItem *Zombie::FindPoleTarget() {
         aAttackRect.mHeight -= aDrawPos.mClipHeight;
     }
 
-    GridItemID aRelatedPoleID = *reinterpret_cast<GridItemID *>(&mRelatedZombieID);
-    ZombieID aZombieID = mBoard->ZombieGetID(this);
+    const GridItemID aRelatedPoleID = GridItemID(mRelatedZombieID);
+    const ZombieID aZombieID = mBoard->ZombieGetID(this);
 
     GridItem *aBestPole = nullptr;
     int aBestDistance = BOARD_WIDTH;
@@ -1492,7 +1492,7 @@ GridItem *Zombie::FindPoleTarget() {
         }
 
         GridItemID aPoleID = mBoard->GridItemGetID(aPole);
-        ZombieID aRelatedZombieID = *reinterpret_cast<ZombieID *>(&aPole->mZombieType);
+        const ZombieID aRelatedZombieID = ZombieID(aPole->mZombieType);
         // 当杆子已被某一僵尸锁定时
         if (aRelatedZombieID != ZombieID::ZOMBIEID_NULL) {
             // 这根杆子不是自己已经找到的那根
@@ -1563,8 +1563,8 @@ void Zombie::UpdateGigaPolevaulter() {
         if (GridItem *aPole = FindPoleTarget()) {
             PlayZombieReanim("anim_prepare", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 40.0f);
             mZombiePhase = ZombiePhase::PHASE_POLEVAULTER_PREPARE;
-            *reinterpret_cast<GridItemID *>(&mRelatedZombieID) = mBoard->GridItemGetID(aPole);
-            *reinterpret_cast<ZombieID *>(&aPole->mZombieType) = mBoard->ZombieGetID(this);
+            reinterpret_cast<GridItemID &>(mRelatedZombieID) = mBoard->GridItemGetID(aPole);
+            reinterpret_cast<ZombieID &>(aPole->mZombieType) = mBoard->ZombieGetID(this);
             syncGigaPolevaulterPhaseCounter();
             return;
         } else if (mHasArm == false && FindGigaPolevaulterTarget()) {
@@ -1691,8 +1691,8 @@ void Zombie::UpdateGigaPolevaulter() {
             StopEating();
             PlayZombieReanim("anim_pick", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
             mZombiePhase = ZombiePhase::PHASE_POLEVAULTER_PICK;
-            *reinterpret_cast<GridItemID *>(&mRelatedZombieID) = GridItemID(mBoard->mGridItems.DataArrayGetID(aPole));
-            *reinterpret_cast<ZombieID *>(&aPole->mZombieType) = mBoard->ZombieGetID(this);
+            reinterpret_cast<GridItemID &>(mRelatedZombieID) = GridItemID(mBoard->mGridItems.DataArrayGetID(aPole));
+            reinterpret_cast<ZombieID &>(aPole->mZombieType) = mBoard->ZombieGetID(this);
             syncGigaPolevaulterPhaseCounter();
         } else if (mSummonCounter > 0) {
             StopEating();
@@ -1733,7 +1733,7 @@ void Zombie::UpdateGigaPolevaulter() {
                 aPole->GridItemDie();
                 mHasObject = true;
             }
-            *reinterpret_cast<GridItemID *>(&mRelatedZombieID) = GridItemID::GRIDITEMID_NULL;
+            reinterpret_cast<GridItemID &>(mRelatedZombieID) = GridItemID::GRIDITEMID_NULL;
         }
         if (aBodyReanim->mLoopCount > 0) {
             if (isRemoteClient) {
@@ -1748,7 +1748,7 @@ void Zombie::UpdateGigaPolevaulter() {
                 mZombieAttackRect = Rect(50, 0, 20, 115);
                 StartWalkAnim(0);
             }
-            *reinterpret_cast<GridItemID *>(&mRelatedZombieID) = GridItemID::GRIDITEMID_NULL;
+            reinterpret_cast<GridItemID &>(mRelatedZombieID) = GridItemID::GRIDITEMID_NULL;
             syncGigaPolevaulterPhaseCounter();
         }
     } else if (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_TAKE) {
