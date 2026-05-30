@@ -78,14 +78,6 @@ bool gPauseSyncFromRemote = false;
 void Board::_constructor(LawnApp *theApp) {
     old_Board_Board(this, theApp);
 
-    // gBoardMenuButton/gBoardStoreButton are process-global pointers.
-    // Clean previous instances before rebinding, otherwise an old Board
-    // destructor may delete the newly rebound pointers and cause UAF.
-    delete gBoardMenuButton;
-    delete gBoardStoreButton;
-    gBoardMenuButton = nullptr;
-    gBoardStoreButton = nullptr;
-
     pvzstl::string str = (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || theApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) ? "[MAIN_MENU_BUTTON]" : "[MENU_BUTTON]";
     gBoardMenuButton = MakeButton(1000, this, this, str);
     gBoardMenuButton->Resize(705, -3, 120, 80);
@@ -131,7 +123,9 @@ void Board::_destructor() {
 
 void Board::RemovedFromManager(WidgetManager *theManager) {
     RemoveWidget(gBoardMenuButton);
+    mApp->SafeDeleteWidget(gBoardMenuButton);
     RemoveWidget(gBoardStoreButton);
+    mApp->SafeDeleteWidget(gBoardStoreButton);
 
     old_Board_RemovedFromManager(this, theManager);
 }
