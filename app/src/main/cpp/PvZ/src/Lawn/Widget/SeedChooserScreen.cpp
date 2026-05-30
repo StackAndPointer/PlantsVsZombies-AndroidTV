@@ -812,6 +812,11 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
                 return;
             }
 
+            if (aChosenSeed.mCrazyDavePicked) {
+                mApp->PlaySample(Sexy::SOUND_BUZZER);
+                return;
+            }
+
             if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
                 return;
             }
