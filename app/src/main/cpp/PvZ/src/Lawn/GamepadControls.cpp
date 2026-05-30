@@ -693,6 +693,7 @@ void GamepadControls::UpdatePreviewReanim() {
                     theDrawHeightOffset += 30.0;
                     break;
                 case ZombieType::ZOMBIE_POLEVAULTER:
+                case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
                     theDrawHeightOffset += 15.0;
                     break;
                 default:
@@ -715,6 +716,10 @@ void GamepadControls::UpdatePreviewReanim() {
                 zombieReanim->PlayReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 12.0);
             } else if (aZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL) {
                 zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
+            } else if (aZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
+                zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
+                zombieReanim->HideTrackByPrefix("anim_pole1", true);
+                zombieReanim->HideTrackByPrefix("anim_pole2", true);
             } else {
                 if (aZombieType == ZombieType::ZOMBIE_FLAG) {
                     Reanimation *zombieReanimAttachment = anApp->AddReanimation(0, 0, 0, ReanimationType::REANIM_ZOMBIE_FLAGPOLE);

@@ -250,10 +250,8 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             mVariant = false;
             mPosX = float(WIDE_BOARD_WIDTH + 70 + Rand(10));
             mSummonCounter = 1;
-            ReanimShowTrack("anim_pole1", RENDER_GROUP_HIDDEN);
-            ReanimShowTrack("anim_pole1_2", RENDER_GROUP_HIDDEN);
-            ReanimShowTrack("anim_pole2", RENDER_GROUP_HIDDEN);
-            ReanimShowTrack("anim_pole2_2", RENDER_GROUP_HIDDEN);
+            ReanimShowPrefix("anim_pole1", RENDER_GROUP_HIDDEN);
+            ReanimShowPrefix("anim_pole2", RENDER_GROUP_HIDDEN);
             if (IsOnBoard()) {
                 PlayZombieReanim("anim_run", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
                 PickRandomSpeed();
@@ -1669,10 +1667,7 @@ void Zombie::UpdateGigaPolevaulter() {
     } else if (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_THROW) {
         Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
         if (aBodyReanim->ShouldTriggerTimedEvent(0.54f)) {
-            // Todo: Remove ReanimShowTrack(...) when reanim optimized
-            ReanimShowTrack("Zombie_polevaulter_pole", RENDER_GROUP_HIDDEN);
-            ReanimShowTrack("Zombie_polevaulter_pole2", RENDER_GROUP_HIDDEN);
-
+            mApp->PlayFoley(FoleyType::FOLEY_SWING);
             int aOriginX = int(mPosX - 68.0f);
             int aOriginY = int(mPosY - 44.0f);
             Projectile *aProjectile = mBoard->AddProjectile(aOriginX, aOriginY, mRenderOrder, mRow, ProjectileType::PROJECTILE_ZOMBIE_POLE);
@@ -1710,14 +1705,11 @@ void Zombie::UpdateGigaPolevaulter() {
         if (aBodyReanim->ShouldTriggerTimedEvent(0.8f)) {
             ++mSummonCounter;
             if (mSummonCounter == 1) {
-                ReanimShowTrack("anim_pole3", RENDER_GROUP_NORMAL);
-                ReanimShowTrack("anim_pole3_2", RENDER_GROUP_NORMAL);
+                ReanimShowPrefix("anim_pole3", RENDER_GROUP_NORMAL);
             } else if (mSummonCounter == 2) {
-                ReanimShowTrack("anim_pole2", RENDER_GROUP_NORMAL);
-                ReanimShowTrack("anim_pole2_2", RENDER_GROUP_NORMAL);
+                ReanimShowPrefix("anim_pole2", RENDER_GROUP_NORMAL);
             } else if (mSummonCounter == 3) {
-                ReanimShowTrack("anim_pole1", RENDER_GROUP_NORMAL);
-                ReanimShowTrack("anim_pole1_2", RENDER_GROUP_NORMAL);
+                ReanimShowPrefix("anim_pole1", RENDER_GROUP_NORMAL);
             }
         }
         if (aBodyReanim->mLoopCount > 0) {
@@ -1738,10 +1730,6 @@ void Zombie::UpdateGigaPolevaulter() {
         Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
         if (aBodyReanim->ShouldTriggerTimedEvent(0.2f)) {
             if (GridItem *aPole = FindPoleTarget()) {
-                // Todo: Remove ReanimShowTrack(...) when reanim optimized
-                ReanimShowTrack("Zombie_polevaulter_pole", RENDER_GROUP_NORMAL);
-                ReanimShowTrack("Zombie_polevaulter_pole2", RENDER_GROUP_NORMAL);
-
                 aPole->GridItemDie();
                 mHasObject = true;
             }
@@ -1766,20 +1754,13 @@ void Zombie::UpdateGigaPolevaulter() {
     } else if (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_TAKE) {
         Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
         if (aBodyReanim->ShouldTriggerTimedEvent(0.5f)) {
-            // Todo: Remove ReanimShowTrack(...) when reanim optimized
-            ReanimShowTrack("Zombie_polevaulter_pole", RENDER_GROUP_NORMAL);
-            ReanimShowTrack("Zombie_polevaulter_pole2", RENDER_GROUP_NORMAL);
-
             --mSummonCounter;
             if (mSummonCounter == 0) {
-                ReanimShowTrack("anim_pole3", RENDER_GROUP_HIDDEN);
-                ReanimShowTrack("anim_pole3_2", RENDER_GROUP_HIDDEN);
+                ReanimShowPrefix("anim_pole3", RENDER_GROUP_HIDDEN);
             } else if (mSummonCounter == 1) {
-                ReanimShowTrack("anim_pole2", RENDER_GROUP_HIDDEN);
-                ReanimShowTrack("anim_pole2_2", RENDER_GROUP_HIDDEN);
+                ReanimShowPrefix("anim_pole2", RENDER_GROUP_HIDDEN);
             } else if (mSummonCounter == 2) {
-                ReanimShowTrack("anim_pole1", RENDER_GROUP_HIDDEN);
-                ReanimShowTrack("anim_pole1_2", RENDER_GROUP_HIDDEN);
+                ReanimShowPrefix("anim_pole1", RENDER_GROUP_HIDDEN);
             }
             mHasObject = true;
         }
@@ -4114,6 +4095,7 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
             } else if (mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
                 ReanimShowPrefix("anim_glasses", RENDER_GROUP_HIDDEN);
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_GIGA_ZOMBIEPOLEVAULTERHEAD);
+                DropPole();
             }
         }
         return;
@@ -4166,7 +4148,7 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
         ReanimShowPrefix("anim_hat", RENDER_GROUP_HIDDEN);
         ReanimShowPrefix("hat", RENDER_GROUP_HIDDEN);
         aEffect = ParticleEffect::PARTICLE_ZOMBIE_BALLOON_HEAD;
-    } else if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
+    } else if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER) {
         DropPole();
     } else if (mZombieType == ZombieType::ZOMBIE_FLAG) {
         DropFlag();
@@ -4274,17 +4256,10 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
 }
 
 void Zombie::DropPole() {
-    if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER) {
+    if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
         ReanimShowPrefix("Zombie_polevaulter_innerarm", RENDER_GROUP_HIDDEN);
         ReanimShowPrefix("Zombie_polevaulter_innerhand", RENDER_GROUP_HIDDEN);
         ReanimShowPrefix("Zombie_polevaulter_pole", RENDER_GROUP_HIDDEN);
-    }
-    if (mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
-        ReanimShowTrack("Zombie_polevaulter_innerarm_lower", RENDER_GROUP_HIDDEN);
-        ReanimShowTrack("Zombie_polevaulter_innerarm_upper", RENDER_GROUP_HIDDEN);
-        ReanimShowTrack("Zombie_polevaulter_innerhand", RENDER_GROUP_HIDDEN);
-        ReanimShowTrack("Zombie_polevaulter_pole", RENDER_GROUP_HIDDEN);
-        ReanimShowTrack("Zombie_polevaulter_pole2", RENDER_GROUP_HIDDEN);
     }
 }
 
