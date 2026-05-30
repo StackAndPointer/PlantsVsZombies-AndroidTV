@@ -124,8 +124,10 @@ void Board::_destructor() {
 void Board::RemovedFromManager(WidgetManager *theManager) {
     RemoveWidget(gBoardMenuButton);
     mApp->SafeDeleteWidget(gBoardMenuButton);
+    gBoardMenuButton = nullptr;
     RemoveWidget(gBoardStoreButton);
     mApp->SafeDeleteWidget(gBoardStoreButton);
+    gBoardStoreButton = nullptr;
 
     old_Board_RemovedFromManager(this, theManager);
 }
