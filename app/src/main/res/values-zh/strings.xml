@@ -123,6 +123,11 @@
     <string name="addon_appearance_readmetitle">来自 “%1$s” 的说明</string>
     <string name="addon_appearance_export_zombatar">导出大头贴图片文件</string>
     <string name="addon_appearance_toast5">Pak 不包含说明信息</string>
+    <string name="addon_appearance_importpak">导入外部 Pak</string>
+    <string name="addon_appearance_importpak_toast1">外部 Pak 已导入</string>
+    <string name="addon_appearance_importpak_toast2">外部 Pak 导入失败</string>
+    <string name="addon_appearance_uninstallpak">删除 Pak</string>
+    <string name="addon_appearance_uninstallpak_toast1">外部 Pak 已删除</string>
     <string name="addon_appearance_toast6">导出成功，请在图库查看</string>
     <string name="addon_appearance_toast7">导出失败</string>
     <string name="addon_appearance_toast8">您还未创建大头贴</string>

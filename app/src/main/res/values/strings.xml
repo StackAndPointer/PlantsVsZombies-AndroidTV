@@ -123,6 +123,11 @@
     <string name="addon_appearance_readmetitle">Instructions of \"%1$s\"</string>
     <string name="addon_appearance_export_zombatar">Export Zombatar Image</string>
     <string name="addon_appearance_toast5">No Instructions for This Pak</string>
+    <string name="addon_appearance_importpak">Import External Pak</string>
+    <string name="addon_appearance_importpak_toast1">External Pak imported</string>
+    <string name="addon_appearance_importpak_toast2">Failed to import external Pak</string>
+    <string name="addon_appearance_uninstallpak">Uninstall Pak</string>
+    <string name="addon_appearance_uninstallpak_toast1">External Pak uninstalled</string>
     <string name="addon_appearance_toast6">Successfully exported, view it in the gallery.</string>
     <string name="addon_appearance_toast7">Failed to export</string>
     <string name="addon_appearance_toast8">You haven\'t created your Zombatar</string>

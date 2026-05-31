@@ -34,6 +34,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
@@ -45,6 +48,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -72,6 +76,7 @@ import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.Switch;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -93,11 +98,18 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class SetActivity extends Activity {
+    private static final int REQUEST_CODE_IMPORT_EXTERNAL_PAK = 22;
+    private static final String EXTERNAL_PAK_DIR = "imported_paks";
+    private static final String EXTERNAL_PAK_PREFIX = "external_pak:";
+    private SharedPreferences dataSharedPreferences;
+    private LinearLayout pakListLayout;
+    private LinearLayout.LayoutParams pakItemLayoutParams;
 
     public static File getUserDataFile(Context context) {
         SharedPreferences sharedPreferences = context.getSharedPreferences("data", 0);
@@ -260,6 +272,7 @@ public class SetActivity extends Activity {
         //如果是初次启动，则载入assets文件夹中的data.xml
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         SharedPreferences sharedPreferences = getSharedPreferences("data", 0);
+        dataSharedPreferences = sharedPreferences;
 
         loadPreferencesFromAssetsFile(preferences, sharedPreferences);
 
@@ -279,6 +292,7 @@ public class SetActivity extends Activity {
         wrapWrapParams.gravity = Gravity.CENTER;
         LinearLayout.LayoutParams matchWrapParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         matchWrapParams.gravity = Gravity.CENTER;
+        pakItemLayoutParams = matchWrapParams;
         LinearLayout.LayoutParams weightParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         weightParams.weight = 1;
         LinearLayout.LayoutParams marginParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -1096,162 +1110,31 @@ public class SetActivity extends Activity {
         appearanceLayout.addView(seedBankPin);
         appearanceLayout.addView(zombatarButton);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-            try {
-                LinearLayout layout = new LinearLayout(this);
-                layout.setOrientation(LinearLayout.VERTICAL);
-                layout.setPadding(0, 20, 0, 20);
-                LinearLayout.LayoutParams tmpParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-                tmpParams.gravity = Gravity.CENTER;
-                tmpParams.width = 500;
-                layout.setLayoutParams(tmpParams);
-                TextView paksInfo = new TextView(this);
-                paksInfo.setText(R.string.addon_appearance_paksinfo);
-                paksInfo.setGravity(Gravity.CENTER);
-                paksInfo.setLayoutParams(wrapWrapParams);
-                String[] filesOfPaks = getAssets().list("paks");
-                for (String filesOfPak : filesOfPaks) {
-                    if (filesOfPak.endsWith(".zip")) {
-                        Switch pakCheckBox = new Switch(this);
-                        String pakNameToShow = filesOfPak.substring(0, filesOfPak.length() - 4);
-                        pakCheckBox.setText(pakNameToShow);
-                        pakCheckBox.setEllipsize(TextUtils.TruncateAt.END); // 设置在末尾显示省略号
-                        pakCheckBox.setMaxLines(1);
-                        pakCheckBox.setChecked(sharedPreferences.getBoolean(filesOfPak, false));
-                        pakCheckBox.setLayoutParams(matchWrapParams);
-                        pakCheckBox.setPadding(0, 15, 0, 15);
-                        pakCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-                            if (isChecked) {
-                                try {
-                                    InputStream inputStream = getAssets().open("paks/" + filesOfPak);
-                                    if (inputStream != null) {
-                                        File pakFileDestDir = getUserDataFile(SetActivity.this);
+            LinearLayout layout = new LinearLayout(this);
+            pakListLayout = layout;
+            layout.setOrientation(LinearLayout.VERTICAL);
+            layout.setPadding(0, 20, 0, 20);
+            LinearLayout.LayoutParams tmpParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            tmpParams.gravity = Gravity.CENTER;
+            tmpParams.width = 500;
+            layout.setLayoutParams(tmpParams);
+            TextView paksInfo = new TextView(this);
+            paksInfo.setText(R.string.addon_appearance_paksinfo);
+            paksInfo.setGravity(Gravity.CENTER);
+            paksInfo.setLayoutParams(wrapWrapParams);
+            refreshPakListUi();
+            appearanceLayout.addView(paksInfo);
+            appearanceLayout.addView(layout);
 
-                                        if (!pakFileDestDir.exists()) pakFileDestDir.mkdir();
-                                        ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-                                        // 读取ZipEntry对象
-                                        ZipEntry zipEntry = zipInputStream.getNextEntry();
-                                        // 遍历ZipEntry对象并解压缩文件
-                                        while (zipEntry != null) {
-                                            String entryName = zipEntry.getName();
-
-                                            if (zipEntry.isDirectory()) {
-                                                // 如果是文件夹，创建相应的文件夹
-                                                File dir = new File(pakFileDestDir, entryName);
-                                                dir.mkdir();
-                                            } else {
-                                                // 如果是文件，创建相应的文件并复制内容
-                                                byte[] buffer = new byte[1024];
-                                                int count;
-                                                FileOutputStream fos = new FileOutputStream(new File(pakFileDestDir, entryName));
-                                                BufferedOutputStream bos = new BufferedOutputStream(fos, buffer.length);
-                                                while ((count = zipInputStream.read(buffer, 0, buffer.length)) != -1) {
-                                                    bos.write(buffer, 0, count);
-                                                }
-                                                bos.flush();
-                                                bos.close();
-                                            }
-                                            zipInputStream.closeEntry();
-                                            zipEntry = zipInputStream.getNextEntry();
-                                        }
-                                        // 关闭ZipInputStream对象
-                                        zipInputStream.close();
-                                        inputStream.close();
-                                    }
-                                    sharedPreferences.edit().putBoolean(filesOfPak, true).apply();
-                                    Toast.makeText(SetActivity.this, R.string.addon_appearance_toast1, Toast.LENGTH_SHORT).show();
-                                } catch (IOException ignored) {
-                                    sharedPreferences.edit().putBoolean(filesOfPak, false).apply();
-                                    Toast.makeText(SetActivity.this, R.string.addon_appearance_toast2, Toast.LENGTH_SHORT).show();
-                                }
-                            } else {
-                                try {
-                                    InputStream inputStream = getAssets().open("paks/" + filesOfPak);
-                                    if (inputStream != null) {
-                                        File pakFileDestDir = getUserDataFile(SetActivity.this);
-
-                                        ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-                                        // 读取ZipEntry对象
-                                        ZipEntry zipEntry = zipInputStream.getNextEntry();
-                                        // 遍历ZipEntry对象并解压缩文件
-                                        while (zipEntry != null) {
-                                            String entryName = zipEntry.getName();
-                                            if (!zipEntry.isDirectory()) {
-                                                File file = new File(pakFileDestDir, entryName);
-                                                if (file.exists()) file.delete();
-                                            }
-                                            zipInputStream.closeEntry();
-                                            zipEntry = zipInputStream.getNextEntry();
-                                        }
-                                        // 关闭ZipInputStream对象
-                                        zipInputStream.close();
-                                        inputStream.close();
-                                    }
-                                    sharedPreferences.edit().putBoolean(filesOfPak, false).apply();
-                                    Toast.makeText(SetActivity.this, R.string.addon_appearance_toast3, Toast.LENGTH_SHORT).show();
-                                } catch (IOException ignored) {
-                                    Toast.makeText(SetActivity.this, R.string.addon_appearance_toast4, Toast.LENGTH_SHORT).show();
-                                }
-                            }
-                        });
-                        pakCheckBox.setOnLongClickListener(v -> {
-                            try {
-                                InputStream inputStream = getAssets().open("paks/" + filesOfPak);
-                                if (inputStream != null) {
-                                    boolean hasReadMeFile = false;
-                                    ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-                                    // 读取ZipEntry对象
-                                    ZipEntry zipEntry = zipInputStream.getNextEntry();
-                                    // 遍历ZipEntry对象并解压缩文件
-                                    while (zipEntry != null) {
-                                        String entryName = zipEntry.getName();
-
-                                        if (entryName.equals("readme.txt")) {
-                                            hasReadMeFile = true;
-                                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                                            byte[] buffer = new byte[1024];
-                                            int length;
-                                            while ((length = zipInputStream.read(buffer)) != -1) {
-                                                byteArrayOutputStream.write(buffer, 0, length);
-                                            }
-
-                                            // 将字节数组转换为字符串
-                                            String readmeContent = byteArrayOutputStream.toString("UTF-8");
-
-                                            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                                            builder.setTitle(getString(R.string.addon_appearance_readmetitle, pakNameToShow)); // 设置对话框标题
-                                            builder.setMessage(readmeContent); // 设置对话框内容
-
-                                            // 添加确定按钮和取消按钮
-                                            builder.setPositiveButton("OK", null);
-                                            builder.create().show();
-
-                                            // 关闭 ByteArrayOutputStream
-                                            byteArrayOutputStream.close();
-                                            zipInputStream.closeEntry();
-                                            zipInputStream.close();
-                                            inputStream.close();
-                                            break;
-                                        }
-                                        zipInputStream.closeEntry();
-                                        zipEntry = zipInputStream.getNextEntry();
-                                    }
-                                    if (!hasReadMeFile) {
-                                        zipInputStream.close();
-                                        inputStream.close();
-                                        Toast.makeText(SetActivity.this, R.string.addon_appearance_toast5, Toast.LENGTH_SHORT).show();
-                                    }
-                                }
-                            } catch (IOException ignored) {
-                            }
-                            return true;
-                        });
-                        layout.addView(pakCheckBox);
-                    }
-                }
-                appearanceLayout.addView(paksInfo);
-                appearanceLayout.addView(layout);
-            } catch (IOException ignored) {
-            }
+            Button importPak = new Button(this);
+            importPak.setText(R.string.addon_appearance_importpak);
+            importPak.setOnClickListener(view -> {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("application/zip");
+                startActivityForResult(intent, REQUEST_CODE_IMPORT_EXTERNAL_PAK);
+            });
+            appearanceLayout.addView(importPak);
 
 //            Button importPak = new Button(this);
 //            importPak.setText(R.string.addon_appearance_importpak);
@@ -1490,6 +1373,18 @@ public class SetActivity extends Activity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        if (requestCode == REQUEST_CODE_IMPORT_EXTERNAL_PAK && resultCode == Activity.RESULT_OK) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                if (importExternalPak(uri)) {
+                    Toast.makeText(this, R.string.addon_appearance_importpak_toast1, Toast.LENGTH_SHORT).show();
+                    refreshPakListUi();
+                } else {
+                    Toast.makeText(this, R.string.addon_appearance_importpak_toast2, Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+
         if (requestCode == 33 && resultCode == Activity.RESULT_OK) {
             Uri uri = data.getData();
             if (uri != null) {
@@ -1586,6 +1481,335 @@ public class SetActivity extends Activity {
 
             }
         }
+    }
+
+    private static class PakInfo {
+        String readmeContent;
+        Bitmap infoImage;
+    }
+
+    private static class PakItem {
+        final String displayName;
+        final String prefKey;
+        final boolean isExternal;
+        final File externalFile;
+
+        private PakItem(String displayName, String prefKey, boolean isExternal, File externalFile) {
+            this.displayName = displayName;
+            this.prefKey = prefKey;
+            this.isExternal = isExternal;
+            this.externalFile = externalFile;
+        }
+
+        static PakItem asset(String zipFileName) {
+            String displayName = zipFileName.substring(0, zipFileName.length() - 4);
+            return new PakItem(displayName, zipFileName, false, null);
+        }
+
+        static PakItem external(File file) {
+            String name = file.getName();
+            String displayName = name.substring(0, name.length() - 4);
+            return new PakItem(displayName, EXTERNAL_PAK_PREFIX + name, true, file);
+        }
+    }
+
+    private List<PakItem> getExternalPakItems() {
+        List<PakItem> items = new ArrayList<>();
+        File pakDir = new File(getUserDataFile(this), EXTERNAL_PAK_DIR);
+        File[] files = pakDir.listFiles();
+        if (files == null) {
+            return items;
+        }
+        for (File file : files) {
+            if (file.isFile() && file.getName().toLowerCase(Locale.US).endsWith(".zip")) {
+                items.add(PakItem.external(file));
+            }
+        }
+        return items;
+    }
+
+    private void refreshPakListUi() {
+        if (pakListLayout == null || dataSharedPreferences == null || pakItemLayoutParams == null) {
+            return;
+        }
+        pakListLayout.removeAllViews();
+        List<PakItem> pakItems = new ArrayList<>();
+        try {
+            String[] filesOfPaks = getAssets().list("paks");
+            if (filesOfPaks != null) {
+                for (String filesOfPak : filesOfPaks) {
+                    if (filesOfPak.endsWith(".zip")) {
+                        pakItems.add(PakItem.asset(filesOfPak));
+                    }
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        pakItems.addAll(getExternalPakItems());
+        Collections.sort(pakItems, (a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
+        for (PakItem pakItem : pakItems) {
+            pakListLayout.addView(createPakSwitch(pakItem));
+        }
+    }
+
+    private Switch createPakSwitch(PakItem pakItem) {
+        Switch pakCheckBox = new Switch(this);
+        pakCheckBox.setText(pakItem.displayName);
+        pakCheckBox.setEllipsize(TextUtils.TruncateAt.END);
+        pakCheckBox.setMaxLines(1);
+        pakCheckBox.setChecked(dataSharedPreferences.getBoolean(pakItem.prefKey, false));
+        pakCheckBox.setLayoutParams(pakItemLayoutParams);
+        pakCheckBox.setPadding(0, 15, 0, 15);
+        pakCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                if (loadPak(pakItem)) {
+                    dataSharedPreferences.edit().putBoolean(pakItem.prefKey, true).apply();
+                    Toast.makeText(SetActivity.this, R.string.addon_appearance_toast1, Toast.LENGTH_SHORT).show();
+                } else {
+                    dataSharedPreferences.edit().putBoolean(pakItem.prefKey, false).apply();
+                    Toast.makeText(SetActivity.this, R.string.addon_appearance_toast2, Toast.LENGTH_SHORT).show();
+                }
+            } else {
+                if (unloadPak(pakItem)) {
+                    dataSharedPreferences.edit().putBoolean(pakItem.prefKey, false).apply();
+                    Toast.makeText(SetActivity.this, R.string.addon_appearance_toast3, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(SetActivity.this, R.string.addon_appearance_toast4, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+        pakCheckBox.setOnLongClickListener(v -> {
+            showPakInfoDialog(pakItem, pakCheckBox, dataSharedPreferences);
+            return true;
+        });
+        return pakCheckBox;
+    }
+
+    private InputStream openPakStream(PakItem pakItem) throws IOException {
+        if (pakItem.isExternal && pakItem.externalFile != null) {
+            return new FileInputStream(pakItem.externalFile);
+        }
+        return getAssets().open("paks/" + pakItem.prefKey);
+    }
+
+    private boolean loadPak(PakItem pakItem) {
+        try (InputStream inputStream = openPakStream(pakItem);
+             ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+            File pakFileDestDir = getUserDataFile(this);
+            if (!pakFileDestDir.exists()) {
+                pakFileDestDir.mkdir();
+            }
+            ZipEntry zipEntry = zipInputStream.getNextEntry();
+            while (zipEntry != null) {
+                String entryName = zipEntry.getName();
+                if (zipEntry.isDirectory()) {
+                    new File(pakFileDestDir, entryName).mkdirs();
+                } else {
+                    File target = new File(pakFileDestDir, entryName);
+                    File parent = target.getParentFile();
+                    if (parent != null && !parent.exists()) {
+                        parent.mkdirs();
+                    }
+                    byte[] buffer = new byte[1024];
+                    int count;
+                    try (FileOutputStream fos = new FileOutputStream(target);
+                         BufferedOutputStream bos = new BufferedOutputStream(fos, buffer.length)) {
+                        while ((count = zipInputStream.read(buffer, 0, buffer.length)) != -1) {
+                            bos.write(buffer, 0, count);
+                        }
+                        bos.flush();
+                    }
+                }
+                zipInputStream.closeEntry();
+                zipEntry = zipInputStream.getNextEntry();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private boolean unloadPak(PakItem pakItem) {
+        try (InputStream inputStream = openPakStream(pakItem);
+             ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+            File pakFileDestDir = getUserDataFile(this);
+            ZipEntry zipEntry = zipInputStream.getNextEntry();
+            while (zipEntry != null) {
+                if (!zipEntry.isDirectory()) {
+                    File file = new File(pakFileDestDir, zipEntry.getName());
+                    if (file.exists()) {
+                        file.delete();
+                    }
+                }
+                zipInputStream.closeEntry();
+                zipEntry = zipInputStream.getNextEntry();
+            }
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private PakInfo readPakInfo(PakItem pakItem) {
+        PakInfo info = new PakInfo();
+        try (InputStream inputStream = openPakStream(pakItem);
+             ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+            ZipEntry zipEntry = zipInputStream.getNextEntry();
+            while (zipEntry != null) {
+                String entryName = zipEntry.getName();
+                if (!zipEntry.isDirectory() && !entryName.contains("/")) {
+                    if ("readme.txt".equalsIgnoreCase(entryName)) {
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = zipInputStream.read(buffer)) != -1) {
+                            byteArrayOutputStream.write(buffer, 0, length);
+                        }
+                        info.readmeContent = byteArrayOutputStream.toString("UTF-8");
+                    } else if ("info.png".equalsIgnoreCase(entryName) || "info.jpg".equalsIgnoreCase(entryName)) {
+                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                        byte[] buffer = new byte[1024];
+                        int length;
+                        while ((length = zipInputStream.read(buffer)) != -1) {
+                            byteArrayOutputStream.write(buffer, 0, length);
+                        }
+                        byte[] imageBytes = byteArrayOutputStream.toByteArray();
+                        info.infoImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                    }
+                }
+                zipInputStream.closeEntry();
+                zipEntry = zipInputStream.getNextEntry();
+            }
+        } catch (IOException ignored) {
+        }
+        return info;
+    }
+
+    private void showPakInfoDialog(PakItem pakItem, Switch pakCheckBox, SharedPreferences sharedPreferences) {
+        PakInfo pakInfo = readPakInfo(pakItem);
+        if (pakInfo.readmeContent == null && pakInfo.infoImage == null) {
+            Toast.makeText(SetActivity.this, R.string.addon_appearance_toast5, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(getString(R.string.addon_appearance_readmetitle, pakItem.displayName));
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(40, 20, 40, 20);
+        if (pakInfo.readmeContent != null) {
+            TextView textView = new TextView(this);
+            textView.setText(pakInfo.readmeContent);
+            content.addView(textView);
+        }
+        if (pakInfo.infoImage != null) {
+            ImageView imageView = new ImageView(this);
+            imageView.setAdjustViewBounds(true);
+            imageView.setImageBitmap(pakInfo.infoImage);
+            content.addView(imageView);
+        }
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.addView(content);
+        builder.setView(scrollView);
+        builder.setPositiveButton("OK", null);
+        if (pakItem.isExternal) {
+            builder.setNeutralButton(R.string.addon_appearance_uninstallpak, (dialog, which) -> {
+                if (sharedPreferences.getBoolean(pakItem.prefKey, false)) {
+                    unloadPak(pakItem);
+                    sharedPreferences.edit().putBoolean(pakItem.prefKey, false).apply();
+                }
+                if (pakItem.externalFile != null) {
+                    pakItem.externalFile.delete();
+                }
+                Toast.makeText(this, R.string.addon_appearance_uninstallpak_toast1, Toast.LENGTH_SHORT).show();
+                ViewGroup parent = (ViewGroup) pakCheckBox.getParent();
+                if (parent != null) {
+                    parent.removeView(pakCheckBox);
+                }
+            });
+        }
+        builder.create().show();
+    }
+
+    private boolean importExternalPak(Uri uri) {
+        String rawName = getDisplayNameFromUri(uri);
+        if (rawName == null && uri.getPath() != null) {
+            rawName = new File(uri.getPath()).getName();
+        }
+        if (rawName == null || !rawName.toLowerCase(Locale.US).endsWith(".zip")) {
+            rawName = "external-" + System.currentTimeMillis() + ".zip";
+        }
+        String safeName = sanitizePakFileName(rawName);
+        if (!safeName.toLowerCase(Locale.US).endsWith(".zip")) {
+            safeName += ".zip";
+        }
+        File pakDir = new File(getUserDataFile(this), EXTERNAL_PAK_DIR);
+        if (!pakDir.exists()) {
+            pakDir.mkdirs();
+        }
+        File dest = new File(pakDir, safeName);
+        int suffix = 1;
+        while (dest.exists()) {
+            String baseName = safeName.substring(0, safeName.length() - 4);
+            dest = new File(pakDir, baseName + "_" + suffix + ".zip");
+            suffix++;
+        }
+        try (InputStream inputStream = getContentResolver().openInputStream(uri);
+             FileOutputStream fos = new FileOutputStream(dest)) {
+            if (inputStream == null) {
+                return false;
+            }
+            byte[] buffer = new byte[1024];
+            int read;
+            while ((read = inputStream.read(buffer)) != -1) {
+                fos.write(buffer, 0, read);
+            }
+            fos.flush();
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private String getDisplayNameFromUri(Uri uri) {
+        Cursor cursor = null;
+        try {
+            cursor = getContentResolver().query(uri, new String[]{OpenableColumns.DISPLAY_NAME}, null, null, null);
+            if (cursor != null && cursor.moveToFirst()) {
+                int index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
+                if (index >= 0) {
+                    return cursor.getString(index);
+                }
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+        return null;
+    }
+
+    private String sanitizePakFileName(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            return "external-" + System.currentTimeMillis() + ".zip";
+        }
+        String sanitized = fileName
+                .replace("/", "_")
+                .replace("\\", "_")
+                .replace(":", "_")
+                .replace("*", "_")
+                .replace("?", "_")
+                .replace("\"", "_")
+                .replace("<", "_")
+                .replace(">", "_")
+                .replace("|", "_");
+        sanitized = sanitized.trim();
+        if (sanitized.isEmpty() || ".".equals(sanitized) || "..".equals(sanitized)) {
+            sanitized = "external-" + System.currentTimeMillis() + ".zip";
+        }
+        return sanitized;
     }
 
     @Override
