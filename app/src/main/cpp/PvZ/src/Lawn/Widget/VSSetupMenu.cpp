@@ -411,7 +411,7 @@ void VSSetupMenu::MouseDrag(int x, int y) {
         return;
     }
     if (touchingOnWhichController == 1) {
-        if (gTcpConnected)
+        if (gTcpConnected || gIsReplayMode)
             return;
         Sexy::Widget *theController1Widget = FindWidget(7);
         theController1Widget->Move(theController1Widget->mX + x - touchDownX, theController1Widget->mY);

@@ -1862,7 +1862,7 @@ void WaitForSecondPlayerDialog::ScanUdpBroadcastRoom() {
 }
 
 void WaitForSecondPlayerDialog::TryTcpConnect() {
-    if (gTcpConnected)
+    if (gTcpConnected || gIsReplayMode)
         return;
 
     // 既不是手动目标，也没有扫描到房间，就没法连

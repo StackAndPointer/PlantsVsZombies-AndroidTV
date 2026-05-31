@@ -826,7 +826,7 @@ void Zombie::UpdateSuperFanImp() {
     }
 
     if (doPop) {
-        if (mApp->IsVSMode() && gTcpConnected)
+        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
             return;
 
         mZombiePhase = ZombiePhase::PHASE_IMP_POPPING;
@@ -872,7 +872,7 @@ void Zombie::UpdateGigaFootball() {
         //            mPhaseCounter = RandRangeInt(1000, 1500) / 2;
         //        }
 
-        if (mApp->IsVSMode() && gTcpConnected)
+        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
             return;
 
         bool doTackle = false;
@@ -939,7 +939,7 @@ void Zombie::UpdateGigaFootball() {
     }
 
     if (doWalk) {
-        if (mApp->IsVSMode() && gTcpConnected)
+        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
             return;
 
         mZombiePhase = ZombiePhase::PHASE_FOOTBALL_WALKING;
@@ -1117,7 +1117,7 @@ ZombieID Zombie::RaiseDeadZombie(ZombieType theZombieType, int theRow, int theCo
 }
 
 void Zombie::RaiseDeadZombies() {
-    if (mApp->IsVSMode() && gTcpConnected)
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
         return;
 
     std::vector<ZombieType> deadFollowers = msDeadFollowers;
@@ -1206,7 +1206,7 @@ void Zombie::UpdateZombieJackInTheBox() {
         }
 
         if (mPhaseCounter <= 0) {
-            if (mApp->IsVSMode() && gTcpConnected)
+            if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
                 return;
 
             DoSpecial();
@@ -1228,7 +1228,7 @@ void Zombie::UpdateZombiePolevaulter() {
                 return;
             }
 
-            if (mApp->IsVSMode() && gTcpConnected) {
+            if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
                 return;
             }
 
@@ -1836,7 +1836,7 @@ void Zombie::UpdateZombieGargantuar() {
             ReanimShowTrack("Zombie_gargantuar_whiterope", RENDER_GROUP_HIDDEN);
             mApp->PlayFoley(FoleyType::FOLEY_SWING);
 
-            if (mApp->IsVSMode() && gTcpConnected)
+            if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
                 return;
 
             Zombie *aZombieImp = mBoard->AddZombie(ZombieType::ZOMBIE_IMP, mFromWave, false);
@@ -1902,7 +1902,7 @@ void Zombie::UpdateZombieGargantuar() {
         return;
 
     // 客机不判断是否扔小鬼、是否砸地
-    if (mApp->IsVSMode() && gTcpConnected)
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
         return;
 
     if (mHasObject && mBodyHealth < mBodyMaxHealth / 2 && aThrowingDistance > 40.0f) {
@@ -2157,7 +2157,7 @@ void Zombie::UpdateZombieJalapenoHead() {
     }
 
     if (mPhaseCounter == 0) {
-        if (mApp->IsVSMode() && gTcpConnected)
+        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
             return;
 
         DoSpecial();
@@ -2893,7 +2893,7 @@ void Zombie::RiseFromGrave(int theCol, int theRow) {
 void Zombie::CheckForBoardEdge() {
     // 修复僵尸正常进家、支持调整僵尸进家线
 
-    if (mApp->IsVSMode() && gTcpConnected) {
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
         return;
     }
 
@@ -3271,7 +3271,7 @@ void Zombie::UpdateZombieBobsled() {
         if (mPhaseCounter == 0) {
             mZombiePhase = ZombiePhase::PHASE_ZOMBIE_NORMAL;
             if (GetBobsledPosition() == 0) {
-                if (mApp->IsVSMode() && gTcpConnected)
+                if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
                     return;
 
                 if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
@@ -4023,7 +4023,7 @@ void Zombie::SetupReanimForLostHead() {
 }
 
 void Zombie::DropHead(unsigned int theDamageFlags) {
-    if (mApp->IsVSMode() && gTcpConnected) {
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
         return;
     }
 
@@ -4658,7 +4658,7 @@ Zombie *Zombie::FindZombieGigaFootball() {
 }
 
 void Zombie::TakeDamage(int theDamage, unsigned int theDamageFlags) {
-    if (mApp->IsVSMode() && gTcpConnected)
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
         return;
 
     if (gTcpClientSocket >= 0) {
@@ -5046,7 +5046,7 @@ void Zombie::SetupLostArmReanim() {
 }
 
 void Zombie::BungeeDropZombie(Zombie *theDroppedZombie, int theGridX, int theGridY) {
-    if (mApp->IsVSMode() && gTcpConnected)
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
         return;
 
     BungeeDropZombie_Origin(theDroppedZombie, theGridX, theGridY);
@@ -5083,7 +5083,7 @@ void Zombie::BungeeDropZombie_Origin(Zombie *theDroppedZombie, int theGridX, int
 }
 
 void Zombie::PickRandomSpeed() {
-    if (mApp->IsVSMode() && gTcpConnected)
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
         return;
 
     if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_WALKING_IN_POOL) {
@@ -5292,7 +5292,7 @@ void Zombie::ApplyChill(bool theIsIceTrap) {
 }
 
 void Zombie::HitIceTrap() {
-    if (mApp->IsVSMode() && gTcpConnected)
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
         return;
 
     bool cold = false;
@@ -5676,7 +5676,7 @@ ZombieID Zombie::SummonBackupDancer(int theRow, int thePosX) {
 }
 
 void Zombie::SummonBackupDancers() {
-    if (mApp->IsVSMode() && gTcpConnected)
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
         return;
 
     SummonBackupDancers_Origin();
