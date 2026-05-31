@@ -23,9 +23,20 @@
 #include "LawnDialog.h"
 
 class NewOptionsDialog : public LawnDialog {
+protected:
+    enum {
+        NewOptionsDialog_House,
+        NewOptionsDialog_Useless,
+        NewOptionsDialog_HelpDialog,
+        NewOptionsDialog_Almanac,
+        NewOptionsDialog_MainMenu,
+        NewOptionsDialog_Restart,
+        NewOptionsDialog_Update,
+        NewOptionsDialog_ClearSecondPlayer,
+    };
 
 public:
-    void ButtonDepress(int buttonId);
+    void ButtonDepress(int theId);
 };
 inline void (*old_NewOptionsDialog_ButtonDepress)(NewOptionsDialog *a1, int a2);
 

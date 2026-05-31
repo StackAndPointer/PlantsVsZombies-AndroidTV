@@ -27,23 +27,23 @@
 #include "PvZ/Lawn/Widget/VSResultsMenu.h"
 #include "PvZ/NetPlay.h"
 
-void NewOptionsDialog::ButtonDepress(int buttonId) {
-    if (buttonId == 4 && (gTcpConnected || gTcpClientSocket >= 0)) {
+void NewOptionsDialog::ButtonDepress(int theId) {
+    if (theId == NewOptionsDialog::NewOptionsDialog_MainMenu && (gTcpConnected || gTcpClientSocket >= 0)) {
         // 对战时返回主菜单，加一层退出确认
         mApp->DoConfirmBackToMain(false);
-        auto dialog = (ConfirmBackToMainDialog *)(mApp->GetDialog(DIALOG_CONFIRM_BACK_TO_MAIN));
-        dialog->mRestartButton->mDisabled = true;
+        auto aConfirmDialog = reinterpret_cast<ConfirmBackToMainDialog *>(mApp->GetDialog(DIALOG_CONFIRM_BACK_TO_MAIN));
+        aConfirmDialog->mRestartButton->mDisabled = true;
         return;
     }
 
-    if (buttonId == 5 && (gTcpConnected || gTcpClientSocket >= 0)) {
+    if (theId == 5 && (gTcpConnected || gTcpClientSocket >= 0)) {
         if (gIsServerModeSpectator || gIsReplayMode) {
             mApp->PlaySample(Sexy::SOUND_BUZZER);
             return;
         }
         mApp->PlaySample(Sexy::SOUND_GRAVEBUTTON);
 
-        this->Sexy::Dialog::ButtonDepress(buttonId);
+        Sexy::Dialog::ButtonDepress(theId);
 
         if (mApp->mBoard) {
 
@@ -96,5 +96,5 @@ void NewOptionsDialog::ButtonDepress(int buttonId) {
     }
 
 
-    return old_NewOptionsDialog_ButtonDepress(this, buttonId);
+    return old_NewOptionsDialog_ButtonDepress(this, theId);
 }
