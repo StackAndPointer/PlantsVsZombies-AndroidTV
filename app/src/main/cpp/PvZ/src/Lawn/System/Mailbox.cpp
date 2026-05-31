@@ -28,10 +28,10 @@ int Mailbox::GetNumUnseenMessages() {
     }
 
     int unseenCount = 0;
-    int visibleMessageCount = 0;
-    int seenCount = 0;
-    int hiddenByLevelCount = 0;
-    int invalidCount = 0;
+    [[maybe_unused]] int visibleMessageCount = 0;
+    [[maybe_unused]] int seenCount = 0;
+    [[maybe_unused]] int hiddenByLevelCount = 0;
+    [[maybe_unused]] int invalidCount = 0;
 
     LawnPlayerInfo *playerInfo = mApp->mPlayerInfo;
     int levelGate = playerInfo->mLevel;

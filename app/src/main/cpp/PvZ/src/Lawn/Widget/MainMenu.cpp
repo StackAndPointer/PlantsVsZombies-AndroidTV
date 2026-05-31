@@ -417,7 +417,7 @@ void MainMenu::EnableButtons() {
         }
     }
 
-    char *names[3] = {"survival button", "survival selected", "survival pressed"};
+    static const char *names[3] = {"survival button", "survival selected", "survival pressed"};
     for (int i = 0; i < 3; ++i) {
         ReanimatorTrack *reanimatorTrack = mainMenuReanim->mDefinition->mTracks + mainMenuReanim->FindTrackIndex(names[i]);
         int mTransformCount = reanimatorTrack->mTransformCount;

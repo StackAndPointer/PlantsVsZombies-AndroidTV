@@ -31,7 +31,9 @@ target_compile_options(Homura PRIVATE
         -Werror=implicit-fallthrough
         -Werror=nonnull
         -Werror=return-type
+        -Werror=unused-but-set-variable
         -Werror=unused-result
+        -Werror=writable-strings
 )
 
 target_compile_definitions(Homura PRIVATE PVZ_VERSION=${PVZ_VERSION})
