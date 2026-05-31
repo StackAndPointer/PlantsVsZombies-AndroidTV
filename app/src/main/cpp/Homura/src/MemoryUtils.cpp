@@ -24,8 +24,10 @@
 #include <cassert>
 #include <cerrno>
 #include <cinttypes>
+#include <cstdio>
 #include <cstring>
 
+#include <charconv>
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
@@ -43,9 +45,9 @@ bool homura::GetProtection(std::uintptr_t address, int &prot) {
         return false;
     }
     for (std::string line; std::getline(mapsFile, line);) {
-        unsigned long start, end;
+        std::uintptr_t start, end;
         char perms[5];
-        if (std::sscanf(line.c_str(), "%lx-%lx %4s", &start, &end, perms) != 3) {
+        if (std::sscanf(line.c_str(), "%" SCNxPTR "-%" SCNxPTR " %4s", &start, &end, perms) != 3) {
             continue;
         }
         if (start <= address && address < end) {
@@ -102,11 +104,9 @@ std::uintptr_t homura::GetLibBaseAddr(std::string_view libName) {
     }
     for (std::string line; std::getline(mapsFile, line);) {
         if (line.contains(libName)) {
-            std::uintptr_t baseAddr;
-            try {
-                // On Unix-like OS, a `long` variable is the same size as a pointer variable
-                baseAddr = std::stoul(line, nullptr, 16);
-            } catch (const std::out_of_range &) {
+            std::uintptr_t baseAddr = 0;
+            const auto [_, ec] = std::from_chars(line.c_str(), std::to_address(line.cend()), baseAddr, 16);
+            if (ec == std::errc::result_out_of_range) [[unlikely]] {
                 throw std::runtime_error{std::format("Getting a 64-bit address ({}) in a 32-bit program", libName)};
             }
             baseAddrMap.emplace(libName, baseAddr);
