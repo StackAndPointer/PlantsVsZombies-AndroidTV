@@ -171,4 +171,6 @@
     <string name="secondplayer_default">default</string>
     <string name="secondplayer_edit">Reset</string>
     <string name="secondplayer_edit_toast">Press any key</string>
+    <string name="replay_import_select_rpl">Please select a replay file with .rpl suffix.</string>
+    <string name="replay_import_only_rpl">Only .rpl replay files are supported.</string>
 </resources>

@@ -33,22 +33,47 @@ class ScrollWidget;
 
 class ReplayManageWidget : public Sexy::Widget {
 public:
+    enum {
+        ReplayManageWidget_Close = 1100,
+        ReplayManageWidget_Import = 1101,
+        ReplayManageWidget_Export = 1102,
+        ReplayManageWidget_Delete = 1103,
+        ReplayManageWidget_Play = 1104,
+    };
+
     LawnApp *mApp;
     Sexy::ButtonListener *mButtonListener;
     Sexy::ScrollWidget *mScrollWidget;
     ReplayListContentWidget *mScrollContent;
     GameButton *mCloseButton;
+    GameButton *mImportButton;
+    GameButton *mExportButton;
+    GameButton *mDeleteButton;
+    GameButton *mPlayButton;
     bool mZombieBackground;
+    int mSelectedReplayIndex;
+    bool mNeedRefreshList;
 
     explicit ReplayManageWidget(LawnApp *app, Sexy::ButtonListener *buttonListener);
     ~ReplayManageWidget();
 
     void Draw(Sexy::Graphics *g);
+    void SelectReplayIndex(int index);
+    void RefreshReplayList();
+    void RequestImportReplay();
+    void RequestExportReplay();
+    void DeleteSelectedReplay();
+    void PlaySelectedReplay();
     void StartReplayByIndex(int index);
 
 protected:
     void _destructor();
     void _destructor2();
 };
+
+namespace replayui {
+void OnReplayImportFinished(bool success, const char *message);
+void OnReplayExportFinished(bool success, const char *message);
+} // namespace replayui
 
 #endif // PVZ_LAWN_WIDGET_REPLAY_MANAGE_WIDGET_H

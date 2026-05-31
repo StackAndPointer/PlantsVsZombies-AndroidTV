@@ -594,9 +594,9 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
             if (mServerHosting) {
                 mRightButton->SetLabel("[EXIT_ROOM_BUTTON]");
             } else if (mServerJoined) {
-                mRightButton->SetLabel("[SPECTATE]");
+                mRightButton->SetLabel("[SWITCH_TO_SPECTATOR]");
             } else if (mServerSpectating) {
-                mRightButton->SetLabel("[CLIENT]");
+                mRightButton->SetLabel("[SWITCH_TO_GUEST]");
             } else if (inServerListMode) {
                 mRightButton->SetLabel("[REPLAY_MANAGE]");
             } else {
@@ -2157,6 +2157,26 @@ void WaitForSecondPlayerDialog::ButtonDepress_Thunk(this ButtonListener &self, i
                     return;
             }
             break;
+        case ReplayManageWidget::ReplayManageWidget_Import:
+            if (aDialog->mReplayManageWidget != nullptr) {
+                aDialog->mReplayManageWidget->RequestImportReplay();
+            }
+            return;
+        case ReplayManageWidget::ReplayManageWidget_Export:
+            if (aDialog->mReplayManageWidget != nullptr) {
+                aDialog->mReplayManageWidget->RequestExportReplay();
+            }
+            return;
+        case ReplayManageWidget::ReplayManageWidget_Delete:
+            if (aDialog->mReplayManageWidget != nullptr) {
+                aDialog->mReplayManageWidget->DeleteSelectedReplay();
+            }
+            return;
+        case ReplayManageWidget::ReplayManageWidget_Play:
+            if (aDialog->mReplayManageWidget != nullptr) {
+                aDialog->mReplayManageWidget->PlaySelectedReplay();
+            }
+            return;
         case WaitForSecondPlayerDialog::WaitForSecondPlayerDialog_ReplayClose:
             aDialog->CloseReplayManageWidget();
             return;

@@ -178,4 +178,6 @@
     <!-- <string name="custom_balance_title">自定义平衡设置</string> -->
     <!-- <string name="addon_seed_chooser">选择卡片类型</string> -->
     <!-- <string name="seed_chooser_title">选择卡片类型</string> -->
+    <string name="replay_import_select_rpl">请选择后缀为 .rpl 的回放文件</string>
+    <string name="replay_import_only_rpl">仅支持导入 .rpl 后缀回放文件</string>
 </resources>

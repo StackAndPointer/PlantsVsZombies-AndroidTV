@@ -20,6 +20,8 @@
 #include "PvZ/Lawn/Widget/ReplayManageWidget.h"
 #include "Homura/Logger.h"
 #include "Homura/MemberUtils.h"
+#include "PvZ/Android/Native/BridgeApp.h"
+#include "PvZ/Android/Native/NativeApp.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/SeedPacket.h"
@@ -36,6 +38,7 @@
 
 #include <cstring>
 
+#include <filesystem>
 #include <mutex>
 #include <sstream>
 #include <vector>
@@ -44,6 +47,7 @@ using namespace Sexy;
 
 namespace {
 constexpr int kReplayRowHeight = 140;
+bool gReplayListDirty = false;
 
 std::vector<SeedType> ParseDeck(const std::string &text) {
     std::vector<SeedType> out;
@@ -82,9 +86,7 @@ public:
         vTable = sReplayListContentWidgetVTable;
 
         mOwner = owner;
-        mReplays = replay::ListReplayFiles();
-        mTotalItems = static_cast<int>(mReplays.size());
-        LOG_INFO("[REPLAY] list loaded count={}", mTotalItems);
+        RefreshReplays();
     }
 
     ~ReplayListContentWidget() {
@@ -92,8 +94,22 @@ public:
         Widget::_destructor();
     }
 
+    void RefreshReplays() {
+        mReplays = replay::ListReplayFiles();
+        mTotalItems = static_cast<int>(mReplays.size());
+        if (mOwner != nullptr) {
+            const int selected = mOwner->mSelectedReplayIndex;
+            if (selected >= mTotalItems) {
+                mOwner->mSelectedReplayIndex = mTotalItems > 0 ? (mTotalItems - 1) : -1;
+            }
+            Resize(0, 0, mOwner->mScrollWidget->mWidth, mTotalItems * kReplayRowHeight);
+        }
+        LOG_INFO("[REPLAY] list loaded count={}", mTotalItems);
+    }
+
     void Draw(Graphics *g) {
         int y = 0;
+        int index = 0;
         for (const auto &item : mReplays) {
             const int rowTop = y;
             const int rowMidY = rowTop + kReplayRowHeight / 2;
@@ -119,6 +135,13 @@ public:
             const bool versionMismatch = item.netplayVersion != NETPLAY_VERSION;
             bool plantWin = item.winnerName == plantPlayer;
             bool zombieWin = item.winnerName == zombiePlayer;
+
+            if (mOwner != nullptr && index == mOwner->mSelectedReplayIndex) {
+                g->SetColor(Color(255, 238, 120, 80));
+                g->FillRect(Rect(sideMargin - 30, rowTop + 4, mWidth - sideMargin * 2 + 60, kReplayRowHeight - 8));
+                g->SetColor(Color(255, 220, 90, 180));
+                g->DrawRect(Rect(sideMargin - 30, rowTop + 4, mWidth - sideMargin * 2 + 60, kReplayRowHeight - 8));
+            }
 
             TodDrawString(g, plantPlayer, leftNameX, rowTop + 26, FONT_DWARVENTODCRAFT18, Color(170, 255, 170), DrawStringJustification::DS_ALIGN_LEFT);
             TodDrawString(g, zombiePlayer, rightNameX, rowTop + 26, FONT_DWARVENTODCRAFT18, Color(255, 170, 170), DrawStringJustification::DS_ALIGN_RIGHT);
@@ -178,6 +201,7 @@ public:
                 }
             }
             y += kReplayRowHeight;
+            ++index;
         }
     }
 
@@ -193,7 +217,7 @@ public:
             return;
         }
         LOG_INFO("[REPLAY] click list index={} file={}", index, mReplays[index].fileName);
-        mOwner->StartReplayByIndex(index);
+        mOwner->SelectReplayIndex(index);
     }
 
 protected:
@@ -236,10 +260,26 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
 
     mScrollWidget->AddWidget(mScrollContent);
     mScrollWidget->ScrollToMin(false);
-    mCloseButton = MakeButton(1100, buttonListener, this, "[CLOSE]");
+    mPlayButton = MakeButton(ReplayManageWidget_Play, buttonListener, this, "[REPLAY_PLAY]");
+    mPlayButton->Resize(120, 564, 170, 50);
+    mDeleteButton = MakeButton(ReplayManageWidget_Delete, buttonListener, this, "[REPLAY_DELETE]");
+    mDeleteButton->Resize(340, 564, 170, 50);
+    mImportButton = MakeButton(ReplayManageWidget_Import, buttonListener, this, "[REPLAY_IMPORT]");
+    mImportButton->Resize(560, 564, 170, 50);
+    mExportButton = MakeButton(ReplayManageWidget_Export, buttonListener, this, "[REPLAY_EXPORT]");
+    mExportButton->Resize(780, 564, 170, 50);
+    mCloseButton = MakeButton(ReplayManageWidget_Close, buttonListener, this, "[CLOSE]");
     mCloseButton->Resize(1000, 564, 170, 50);
+
     mZombieBackground = Rand(2);
+
+    mSelectedReplayIndex = mScrollContent->mTotalItems > 0 ? 0 : -1;
+    mNeedRefreshList = false;
     AddWidget(mCloseButton);
+    AddWidget(mImportButton);
+    AddWidget(mExportButton);
+    AddWidget(mDeleteButton);
+    AddWidget(mPlayButton);
     TodLoadResources("DelayLoad_Almanac");
 }
 
@@ -248,6 +288,14 @@ ReplayManageWidget::~ReplayManageWidget() {
 }
 
 void ReplayManageWidget::_destructor() {
+    RemoveWidget(mPlayButton);
+    mApp->SafeDeleteWidget(mPlayButton);
+    RemoveWidget(mDeleteButton);
+    mApp->SafeDeleteWidget(mDeleteButton);
+    RemoveWidget(mExportButton);
+    mApp->SafeDeleteWidget(mExportButton);
+    RemoveWidget(mImportButton);
+    mApp->SafeDeleteWidget(mImportButton);
     RemoveWidget(mCloseButton);
     mApp->SafeDeleteWidget(mCloseButton);
 
@@ -265,17 +313,103 @@ void ReplayManageWidget::_destructor2() {
 }
 
 void ReplayManageWidget::Draw(Graphics *g) {
+    if (mNeedRefreshList || gReplayListDirty) {
+        RefreshReplayList();
+        gReplayListDirty = false;
+    }
+    const bool hasReplay = mScrollContent->mTotalItems > 0;
+    mPlayButton->mDisabled = !hasReplay;
+    mExportButton->mDisabled = !hasReplay;
+    mDeleteButton->mDisabled = !hasReplay;
     g->DrawImage(mZombieBackground ? IMAGE_ALMANAC_ZOMBIEBACK : IMAGE_ALMANAC_PLANTBACK, 0, 0);
     TodDrawString(g, "[REPLAY_MANAGE]", 640, 110, FONT_DWARVENTODCRAFT24, Color(255, 248, 195), DrawStringJustification::DS_ALIGN_CENTER);
+    if (!hasReplay) {
+        TodDrawString(g, "[NO_REPLAY_FILES]", 640, 330, FONT_HOUSEOFTERROR20, Color(255, 230, 170), DrawStringJustification::DS_ALIGN_CENTER);
+    }
+}
+
+void ReplayManageWidget::SelectReplayIndex(int index) {
+    if (index < 0 || index >= mScrollContent->mTotalItems) {
+        return;
+    }
+    mSelectedReplayIndex = index;
+}
+
+void ReplayManageWidget::RefreshReplayList() {
+    mScrollContent->RefreshReplays();
+    if (mSelectedReplayIndex < 0 && mScrollContent->mTotalItems > 0) {
+        mSelectedReplayIndex = 0;
+    }
+    mNeedRefreshList = false;
+}
+
+void ReplayManageWidget::RequestImportReplay() {
+    std::error_code ec;
+    std::filesystem::create_directories("replays", ec);
+    const std::string targetDir = std::filesystem::absolute("replays", ec).string();
+
+    Native::BridgeApp *bridgeApp = Native::BridgeApp::getSingleton();
+    JNIEnv *env = bridgeApp->getJNIEnv();
+    jobject activity = bridgeApp->mNativeApp->getActivity();
+    jclass cls = env->GetObjectClass(activity);
+    jmethodID mid = env->GetMethodID(cls, "showReplayImportPicker", "(Ljava/lang/String;)V");
+    if (mid == nullptr) {
+        env->DeleteLocalRef(cls);
+        return;
+    }
+    jstring jTargetDir = env->NewStringUTF(targetDir.c_str());
+    env->CallVoidMethod(activity, mid, jTargetDir);
+    env->DeleteLocalRef(jTargetDir);
+    env->DeleteLocalRef(cls);
+}
+
+void ReplayManageWidget::RequestExportReplay() {
+    if (mSelectedReplayIndex < 0 || mSelectedReplayIndex >= mScrollContent->mTotalItems) {
+        return;
+    }
+    const auto &item = mScrollContent->mReplays[mSelectedReplayIndex];
+
+    Native::BridgeApp *bridgeApp = Native::BridgeApp::getSingleton();
+    JNIEnv *env = bridgeApp->getJNIEnv();
+    jobject activity = bridgeApp->mNativeApp->getActivity();
+    jclass cls = env->GetObjectClass(activity);
+    jmethodID mid = env->GetMethodID(cls, "showReplayExportPicker", "(Ljava/lang/String;Ljava/lang/String;)V");
+    if (mid == nullptr) {
+        env->DeleteLocalRef(cls);
+        return;
+    }
+    jstring jSourcePath = env->NewStringUTF(item.filePath.c_str());
+    jstring jName = env->NewStringUTF(item.fileName.c_str());
+    env->CallVoidMethod(activity, mid, jSourcePath, jName);
+    env->DeleteLocalRef(jSourcePath);
+    env->DeleteLocalRef(jName);
+    env->DeleteLocalRef(cls);
+}
+
+void ReplayManageWidget::DeleteSelectedReplay() {
+    if (mSelectedReplayIndex < 0 || mSelectedReplayIndex >= mScrollContent->mTotalItems) {
+        return;
+    }
+    const auto path = mScrollContent->mReplays[mSelectedReplayIndex].filePath;
+    std::error_code ec;
+    const bool removed = std::filesystem::remove(path, ec);
+    LOG_INFO("[REPLAY] delete selected path={} removed={} err={}", path, removed, ec.value());
+    mNeedRefreshList = true;
+}
+
+void ReplayManageWidget::PlaySelectedReplay() {
+    if (mSelectedReplayIndex < 0 || mSelectedReplayIndex >= mScrollContent->mTotalItems) {
+        return;
+    }
+    StartReplayByIndex(mSelectedReplayIndex);
 }
 
 void ReplayManageWidget::StartReplayByIndex(int index) {
-    auto list = replay::ListReplayFiles();
-    if (index < 0 || index >= static_cast<int>(list.size())) {
-        LOG_ERROR("[REPLAY] start failed invalid index={} size={}", index, (int)list.size());
+    if (index < 0 || index >= mScrollContent->mTotalItems) {
+        LOG_ERROR("[REPLAY] start failed invalid index={} size={}", index, mScrollContent->mTotalItems);
         return;
     }
-    const ReplayMetaInfo &item = list[index];
+    const ReplayMetaInfo &item = mScrollContent->mReplays[index];
     if (!replay::BeginPlaybackFromFile(item.filePath)) {
         LOG_ERROR("[REPLAY] begin playback failed file={}", item.filePath);
         return;
@@ -319,3 +453,14 @@ void ReplayManageWidget::StartReplayByIndex(int index) {
     mApp->KillChallengeScreen();
     mApp->PreNewGame(GAMEMODE_MP_VS, false);
 }
+
+namespace replayui {
+void OnReplayImportFinished(bool success, const char *message) {
+    LOG_INFO("[REPLAY] import finished success={} msg={}", success, message ? message : "");
+    gReplayListDirty = true;
+}
+
+void OnReplayExportFinished(bool success, const char *message) {
+    LOG_INFO("[REPLAY] export finished success={} msg={}", success, message ? message : "");
+}
+} // namespace replayui

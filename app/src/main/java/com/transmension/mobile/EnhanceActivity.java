@@ -22,6 +22,7 @@ package com.transmension.mobile;
 import static com.android.support.Preferences.context;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
@@ -37,6 +38,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Vibrator;
 import android.preference.PreferenceManager;
+import android.net.Uri;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.TypedValue;
@@ -55,6 +57,7 @@ import android.view.animation.ScaleAnimation;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import com.android.support.CkHomuraMenu;
 import com.trans.pvztv.R;
@@ -125,6 +128,14 @@ public class EnhanceActivity extends MainActivity {
     private MediaPlayer mMediaPlayer = null;
     private boolean mVisible = false;
     private SurfaceView mView = null;
+    private static final int REQUEST_REPLAY_IMPORT = 0x9A01;
+    private static final int REQUEST_REPLAY_EXPORT = 0x9A02;
+    private String mReplayImportTargetDir = null;
+    private String mReplayExportSourcePath = null;
+
+    private static native void nativeOnReplayImportFinished(boolean success, String message);
+
+    private static native void nativeOnReplayExportFinished(boolean success, String message);
     Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
@@ -827,6 +838,28 @@ public class EnhanceActivity extends MainActivity {
         }
     }
 
+    public void showReplayImportPicker(String targetDirPath) {
+        runOnUiThread(() -> {
+            mReplayImportTargetDir = targetDirPath;
+            Toast.makeText(this, getString(R.string.replay_import_select_rpl), Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("*/*");
+            startActivityForResult(intent, REQUEST_REPLAY_IMPORT);
+        });
+    }
+
+    public void showReplayExportPicker(String sourceFilePath, String suggestedFileName) {
+        runOnUiThread(() -> {
+            mReplayExportSourcePath = sourceFilePath;
+            Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            intent.setType("application/octet-stream");
+            intent.putExtra(Intent.EXTRA_TITLE, suggestedFileName);
+            startActivityForResult(intent, REQUEST_REPLAY_EXPORT);
+        });
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
@@ -972,6 +1005,106 @@ public class EnhanceActivity extends MainActivity {
         if (isAddonWindowLoaded && visibilityWindow != null) mWindowManager.removeViewImmediate(visibilityWindow);
         if (mOrientationListenerStarted) mOrientationListener.disable();
         super.onDestroy();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode != RESULT_OK || data == null) {
+            if (requestCode == REQUEST_REPLAY_IMPORT) {
+                nativeOnReplayImportFinished(false, "cancelled");
+            } else if (requestCode == REQUEST_REPLAY_EXPORT) {
+                nativeOnReplayExportFinished(false, "cancelled");
+            }
+            return;
+        }
+
+        Uri uri = data.getData();
+        if (uri == null) {
+            if (requestCode == REQUEST_REPLAY_IMPORT) {
+                nativeOnReplayImportFinished(false, "empty uri");
+            } else if (requestCode == REQUEST_REPLAY_EXPORT) {
+                nativeOnReplayExportFinished(false, "empty uri");
+            }
+            return;
+        }
+
+        if (requestCode == REQUEST_REPLAY_IMPORT) {
+            handleReplayImport(uri);
+        } else if (requestCode == REQUEST_REPLAY_EXPORT) {
+            handleReplayExport(uri);
+        }
+    }
+
+    private void handleReplayImport(Uri uri) {
+        if (mReplayImportTargetDir == null || mReplayImportTargetDir.isEmpty()) {
+            nativeOnReplayImportFinished(false, "target dir missing");
+            return;
+        }
+        File dir = new File(mReplayImportTargetDir);
+        if (!dir.exists() && !dir.mkdirs()) {
+            nativeOnReplayImportFinished(false, "failed to create target dir");
+            return;
+        }
+
+        String name = "imported_replay.pvrp";
+        String last = uri.getLastPathSegment();
+        if (last != null) {
+            int cut = last.lastIndexOf('/');
+            name = cut >= 0 ? last.substring(cut + 1) : last;
+            if (name.isEmpty()) {
+                name = "imported_replay.pvrp";
+            }
+        }
+        final String lowerName = name.toLowerCase(Locale.ROOT);
+        if (!lowerName.endsWith(".rpl")) {
+            Toast.makeText(this, getString(R.string.replay_import_only_rpl), Toast.LENGTH_SHORT).show();
+            nativeOnReplayImportFinished(false, "invalid extension");
+            return;
+        }
+        File dst = new File(dir, name);
+        byte[] buffer = new byte[8192];
+        try (InputStream in = getContentResolver().openInputStream(uri); FileOutputStream out = new FileOutputStream(dst)) {
+            if (in == null) {
+                nativeOnReplayImportFinished(false, "open input stream failed");
+                return;
+            }
+            int read;
+            while ((read = in.read(buffer)) > 0) {
+                out.write(buffer, 0, read);
+            }
+            out.flush();
+            nativeOnReplayImportFinished(true, dst.getAbsolutePath());
+        } catch (IOException e) {
+            nativeOnReplayImportFinished(false, e.getMessage());
+        }
+    }
+
+    private void handleReplayExport(Uri uri) {
+        if (mReplayExportSourcePath == null || mReplayExportSourcePath.isEmpty()) {
+            nativeOnReplayExportFinished(false, "source path missing");
+            return;
+        }
+        File src = new File(mReplayExportSourcePath);
+        if (!src.exists()) {
+            nativeOnReplayExportFinished(false, "source file missing");
+            return;
+        }
+        byte[] buffer = new byte[8192];
+        try (InputStream in = new FileInputStream(src); java.io.OutputStream out = getContentResolver().openOutputStream(uri, "w")) {
+            if (out == null) {
+                nativeOnReplayExportFinished(false, "open output stream failed");
+                return;
+            }
+            int read;
+            while ((read = in.read(buffer)) > 0) {
+                out.write(buffer, 0, read);
+            }
+            out.flush();
+            nativeOnReplayExportFinished(true, src.getName());
+        } catch (IOException e) {
+            nativeOnReplayExportFinished(false, e.getMessage());
+        }
     }
 
     public boolean videoIsPlaying() {

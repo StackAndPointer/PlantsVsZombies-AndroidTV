@@ -30,6 +30,7 @@
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/Widget/ReplayManageWidget.h"
 #include "PvZ/Lawn/Widget/SeedChooserScreen.h"
 #include "PvZ/Lawn/Widget/TitleScreen.h"
 #include "PvZ/Lawn/Widget/VSSetupMenu.h"
@@ -682,4 +683,20 @@ extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_NativeView_onText
     gHasInputContent.wait(true); // 若旧输入未被消费则等待
     gInputString = std::move(input);
     gHasInputContent = true;
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativeOnReplayImportFinished(JNIEnv *env, jclass clazz, jboolean success, jstring message) {
+    const char *msg = message ? env->GetStringUTFChars(message, nullptr) : "";
+    replayui::OnReplayImportFinished(success, msg);
+    if (message) {
+        env->ReleaseStringUTFChars(message, msg);
+    }
+}
+
+extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativeOnReplayExportFinished(JNIEnv *env, jclass clazz, jboolean success, jstring message) {
+    const char *msg = message ? env->GetStringUTFChars(message, nullptr) : "";
+    replayui::OnReplayExportFinished(success, msg);
+    if (message) {
+        env->ReleaseStringUTFChars(message, msg);
+    }
 }
