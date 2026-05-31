@@ -5940,7 +5940,14 @@ void Zombie::DoSpecial() {
                 mBoard->KillAllZombiesInRadius_Custom(mRow, aPosX, aPosY, SuperFanImpZombieRadius, 1, true, 127);
             } else {
                 mBoard->KillAllZombiesInRadius_Custom(mRow, aPosX, aPosY, SuperFanImpZombieRadius, 1, true, 255);
-                mBoard->KillAllPlantsInGrid(aGridX, aGridY);
+                Plant *aPumpkin = mBoard->GetTopPlantAt(aGridX, aGridY, PlantPriority::TOPPLANT_ONLY_PUMPKIN);
+                if (aPumpkin != nullptr) {
+                    // Prioritize breaking the pumpkin shell before hurting the plant inside.
+                    mBoard->mPlantsEaten++;
+                    aPumpkin->mPlantHealth -= 301;
+                } else {
+                    mBoard->KillAllPlantsInGrid(aGridX, aGridY);
+                }
             }
             break;
         }
