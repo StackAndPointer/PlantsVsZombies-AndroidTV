@@ -1093,9 +1093,27 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
     SeedBank *aSeedBank = GetSeedBank();
     SeedPacket *aSeedPacket = &aSeedBank->mSeedPackets[mSelectedSeedIndex];
     SeedType aPacketType = aSeedPacket->mPacketType;
+
+    if (mBoard->HasLevelAwardDropped() || (mBoard->mChallenge->IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode <= 1 && Challenge::IsMPResourceProducer(aSeedPacket->mPacketType))
+        || mBoard->mChallenge->ISMPSeedSuddenDeathDisabled(aSeedBank->mIsZombie, aPacketType)) {
+        bool isClientGamepadControl = mPlayerIndex2 == 1;
+        if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
+            U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
+            netplay::PutEvent(event);
+        } else {
+            mGameObject->mApp->PlaySample(SOUND_BUZZER);
+            if (gTcpClientSocket >= 0) {
+                U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_BUZZER)};
+                netplay::PutEvent(event);
+            }
+        }
+        return;
+    }
+
     int aPacketCost = mBoard->GetCurrentPlantCost(aSeedPacket->mPacketType, SeedType::SEED_NONE);
     int aGridX = mBoard->PixelToGridXKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
     int aGridY = mBoard->PixelToGridYKeepOnBoard((int)mCursorPositionX, (int)mCursorPositionY);
+
     if (mIsZombie) {
 
         if (!mBoard->CanTakeDeathMoney(aPacketCost) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK || mBoard->HasLevelAwardDropped()) {
@@ -1126,22 +1144,6 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             mBoard->TakeDeathMoney(aPacketCost);
             aSeedPacket->Deactivate();
             aSeedPacket->WasPlanted(mPlayerIndex2);
-            return;
-        }
-
-        if (mBoard->HasLevelAwardDropped() || (mBoard->mChallenge->IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode <= 1 && Challenge::IsMPResourceProducer(aSeedPacket->mPacketType))
-            || mBoard->mChallenge->ISMPSeedSuddenDeathDisabled(aSeedBank->mIsZombie, aPacketType)) {
-            bool isClientGamepadControl = mPlayerIndex2 == 1;
-            if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
-                U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
-                netplay::PutEvent(event);
-            } else {
-                mGameObject->mApp->PlaySample(SOUND_BUZZER);
-                if (gTcpClientSocket >= 0) {
-                    U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_BUZZER)};
-                    netplay::PutEvent(event);
-                }
-            }
             return;
         }
 
