@@ -1462,7 +1462,7 @@ void Zombie::UpdateZombieDolphinRider() {
 }
 
 GridItem *Zombie::FindPoleTarget() {
-    if (mMindControlled || mSummonCounter >= 3) {
+    if (mMindControlled) {
         return nullptr;
     }
 
@@ -1483,11 +1483,12 @@ GridItem *Zombie::FindPoleTarget() {
         aAttackRect.mHeight -= aDrawPos.mClipHeight;
     }
 
-    const GridItemID aRelatedPoleID = GridItemID(mRelatedZombieID);
+    auto &aRelatedPoleID = reinterpret_cast<GridItemID &>(mRelatedZombieID);
     const ZombieID aZombieID = mBoard->ZombieGetID(this);
 
     GridItem *aBestPole = nullptr;
     int aBestDistance = BOARD_WIDTH;
+    bool foundRelatedPole = false;
 
     GridItem *aPole = nullptr;
     while (mBoard->IterateGridItems(aPole)) {
@@ -1497,13 +1498,14 @@ GridItem *Zombie::FindPoleTarget() {
         }
 
         GridItemID aPoleID = mBoard->GridItemGetID(aPole);
-        const ZombieID aRelatedZombieID = ZombieID(aPole->mZombieType);
+        const auto aRelatedZombieID = ZombieID(aPole->mZombieType);
         // 当杆子已被某一僵尸锁定时
         if (aRelatedZombieID != ZombieID::ZOMBIEID_NULL) {
             // 这根杆子不是自己已经找到的那根
             if (aPoleID != aRelatedPoleID) {
                 continue;
             }
+            foundRelatedPole = true;
             // 这跟杆子早已物有所主
             if (aRelatedZombieID != aZombieID) {
                 return nullptr;
@@ -1521,6 +1523,10 @@ GridItem *Zombie::FindPoleTarget() {
             aBestDistance = aDistance;
             aBestPole = aPole;
         }
+    }
+
+    if (aRelatedPoleID != GridItemID::GRIDITEMID_NULL && !foundRelatedPole) {
+        aRelatedPoleID = GridItemID::GRIDITEMID_NULL;
     }
 
     return aBestPole;
@@ -1547,6 +1553,29 @@ void Zombie::UpdateGigaPolevaulter() {
         return;
     }
 
+    auto findNearestVaultPlant = [this]() -> Plant * {
+        Rect aAttackRect = GetZombieAttackRect();
+        Plant *aBestPlant = nullptr;
+
+        Plant *aPlant = nullptr;
+        while (mBoard->IteratePlants(aPlant)) {
+            if (aPlant->mRow != mRow) {
+                continue;
+            }
+
+            Rect aPlantRect = aPlant->GetPlantRect();
+            if (GetRectOverlap(aAttackRect, aPlantRect) < 20 || !CanTargetPlant(aPlant, ZombieAttackType::ATTACKTYPE_VAULT)) {
+                continue;
+            }
+
+            if (aBestPlant == nullptr || aPlant->mX > aBestPlant->mX) {
+                aBestPlant = aPlant;
+            }
+        }
+
+        return aBestPlant;
+    };
+
     bool isRemoteClient = mApp->IsVSMode() && gTcpConnected;
     auto syncGigaPolevaulterPhaseCounter = [this]() {
         if (gTcpClientSocket >= 0) {
@@ -1565,7 +1594,8 @@ void Zombie::UpdateGigaPolevaulter() {
             return;
         }
 
-        if (GridItem *aPole = FindPoleTarget()) {
+        GridItem *aPole = FindPoleTarget();
+        if (aPole && mSummonCounter < 3) {
             PlayZombieReanim("anim_prepare", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 40.0f);
             mZombiePhase = ZombiePhase::PHASE_POLEVAULTER_PREPARE;
             reinterpret_cast<GridItemID &>(mRelatedZombieID) = mBoard->GridItemGetID(aPole);
@@ -1579,7 +1609,7 @@ void Zombie::UpdateGigaPolevaulter() {
             return;
         }
 
-        Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
+        Plant *aPlant = findNearestVaultPlant();
         if (aPlant) {
             if (mBoard->GetLadderAt(aPlant->mPlantCol, aPlant->mRow)) {
                 float aPlantX = mBoard->GridToPixelX(aPlant->mPlantCol, aPlant->mRow) + 40;
