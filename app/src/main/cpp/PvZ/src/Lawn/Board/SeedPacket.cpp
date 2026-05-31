@@ -267,21 +267,23 @@ void DrawSeedType(Sexy::Graphics *g, float x, float y, SeedType theSeedType, See
     if (theSeedType == SeedType::SEED_ZOMBIE_GRAVESTONE) {
         TodDrawImageCelScaledF(g, Sexy::IMAGE_MP_TOMBSTONE, x + theOffsetX, y + theOffsetY, 0, 0, g->mScaleX, g->mScaleY);
     } else if (theSeedType == SeedType::SEED_ZOMBIE_MOUND) {
-        Board *board = gLawnApp->mBoard;
         int aCelCol = 2;
-        GamepadControls *aGamepad = board->mGamepadControls[0]->mIsZombie ? board->mGamepadControls[0] : (board->mGamepadControls[1]->mIsZombie ? board->mGamepadControls[1] : nullptr);
-        int aGridX = board->PixelToGridXKeepOnBoard(int(aGamepad->mCursorPositionX), int(aGamepad->mCursorPositionY));
-        int aGridY = board->PixelToGridYKeepOnBoard(int(aGamepad->mCursorPositionX), int(aGamepad->mCursorPositionY));
-        GridItem *aMound = board->GetMoundAt(aGridX, aGridY);
-        if (aMound) {
-            if (aMound->mMoundLevel == 0) {
-                aCelCol = 0;
-            } else if (aMound->mMoundLevel == 1) {
-                aCelCol = 3;
-            } else if (aMound->mMoundLevel == 2) {
-                aCelCol = 4;
-            } else if (aMound->mMoundLevel == 3) {
-                aCelCol = 1;
+        Board *board = gLawnApp->mBoard;
+        if (board) {
+            GamepadControls *aGamepad = board->mGamepadControls[0]->mIsZombie ? board->mGamepadControls[0] : (board->mGamepadControls[1]->mIsZombie ? board->mGamepadControls[1] : nullptr);
+            int aGridX = board->PixelToGridXKeepOnBoard(int(aGamepad->mCursorPositionX), int(aGamepad->mCursorPositionY));
+            int aGridY = board->PixelToGridYKeepOnBoard(int(aGamepad->mCursorPositionX), int(aGamepad->mCursorPositionY));
+            GridItem *aMound = board->GetMoundAt(aGridX, aGridY);
+            if (aMound) {
+                if (aMound->mMoundLevel == 0) {
+                    aCelCol = 0;
+                } else if (aMound->mMoundLevel == 1) {
+                    aCelCol = 3;
+                } else if (aMound->mMoundLevel == 2) {
+                    aCelCol = 4;
+                } else if (aMound->mMoundLevel == 3) {
+                    aCelCol = 1;
+                }
             }
         }
         TodDrawImageCelScaledF(g, addonImages.seed_mounds, x + theOffsetX, y + theOffsetY - 5, aCelCol, 0, g->mScaleX, g->mScaleY);
