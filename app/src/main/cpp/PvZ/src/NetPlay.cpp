@@ -32,6 +32,7 @@
 #include <cstring>
 #include <sstream>
 #include <string_view>
+#include <thread>
 
 #include <ranges>
 #include <vector>
@@ -179,13 +180,7 @@ void netplay::MetricsRecordSunflowerLoss() {
     gMetricsSunflowerLoss++;
 }
 
-bool netplay::MetricsSendSettlement(bool plantWin, int mainCounter) {
-    if (gMetricsServerIp.empty() || gMetricsServerPort <= 0) {
-        LOG_WARN("[SETTLE] endpoint not ready ip='{}' port={}", gMetricsServerIp, gMetricsServerPort);
-        return false;
-    }
-    int roomIdForSettle = gMetricsRoomId;
-
+static bool SendSettlementPayloadBlocking(const std::string &serverIp, int serverPort, const std::string &payload, int roomIdForSettle, int mainCounter, std::size_t eventCount) {
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
         LOG_ERROR("[SETTLE] socket create failed: {}", std::strerror(errno));
@@ -194,23 +189,51 @@ bool netplay::MetricsSendSettlement(bool plantWin, int mainCounter) {
 
     sockaddr_in sa{};
     sa.sin_family = AF_INET;
-    sa.sin_port = htons(uint16_t(gMetricsServerPort));
-    if (inet_pton(AF_INET, gMetricsServerIp.c_str(), &sa.sin_addr) != 1) {
-        LOG_ERROR("[SETTLE] bad ip '{}'", gMetricsServerIp);
+    sa.sin_port = htons(uint16_t(serverPort));
+    if (inet_pton(AF_INET, serverIp.c_str(), &sa.sin_addr) != 1) {
+        LOG_ERROR("[SETTLE] bad ip '{}'", serverIp);
         close(sock);
         return false;
     }
     if (connect(sock, (sockaddr *)&sa, sizeof(sa)) != 0) {
-        LOG_ERROR("[SETTLE] connect {}:{} failed: {}", gMetricsServerIp, gMetricsServerPort, std::strerror(errno));
+        LOG_ERROR("[SETTLE] connect {}:{} failed: {}", serverIp, serverPort, std::strerror(errno));
+        close(sock);
+        return false;
+    }
+    ssize_t sent = send(sock, payload.data(), payload.size(), 0);
+    if (sent < 0 || size_t(sent) != payload.size()) {
+        LOG_ERROR("[SETTLE] send failed: {}", std::strerror(errno));
         close(sock);
         return false;
     }
 
+    char resp[64]{};
+    ssize_t n = recv(sock, resp, sizeof(resp) - 1, 0);
+    close(sock);
+    if (n <= 0) {
+        LOG_ERROR("[SETTLE] no response");
+        return false;
+    }
+    std::string r(resp, size_t(n));
+    while (!r.empty() && (r.back() == '\n' || r.back() == '\r'))
+        r.pop_back();
+    LOG_DEBUG("[SETTLE] resp={} room={} mainCounter={} events={}", r, roomIdForSettle, mainCounter, eventCount);
+    bool ok = (r == "OK" || r == "OK_DUP");
+    return ok;
+}
+
+bool netplay::MetricsSendSettlement(bool plantWin, int mainCounter) {
+    if (gMetricsServerIp.empty() || gMetricsServerPort <= 0) {
+        LOG_WARN("[SETTLE] endpoint not ready ip='{}' port={}", gMetricsServerIp, gMetricsServerPort);
+        return false;
+    }
+    int roomIdForSettle = gMetricsRoomId;
     const auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     if (roomIdForSettle <= 0) {
         roomIdForSettle = int((nowMs / 1000LL) & 0x7fffffff);
         LOG_WARN("[SETTLE] room id not set, fallback to {}", roomIdForSettle);
     }
+
     std::ostringstream settleId;
     settleId << roomIdForSettle << "-" << mainCounter << "-" << (plantWin ? "P" : "Z") << "-" << ToBase36(nowMs);
 
@@ -261,28 +284,17 @@ bool netplay::MetricsSendSettlement(bool plantWin, int mainCounter) {
     }
     oss << '\n';
 
-    const std::string payload = oss.str();
-    ssize_t sent = send(sock, payload.data(), payload.size(), 0);
-    if (sent < 0 || size_t(sent) != payload.size()) {
-        LOG_ERROR("[SETTLE] send failed: {}", std::strerror(errno));
-        close(sock);
-        return false;
-    }
+    std::string payload = oss.str();
+    std::string serverIp = gMetricsServerIp;
+    const int serverPort = gMetricsServerPort;
+    const std::size_t eventCount = settleEvents.size();
+    MetricsResetSettlementEvents();
 
-    char resp[64]{};
-    ssize_t n = recv(sock, resp, sizeof(resp) - 1, 0);
-    close(sock);
-    if (n <= 0) {
-        LOG_ERROR("[SETTLE] no response");
-        return false;
-    }
-    std::string r(resp, size_t(n));
-    while (!r.empty() && (r.back() == '\n' || r.back() == '\r'))
-        r.pop_back();
-    LOG_DEBUG("[SETTLE] resp={} room={} mainCounter={} events={}", r, roomIdForSettle, mainCounter, settleEvents.size());
-    bool ok = (r == "OK" || r == "OK_DUP");
-    if (ok) {
-        MetricsResetSettlementEvents();
-    }
-    return ok;
+    std::thread([serverIp = std::move(serverIp), serverPort, payload = std::move(payload), roomIdForSettle, mainCounter, eventCount]() {
+        const bool ok = SendSettlementPayloadBlocking(serverIp, serverPort, payload, roomIdForSettle, mainCounter, eventCount);
+        if (!ok) {
+            LOG_WARN("[SETTLE] async send failed room={} mainCounter={} events={}", roomIdForSettle, mainCounter, eventCount);
+        }
+    }).detach();
+    return true;
 }
