@@ -290,7 +290,7 @@ const char *GetServerModeTransportSuffix() {
 void Board::ShovelDown() {
     // 用于铲掉光标正下方的植物。
     requestDrawShovelInCursor = false;
-    if (gTcpClientSocket) {
+    if (gTcpClientSocket >= 0) {
         U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
         netplay::PutEvent(event);
     }
@@ -307,7 +307,7 @@ void Board::ShovelDown() {
     float aYPos = mGamepadControls[0]->mCursorPositionY;
     Plant *aPlantUnderShovel = ToolHitTest(aXPos, aYPos);
     if (aPlantUnderShovel != nullptr) {
-        if (gTcpClientSocket) {
+        if (gTcpClientSocket >= 0) {
             BaseEvent event = {EventType::EVENT_SERVER_BOARD_GAMEPAD_USE_SHOVEL};
             netplay::PutEvent(event);
         }
