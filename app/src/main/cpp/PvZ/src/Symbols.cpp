@@ -1255,6 +1255,7 @@ bool LoadGameMain() {
     MailScreen_Delete2Addr = libGameMain.GetSymbol("_ZN10MailScreenD2Ev");
     MailScreen_KeyDownAddr = libGameMain.GetSymbol("_ZN10MailScreen7KeyDownEN4Sexy7KeyCodeE");
     Mailbox_GetNumUnseenMessagesAddr = libGameMain.GetSymbol("_ZN7Mailbox20GetNumUnseenMessagesEv");
+    Mailbox_GetMessageByIndexAddr = libGameMain.GetSymbol("_ZN7Mailbox17GetMessageByIndexEib");
     GameObject_BeginDrawAddr = libGameMain.GetSymbol("_ZN10GameObject9BeginDrawEPN4Sexy8GraphicsE");
     GameObject_EndDrawAddr = libGameMain.GetSymbol("_ZN10GameObject7EndDrawEPN4Sexy8GraphicsE");
     GameObject_MakeParentGraphicsFrameAddr = libGameMain.GetSymbol("_ZN10GameObject23MakeParentGraphicsFrameEPN4Sexy8GraphicsE");

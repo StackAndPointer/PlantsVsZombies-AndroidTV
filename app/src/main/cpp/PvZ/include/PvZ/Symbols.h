@@ -1281,6 +1281,7 @@ inline void *MailScreen_RemovedFromManagerAddr;
 inline void *MailScreen_Delete2Addr;
 inline void *MailScreen_KeyDownAddr;
 inline void *Mailbox_GetNumUnseenMessagesAddr;
+inline void *Mailbox_GetMessageByIndexAddr;
 inline void *SaveGameContext_SyncIntAddr;
 inline void *SaveGameContext_SyncReanimationDefAddr;
 inline void *EffectSystem_EffectSystemInitializeAddr;

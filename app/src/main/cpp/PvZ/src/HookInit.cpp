@@ -525,6 +525,7 @@ void InitHookFunction() {
     homura::HookFunc(MailScreen_AddedToManagerAddr, &MailScreen::AddedToManager, &old_MailScreen_AddedToManager);
     homura::HookFunc(MailScreen_RemovedFromManagerAddr, &MailScreen::RemovedFromManager, &old_MailScreen_RemovedFromManager);
     homura::HookFunc(MailScreen_Delete2Addr, &MailScreen::_destructor2, &old_MailScreen_Delete2);
+    homura::HookFunc(Mailbox_GetNumUnseenMessagesAddr, &Mailbox::GetNumUnseenMessages, nullptr);
 
 
     homura::HookFunc(ZenGardenControls_UpdateAddr, &ZenGardenControls::Update, &old_ZenGardenControls_Update);
