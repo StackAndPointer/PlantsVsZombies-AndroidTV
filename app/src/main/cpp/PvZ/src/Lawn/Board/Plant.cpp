@@ -1511,15 +1511,13 @@ static int GetVSCostShuffle(SeedType theSeedType) {
         case SeedType::SEED_ICESHROOM:   // 75 -> 50
         case SeedType::SEED_GRAVEBUSTER: // 75 -> 50
             return 50;
-        case SeedType::SEED_TORCHWOOD:  // 125 -> 150
-        case SeedType::SEED_DOOMSHROOM: // 125 -> 150
+        case SeedType::SEED_TORCHWOOD:       // 125 -> 150
+        case SeedType::SEED_DOOMSHROOM:      // 125 -> 150
+        case SeedType::SEED_ZOMBIE_CATAPULT: // 200 -> 150
             return 150;
-        case SeedType::SEED_ZOMBIE_CATAPULT: // 200 -> 175
-            return 175;
-        case SeedType::SEED_MELONPULT: // 300 -> 225
+        case SeedType::SEED_MELONPULT:   // 300 -> 225
+        case SeedType::SEED_ZOMBIE_FLAG: // 300 -> 225
             return 225;
-        case SeedType::SEED_ZOMBIE_FLAG: // 300 -> 250
-            return 250;
         default:
             break;
     }
