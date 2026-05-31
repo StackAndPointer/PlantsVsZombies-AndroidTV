@@ -658,6 +658,7 @@ bool LoadGameMain() {
     Challenge_ScaryPotterJackExplodeAddr = libGameMain.GetSymbol("_ZN9Challenge22ScaryPotterJackExplodeEii");
     Challenge_UpdateConveyorBeltAddr = libGameMain.GetSymbol("_ZN9Challenge18UpdateConveyorBeltEi");
     Challenge_MouseDownWhackAZombieAddr = libGameMain.GetSymbol("_ZN9Challenge21MouseDownWhackAZombieEiii");
+    Challenge_IZombieMouseDownWithZombieAddr = libGameMain.GetSymbol("_ZN9Challenge26IZombieMouseDownWithZombieEiiii");
     Challenge_ZombieAtePlantAddr = libGameMain.GetSymbol("_ZN9Challenge14ZombieAtePlantEP6ZombieP5Plant");
     Challenge_UpdateMPGraveStonesAddr = libGameMain.GetSymbol("_ZN9Challenge19UpdateMPGraveStonesEv");
     Challenge_IsMPResourceProducerAddr = libGameMain.GetSymbol("_ZN9Challenge20IsMPResourceProducerE8SeedType");

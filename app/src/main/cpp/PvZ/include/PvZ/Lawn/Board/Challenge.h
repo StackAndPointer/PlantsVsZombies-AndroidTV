@@ -156,6 +156,10 @@ public:
     void ZombieAtePlant(Zombie *theZombie, Plant *thePlant) {
         reinterpret_cast<void (*)(Challenge *, Zombie *, Plant *)>(Challenge_ZombieAtePlantAddr)(this, theZombie, thePlant);
     }
+    void IZombieMouseDownWithZombie(int x, int y, int theClickCount, int thePlayerIndex) {
+        reinterpret_cast<void (*)(Challenge *, int, int, int, int)>(Challenge_IZombieMouseDownWithZombieAddr)(this, x, y, theClickCount, thePlayerIndex);
+    }
+
 
     void Update();
     void UpdateVSAddPlants();

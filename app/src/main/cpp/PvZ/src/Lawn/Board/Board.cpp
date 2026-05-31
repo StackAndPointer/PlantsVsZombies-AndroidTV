@@ -3579,6 +3579,11 @@ void Board::MouseMove(int x, int y) {
 }
 
 void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerIndex) {
+    if (mApp->IsIZombieLevel()) {
+        mChallenge->IZombieMouseDownWithZombie(x, y, theClickCount, thePlayerIndex);
+        return;
+    }
+
     CursorObject *cursor = mCursorObject[thePlayerIndex];
     GamepadControls *gamepad;
     SeedBank *seedBank;
