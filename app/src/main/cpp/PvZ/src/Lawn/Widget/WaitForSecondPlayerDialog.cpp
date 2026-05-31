@@ -2147,9 +2147,9 @@ void WaitForSecondPlayerDialog::ButtonDepress_Thunk(this ButtonListener &self, i
                     if (aDialog->mServerHosting) {
                         aDialog->ServerSendExitRoom(); // EXIT_ROOM(0x06)
                     } else if (aDialog->mServerJoined) {
-                        aDialog->ServerSendRejoinRole(true);
+                        aDialog->ServerSendSwitchRole(true);
                     } else if (aDialog->mServerSpectating) {
-                        aDialog->ServerSendRejoinRole(false);
+                        aDialog->ServerSendSwitchRole(false);
                     } else {
                         aDialog->ServerSendCreate(); // CREATE(0x01)
                     }
