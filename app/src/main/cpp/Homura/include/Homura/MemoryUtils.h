@@ -24,6 +24,7 @@
 
 #include <cstdint>
 
+#include <span>
 #include <string>
 #include <vector>
 
@@ -32,14 +33,18 @@ namespace homura {
 /**
  * @brief 修改从地址 address 开始, 长度为 length 字节的内存的访问保护.
  *
- * @param [in] address 目标内存地址(不要求对齐).
- * @param [in] length 目标内存区域大小(不要求对齐).
+ * @param [in] address 目标内存地址 (不要求对齐).
+ * @param [in] length 目标内存区域大小 (不要求对齐).
  * @param [in] prot 新的内存保护标志.
- * @return 修改是否成功.
+ * @return 是否成功修改.
  */
 bool SetProtection(std::uintptr_t address, std::size_t length, int prot);
 
-bool WriteMemory(std::uintptr_t address, const std::vector<std::uint8_t> &buffer);
+bool GetProtection(std::uintptr_t address, int &prot);
+
+bool InSamePage(std::uintptr_t addr1, std::uintptr_t addr2);
+
+bool WriteMemory(std::uintptr_t address, std::span<const std::uint8_t> buffer);
 
 /**
  * @brief 获取动态库的加载地址.

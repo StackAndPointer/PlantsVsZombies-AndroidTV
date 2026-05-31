@@ -23,6 +23,7 @@
 
 #include <cassert>
 #include <cerrno>
+#include <cinttypes>
 #include <cstring>
 
 #include <fstream>
@@ -36,7 +37,42 @@ bool homura::SetProtection(std::uintptr_t address, std::size_t length, int prot)
     return mprotect(reinterpret_cast<void *>(alignedAddr), length, prot) == 0;
 }
 
-bool homura::WriteMemory(std::uintptr_t address, const std::vector<std::uint8_t> &buffer) {
+bool homura::GetProtection(std::uintptr_t address, int &prot) {
+    std::ifstream mapsFile{"/proc/self/maps"};
+    if (!mapsFile.is_open()) {
+        return false;
+    }
+    for (std::string line; std::getline(mapsFile, line);) {
+        unsigned long start, end;
+        char perms[5];
+        if (std::sscanf(line.c_str(), "%lx-%lx %4s", &start, &end, perms) != 3) {
+            continue;
+        }
+        if (start <= address && address < end) {
+            prot = PROT_NONE;
+            if (perms[0] == 'r') {
+                prot |= PROT_READ;
+            }
+            if (perms[1] == 'w') {
+                prot |= PROT_WRITE;
+            }
+            if (perms[2] == 'x') {
+                prot |= PROT_EXEC;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool homura::InSamePage(std::uintptr_t addr1, std::uintptr_t addr2) {
+    const long pageSize = sysconf(_SC_PAGESIZE);
+    const std::uintptr_t start = addr1 & ~(pageSize - 1);                // 向下对齐
+    const std::uintptr_t end = (addr1 + pageSize - 1) & ~(pageSize - 1); // 向上对齐
+    return (start <= addr2) && (addr2 < end);
+}
+
+bool homura::WriteMemory(std::uintptr_t address, std::span<const std::uint8_t> buffer) {
     if ((address == 0) || buffer.empty()) {
         LOG_ERROR("Invalid argument(s)");
         return false;
