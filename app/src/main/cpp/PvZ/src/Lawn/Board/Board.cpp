@@ -3766,14 +3766,14 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
     }
 
     if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE) {
-        mApp->mZenGarden->MovePlant(cursor->mGlovePlantID, gridX, gridY);
+        mApp->mZenGarden->MovePlant(mPlants.DataArrayGet(cursor->mGlovePlantID), gridX, gridY);
     } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_WHEEL_BARROW) {
         mApp->mZenGarden->MouseDownWithFullWheelBarrow(x, y);
     } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
         AddPlant(gridX, gridY, cursor->mType, cursor->mImitaterType, thePlayerIndex, true);
-        if (cursor->mCoinID != nullptr) {
-            cursor->mCoinID->Die();
-            cursor->mCoinID = nullptr;
+        if (cursor->mCoinID != COINID_NULL) {
+            mCoins.DataArrayGet(cursor->mCoinID)->Die();
+            cursor->mCoinID = COINID_NULL;
         }
     } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK) {
         Plant *plant = AddPlant(gridX, gridY, cursor->mType, cursor->mImitaterType, thePlayerIndex, true);

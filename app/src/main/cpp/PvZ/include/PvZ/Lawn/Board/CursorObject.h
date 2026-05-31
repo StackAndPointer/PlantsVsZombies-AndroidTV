@@ -33,10 +33,10 @@ public:
     SeedType mType;                // 14
     SeedType mImitaterType;        // 15
     CursorType mCursorType;        // 16
-    Coin *mCoinID;                 // 17
-    Plant *mGlovePlantID;          // 18
-    Plant *mDuplicatorPlantID;     // 19
-    Plant *mCobCannonPlantID;      // 20
+    CoinID mCoinID;                // 17
+    PlantID mGlovePlantID;         // 18
+    PlantID mDuplicatorPlantID;    // 19
+    PlantID mCobCannonPlantID;     // 20
     int mHammerDownCounter;        // 21
     ReanimationID mReanimCursorID; // 22
     // 大小23个整数
