@@ -857,8 +857,6 @@ void Zombie::UpdateGigaFootball() {
         }
     };
 
-    bool doWalk = false;
-
     if (mZombiePhase == ZombiePhase::PHASE_FOOTBALL_PRE_CHARGE) {
         Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
         if (aBodyReanim->mLoopCount > 0) {
@@ -918,33 +916,39 @@ void Zombie::UpdateGigaFootball() {
         }
 
         if (aBodyReanim->mLoopCount > 0) {
-            doWalk = true;
+            if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
+                return;
+
+            mZombiePhase = ZombiePhase::PHASE_FOOTBALL_WALKING;
+            mPhaseCounter = RandRangeInt(1000, 1500);
             StartWalkAnim(0);
+            syncFootballPhaseCounter();
         }
     } else if (mZombiePhase == ZombiePhase::PHASE_FOOTBALL_WALKING) {
+        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
+            return;
+
         if (mIsEating)
             mPhaseCounter++;
 
         if (mPhaseCounter <= 0) {
             mZombiePhase = ZombiePhase::PHASE_FOOTBALL_PRE_CHARGE;
             StartWalkAnim(0);
+            syncFootballPhaseCounter();
         }
     } else if (mZombiePhase == ZombiePhase::PHASE_FOOTBALL_KICKING) {
-        Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
-        if (aBodyReanim->mLoopCount > 0) {
-            doWalk = true;
-            StopEating();
-            StartWalkAnim(0);
-        }
-    }
-
-    if (doWalk) {
         if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
             return;
 
-        mZombiePhase = ZombiePhase::PHASE_FOOTBALL_WALKING;
-        mPhaseCounter = RandRangeInt(1000, 1500);
-        syncFootballPhaseCounter();
+        mPhaseCounter++;
+
+        Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+        if (aBodyReanim->mLoopCount > 0) {
+            StopEating();
+            mZombiePhase = ZombiePhase::PHASE_FOOTBALL_WALKING;
+            StartWalkAnim(0);
+            syncFootballPhaseCounter();
+        }
     }
 }
 
