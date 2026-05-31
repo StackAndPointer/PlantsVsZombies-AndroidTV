@@ -73,7 +73,8 @@ static std::string UrlEncode(std::string_view s) {
 
 void netplay::details::PutEventData(const std::byte *data, std::size_t n) {
     sendBuffer.append_range(std::views::counted(data, n));
-    replay::RecordPacket(ReplayPacketDir::Outbound, data, n, static_cast<std::uint32_t>(gNetPingNowTick));
+    const std::uint32_t replayTick = static_cast<std::uint32_t>(gLawnApp->mAppCounter);
+    replay::RecordPacket(ReplayPacketDir::Outbound, data, n, replayTick);
 }
 
 bool netplay::FlushSendBuffer(int socket) {

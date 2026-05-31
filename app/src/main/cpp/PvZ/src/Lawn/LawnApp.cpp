@@ -368,7 +368,8 @@ int LawnApp::GamepadToPlayerIndex(unsigned int thePlayerIndex) {
 
 
 void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
-    replay::RecordPacket(ReplayPacketDir::InboundClient, buf, bufSize, static_cast<std::uint32_t>(gNetPingNowTick));
+    const std::uint32_t replayTick = static_cast<std::uint32_t>(mAppCounter);
+    replay::RecordPacket(ReplayPacketDir::InboundClient, buf, bufSize, replayTick);
     clientRecvBuffer.append_range(std::views::counted(buf, bufSize));
     size_t offset = 0;
 
@@ -430,7 +431,8 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
 }
 
 void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
-    replay::RecordPacket(ReplayPacketDir::InboundServer, buf, bufSize, static_cast<std::uint32_t>(gNetPingNowTick));
+    const std::uint32_t replayTick = static_cast<std::uint32_t>(mAppCounter);
+    replay::RecordPacket(ReplayPacketDir::InboundServer, buf, bufSize, replayTick);
     serverRecvBuffer.append_range(std::views::counted(buf, bufSize));
     size_t offset = 0;
 

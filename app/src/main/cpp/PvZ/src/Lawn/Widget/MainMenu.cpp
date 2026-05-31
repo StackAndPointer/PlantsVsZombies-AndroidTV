@@ -417,6 +417,15 @@ void MainMenu::EnableButtons() {
         }
     }
 
+    char *names[3] = {"survival button", "survival selected", "survival pressed"};
+    for (int i = 0; i < 3; ++i) {
+        ReanimatorTrack *reanimatorTrack = mainMenuReanim->mDefinition->mTracks + mainMenuReanim->FindTrackIndex(names[i]);
+        int mTransformCount = reanimatorTrack->mTransformCount;
+        for (int j = 0; j < mTransformCount; ++j) {
+            LOG_DEBUG("{}: ({}, {})", names[i], reanimatorTrack->mTransforms[j].mTransX, reanimatorTrack->mTransforms[j].mTransY);
+        }
+    }
+
     // if (mainMenu->mPressedButtonId == UNLOCK_BUTTON) {
     // LOGD("123123213");
     // Reanimation *mainMenuReanim = ReanimationTryToGet(mainMenu->mApp, mainMenu->mMainMenuReanimID);
