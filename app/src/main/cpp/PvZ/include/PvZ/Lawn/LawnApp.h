@@ -71,7 +71,7 @@ public:
     int *unk3[7];                            // 567 ~ 573
     bool mRegisterResourcesLoaded;           // 2296
     bool mTodCheatKeys;                      // 2297
-    bool mNewIs3DAccelerated;                // 2298，在对齐间隙插入新成�?
+    bool mNewIs3DAccelerated;                // 2298，在对齐间隙插入新成员
     GameMode mGameMode;                      // 575
     GameScenes mGameScene;                   // 576
     bool mLoadingZombiesThreadCompleted;     // 2308
@@ -86,7 +86,7 @@ public:
     EffectSystem *mEffectSystem;             // 585
     ReanimatorCache *mReanimatorCache;       // 586
     LawnPlayerInfo *mPlayerInfo;             // 587
-    DefaultPlayerInfo *mPlayer2Info;         // 588 , 游戏内没有初始化，但有一些判�?
+    DefaultPlayerInfo *mPlayer2Info;         // 588 , 游戏内没有初始化，但有一些判定
     int *mLastLevelStats;                    // 589
     bool mCloseRequest;                      // 2360
     int mAppCounter;                         // 591
@@ -103,7 +103,7 @@ public:
     int unk8[35];                            // 602 ~ 636
     Sexy::Image *mQRCodeImage;               // 637
     int unk8_1[7];                           // 638 ~ 644
-    int mInitialSunMoney;                    // 645     // 这个数据能给玩家加初始阳�?
+    int mInitialSunMoney;                    // 645     // 这个数据能给玩家加初始阳光
     bool mIsFullVersion;                     // 2584
     int unk9_1[3];                           // 647 ~ 649
     int mVsInitialPlantMode;                 // 650
@@ -189,13 +189,13 @@ public:
     bool IsFirstTimeAdventureMode() {
         return reinterpret_cast<bool (*)(LawnApp *)>(LawnApp_IsFirstTimeAdventureModeAddr)(this);
     }
-    // 阻塞式函数，能创建并立即展示一个带按钮的对话框。按钮个数由最后一个参数决定。其返回值就是用户按下的按钮ID，一般情况下只可能为1000�?001�?
-    int LawnMessageBox(Dialogs theDialogId, // 用于标识本对话框的ID，以便于用KillDialog(theDialogId)关闭此对话框。一般用不到，所以随便填个数字就可以�?
+    // 阻塞式函数，能创建并立即展示一个带按钮的对话框。按钮个数由最后一个参数决定。其返回值就是用户按下的按钮ID，一般情况下只可能为1000/1001
+    int LawnMessageBox(Dialogs theDialogId, // 用于标识本对话框的ID，以便于用KillDialog(theDialogId)关闭此对话框。一般用不到，所以随便填个数字就可以�?
                        const char *theHeaderName,
                        const char *theLinesName,
                        const char *theButton1Name,
                        const char *theButton2Name,
-                       int theButtonMode) // 取值为0�?�?�?。其�?就是无按钮；1�?会展示两个按钮，其ID分别�?000�?001�?只会展示一个按钮，其ID�?000�?
+                       int theButtonMode) // 取值为0-3。其中0就是无按钮；1和2会展示两个按钮，其ID分别为1000和1001；3只会展示一个按钮，其ID为1000
     {
         return reinterpret_cast<int (*)(LawnApp *, Dialogs, const char *, const char *, const char *, const char *, int)>(LawnApp_LawnMessageBoxAddr)(
             this, theDialogId, theHeaderName, theLinesName, theButton1Name, theButton2Name, theButtonMode);

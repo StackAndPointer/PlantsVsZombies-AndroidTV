@@ -23,10 +23,19 @@
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/System/Music.h"
+#include "PvZ/Lawn/Widget/ConfirmBackToMainDialog.h"
 #include "PvZ/Lawn/Widget/VSResultsMenu.h"
 #include "PvZ/NetPlay.h"
 
 void NewOptionsDialog::ButtonDepress(int buttonId) {
+    if (buttonId == 4 && (gTcpConnected || gTcpClientSocket >= 0)) {
+        // 对战时返回主菜单，加一层退出确认
+        mApp->DoConfirmBackToMain(false);
+        auto dialog = (ConfirmBackToMainDialog *)(mApp->GetDialog(DIALOG_CONFIRM_BACK_TO_MAIN));
+        dialog->mRestartButton->mDisabled = true;
+        return;
+    }
+
     if (buttonId == 5 && (gTcpConnected || gTcpClientSocket >= 0)) {
         if (gIsServerModeSpectator || gIsReplayMode) {
             mApp->PlaySample(Sexy::SOUND_BUZZER);
