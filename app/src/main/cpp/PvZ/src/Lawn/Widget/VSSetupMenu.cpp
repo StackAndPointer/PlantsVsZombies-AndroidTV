@@ -956,7 +956,7 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
         gGamepad1ToPlayerIndex = mSides[0];
 
         if (Challenge::msVSShuffleMode) {
-            if (gOpeningEncounter && Rand(10) == 0 && !gTcpConnected) {
+            if (gOpeningEncounter && Rand(10) == 0 && !(gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
                 gOpeningEncounter->mType = EncounterType(Rand(NUM_ENCOUNTER));
                 gOpeningEncounter->OpeningEncounterInitialize(gOpeningEncounter->mType);
                 if (gTcpClientSocket >= 0) {
