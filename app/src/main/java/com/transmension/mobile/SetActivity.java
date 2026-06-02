@@ -1687,10 +1687,6 @@ public class SetActivity extends Activity {
 
     private void showPakInfoDialog(PakItem pakItem, Switch pakCheckBox, SharedPreferences sharedPreferences) {
         PakInfo pakInfo = readPakInfo(pakItem);
-        if (pakInfo.readmeContent == null && pakInfo.infoImage == null) {
-            Toast.makeText(SetActivity.this, R.string.addon_appearance_toast5, Toast.LENGTH_SHORT).show();
-            return;
-        }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(getString(R.string.addon_appearance_readmetitle, pakItem.displayName));
@@ -1701,6 +1697,10 @@ public class SetActivity extends Activity {
         if (pakInfo.readmeContent != null) {
             TextView textView = new TextView(this);
             textView.setText(pakInfo.readmeContent);
+            content.addView(textView);
+        } else {
+            TextView textView = new TextView(this);
+            textView.setText(R.string.addon_appearance_noinfo);
             content.addView(textView);
         }
         if (pakInfo.infoImage != null) {
