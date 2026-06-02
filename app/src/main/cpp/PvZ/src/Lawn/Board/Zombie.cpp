@@ -109,7 +109,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     mRevived = false;
     mIsDeadFollowers = false;
 
-    if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         mScaleZombie = 0.2 * zombieSetScale;
         UpdateAnimSpeed();
         float theRatio = mScaleZombie * mScaleZombie;
@@ -346,12 +346,12 @@ bool Zombie::IsOnBoard() {
 }
 
 void Zombie::Update() {
-    if (zombieBloated && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (zombieBloated && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         // 如果开启了“普僵必噎死”
         mBloated = mZombieType == ZombieType::ZOMBIE_NORMAL && !mInPool;
     }
 
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         // 如果开了高级暂停
         return;
     }
@@ -2784,7 +2784,7 @@ int Zombie::GetDancerFrame() {
         return 0;
 
     // 女仆秘籍
-    if (maidCheats > 0 && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (maidCheats > 0 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         switch (maidCheats) {
             case 1:
                 return 11; // 保持前进 (DancerDancingLeft)
@@ -2951,7 +2951,7 @@ void Zombie::CheckForBoardEdge() {
         // 如果是除上述僵尸外的僵尸
         boardEdge = -50;
     }
-    if (boardEdgeAdjust > 0 && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (boardEdgeAdjust > 0 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         boardEdge -= boardEdgeAdjust; // 支持任意调整进家线
     }
     if (mX <= boardEdge && mHasHead) {

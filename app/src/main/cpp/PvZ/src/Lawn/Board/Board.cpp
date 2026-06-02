@@ -341,7 +341,7 @@ void Board::ShovelDown() {
 }
 
 void Board::UpdateGame() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         UpdateGameObjects();
         return;
     }
@@ -378,7 +378,7 @@ void Board::UpdateGameObjects() {
 
 void Board::DrawDebugText(Sexy::Graphics *g) {
     // 出僵DEBUG功能
-    if (drawDebugText && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (drawDebugText && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         DebugTextMode tmp = mDebugTextMode;
         mDebugTextMode = DebugTextMode::DEBUG_TEXT_ZOMBIE_SPAWN;
         old_Board_DrawDebugText(this, g);
@@ -391,7 +391,7 @@ void Board::DrawDebugText(Sexy::Graphics *g) {
 
 void Board::DrawDebugObjectRects(Sexy::Graphics *g) {
     // 碰撞体积绘制
-    if (drawDebugRects && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (drawDebugRects && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         DebugTextMode tmp = mDebugTextMode;
         mDebugTextMode = DebugTextMode::DEBUG_TEXT_COLLISION;
         old_Board_DrawDebugObjectRects(this, g);
@@ -429,7 +429,7 @@ void Board::DrawFadeOut(Sexy::Graphics *g) {
 
 int Board::GetCurrentPlantCost(SeedType theSeedType, SeedType theImitaterType) {
     // 无限阳光
-    if (infiniteSun && !IsOnlineModeActiveAndConnectedToServer())
+    if (infiniteSun && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode)
         return 0;
 
     if (theSeedType == SeedType::SEED_ZOMBIE_MOUND) {
@@ -447,7 +447,7 @@ int Board::GetCurrentPlantCost(SeedType theSeedType, SeedType theImitaterType) {
 
 void Board::AddSunMoney(int theAmount, int thePlayerIndex) {
     // 无限阳光
-    if (infiniteSun && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (infiniteSun && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         if (thePlayerIndex == 0) {
             mSunMoney1 = 9990;
         } else {
@@ -460,7 +460,7 @@ void Board::AddSunMoney(int theAmount, int thePlayerIndex) {
 
 void Board::AddDeathMoney(int theAmount) {
     // 无限阳光
-    if (infiniteSun && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (infiniteSun && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         mDeathMoney = 9990;
     } else {
         old_Board_AddDeathMoney(this, theAmount);
@@ -476,7 +476,7 @@ bool Board::IsIceAt(int theGridX, int theGridY) {
 
 PlantingReason Board::CanPlantAt(int theGridX, int theGridY, SeedType theSeedType) {
     // 自由种植！
-    if (FreePlantAt && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (FreePlantAt && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         return PlantingReason::PLANTING_OK;
     }
 
@@ -665,7 +665,7 @@ PlantingReason Board::CanPlantAt(int theGridX, int theGridY, SeedType theSeedTyp
 
 bool Board::PlantingRequirementsMet(SeedType theSeedType) {
     // 紫卡直接种植！
-    if (FreePlantAt && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (FreePlantAt && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         return true;
     }
     return old_Board_PlantingRequirementsMet(this, theSeedType);
@@ -676,7 +676,7 @@ void Board::ZombiesWon(Zombie *theZombie) {
         old_BoardZombiesWon(this, theZombie);
         return;
     }
-    if (ZombieCanNotWon && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (ZombieCanNotWon && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         theZombie->ApplyBurn();
         theZombie->DieNoLoot();
         return;
@@ -741,7 +741,7 @@ Plant *Board::AddPlant_Origin(int theGridX, int theGridY, SeedType theSeedType, 
     if (theSeedType == SeedType::SEED_CABBAGEPULT || theSeedType == SeedType::SEED_KERNELPULT || theSeedType == SeedType::SEED_MELONPULT || theSeedType == SeedType::SEED_WINTERMELON) {
         mCatapultPlantsUsed = true;
     }
-    if (theSeedType == SeedType::SEED_PUMPKINSHELL && PumpkinWithLadder && !IsOnlineModeActiveAndConnectedToServer() && GetLadderAt(theGridX, theGridY) == nullptr) {
+    if (theSeedType == SeedType::SEED_PUMPKINSHELL && PumpkinWithLadder && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode && GetLadderAt(theGridX, theGridY) == nullptr) {
         AddALadder(theGridX, theGridY);
     }
 
@@ -817,7 +817,7 @@ Coin *Board::AddCoin(int theX, int theY, CoinType theCoinType, CoinMotion theCoi
 }
 
 void Board::UpdateSunSpawning() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         // 如果开了高级暂停
         return;
     }
@@ -880,7 +880,7 @@ void Board::UpdateSunSpawning() {
 }
 
 void Board::UpdateZombieSpawning() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         // 如果开了高级暂停
         return;
     }
@@ -977,7 +977,7 @@ void Board::UpdateZombieSpawning() {
 }
 
 void Board::UpdateIce() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         // 如果开了高级暂停
         return;
     }
@@ -1214,7 +1214,7 @@ bool Board::StageHas6Rows() {
 
 
 void Board::UpdateFwoosh() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         return;
     }
 
@@ -1222,7 +1222,7 @@ void Board::UpdateFwoosh() {
 }
 
 void Board::UpdateFog() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         return;
     }
 
@@ -1230,7 +1230,7 @@ void Board::UpdateFog() {
 }
 
 void Board::DrawFog(Sexy::Graphics *g) {
-    if (noFog && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (noFog && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         return;
     }
 
@@ -1420,7 +1420,7 @@ Zombie *Board::AddZombie_Origin(ZombieType theZombieType, int theFromWave, bool 
 // void (*old_Board_UpdateCoverLayer)(Board *this);
 //
 // void Board_UpdateCoverLayer(Board *this) {
-// if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+// if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
 // return;
 // }
 // old_Board_UpdateCoverLayer(this);
@@ -2748,7 +2748,7 @@ void Board::Update() {
     }
 
     if (!mPaused && mTimeStopCounter <= 0) {
-        if (speedUpMode > 0 && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (speedUpMode > 0 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             switch (speedUpMode) {
                 case 1:
                     if (speedUpCounter++ % 5 == 0) {
@@ -2797,21 +2797,21 @@ void Board::Update() {
     }
 
     if (clearAllPlant) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             RemoveAllPlants();
         }
         clearAllPlant = false;
     }
 
     if (clearAllZombies) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             RemoveAllZombies();
         }
         clearAllZombies = false;
     }
 
     if (clearAllGraves) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             for (GridItem *aGridItem = nullptr; IterateGridItems(aGridItem);) {
                 if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE) {
                     aGridItem->GridItemDie();
@@ -2822,14 +2822,14 @@ void Board::Update() {
     }
 
     if (clearAllMowers) {
-        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             RemoveAllMowers();
         }
         clearAllMowers = false;
     }
 
     if (recoverAllMowers) {
-        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             ResetLawnMowers();
         }
         recoverAllMowers = false;
@@ -2837,7 +2837,7 @@ void Board::Update() {
 
     // 魅惑所有僵尸
     if (hypnoAllZombies) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             for (Zombie *aZombie = nullptr; IterateZombies(aZombie);) {
                 if (aZombie->mZombieType != ZombieType::ZOMBIE_BOSS) {
                     aZombie->mMindControlled = true;
@@ -2848,14 +2848,14 @@ void Board::Update() {
     }
 
     if (freezeAllZombies) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             for (Zombie *aZombie = nullptr; IterateZombies(aZombie); aZombie->HitIceTrap()) {}
         }
         freezeAllZombies = false;
     }
 
     if (startAllMowers) {
-        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             for (LawnMower *alawnMower = nullptr; IterateLawnMowers(alawnMower); alawnMower->StartMower()) {}
         }
         startAllMowers = false;
@@ -2863,7 +2863,7 @@ void Board::Update() {
 
     // 修改卡槽
     if (setSeedPacket) {
-        if (choiceSeedType != SeedType::SEED_NONE && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (choiceSeedType != SeedType::SEED_NONE && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             if (SeedBank *aSeedBank = mSeedBank[targetSeedBank]) {
                 SeedPacket &aSeedPacket = aSeedBank->mSeedPackets[choiceSeedPacketIndex];
                 if (aSeedBank->mIsZombie) {
@@ -2881,7 +2881,7 @@ void Board::Update() {
     }
 
     if (passNowLevel) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             mLevelComplete = true;
             mApp->mBoardResult = mApp->mGameMode == GameMode::GAMEMODE_MP_VS ? BoardResult::BOARDRESULT_VS_PLANT_WON : BoardResult::BOARDRESULT_WON;
         }
@@ -2891,7 +2891,7 @@ void Board::Update() {
     // 布置选择阵型
     if (layChoseFormation) // 用按钮触发, 防止进入游戏时自动布阵
     {
-        if (formationId >= 0 && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (formationId >= 0 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             formation::ApplyFormation(this, formation::GetBuiltinFormationStr(formationId));
         }
         layChoseFormation = false;
@@ -2899,7 +2899,7 @@ void Board::Update() {
 
     // 布置粘贴阵型
     if (layPastedFormation) {
-        if (!customFormation.empty() && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (!customFormation.empty() && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             formation::ApplyFormation(this, customFormation);
         }
         layPastedFormation = false;
@@ -2907,7 +2907,7 @@ void Board::Update() {
 
     // 放置植物
     if (gCheatPlacePlant) {
-        if (gCheatPlacePlantType != SeedType::SEED_NONE && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (gCheatPlacePlantType != SeedType::SEED_NONE && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             CheatPlacePlant(this, gCheatPlaceColumn, gCheatPlaceRow, gCheatPlacePlantType, gCheatIsPlaceImitaterPlant);
         }
         gCheatPlacePlant = false;
@@ -2915,7 +2915,7 @@ void Board::Update() {
 
     // 放置僵尸
     if (gCheatPlaceZombie) {
-        if (gCheatPlaceZombieType != ZombieType::ZOMBIE_INVALID && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (gCheatPlaceZombieType != ZombieType::ZOMBIE_INVALID && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             CheatPlaceZombie(this, gCheatPlaceColumn, gCheatPlaceRow, gCheatPlaceZombieType);
         }
         gCheatPlaceZombie = false;
@@ -2923,7 +2923,7 @@ void Board::Update() {
 
     // 放置墓碑
     if (gCheatPlaceGraveStone) {
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             CheatPlaceGraveStone(this, gCheatPlaceColumn, gCheatPlaceRow);
         }
         gCheatPlaceGraveStone = false;
@@ -2932,7 +2932,7 @@ void Board::Update() {
     // 放置梯子
     if (gCheatPlaceLadder) {
         // 防止选“所有行”或“所有列”的时候放置到空地
-        if (gCheatPlaceColumn < 9 && gCheatPlaceRow < (StageHas6Rows() ? 6 : 5) && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (gCheatPlaceColumn < 9 && gCheatPlaceRow < (StageHas6Rows() ? 6 : 5) && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             if (GetLadderAt(gCheatPlaceColumn, gCheatPlaceRow) == nullptr) {
                 AddALadder(gCheatPlaceColumn, gCheatPlaceRow);
             }
@@ -2942,7 +2942,7 @@ void Board::Update() {
 
     // 出怪设置
     if (buttonSetSpawn) {
-        if (choiceSpawnMode > 0 && !IsOnlineModeActiveAndConnectedToServer()) {
+        if (choiceSpawnMode > 0 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             CheatSetZombieSpawn(this, gCheatZombiesToSpawn);
         }
         buttonSetSpawn = false;
@@ -3314,7 +3314,7 @@ void Board::AddSecondPlayer(int a2) {
 
 bool Board::IsLastStandFinalStage() {
     // 无尽坚不可摧
-    if (endlessLastStand && !IsOnlineModeActiveAndConnectedToServer())
+    if (endlessLastStand && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode)
         return false;
 
     return mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && mChallenge->mSurvivalStage == 4;
@@ -3388,7 +3388,7 @@ void Board::DoPlantingEffects(int theGridX, int theGridY, Plant *thePlant) {
 
 
 void Board::InitLawnMowers() {
-    if (banMower && !IsOnlineModeActiveAndConnectedToServer())
+    if (banMower && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode)
         return;
 
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BUTTERED_POPCORN)
@@ -3543,14 +3543,14 @@ bool Board::GetAliveJacksonZombie() {
 
 void Board::UpdateLevelEndSequence() {
     // 修复无尽最后一波僵尸出现后高级暂停无法暂停下一关的到来
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer())
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode)
         return;
 
     old_Board_UpdateLevelEndSequence(this);
 }
 
 void Board::UpdateGridItems() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer())
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode)
         return;
 
     old_Board_UpdateGridItems(this);

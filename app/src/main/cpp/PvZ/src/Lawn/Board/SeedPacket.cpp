@@ -35,13 +35,13 @@
 using namespace Sexy;
 
 void SeedPacket::Update() {
-    if (mRefreshing && seedPacketFastCoolDown && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (mRefreshing && seedPacketFastCoolDown && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         // 正在刷新的种子立即冷却完毕
         mActive = true;
         mRefreshing = false;
     }
 
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
         // 在IZ模式不暂停刷新种子卡片
         if (!mApp->IsIZombieLevel()) {
             return;

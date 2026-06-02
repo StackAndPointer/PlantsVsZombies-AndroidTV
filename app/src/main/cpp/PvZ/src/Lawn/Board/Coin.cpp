@@ -67,7 +67,8 @@ void Coin::GamepadCursorOver(int thePlayerIndex) {
 }
 
 void Coin::Update() {
-    if (BanDropCoin && !IsOnlineModeActiveAndConnectedToServer() && (mType <= CoinType::COIN_LARGESUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || mType == CoinType::COIN_VS_ZOMBIE_BRAIN)) {
+    if (BanDropCoin && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode
+        && (mType <= CoinType::COIN_LARGESUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || mType == CoinType::COIN_VS_ZOMBIE_BRAIN)) {
         // 开启了"禁止掉落阳光金币"时
         Die();
         return;
