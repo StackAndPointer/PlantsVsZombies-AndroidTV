@@ -36,6 +36,7 @@ void RecordPacket(ReplayPacketDir dir, const std::byte *data, std::size_t len, s
 bool SaveCurrentMatchReplay(const ReplayMetaInfo &meta);
 std::vector<ReplayMetaInfo> ListReplayFiles();
 bool BeginPlaybackFromFile(const std::string &path);
+void AdvancePlaybackTick();
 int EstimateRecordedDurationTicks();
 void StopPlayback();
 bool IsPlaybackActive();

@@ -514,6 +514,8 @@ void LawnApp::UpdateFrames() {
         TickNetDelayAwaitingPong();
         if (!replay::IsPlaybackActive()) {
             SendPeriodicNetPing();
+        } else {
+            replay::AdvancePlaybackTick();
         }
     }
     replay::TickPlayback();

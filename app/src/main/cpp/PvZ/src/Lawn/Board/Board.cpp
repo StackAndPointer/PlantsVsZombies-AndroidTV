@@ -3227,11 +3227,9 @@ void Board::Draw(Sexy::Graphics *g) {
         Color aColor = Color(0, 205, 0, 255);
 
         if (gIsReplayMode) {
-            if (gNetDelayNow == 0) {
-                TodDrawString(g, "[REPLAY]", 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
-            } else {
-                TodDrawString(g, StrFormat("[REPLAY] %dms", gNetDelayNow * 10), 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
-            }
+
+            TodDrawString(g, "[REPLAY]", 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
+
         } else if (gTcpConnected) {
             if (gNetDelayNow == 0) {
                 pvzstl::string status = TodStringTranslate(gIsServerModeSpectator ? "[SPECTATE]" : "[VS_STATUS_IN_ROOM]");

@@ -26,7 +26,7 @@ struct ReplayPacketRecord {
 
 struct PlaybackState {
     bool active = false;
-    std::uint32_t startTick = 0;
+    std::uint32_t playbackTick = 0;
     std::size_t nextIndex = 0;
     std::vector<ReplayPacketRecord> packets;
 };
@@ -84,6 +84,13 @@ void replay::ResetRecorder() {
     gRecordedPackets.clear();
     gRecordStartTick = 0;
     gRecordStartTickReady = false;
+}
+
+void replay::AdvancePlaybackTick() {
+    if (!gPlaybackState.active) {
+        return;
+    }
+    ++gPlaybackState.playbackTick;
 }
 
 void replay::RecordPacket(ReplayPacketDir dir, const std::byte *data, std::size_t len, std::uint32_t tick) {
@@ -292,7 +299,7 @@ bool replay::BeginPlaybackFromFile(const std::string &path) {
     }
 
     gPlaybackState.active = true;
-    gPlaybackState.startTick = gNetPingNowTick;
+    gPlaybackState.playbackTick = 0;
     gPlaybackState.nextIndex = 0;
     gPlaybackState.packets = std::move(packets);
     LOG_INFO("[REPLAY] playback begin path={} packets={}", path, gPlaybackState.packets.size());
@@ -326,7 +333,7 @@ void replay::TickPlayback() {
     if (!gPlaybackState.active || gLawnApp == nullptr) {
         return;
     }
-    const std::uint32_t elapsedTick = gNetPingNowTick - gPlaybackState.startTick;
+    const std::uint32_t elapsedTick = gPlaybackState.playbackTick;
     while (gPlaybackState.nextIndex < gPlaybackState.packets.size()) {
         const auto &pkt = gPlaybackState.packets[gPlaybackState.nextIndex];
         if (pkt.tick > elapsedTick) {
