@@ -389,7 +389,7 @@ void ReplayManageWidget::DeleteSelectedReplay() {
     if (mSelectedReplayIndex < 0 || mSelectedReplayIndex >= mScrollContent->mTotalItems) {
         return;
     }
-    if (mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[DIALOG_WARNING]", "Delete this replay? This action cannot be undone.", "[DIALOG_BUTTON_OK]", "[DIALOG_BUTTON_CANCEL]", 1) != 1000) {
+    if (mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[DIALOG_WARNING]", "[CONFIRM_DELETE_REPLAY]", "[DIALOG_BUTTON_OK]", "[DIALOG_BUTTON_CANCEL]", 1) != 1000) {
         return;
     }
     const auto path = mScrollContent->mReplays[mSelectedReplayIndex].filePath;
