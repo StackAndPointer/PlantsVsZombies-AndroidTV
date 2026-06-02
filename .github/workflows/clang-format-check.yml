@@ -5,11 +5,13 @@ on:
     paths:
       - '.clang-format'
       - 'app/src/main/cpp/**'
+      - '!**/CMakeLists.txt'
 
   pull_request:
     paths:
       - '.clang-format'
       - 'app/src/main/cpp/**'
+      - '!**/CMakeLists.txt'
 
 jobs:
   formatting-check:
