@@ -6152,6 +6152,20 @@ void Zombie::UpdateLadder() {
     if (mMindControlled || !mHasHead || IsDeadOrDying()) {
         return;
     }
+    auto syncLadderPhase = [this](ZombiePhase phase, int phaseCounter, int summonCounter) {
+        if (gTcpClientSocket < 0) {
+            return;
+        }
+
+        U8U8U16U16_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER;
+        event.data1 = uint8_t(phase);
+        event.data2 = uint8_t(summonCounter);
+        event.data3 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+        event.data4 = uint16_t(phaseCounter);
+        netplay::PutEvent(event);
+    };
+
     if (mZombiePhase == PHASE_LADDER_CARRYING && mZombieHeight == HEIGHT_ZOMBIE_NORMAL) {
         Plant *plant = FindPlantTarget(ATTACKTYPE_LADDER);
         if (plant != nullptr) {
@@ -6198,6 +6212,7 @@ void Zombie::UpdateLadder() {
             }
             mZombiePhase = PHASE_LADDER_CARRYING;
             StartWalkAnim(0);
+            syncLadderPhase(PHASE_LADDER_CARRYING, mPhaseCounter, mSummonCounter);
         }
     }
 }

@@ -2280,6 +2280,9 @@ void Board::processServerEvent(const BaseEvent *event) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
                 aZombie->mZombiePhase = ZombiePhase(serverZombiePhase);
                 aZombie->mPhaseCounter = serverPhaseCounter;
+                if (aZombie->mZombieType == ZombieType::ZOMBIE_LADDER && aZombie->mZombiePhase == ZombiePhase::PHASE_LADDER_CARRYING) {
+                    aZombie->StartWalkAnim(0);
+                }
                 if (aZombie->mZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL) {
                     if (aZombie->mZombiePhase == ZombiePhase::PHASE_FOOTBALL_TACKLING) {
                         aZombie->PlayZombieReanim("anim_tackle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
