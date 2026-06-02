@@ -49,6 +49,10 @@ namespace {
 constexpr int kReplayRowHeight = 140;
 bool gReplayListDirty = false;
 
+bool IsReplayPlayable(const ReplayMetaInfo &item) {
+    return item.netplayVersion == 0 || item.netplayVersion == NETPLAY_VERSION;
+}
+
 std::vector<SeedType> ParseDeck(const std::string &text) {
     std::vector<SeedType> out;
     std::stringstream ss(text);
@@ -211,11 +215,6 @@ public:
             LOG_WARN("[REPLAY] invalid click y={}, idx={}, count={}", y, index, (int)mReplays.size());
             return;
         }
-        const ReplayMetaInfo &item = mReplays[index];
-        if (item.netplayVersion != NETPLAY_VERSION) {
-            mOwner->mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[REPLAY]", "[REPLAY_ERROR_VERSION_TEXT]", "[DIALOG_BUTTON_OK]", "", 3);
-            return;
-        }
         LOG_INFO("[REPLAY] click list index={} file={}", index, mReplays[index].fileName);
         mOwner->SelectReplayIndex(index);
     }
@@ -230,7 +229,6 @@ protected:
         delete this;
     }
 };
-
 
 ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListener) {
     Widget::_constructor();
@@ -318,7 +316,8 @@ void ReplayManageWidget::Draw(Graphics *g) {
         gReplayListDirty = false;
     }
     const bool hasReplay = mScrollContent->mTotalItems > 0;
-    mPlayButton->mDisabled = !hasReplay;
+    const bool hasPlayableSelection = hasReplay && mSelectedReplayIndex >= 0 && mSelectedReplayIndex < mScrollContent->mTotalItems && IsReplayPlayable(mScrollContent->mReplays[mSelectedReplayIndex]);
+    mPlayButton->mDisabled = !hasPlayableSelection;
     mExportButton->mDisabled = !hasReplay;
     mDeleteButton->mDisabled = !hasReplay;
     g->DrawImage(mZombieBackground ? IMAGE_ALMANAC_ZOMBIEBACK : IMAGE_ALMANAC_PLANTBACK, 0, 0);
@@ -390,11 +389,14 @@ void ReplayManageWidget::DeleteSelectedReplay() {
     if (mSelectedReplayIndex < 0 || mSelectedReplayIndex >= mScrollContent->mTotalItems) {
         return;
     }
+    if (mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[DIALOG_WARNING]", "Delete this replay? This action cannot be undone.", "[DIALOG_BUTTON_OK]", "[DIALOG_BUTTON_CANCEL]", 1) != 1000) {
+        return;
+    }
     const auto path = mScrollContent->mReplays[mSelectedReplayIndex].filePath;
     std::error_code ec;
     const bool removed = std::filesystem::remove(path, ec);
     LOG_INFO("[REPLAY] delete selected path={} removed={} err={}", path, removed, ec.value());
-    mNeedRefreshList = true;
+    RefreshReplayList();
 }
 
 void ReplayManageWidget::PlaySelectedReplay() {
@@ -410,6 +412,11 @@ void ReplayManageWidget::StartReplayByIndex(int index) {
         return;
     }
     const ReplayMetaInfo &item = mScrollContent->mReplays[index];
+    if (!IsReplayPlayable(item)) {
+        LOG_WARN("[REPLAY] start blocked version mismatch file={} version={} local={}", item.filePath, item.netplayVersion, NETPLAY_VERSION);
+        mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[REPLAY]", "[REPLAY_ERROR_VERSION_TEXT]", "[DIALOG_BUTTON_OK]", "", 3);
+        return;
+    }
     if (!replay::BeginPlaybackFromFile(item.filePath)) {
         LOG_ERROR("[REPLAY] begin playback failed file={}", item.filePath);
         return;
