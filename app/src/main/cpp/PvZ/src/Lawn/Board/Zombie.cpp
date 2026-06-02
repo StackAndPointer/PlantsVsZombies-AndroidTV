@@ -1178,6 +1178,20 @@ void Zombie::JacksonDie() {
 }
 
 void Zombie::SquishAllInSquare(int theX, int theY, ZombieAttackType theAttackType) {
+    if (mApp->IsVSMode() && gTcpConnected) {
+        return;
+    }
+
+    if (gTcpClientSocket >= 0) {
+        U16UNI32_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_SQUISH_ALL_IN_SQUARE;
+        event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+        event.data2.u8x4.u8_1 = uint8_t(theX);
+        event.data2.u8x4.u8_2 = uint8_t(theY);
+        event.data2.u8x4.u8_3 = uint8_t(theAttackType);
+        netplay::PutEvent(event);
+    }
+
     old_Zombie_SquishAllInSquare(this, theX, theY, theAttackType);
 }
 
@@ -2199,6 +2213,8 @@ void Zombie::UpdateZombieJalapenoHead() {
 }
 
 void Zombie::UpdateZombieSquashHead() {
+    bool isRemoteClient = mApp->IsVSMode() && gTcpConnected;
+
     if (mHasHead && mIsEating && mZombiePhase == ZombiePhase::PHASE_SQUASH_PRE_LAUNCH) {
         StopEating();
         PlayZombieReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 20, 12.0f);
@@ -2298,7 +2314,7 @@ void Zombie::UpdateZombieSquashHead() {
                         }
                     }
                 }
-            } else {
+            } else if (!isRemoteClient) {
                 SquishAllInSquare(mBoard->PixelToGridXKeepOnBoard(aSquashX, mY), mRow, ZombieAttackType::ATTACKTYPE_CHEW);
             }
         }

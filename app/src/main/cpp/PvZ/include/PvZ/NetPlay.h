@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3172;
+inline constexpr uint32_t NETPLAY_VERSION = 3173;
 
 enum EventType : uint8_t {
     EVENT_NULL,
@@ -156,6 +156,7 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_ZOMBIE_YUCKY_SETROW, // 同步吃大蒜换行
     EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER,
     EVENT_SERVER_BOARD_ZOMBIE_DO_SPECIAL, // 同步僵尸触发特性
+    EVENT_SERVER_BOARD_ZOMBIE_SQUISH_ALL_IN_SQUARE,
     EVENT_SERVER_BOARD_ZOMBIE_TAKE_DAMAGE,
     EVENT_SERVER_BOARD_ZOMBIE_DROP_HEAD,
     EVENT_SERVER_BOARD_ZOMBIE_WIN, // 僵尸方通过进家胜利

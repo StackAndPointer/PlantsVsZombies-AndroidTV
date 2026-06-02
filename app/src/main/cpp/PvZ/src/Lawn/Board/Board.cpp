@@ -2379,6 +2379,19 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aZombie->DoSpecial();
             }
         } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_SQUISH_ALL_IN_SQUARE: {
+            auto *eventZombieSquishAllInSquare = static_cast<const U16UNI32_Event *>(event);
+            uint16_t serverZombieID = eventZombieSquishAllInSquare->data1;
+            uint16_t clientZombieID;
+            if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+
+                old_Zombie_SquishAllInSquare(aZombie,
+                                             int(eventZombieSquishAllInSquare->data2.u8x4.u8_1),
+                                             int(eventZombieSquishAllInSquare->data2.u8x4.u8_2),
+                                             static_cast<ZombieAttackType>(eventZombieSquishAllInSquare->data2.u8x4.u8_3));
+            }
+        } break;
         case EVENT_SERVER_BOARD_ZOMBIE_TAKE_DAMAGE: {
             auto *eventZombieTakeDmg = static_cast<const U16U16U8_Event *>(event);
             int damage = eventZombieTakeDmg->data2;
