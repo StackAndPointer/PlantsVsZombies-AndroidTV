@@ -368,8 +368,6 @@ int LawnApp::GamepadToPlayerIndex(unsigned int thePlayerIndex) {
 
 
 void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
-    const std::uint32_t replayTick = static_cast<std::uint32_t>(mAppCounter);
-    replay::RecordPacket(ReplayPacketDir::InboundClient, buf, bufSize, replayTick);
     clientRecvBuffer.append_range(std::views::counted(buf, bufSize));
     size_t offset = 0;
 
@@ -382,6 +380,7 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
         static_assert(std::size(alignedBuf) <= UINT8_MAX, "'alignedBuf' is too big, please use dynamically allocating");
 
         BaseEvent *event = netplay::GetEvent(alignedBuf, clientRecvPtr);
+        replay::RecordPacket(ReplayPacketDir::InboundClient, clientRecvPtr, event->size, static_cast<std::uint32_t>(mAppCounter));
         LOG_DEBUG("event.type = {}", int(event->type));
 
         if (event->type == EVENT_CLIENT_PING) {
@@ -431,8 +430,6 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
 }
 
 void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
-    const std::uint32_t replayTick = static_cast<std::uint32_t>(mAppCounter);
-    replay::RecordPacket(ReplayPacketDir::InboundServer, buf, bufSize, replayTick);
     serverRecvBuffer.append_range(std::views::counted(buf, bufSize));
     size_t offset = 0;
 
@@ -445,6 +442,7 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
         static_assert(std::size(alignedBuf) <= UINT8_MAX, "'alignedBuf' is too big, please use dynamically allocating");
 
         BaseEvent *event = netplay::GetEvent(alignedBuf, serverRecvPtr);
+        replay::RecordPacket(ReplayPacketDir::InboundServer, serverRecvPtr, event->size, static_cast<std::uint32_t>(mAppCounter));
         LOG_DEBUG("event.type = {}", int(event->type));
 
         if (event->type == EVENT_CLIENT_PING) {

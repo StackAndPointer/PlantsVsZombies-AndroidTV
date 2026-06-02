@@ -93,13 +93,23 @@ void replay::RecordPacket(ReplayPacketDir dir, const std::byte *data, std::size_
     if (data == nullptr || len == 0) {
         return;
     }
-    ReplayPacketRecord record;
-    record.dir = dir;
     if (!gRecordStartTickReady) {
         gRecordStartTick = tick;
         gRecordStartTickReady = true;
     }
-    record.tick = tick - gRecordStartTick;
+
+    const std::uint32_t normalizedTick = tick - gRecordStartTick;
+    if (!gRecordedPackets.empty()) {
+        ReplayPacketRecord &last = gRecordedPackets.back();
+        if (last.dir == dir && last.tick == normalizedTick) {
+            last.data.insert(last.data.end(), data, data + len);
+            return;
+        }
+    }
+
+    ReplayPacketRecord record;
+    record.dir = dir;
+    record.tick = normalizedTick;
     record.data.assign(data, data + len);
     gRecordedPackets.push_back(std::move(record));
 }
