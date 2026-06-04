@@ -2285,7 +2285,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                     mServerJoined = false;
                     mServerSpectating = false;
                     mServerHostHasGuest = false;
-                    mServerHostSpectateAllowed = false;
+                    mServerHostSpectateAllowed = (mApp && mApp->mPlayerInfo && mApp->mPlayerInfo->mHostAllowSpectate);
                     mServerJoinedSpectateAllowed = false;
                     mServerHostForceRelay = false;
                     mServerClientWantStart = false;
@@ -2494,8 +2494,6 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                     int rid = homura::ReadBEI32(payload);
                     if (mServerHosting && rid == mServerHostedRoomId) {
                         mServerHostHasGuest = false;
-                        mServerHostSpectateAllowed = false;
-                        mServerJoinedSpectateAllowed = false;
                         mServerHostForceRelay = false;
                         mServerClientWantStart = false;
                         gSecondPlayerName[0] = '\0';
