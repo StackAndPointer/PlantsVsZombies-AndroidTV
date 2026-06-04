@@ -1685,15 +1685,13 @@ void SeedChooserScreen::Draw(Graphics *g) {
         g->Translate(-mImitaterButton->mX, -mImitaterButton->mY);
     }
 
-    int aGamepadIndex = mApp->PlayerToGamepadIndex(mPlayerIndex);
-    int aCursorX = aGamepadIndex ? mCursorPositionX2 : mCursorPositionX1;
-    int aCursorY = aGamepadIndex ? mCursorPositionY2 : mCursorPositionY1;
-
     // Draw cursor selectors for two players
     for (int aPlayerIndex = 0; aPlayerIndex < 2; aPlayerIndex++) {
         int aPlayerState = (aPlayerIndex ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0])->mPlayerIndex2;
         if (aPlayerState != -1 && !unkMems3[3]) {
             if (aPlayerState == mPlayerIndex || !mApp->IsVSMode()) {
+                int aCursorX = aPlayerIndex ? mCursorPositionX2 : mCursorPositionX1;
+                int aCursorY = aPlayerIndex ? mCursorPositionY2 : mCursorPositionY1;
                 Image *aSelectorImage = (aPlayerState == mApp->mSecondPlayerGamepadIndex) ? Sexy::IMAGE_SEED_SELECTOR_BLUE : Sexy::IMAGE_SEED_SELECTOR;
                 if (mBanningPhase) {
                     aSelectorImage = (aSelectorImage == Sexy::IMAGE_SEED_SELECTOR_BLUE) ? Sexy::IMAGE_SEED_SELECTOR : Sexy::IMAGE_SEED_SELECTOR_BLUE;
@@ -1751,6 +1749,8 @@ void SeedChooserScreen::Draw(Graphics *g) {
     // Draw cursor arrows for players
     for (int aPlayerIndex = 0; aPlayerIndex < 2; aPlayerIndex++) {
         if (ShouldDisplayCursor(aPlayerIndex) && (aPlayerIndex ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0])->mPlayerIndex2 != -1) {
+            int aCursorX = aPlayerIndex ? mCursorPositionX2 : mCursorPositionX1;
+            int aCursorY = aPlayerIndex ? mCursorPositionY2 : mCursorPositionY1;
             Image *aArrowImage = aPlayerIndex ? Sexy::IMAGE_CURSOR_ARROW_P2 : Sexy::IMAGE_CURSOR_ARROW_P1;
             Image *aTextImage = aPlayerIndex ? Sexy::IMAGE_CURSOR_P2_TEXT : Sexy::IMAGE_CURSOR_P1_TEXT;
 
