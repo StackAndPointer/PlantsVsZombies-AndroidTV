@@ -1208,16 +1208,41 @@ void Zombie::UpdateZombieJackInTheBox() {
 
     if (mZombiePhase == ZombiePhase::PHASE_JACK_IN_THE_BOX_RUNNING) {
         if (mHasHead) {
-            if (mApp->IsVSMode() ? mIsEating : mPhaseCounter <= 0) {
+            bool doPop = false;
+            if (!(mApp->IsVSMode() && gTcpConnected)) {
+                if (mApp->IsVSMode()) {
+                    if (VSSetupAddonWidget::msBalancePatchMode) {
+                        int aPosX = mX + mWidth / 2;
+                        int aPosY = mY + mHeight / 2;
+                        Plant *aPlant = nullptr;
+                        while (mBoard->IteratePlants(aPlant)) {
+                            if (mPhaseCounter <= 0 && GetCircleRectOverlap(aPosX, aPosY, JackInTheBoxPlantRadius, aPlant->GetPlantRect())) {
+                                doPop = true;
+                            }
+                        }
+                    } else {
+                        doPop = mIsEating;
+                    }
+                } else {
+                    doPop = (mPhaseCounter <= 0);
+                }
+            }
+            if (doPop) {
                 mPhaseCounter = 110;
                 mZombiePhase = ZombiePhase::PHASE_JACK_IN_THE_BOX_POPPING;
 
                 StopZombieSound();
                 mApp->PlaySample(SOUND_BOING);
                 PlayZombieReanim("anim_pop", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 28.0f);
+
+                U8U8U16U16_Event event{};
+                event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER;
+                event.data1 = uint8_t(mZombiePhase);
+                event.data3 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+                event.data4 = uint16_t(mPhaseCounter);
+                netplay::PutEvent(event);
             }
         }
-
     } else if (mZombiePhase == ZombiePhase::PHASE_JACK_IN_THE_BOX_POPPING) {
         if (mPhaseCounter == 80) {
             mApp->PlayFoley(FoleyType::FOLEY_JACK_SURPRISE);

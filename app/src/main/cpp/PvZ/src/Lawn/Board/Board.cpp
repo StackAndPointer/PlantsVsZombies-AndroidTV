@@ -2283,6 +2283,9 @@ void Board::processServerEvent(const BaseEvent *event) {
                 if (aZombie->mZombieType == ZombieType::ZOMBIE_LADDER && aZombie->mZombiePhase == ZombiePhase::PHASE_LADDER_CARRYING) {
                     aZombie->StartWalkAnim(0);
                 }
+                if (aZombie->mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX && aZombie->mZombiePhase == ZombiePhase::PHASE_JACK_IN_THE_BOX_POPPING) {
+                    aZombie->PlayZombieReanim("anim_pop", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 28.0f);
+                }
                 if (aZombie->mZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL) {
                     if (aZombie->mZombiePhase == ZombiePhase::PHASE_FOOTBALL_TACKLING) {
                         aZombie->PlayZombieReanim("anim_tackle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
