@@ -954,10 +954,11 @@ void SeedChooserScreen::ButtonDepress_Origin(int theId) {
         mPageIndex = (mPageIndex == 0) ? 1 : 0;
         // 翻页后光标移动回第一张卡
         int x, y;
-        GetSeedPositionInChooser(0, x, y);
+        int aSeedIndex = mPageIndex ? (NUM_ZOMBIE_SEED_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE - 26) : 0;
+        GetSeedPositionInChooser(aSeedIndex, x, y);
         mCursorPositionX1 = mCursorPositionX2 = x;
         mCursorPositionY1 = mCursorPositionY2 = y;
-        mSeedIndex1 = mSeedIndex2 = SeedType(0);
+        mSeedIndex1 = mSeedIndex2 = aSeedIndex;
         return;
     }
 
