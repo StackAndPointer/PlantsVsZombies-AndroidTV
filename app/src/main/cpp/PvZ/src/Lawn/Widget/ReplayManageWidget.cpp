@@ -1,4 +1,4 @@
-﻿/*
+﻿﻿/*
  * Copyright (C) 2023-2026  PvZ TV Touch Team
  *
  * This file is part of PlantsVsZombies-AndroidTV.
@@ -322,6 +322,8 @@ void ReplayManageWidget::Draw(Graphics *g) {
     mDeleteButton->mDisabled = !hasReplay;
     g->DrawImage(mZombieBackground ? IMAGE_ALMANAC_ZOMBIEBACK : IMAGE_ALMANAC_PLANTBACK, 0, 0);
     TodDrawString(g, "[REPLAY_MANAGE]", 640, 110, FONT_DWARVENTODCRAFT24, Color(255, 248, 195), DrawStringJustification::DS_ALIGN_CENTER);
+    TodDrawString(
+        g, StrFormat(TodStringTranslate("[REPLAY_TOTAL_NUM]").c_str(), mScrollContent->mTotalItems), 1110, 110, FONT_DWARVENTODCRAFT18, Color(255, 248, 195), DrawStringJustification::DS_ALIGN_RIGHT);
     if (!hasReplay) {
         TodDrawString(g, "[NO_REPLAY_FILES]", 640, 330, FONT_HOUSEOFTERROR20, Color(255, 230, 170), DrawStringJustification::DS_ALIGN_CENTER);
     }
