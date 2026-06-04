@@ -40,6 +40,63 @@ public:
     Sexy::Image *mImage;
 };
 
+namespace {
+constexpr int kVSResultRequestStateReplaySaved = -2;
+constexpr int kVSResultRequestStateOpponentDisconnected = -3;
+constexpr int kVSResultRequestStateSelfDisconnected = -4;
+
+static bool IsOnlineResultsSessionActive() {
+    return gTcpConnected || gTcpClientSocket >= 0;
+}
+
+static void CloseResultsSocketsAndResetNetState() {
+    if (gTcpServerSocket >= 0) {
+        shutdown(gTcpServerSocket, SHUT_RDWR);
+        close(gTcpServerSocket);
+        gTcpServerSocket = -1;
+    }
+    if (gTcpClientSocket >= 0) {
+        shutdown(gTcpClientSocket, SHUT_RDWR);
+        close(gTcpClientSocket);
+        gTcpClientSocket = -1;
+    }
+    if (gTcpListenSocket >= 0) {
+        close(gTcpListenSocket);
+        gTcpListenSocket = -1;
+    }
+
+    gTcpConnected = false;
+    gTcpConnecting = false;
+    gIsServerModeNetplay = false;
+    gServerModeTransport = ServerModeTransport::NONE;
+    gIsServerModeSpectator = false;
+    gIsReplayMode = false;
+    gReplayPauseByMenu = false;
+    clientRecvBuffer.clear();
+    serverRecvBuffer.clear();
+    netplay::ClearSendBuffer();
+
+    gNetPingSendCounter = 0;
+    gNetDelayNow = 0;
+    gNetPingHasValidDelay = false;
+    gNetPingAwaitingPong = false;
+    gNetPingNowTick = 0;
+    gNetPingLatestSentTick = 0;
+    gNetPingLastPongTick = 0;
+}
+
+static void DisablePlayAgainButton(VSResultsMenu *menu) {
+    if (menu == nullptr) {
+        return;
+    }
+    if (Sexy::Widget *playAgain = menu->FindWidget(VSResultsMenu::VSResultsMenu_Play_Again)) {
+        playAgain->mDisabled = true;
+        (*playAgain->mColors)[ButtonWidget::COLOR_LABEL] = gColorGray;
+        (*playAgain->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = gColorGray;
+    }
+}
+} // namespace
+
 static std::string BuildDeckText(const SeedType *seeds, int count) {
     std::string s;
     for (int i = 0; i < count; ++i) {
@@ -65,6 +122,7 @@ static const char *CampNameFromSide(int side) {
 void VSResultsMenu::_constructor() {
     old_VSResultsMenu_Constructor(this);
     mIsReplaySession = gIsReplayMode;
+    mIsOnlineSession = !mIsReplaySession && IsOnlineResultsSessionActive();
     gVSResultRequestState = -1;
     gNetDelayNow = 0; // 清除旧的延时数据
 
@@ -78,6 +136,7 @@ void VSResultsMenu::_constructor() {
     (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
     mBackButton->mLabelJustify = BUTTON_LABEL_WRAP_CENTER;
     mBackButton->Resize(-60, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+    mBackButton->SetLabel("[BACK_TO_MODE_SELECT]");
 }
 
 void VSResultsMenu::_destructor() {
@@ -93,6 +152,13 @@ void VSResultsMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
     old_VSResultsMenu_AddedToManager(this, theWidgetManager);
 
     AddWidget(mBackButton);
+    if (mBackButton != nullptr) {
+        mBackButton->SetLabel("[BACK_TO_MODE_SELECT]");
+    }
+    if (Sexy::Widget *quitVsWidget = FindWidget(VSResultsMenu::VSResultsMenu_Quit_VS)) {
+        auto *quitVsButton = reinterpret_cast<GameButton *>(quitVsWidget);
+        quitVsButton->SetLabel(mIsOnlineSession && IsOnlineResultsSessionActive() ? "[DISCONNECT]" : "[QUIT_VS]");
+    }
 }
 
 void VSResultsMenu::processClientEvent(const BaseEvent *event) {
@@ -135,10 +201,31 @@ void VSResultsMenu::InitFromBoard(Board *board) {
 }
 
 void VSResultsMenu::Update() {
-    //    if (mIsReplaySession) {
-    //        return;
-    //    }
+    ++mVSResultsCounter;
     old_VSResultsMenu_Update(this);
+
+    //    if (mBackButton != nullptr) {
+    //        mBackButton->SetLabel(mIsOnlineSession && IsOnlineResultsSessionActive() ? "[DISCONNECT]" : "[BACK_TO_MODE_SELECT]");
+    //    }
+    //    if (gVSResultRequestState == kVSResultRequestStateOpponentDisconnected || gVSResultRequestState == kVSResultRequestStateSelfDisconnected) {
+    //        DisablePlayAgainButton(this);
+    //    } else if (Sexy::Widget *playAgain = FindWidget(VSResultsMenu_Play_Again)) {
+    //        if (mIsOnlineSession) {
+    //            playAgain->mDisabled = !IsOnlineResultsSessionActive();
+    //        }
+    //    }
+}
+
+void VSResultsMenu::HandleOpponentDisconnected() {
+    gVSResultRequestState = kVSResultRequestStateOpponentDisconnected;
+    if (mCheckboxController != nullptr) {
+        mCheckboxController->HideCheckboxWidget();
+    }
+    DisablePlayAgainButton(this);
+    if (Sexy::Widget *quitVsWidget = FindWidget(VSResultsMenu::VSResultsMenu_Quit_VS)) {
+        auto *quitVsButton = reinterpret_cast<GameButton *>(quitVsWidget);
+        quitVsButton->SetLabel("[QUIT_VS]");
+    }
 }
 
 void VSResultsMenu::HideReplayButton(bool forceHide) {
@@ -228,38 +315,32 @@ void VSResultsMenu::ButtonDepress(int theId) {
         LOG_INFO("[REPLAY] save button clicked, saved={}, file={}", saved, meta.fileName);
         if (saved && gLawnApp != nullptr) {
             HideReplayButton(true);
-            mDrawReplaySaved = true;
+            gVSResultRequestState = kVSResultRequestStateReplaySaved;
         }
         return;
     }
 
-    if ((gIsServerModeSpectator || gIsReplayMode) && (gTcpConnected || gTcpServerSocket >= 0 || gTcpClientSocket >= 0) && theId == VSResultsMenu::VSResultsMenu_Quit_VS) {
-        if (gTcpServerSocket >= 0) {
-            shutdown(gTcpServerSocket, SHUT_RDWR);
-            close(gTcpServerSocket);
-            gTcpServerSocket = -1;
-        }
-        if (gTcpClientSocket >= 0) {
-            shutdown(gTcpClientSocket, SHUT_RDWR);
-            close(gTcpClientSocket);
-            gTcpClientSocket = -1;
-        }
-        gTcpConnected = false;
-        gTcpConnecting = false;
-        gIsServerModeNetplay = false;
-        gServerModeTransport = ServerModeTransport::NONE;
-        gIsServerModeSpectator = false;
-        gIsReplayMode = false;
-        gSecondPlayerName[0] = '\0';
-        gServerHostName[0] = '\0';
-        netplay::ClearSendBuffer();
-
-        mResultsButtonId = theId;
-        OnExit();
+    if (theId == VSResultsMenu_Play_Again && mVSResultsCounter < 300) { // 3秒后才能点再来一句
         return;
     }
 
     if (theId == VSResultsMenu::VSResultsMenu_Quit_VS) {
+        if (mIsOnlineSession && IsOnlineResultsSessionActive()) {
+            if (mCheckboxController != nullptr) {
+                mCheckboxController->HideCheckboxWidget();
+            }
+            gVSResultRequestState = kVSResultRequestStateSelfDisconnected;
+            DisablePlayAgainButton(this);
+            CloseResultsSocketsAndResetNetState();
+            if (Sexy::Widget *quitVsWidget = FindWidget(VSResultsMenu::VSResultsMenu_Quit_VS)) {
+                auto *quitVsButton = reinterpret_cast<GameButton *>(quitVsWidget);
+                quitVsButton->SetLabel("[QUIT_VS]");
+            }
+            if (Sexy::Widget *playAgain = FindWidget(VSResultsMenu_Play_Again)) {
+                playAgain->mDisabled = true;
+            }
+            return;
+        }
         mResultsButtonId = theId;
         OnExit();
         return;
@@ -294,8 +375,12 @@ void VSResultsMenu::Draw(Graphics *g) {
         mCheckboxController->DrawCheckboxLabel(g);
     }
 
-    if (mDrawReplaySaved) {
+    if (gVSResultRequestState == kVSResultRequestStateReplaySaved) {
         TodDrawString(g, "[REPLAY_SAVED]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
+    } else if (gVSResultRequestState == kVSResultRequestStateOpponentDisconnected) {
+        TodDrawString(g, "[VS_RESULT_OPPONENT_DISCONNECTED]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
+    } else if (gVSResultRequestState == kVSResultRequestStateSelfDisconnected) {
+        TodDrawString(g, "[VS_RESULT_SELF_DISCONNECTED]", 400, -20, Sexy::FONT_HOUSEOFTERROR28, Color(0, 205, 0, 255), DrawStringJustification::DS_ALIGN_CENTER);
     } else {
         if (gTcpConnected) {
             switch (gVSResultRequestState) {
@@ -391,7 +476,7 @@ void VSResultsMenu::DrawInfoBox(Sexy::Graphics *a2, int a3) {
     pvzstl::string playerLabel = StrFormat(playerFmt.c_str(), a3 + 1);
     const char *replayHostName = (gReplayHostName[0] != '\0') ? gReplayHostName : gServerHostName;
     const char *replayGuestName = (gReplayGuestName[0] != '\0') ? gReplayGuestName : gSecondPlayerName;
-    if ((gTcpConnected || gTcpClientSocket >= 0 || mIsReplaySession) && ((mIsReplaySession && replayGuestName[0] != '\0') || (!mIsReplaySession && gSecondPlayerName[0] != '\0'))) {
+    if ((mIsReplaySession || mIsOnlineSession) && ((mIsReplaySession && replayGuestName[0] != '\0') || (!mIsReplaySession && gSecondPlayerName[0] != '\0'))) {
         const char *hostName =
             mIsReplaySession ? ((replayHostName[0] != '\0') ? replayHostName : gLawnApp->mPlayerInfo->mName) : ((gServerHostName[0] != '\0') ? gServerHostName : gLawnApp->mPlayerInfo->mName);
         const char *guestName = mIsReplaySession ? replayGuestName : gSecondPlayerName;

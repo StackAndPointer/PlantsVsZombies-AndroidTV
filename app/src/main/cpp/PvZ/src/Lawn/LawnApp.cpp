@@ -541,9 +541,8 @@ void LawnApp::UpdateFrames() {
                 netplay::ClearSendBuffer();
                 ResetNetDelayState();
                 if (mVSResultsMenu != nullptr) {
-                    mVSResultsMenu->HideReplayButton(true);
-                }
-                if (!GetDialog(DIALOG_WAIT_FOR_SECOND_PLAYER)) {
+                    mVSResultsMenu->HandleOpponentDisconnected();
+                } else if (!GetDialog(DIALOG_WAIT_FOR_SECOND_PLAYER)) {
                     if (gTcpListenSocket >= 0) {
                         close(gTcpListenSocket);
                         gTcpListenSocket = -1;
@@ -599,9 +598,10 @@ void LawnApp::UpdateFrames() {
                 netplay::ClearSendBuffer();
                 ResetNetDelayState();
                 if (mVSResultsMenu != nullptr) {
-                    mVSResultsMenu->HideReplayButton(true);
+                    mVSResultsMenu->HandleOpponentDisconnected();
+                } else {
+                    LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[CONNECTION_CLOSED]", "[REENTER_ROOM]", "[DIALOG_BUTTON_OK]", "", 3);
                 }
-                LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[CONNECTION_CLOSED]", "[REENTER_ROOM]", "[DIALOG_BUTTON_OK]", "", 3);
                 break;
             } else {
                 if (errno == EAGAIN || errno == EWOULDBLOCK) {

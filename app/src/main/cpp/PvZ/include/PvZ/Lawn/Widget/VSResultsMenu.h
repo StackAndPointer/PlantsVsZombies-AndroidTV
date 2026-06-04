@@ -66,7 +66,8 @@ public:
     SeedType mPlantSeeds[6] = {SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE};
     SeedType mZombieSeeds[6] = {SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE, SeedType::SEED_NONE};
     bool mIsReplaySession = false;
-    bool mDrawReplaySaved = false;
+    bool mIsOnlineSession = false;
+    int mVSResultsCounter = 0;
     class VSResultsCheckboxController *mCheckboxController = nullptr;
     GameButton *mBackButton = nullptr;
     GameButton *mSaveReplayButton = nullptr;
@@ -86,6 +87,7 @@ public:
     void Draw(Sexy::Graphics *g);
     void DrawInfoBox(Sexy::Graphics *a2, int a3);
     void HideReplayButton(bool forceHide);
+    void HandleOpponentDisconnected();
     void AddedToManager(Sexy::WidgetManager *theWidgetManager);
     void InitFromBoard(Board *board);
     void ShowReplayButton();
@@ -135,13 +137,29 @@ public:
     }
 
     void DrawCheckboxLabel(Sexy::Graphics *g) const {
-        if (mSendPlayerNameCheckbox == nullptr || g == nullptr) {
+        if (mSendPlayerNameCheckbox == nullptr || g == nullptr || !mSendPlayerNameCheckbox->mVisible) {
             return;
         }
         const Sexy::Color color = (mParentMenu != nullptr && mParentMenu->mFocusedChildWidget == mSendPlayerNameCheckbox) ? Sexy::Color(0, 255, 0) : Sexy::Color(107, 110, 145);
         g->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
         g->SetColor(color);
         g->DrawString(TodStringTranslate("[SEND_PLAYER_NAME]"), mSendPlayerNameCheckbox->mX + 40, mSendPlayerNameCheckbox->mY + 26);
+    }
+
+    void HideCheckboxWidget() {
+        if (mSendPlayerNameCheckbox == nullptr) {
+            return;
+        }
+        mSendPlayerNameCheckbox->SetVisible(false);
+        mSendPlayerNameCheckbox->mDisabled = true;
+    }
+
+    void SetCheckboxVisible(bool visible) {
+        if (mSendPlayerNameCheckbox == nullptr) {
+            return;
+        }
+        mSendPlayerNameCheckbox->SetVisible(visible);
+        mSendPlayerNameCheckbox->mDisabled = !visible;
     }
 
     void DestroyCheckboxWidget() {
