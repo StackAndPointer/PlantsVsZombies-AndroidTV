@@ -310,7 +310,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_support_Preferences_Changes(J
             gCheatPlacePlantType = (SeedType)(value >= 49 ? value + 1 : value - 1); // 植物类型
             break;
         case 104:
-            gCheatPlaceZombieType = (ZombieType)(value - 1); // 僵尸类型
+            gCheatPlaceZombieType = value <= 34 ? (ZombieType)(value - 1) : (ZombieType)(value + 1); // 僵尸类型
             break;
         case 105:
             gCheatPlaceColumn = value; // 横坐标
@@ -468,9 +468,15 @@ extern "C" JNIEXPORT void JNICALL Java_com_android_support_Preferences_Changes(J
             gCheatZombiesToSpawn[ZombieType::ZOMBIE_REDEYE_GARGANTUAR] = boolean; // 红眼巨人僵尸
             break;
         case 234:
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_GIGA_FOOTBALL] = boolean; // 全明星僵尸
+            break;
+        case 235:
+            gCheatZombiesToSpawn[ZombieType::ZOMBIE_SUPER_FAN_IMP] = boolean; // 粉丝小鬼僵尸
+            break;
+        case 241:
             choiceSpawnMode = value; // 刷怪模式
             break;
-        case 236:
+        case 242:
             buttonSetSpawn = boolean; // 设置出怪
             break;
         default:

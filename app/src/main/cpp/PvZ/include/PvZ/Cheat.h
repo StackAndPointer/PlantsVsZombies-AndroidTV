@@ -35,7 +35,7 @@
 namespace cheat {
 
 using SettingsList = std::array<const char *const, 4>;
-using FeatureList = std::array<const char *const, 121>;
+using FeatureList = std::array<const char *const, 123>;
 
 template <std::size_t N>
 consteval bool CheckList(const std::array<const char *const, N> &list) {
@@ -165,8 +165,10 @@ namespace en_US {
         "230_CollapseAdd_CheckBox_Gatling Zombie",
         "231_CollapseAdd_CheckBox_Squash Head Zombie",
         "232_CollapseAdd_CheckBox_Tall-nut Head Zombie",
-        "234_CollapseAdd_Spinner_<font color='green'>Choose Spawn Mode：_Off,Natural (Zombies in Wave is Automatically Picked by The Game),Extreme (Populate Zombies in Wave Evenly)",
-        "236_CollapseAdd_OnceCheckBox_Set Zombie Spawn",
+        "234_CollapseAdd_CheckBox_All-Star Zombie",
+        "235_CollapseAdd_CheckBox_Super-Fan Imp Zombie",
+        "241_CollapseAdd_Spinner_<font color='green'>Choose Spawn Mode：_Off,Natural (Zombies in Wave is Automatically Picked by The Game),Extreme (Populate Zombies in Wave Evenly)",
+        "242_CollapseAdd_OnceCheckBox_Set Zombie Spawn",
 
 
         "Collapse_Battlefield Layout",
@@ -190,7 +192,8 @@ namespace en_US {
         "Ducky Tube Zombie,Snorkel Zombie,Zomboni,Zombie Bobsled Team,Dolphin Rider Zombie,"
         "Jack-in-the-box Zombie,Ballon Zombie,Digger Zombie,Pogo Zombie,Zombie Yeti,"
         "Bungee Zombie,Ladder Zombie,Catapult Zombie,Gargantuar,Imp,Dr. Zomboss,"
-        "Trash Bin Zombie,Pea Head Zombie,Wall-nut Head Zombie,Jalapeno Head Zombie,Gatling Zombie,Squash Head Zombie,Tall-nut Head Zombie,Redeye Gargantuar",
+        "Trash Bin Zombie,Pea Head Zombie,Wall-nut Head Zombie,Jalapeno Head Zombie,Gatling Zombie,Squash Head Zombie,Tall-nut Head Zombie,Redeye Gargantuar,"
+        "All-Star Zombie, Super-Fan Imp Zombie",
         "109_CollapseAdd_OnceCheckBox_Add Zombie",
         "CollapseAdd_RichTextView_<font color='green'>Other Object:",
         "114_CollapseAdd_OnceCheckBox_Add Grave Stone",
@@ -375,8 +378,10 @@ namespace zh_Hans {
         "230_CollapseAdd_CheckBox_机枪射手僵尸",
         "231_CollapseAdd_CheckBox_窝瓜僵尸",
         "232_CollapseAdd_CheckBox_高坚果僵尸",
-        "234_CollapseAdd_Spinner_<font color='green'>请选择刷怪模式：_关闭,自然出怪(由游戏生成出怪列表),极限出怪(均匀填充出怪列表)",
-        "236_CollapseAdd_OnceCheckBox_设置出怪",
+        "234_CollapseAdd_CheckBox_全明星僵尸",
+        "235_CollapseAdd_CheckBox_粉丝小鬼僵尸",
+        "241_CollapseAdd_Spinner_<font color='green'>请选择刷怪模式：_关闭,自然出怪(由游戏生成出怪列表),极限出怪(均匀填充出怪列表)",
+        "242_CollapseAdd_OnceCheckBox_设置出怪",
 
 
         "Collapse_场地布置",
@@ -400,7 +405,8 @@ namespace zh_Hans {
         "鸭子救生圈僵尸,潜水僵尸,雪橇车僵尸,雪橇车僵尸小队,海豚骑士僵尸,"
         "玩偶匣僵尸,气球僵尸,矿工僵尸,蹦蹦僵尸,僵尸雪人,"
         "蹦极僵尸,梯子僵尸,投石车僵尸,白眼巨人僵尸,小鬼僵尸,僵王博士,"
-        "垃圾桶僵尸,豌豆射手僵尸,坚果僵尸,火爆辣椒僵尸,机枪射手僵尸,窝瓜僵尸,高坚果僵尸,红眼巨人僵尸",
+        "垃圾桶僵尸,豌豆射手僵尸,坚果僵尸,火爆辣椒僵尸,机枪射手僵尸,窝瓜僵尸,高坚果僵尸,红眼巨人僵尸,"
+        "全明星僵尸,粉丝小鬼僵尸",
         "109_CollapseAdd_OnceCheckBox_放置僵尸",
         "CollapseAdd_RichTextView_<font color='green'>其他类型:",
         "114_CollapseAdd_OnceCheckBox_放置墓碑",

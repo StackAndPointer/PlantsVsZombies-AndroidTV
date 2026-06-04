@@ -90,8 +90,8 @@ public:
 struct ZombiePicker {
     int mZombieCount;
     int mZombiePoints;
-    int mZombieTypeCount[ZombieType::NUM_ZOMBIE_TYPES];
-    int mAllWavesZombieTypeCount[ZombieType::NUM_ZOMBIE_TYPES];
+    int mZombieTypeCount[ZombieType::EXTENDED_NUM_ZOMBIE_TYPES];
+    int mAllWavesZombieTypeCount[ZombieType::EXTENDED_NUM_ZOMBIE_TYPES];
 };
 
 /*inline*/ void ZombiePickerInitForWave(ZombiePicker *theZombiePicker);
@@ -403,9 +403,7 @@ public:
     ZombieType GetIntroducedZombieType() {
         return reinterpret_cast<ZombieType (*)(Board *)>(Board_GetIntroducedZombieTypeAddr)(this);
     }
-    ZombieType PickZombieType(int theZombiePoints, int theWaveIndex, ZombiePicker *theZombiePicker) {
-        return reinterpret_cast<ZombieType (*)(Board *, int, int, ZombiePicker *)>(Board_PickZombieTypeAddr)(this, theZombiePoints, theWaveIndex, theZombiePicker);
-    }
+    ZombieType PickZombieType(int theZombiePoints, int theWaveIndex, ZombiePicker *theZombiePicker);
     bool HasLevelAwardDropped() {
         return reinterpret_cast<bool (*)(Board *)>(Board_HasLevelAwardDroppedAddr)(this);
     }
@@ -682,9 +680,9 @@ inline bool banMower;
 inline bool layChoseFormation;
 inline bool layPastedFormation;
 inline bool noFog;
-inline bool gCheatZombiesToSpawn[ZombieType::NUM_ZOMBIE_TYPES]; // 僵尸选中情况
-inline int choiceSpawnMode;                                     // 刷怪模式
-inline bool buttonSetSpawn;                                     // 设置出怪
+inline bool gCheatZombiesToSpawn[ZombieType::EXTENDED_NUM_ZOMBIE_TYPES]; // 僵尸选中情况
+inline int choiceSpawnMode;                                              // 刷怪模式
+inline bool buttonSetSpawn;                                              // 设置出怪
 inline int targetSeedBank;
 inline int choiceSeedPacketIndex;
 inline SeedType choiceSeedType = SeedType::SEED_NONE;
@@ -770,6 +768,8 @@ inline void (*old_Board_Pause)(Board *board, bool a2);
 inline void (*old_Board_InitLawnMowers)(Board *board);
 
 inline void (*old_Board_PickZombieWaves)(Board *board);
+
+inline ZombieType (*old_Board_PickZombieType)(Board *board, int theZombiePoints, int theWaveIndex, ZombiePicker *theZombiePicker);
 
 inline void (*old_Board_RemovedFromManager)(Board *board, Sexy::WidgetManager *manager);
 

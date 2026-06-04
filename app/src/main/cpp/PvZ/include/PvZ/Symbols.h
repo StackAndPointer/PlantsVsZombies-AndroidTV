@@ -228,6 +228,8 @@ inline void *CutScene_MouseDownAddr;
 inline void *CutScene_IsBeforePreloadingAddr;
 inline void *CutScene_AddFlowerPotsAddr;
 inline void *CutScene_PlaceLawnItemsAddr;
+inline void *CutScene_FindAndPlaceZombieAddr;
+inline void *CutScene_PlaceStreetZombiesAddr;
 inline void *CutScene_StartLevelIntroAddr;
 inline void *CutScene_ClearUpsellBoardAddr;
 inline void *CutScene_LoadUpsellChallengeScreenAddr;

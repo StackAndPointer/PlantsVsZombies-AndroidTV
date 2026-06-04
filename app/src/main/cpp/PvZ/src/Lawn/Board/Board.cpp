@@ -2679,12 +2679,12 @@ static void CheatPlaceGraveStone(Board *theBoard, int theCol, int theRow) {
     }
 }
 
-static void CheatSetZombieSpawn(Board *theBoard, const bool (&theZombiesToSpawn)[ZombieType::NUM_ZOMBIE_TYPES]) {
-    int typesCount = 0;                          // 已选僵尸种类数
-    int typesList[ZombieType::NUM_ZOMBIE_TYPES]; // 已选僵尸种类列表
+static void CheatSetZombieSpawn(Board *theBoard, const bool (&theZombiesToSpawn)[ZombieType::EXTENDED_NUM_ZOMBIE_TYPES]) {
+    int typesCount = 0;                                   // 已选僵尸种类数
+    int typesList[ZombieType::EXTENDED_NUM_ZOMBIE_TYPES]; // 已选僵尸种类列表
 
     // 将僵尸代号放入种类列表, 并更新已选种类数
-    for (int type = 0; type < ZombieType::NUM_ZOMBIE_TYPES; ++type) {
+    for (int type = 0; type < ZombieType::EXTENDED_NUM_ZOMBIE_TYPES; ++type) {
         if (theZombiesToSpawn[type] && type != ZombieType::ZOMBIE_BUNGEE) // 飞贼僵尸不应作为正常僵尸出现在出怪列表中
         {
             typesList[typesCount++] = type;
@@ -2706,7 +2706,7 @@ static void CheatSetZombieSpawn(Board *theBoard, const bool (&theZombiesToSpawn)
         }
 
         // 设置游戏中的僵尸允许类型
-        for (int type = 0; type < ZombieType::NUM_ZOMBIE_TYPES; ++type) {
+        for (int type = 0; type < ZombieType::EXTENDED_NUM_ZOMBIE_TYPES; ++type) {
             theBoard->mZombieAllowed[type] = theZombiesToSpawn[type];
         }
         theBoard->mZombieAllowed[ZombieType::ZOMBIE_NORMAL] = true; // 自然出怪下必须含有普通僵尸
@@ -3475,7 +3475,7 @@ void Board::PickZombieWaves() {
     // 有问题，在111和115里，冒险中锤僵尸的mNumWaves从8变6了
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BUTTERED_POPCORN && !IsLevelDataLoaded()) {
         mNumWaves = 20;
-        ZombiePicker zombiePicker;
+        ZombiePicker zombiePicker{};
         ZombiePickerInit(&zombiePicker);
         // ZombieType introducedZombieType = Board_GetIntroducedZombieType(this);
         for (int i = 0; i < mNumWaves; i++) {
@@ -3505,7 +3505,7 @@ void Board::PickZombieWaves() {
 
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_POOL_PARTY && !IsLevelDataLoaded()) {
         mNumWaves = 20;
-        ZombiePicker zombiePicker;
+        ZombiePicker zombiePicker{};
         ZombiePickerInit(&zombiePicker);
         // ZombieType introducedZombieType = Board_GetIntroducedZombieType(this);
         for (int i = 0; i < mNumWaves; i++) {
@@ -3532,6 +3532,48 @@ void Board::PickZombieWaves() {
     }
 
     old_Board_PickZombieWaves(this);
+}
+
+ZombieType Board::PickZombieType(int theZombiePoints, int theWaveIndex, ZombiePicker *theZombiePicker) {
+    // 没有启用扩展僵尸时，保持原版抽取逻辑不变。
+    bool hasExtendedZombie = false;
+    for (int type = ZombieType::NUM_ZOMBIE_TYPES; type < ZombieType::EXTENDED_NUM_ZOMBIE_TYPES; ++type) {
+        if (mZombieAllowed[type]) {
+            hasExtendedZombie = true;
+            break;
+        }
+    }
+    if (!hasExtendedZombie) {
+        return old_Board_PickZombieType(this, theZombiePoints, theWaveIndex, theZombiePicker);
+    }
+
+    TodWeightedArray aZombieWeightArray[(int)ZombieType::EXTENDED_NUM_ZOMBIE_TYPES];
+    int aCount = 0;
+    for (int type = 0; type < ZombieType::EXTENDED_NUM_ZOMBIE_TYPES; ++type) {
+        if (!mZombieAllowed[type]) {
+            continue;
+        }
+
+        // 旗帜僵尸、飞贼僵尸仍然走原来的特殊生成路径。
+        if (type == ZombieType::ZOMBIE_FLAG || type == ZombieType::ZOMBIE_BUNGEE) {
+            continue;
+        }
+
+        ZombieDefinition &aZombieDef = GetZombieDefinition(ZombieType(type));
+        if (aZombieDef.mPickWeight <= 0 || aZombieDef.mZombieValue > theZombiePoints) {
+            continue;
+        }
+
+        aZombieWeightArray[aCount].mItem = type;
+        aZombieWeightArray[aCount].mWeight = aZombieDef.mPickWeight;
+        ++aCount;
+    }
+
+    if (aCount <= 0) {
+        return old_Board_PickZombieType(this, theZombiePoints, theWaveIndex, theZombiePicker);
+    }
+
+    return ZombieType(TodPickFromWeightedArray(aZombieWeightArray, aCount));
 }
 
 int Board::GetLiveGargantuarCount() {

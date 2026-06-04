@@ -227,6 +227,8 @@ bool LoadGameMain() {
     CutScene_IsBeforePreloadingAddr = libGameMain.GetSymbol("_ZN8CutScene18IsBeforePreloadingEv");
     CutScene_AddFlowerPotsAddr = libGameMain.GetSymbol("_ZN8CutScene13AddFlowerPotsEv");
     CutScene_PlaceLawnItemsAddr = libGameMain.GetSymbol("_ZN8CutScene14PlaceLawnItemsEv");
+    CutScene_FindAndPlaceZombieAddr = libGameMain.GetSymbol("_ZN8CutScene18FindAndPlaceZombieE10ZombieTypePA5_b");
+    CutScene_PlaceStreetZombiesAddr = libGameMain.GetSymbol("_ZN8CutScene18PlaceStreetZombiesEv");
     CutScene_StartLevelIntroAddr = libGameMain.GetSymbol("_ZN8CutScene15StartLevelIntroEv");
     CutScene_ClearUpsellBoardAddr = libGameMain.GetSymbol("_ZN8CutScene16ClearUpsellBoardEv");
     CutScene_LoadUpsellChallengeScreenAddr = libGameMain.GetSymbol("_ZN8CutScene25LoadUpsellChallengeScreenEv");

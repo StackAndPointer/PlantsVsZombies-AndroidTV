@@ -72,6 +72,9 @@ public:
     void StartLevelIntro() {
         reinterpret_cast<void (*)(CutScene *)>(CutScene_StartLevelIntroAddr)(this);
     }
+    int FindAndPlaceZombie(int theZombieType, bool theZombieGrid[5][5]) {
+        return reinterpret_cast<int (*)(CutScene *, int, bool[5][5])>(CutScene_FindAndPlaceZombieAddr)(this, theZombieType, theZombieGrid);
+    }
     void ClearUpsellBoard() {
         reinterpret_cast<void (*)(CutScene *)>(CutScene_ClearUpsellBoardAddr)(this);
     }
@@ -84,6 +87,8 @@ public:
     void Update();
     void UpdateZombiesWonMP();
     void UpdatePlantsWon();
+    static bool Is2x2Zombie(ZombieType theZombieType);
+    void PlaceStreetZombies();
     void PlaceLawnItems();
     void AddFlowerPots();
     void LoadUpsellChallengeScreen();

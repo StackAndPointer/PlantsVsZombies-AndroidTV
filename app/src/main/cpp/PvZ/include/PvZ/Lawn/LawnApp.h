@@ -339,6 +339,7 @@ public:
     bool IsVSMode();
     bool IsCoopMode();
     bool IsTwinSunbankMode();
+    bool IsMiniBossLevel();
     bool IsFinalBossLevel();
     void LoadAddonImages();
     void LoadAddonSounds();

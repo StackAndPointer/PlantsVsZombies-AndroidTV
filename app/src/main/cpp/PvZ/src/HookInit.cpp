@@ -159,6 +159,7 @@ void InitHookFunction() {
     homura::HookFunc(Board_AddZombieAddr, &Board::AddZombie, nullptr);
     homura::HookFunc(Board_DoPlantingEffectsAddr, &Board::DoPlantingEffects, nullptr);
     homura::HookFunc(Board_InitLawnMowersAddr, &Board::InitLawnMowers, &old_Board_InitLawnMowers);
+    homura::HookFunc(Board_PickZombieTypeAddr, &Board::PickZombieType, &old_Board_PickZombieType);
     homura::HookFunc(Board_PickZombieWavesAddr, &Board::PickZombieWaves, &old_Board_PickZombieWaves);
     homura::HookFunc(Board_DrawUITopAddr, &Board::DrawUITop, &old_Board_DrawUITop);
     homura::HookFunc(Board_GetShovelButtonRectAddr, &Board::GetShovelButtonRect, &old_Board_GetShovelButtonRect);
@@ -542,6 +543,7 @@ void InitHookFunction() {
     homura::HookFunc(CutScene_ShowShovelAddr, &CutScene::ShowShovel, &old_CutScene_ShowShovel);
     homura::HookFunc(CutScene_UpdateAddr, &CutScene::Update, &old_CutScene_Update);
     homura::HookFunc(CutScene_PlaceLawnItemsAddr, &CutScene::PlaceLawnItems, &old_CutScene_PlaceLawnItems);
+    homura::HookFunc(CutScene_PlaceStreetZombiesAddr, &CutScene::PlaceStreetZombies, nullptr);
     homura::HookFunc(CutScene_AddFlowerPotsAddr, &CutScene::AddFlowerPots, &old_CutScene_AddFlowerPots);
     homura::HookFunc(CutScene_LoadUpsellChallengeScreenAddr, &CutScene::LoadUpsellChallengeScreen, nullptr);
 

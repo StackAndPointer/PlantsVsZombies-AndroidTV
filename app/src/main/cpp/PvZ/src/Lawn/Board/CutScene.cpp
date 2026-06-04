@@ -81,6 +81,89 @@ void CutScene::AddFlowerPots() {
     old_CutScene_AddFlowerPots(this);
 }
 
+bool CutScene::Is2x2Zombie(ZombieType theZombieType) {
+    return theZombieType == ZombieType::ZOMBIE_GARGANTUAR || theZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR;
+}
+
+void CutScene::PlaceStreetZombies() {
+    if (mPlacedZombies)
+        return;
+
+    mPlacedZombies = true;
+    if (mApp->IsFinalBossLevel() || mApp->IsScaryPotterLevel() || mApp->IsIZombieLevel() || mApp->IsWhackAZombieLevel() || mApp->IsWallnutBowlingLevel()) {
+        return;
+    }
+
+    // 以下统计出怪列表中各种可预览的僵尸的数量
+    //    int aZombieValueTotal = 0;
+    int aTotalZombieCount = 0;
+    int aZombieTypeCount[ZombieType::EXTENDED_NUM_ZOMBIE_TYPES] = {0};
+
+    for (int aWave = 0; aWave < mBoard->mNumWaves; aWave++) {
+        for (int aZombieIndex = 0; aZombieIndex < MAX_ZOMBIES_IN_WAVE; aZombieIndex++) {
+            ZombieType aZombieType = mBoard->mZombiesInWave[aWave][aZombieIndex];
+            if (aZombieType == ZombieType::ZOMBIE_INVALID) {
+                break;
+            }
+
+            //            aZombieValueTotal += GetZombieDefinition(aZombieType).mZombieValue;
+
+            if (aZombieType == ZombieType::ZOMBIE_FLAG) {
+                continue;
+            }
+            if (aZombieType == ZombieType::ZOMBIE_YETI && !mApp->IsStormyNightLevel()) {
+                continue;
+            }
+            if (aZombieType == ZombieType::ZOMBIE_BOBSLED && mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_BOBSLED_BONANZA) {
+                continue;
+            }
+
+            ++aZombieTypeCount[aZombieType];
+            ++aTotalZombieCount;
+            if (aZombieType == ZombieType::ZOMBIE_BUNGEE || aZombieType == ZombieType::ZOMBIE_BOBSLED) {
+                aZombieTypeCount[aZombieType] = 1; // 蹦极僵尸和雪橇僵尸至多仅允许有 1 只预览僵尸
+            }
+        }
+    }
+
+    // 谁笑到最后关卡，除雪人僵尸外，所有允许出怪的僵尸类型至少计入 1 只僵尸
+    if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND) {
+        for (int aZombieType = 0; aZombieType < ZombieType::NUM_ZOMBIE_TYPES; aZombieType++) {
+            if (aZombieType != ZombieType::ZOMBIE_YETI && mBoard->mZombieAllowed[aZombieType]) {
+                aZombieTypeCount[aZombieType] = std::max(aZombieTypeCount[aZombieType], 1);
+            }
+        }
+    }
+    if (mBoard->StageHasPool()) {
+        aZombieTypeCount[ZombieType::ZOMBIE_DUCKY_TUBE] = 1; // 泳池关卡，必定出现鸭子僵尸预览
+    }
+
+    bool aZombieGrid[5][5] = {{false}};
+    int aPreviewCapacity = 10;
+    if (mApp->IsLittleTroubleLevel()) {
+        aPreviewCapacity = 15;
+    } else if ((mApp->IsStormyNightLevel() && mApp->IsAdventureMode()) || mApp->IsMiniBossLevel()) {
+        aPreviewCapacity = 18;
+    }
+
+    // 优先放置较大体型的僵尸，然后再放置较小体型的僵尸
+    for (ZombieType aZombieType = ZombieType::ZOMBIE_NORMAL; aZombieType < ZombieType::EXTENDED_NUM_ZOMBIE_TYPES; aZombieType = ZombieType(aZombieType + 1)) {
+        if (aZombieTypeCount[(int)aZombieType] && (Is2x2Zombie(aZombieType) || aZombieType == ZombieType::ZOMBIE_ZAMBONI)) {
+            FindAndPlaceZombie(aZombieType, aZombieGrid);
+        }
+    }
+    for (ZombieType aZombieType = ZombieType::ZOMBIE_NORMAL; aZombieType < ZombieType::EXTENDED_NUM_ZOMBIE_TYPES; aZombieType = ZombieType(aZombieType + 1)) {
+        if (aZombieTypeCount[aZombieType] && !Is2x2Zombie(aZombieType) && aZombieType != ZombieType::ZOMBIE_ZAMBONI) {
+            int aZombieNumInWave = aZombieTypeCount[aZombieType];
+            int aZombiePreviewNum = aZombieNumInWave * aPreviewCapacity / aTotalZombieCount;
+            aZombiePreviewNum = ClampInt(aZombiePreviewNum, 1, aZombieNumInWave);
+            for (int i = 0; i < aZombiePreviewNum; i++) {
+                FindAndPlaceZombie(aZombieType, aZombieGrid);
+            }
+        }
+    }
+}
+
 void CutScene::PlaceLawnItems() {
     if (mPlacedLawnItems) {
         return;

@@ -1151,6 +1151,13 @@ bool LawnApp::IsTwinSunbankMode() {
     return IsCoopMode();
 }
 
+bool LawnApp::IsMiniBossLevel() {
+    if (mBoard == nullptr)
+        return false;
+
+    return (IsAdventureMode() && mPlayerInfo->mLevel == 10) || (IsAdventureMode() && mPlayerInfo->mLevel == 20) || (IsAdventureMode() && mPlayerInfo->mLevel == 30);
+}
+
 bool LawnApp::IsFinalBossLevel() {
     if (mBoard == nullptr)
         return false;
