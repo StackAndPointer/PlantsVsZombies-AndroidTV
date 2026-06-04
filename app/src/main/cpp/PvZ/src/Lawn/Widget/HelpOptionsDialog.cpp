@@ -22,6 +22,33 @@
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
 
+using namespace Sexy;
+
+void HelpOptionsDialog_HelpOptionsDialog(HelpOptionsDialog *a, LawnApp *a2) {
+    // 在战斗界面去除“切换用户”按钮
+    old_HelpOptionsDialog_HelpOptionsDialog(a, a2);
+    if (!isMainMenu) {
+        GameButton *switchUserButton = a->mSwitchUserButton;
+        GameButton *settingsButton = a->mSettingsButton;
+        int theX = switchUserButton->mX;
+        int theY = switchUserButton->mY;
+        int theWidth = switchUserButton->mWidth;
+        int theHeight = switchUserButton->mHeight;
+        switchUserButton->mDisabled = true;
+        switchUserButton->mVisible = false;
+        switchUserButton->Resize(0, 0, 0, 0);
+        settingsButton->Resize(theX, theY, theWidth, theHeight);
+    }
+}
+
+void HelpOptionsDialog_AddedToManager(HelpOptionsDialog *a, WidgetManager *a2) {
+    old_HelpOptionsDialog_AddedToManager(a, a2);
+}
+
+void HelpOptionsDialog_RemovedFromManager(HelpOptionsDialog *a, WidgetManager *a2) {
+    old_HelpOptionsDialog_RemovedFromManager(a, a2);
+}
+
 void HelpOptionsDialog_ButtonDepress(HelpOptionsDialog *a, int a2) {
     // 修复在游戏战斗中打开新版暂停菜单时可以切换用户
     if (a2 == 1) {
@@ -42,23 +69,6 @@ void HelpOptionsDialog_ButtonDepress(HelpOptionsDialog *a, int a2) {
     // return;
     // }
     old_HelpOptionsDialog_ButtonDepress(a, a2);
-}
-
-void HelpOptionsDialog_HelpOptionsDialog(HelpOptionsDialog *a, LawnApp *a2) {
-    // 在战斗界面去除“切换用户”按钮
-    old_HelpOptionsDialog_HelpOptionsDialog(a, a2);
-    if (!isMainMenu) {
-        GameButton *switchUserButton = a->mSwitchUserButton;
-        GameButton *settingsButton = a->mSettingsButton;
-        int theX = switchUserButton->mX;
-        int theY = switchUserButton->mY;
-        int theWidth = switchUserButton->mWidth;
-        int theHeight = switchUserButton->mHeight;
-        switchUserButton->mDisabled = true;
-        switchUserButton->mVisible = false;
-        switchUserButton->Resize(0, 0, 0, 0);
-        settingsButton->Resize(theX, theY, theWidth, theHeight);
-    }
 }
 
 void HelpOptionsDialog_Resize(HelpOptionsDialog *a, int a2, int a3, int a4, int a5) {

@@ -28,6 +28,11 @@ void CreditScreen_CreditScreen(Sexy::Widget *creditScreen, LawnApp *a2, bool a3)
 
     gCreditScreenBackButton = MakeButton(1000, (Sexy::ButtonListener *)creditScreen + 64, creditScreen, "[MAIN_MENU_BUTTON]");
     gCreditScreenBackButton->Resize(725, 0, 170, 50);
+}
+
+void CreditScreen_AddedToManager(Sexy::Widget *creditScreen, WidgetManager *theWidgetManager) {
+    old_CreditScreen_AddedToManager(creditScreen, theWidgetManager);
+
     creditScreen->AddWidget(gCreditScreenBackButton);
 }
 

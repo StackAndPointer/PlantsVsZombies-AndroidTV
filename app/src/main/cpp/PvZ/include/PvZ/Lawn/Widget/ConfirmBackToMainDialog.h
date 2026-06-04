@@ -45,12 +45,16 @@ inline void (*old_ConfirmBackToMainDialog_MouseDrag)(ConfirmBackToMainDialog *co
 
 inline void (*old_ConfirmBackToMainDialog_AddedToManager)(ConfirmBackToMainDialog *confirmBackToMainDialog, int a2);
 
+inline void (*old_ConfirmBackToMainDialog_RemovedFromManager)(ConfirmBackToMainDialog *confirmBackToMainDialog, int a2);
+
 inline void (*old_ConfirmBackToMainDialog_ButtonDepress)(ConfirmBackToMainDialog *a, int a2);
 
 
 void ConfirmBackToMainDialog_MouseDrag(ConfirmBackToMainDialog *confirmBackToMainDialog, int x, int y);
 
 void ConfirmBackToMainDialog_AddedToManager(ConfirmBackToMainDialog *confirmBackToMainDialog, int a2);
+
+void ConfirmBackToMainDialog_RemovedFromManager(ConfirmBackToMainDialog *confirmBackToMainDialog, int a2);
 
 void ConfirmBackToMainDialog_ButtonDepress(ConfirmBackToMainDialog *a, int a2);
 

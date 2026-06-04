@@ -37,6 +37,10 @@ void ConfirmBackToMainDialog_AddedToManager(ConfirmBackToMainDialog *confirmBack
     old_ConfirmBackToMainDialog_AddedToManager(confirmBackToMainDialog, a2);
 }
 
+void ConfirmBackToMainDialog_RemovedFromManager(ConfirmBackToMainDialog *confirmBackToMainDialog, int a2) {
+    old_ConfirmBackToMainDialog_RemovedFromManager(confirmBackToMainDialog, a2);
+}
+
 void ConfirmBackToMainDialog_ButtonDepress(ConfirmBackToMainDialog *a, int a2) {
     // 修复重新开始时不关闭NEWOPTIONS
     old_ConfirmBackToMainDialog_ButtonDepress(a, a2);

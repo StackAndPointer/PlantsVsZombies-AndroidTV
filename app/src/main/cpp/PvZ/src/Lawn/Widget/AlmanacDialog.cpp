@@ -60,8 +60,6 @@ void AlmanacDialog::_constructor(LawnApp *theApp) {
 
     gAlmanacCloseButton = MakeButton(ALMANAC_BUTTON_CLOSE, this, this, "[CLOSE]");
     gAlmanacCloseButton->Resize(ALMANAC_BUTTON_CLOSE_X, ALMANAC_BUTTON_CLOSE_Y, ALMANAC_BUTTON_WIDTH, ALMANAC_BUTTON_HEIGHT);
-    AddWidget(gAlmanacBackButton);
-    AddWidget(gAlmanacCloseButton);
 
 
     // 为泳池背景加入PoolEffect。这里挖空背景图，挖出一块透明方形
@@ -78,6 +76,21 @@ void AlmanacDialog::_destructor() {
     gAlmanacCloseButton->~GameButton();
     gAlmanacBackButton = nullptr;
     gAlmanacCloseButton = nullptr;
+}
+
+void AlmanacDialog::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
+    old_AlmanacDialog_AddedToManager(this, theWidgetManager);
+
+    AddWidget(gAlmanacBackButton);
+    AddWidget(gAlmanacCloseButton);
+}
+
+void AlmanacDialog::RemovedFromManager(WidgetManager *theWidgetManager) {
+    // 记录当前游戏状态
+    RemoveWidget(gAlmanacCloseButton);
+    RemoveWidget(gAlmanacBackButton);
+
+    old_AlmanacDialog_RemovedFromManager(this, theWidgetManager);
 }
 
 void AlmanacDialog::SetPage(AlmanacPage thePage) {
@@ -148,14 +161,6 @@ void AlmanacDialog::MouseDrag(int x, int y) {
 void AlmanacDialog::MouseUp(int x, int y, int theClickCount) {
     // 空函数替换，修复点击图鉴Index界面中任何位置都会跳转植物图鉴的问题
     gTouchDownInTextRect = false;
-}
-
-void AlmanacDialog::RemovedFromManager(WidgetManager *theWidgetManager) {
-    // 记录当前游戏状态
-    old_AlmanacDialog_RemovedFromManager(this, theWidgetManager);
-
-    RemoveWidget(gAlmanacBackButton);
-    RemoveWidget(gAlmanacCloseButton);
 }
 
 void AlmanacDialog::ButtonDepress(int theId) {

@@ -994,17 +994,23 @@ inline void *TitleScreen_SwitchStateAddr;
 inline void *CreditScreen_RemovedFromManagerAddr;
 inline void *CreditScreen_Delete2Addr;
 inline void *CreditScreen_CreditScreenAddr;
+inline void *CreditScreen_AddedToManagerAddr;
 inline void *CreditScreen_PauseCreditsAddr;
 inline void *ConfirmBackToMainDialog_AddedToManagerAddr;
+inline void *ConfirmBackToMainDialog_RemovedFromManagerAddr;
 inline void *ConfirmBackToMainDialog_ConfirmBackToMainDialogAddr;
 inline void *CursorObject_DrawAddr;
 inline void *CursorObject_UpdateAddr;
 inline void *CursorPreview_UpdateAddr;
 inline void *HelpOptionsDialog_ButtonDepressAddr;
 inline void *HelpOptionsDialog_HelpOptionsDialogAddr;
+inline void *HelpOptionsDialog_AddedToManagerAddr;
+inline void *HelpOptionsDialog_RemovedFromManagerAddr;
 inline void *HelpOptionsDialog_ResizeAddr;
 
 inline void *NewOptionsDialog_ButtonDepressAddr;
+inline void *NewOptionsDialog_AddedToManagerAddr;
+inline void *NewOptionsDialog_RemovedFromManagerAddr;
 
 inline void *Music2_DeleteAddr;
 inline void *Music_MusicAddr;

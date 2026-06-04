@@ -267,6 +267,7 @@ void InitHookFunction() {
     homura::HookFunc(GridItem_TakeDamgaeAddr, &GridItem::TakeDamgae, &old_GridItem_TakeDamage);
 
 
+    homura::HookFunc(AlmanacDialog_AddedToManagerAddr, &AlmanacDialog::AddedToManager, &old_AlmanacDialog_AddedToManager);
     homura::HookFunc(AlmanacDialog_RemovedFromManagerAddr, &AlmanacDialog::RemovedFromManager, &old_AlmanacDialog_RemovedFromManager);
     homura::HookFunc(AlmanacDialog_AlmanacDialogAddr, &AlmanacDialog::_constructor, &old_AlmanacDialog_AlmanacDialog);
     homura::HookFunc(AlmanacDialog_SetPageAddr, &AlmanacDialog::SetPage, &old_AlmanacDialog_SetPage);
@@ -545,6 +546,8 @@ void InitHookFunction() {
 
 
     homura::HookFunc(NewOptionsDialog_ButtonDepressAddr, &NewOptionsDialog::ButtonDepress, &old_NewOptionsDialog_ButtonDepress);
+    homura::HookFunc(NewOptionsDialog_AddedToManagerAddr, &NewOptionsDialog::AddedToManager, &old_NewOptionsDialog_AddedToManager);
+    homura::HookFunc(NewOptionsDialog_RemovedFromManagerAddr, &NewOptionsDialog::RemovedFromManager, &old_NewOptionsDialog_RemovedFromManager);
 
     homura::HookFunc(BaseGamepadControls_GetGamepadVelocityAddr, &BaseGamepadControls::GetGamepadVelocity, nullptr);
 
@@ -563,9 +566,12 @@ void InitHookFunction() {
     homura::HookFunc(CustomScrollbarWidget_RemoveScrollButtonsAddr, &Sexy::CustomScrollbarWidget::RemoveScrollButtons, nullptr);
 
     homura::HookFunc(CreditScreen_CreditScreenAddr, &CreditScreen_CreditScreen, &old_CreditScreen_CreditScreen);
+    homura::HookFunc(CreditScreen_AddedToManagerAddr, &CreditScreen_AddedToManager, &old_CreditScreen_AddedToManager);
     homura::HookFunc(CreditScreen_RemovedFromManagerAddr, &CreditScreen_RemovedFromManager, &old_CreditScreen_RemovedFromManager);
     homura::HookFunc(CreditScreen_Delete2Addr, &CreditScreen_Delete2, &old_CreditScreen_Delete2);
 
+    homura::HookFunc(HelpOptionsDialog_AddedToManagerAddr, &HelpOptionsDialog_AddedToManager, &old_HelpOptionsDialog_AddedToManager);
+    homura::HookFunc(HelpOptionsDialog_RemovedFromManagerAddr, &HelpOptionsDialog_RemovedFromManager, &old_HelpOptionsDialog_RemovedFromManager);
     homura::HookFunc(HelpTextScreen_AddedToManagerAddr, &HelpTextScreen_AddedToManager, &old_HelpTextScreen_AddedToManager);
     homura::HookFunc(HelpTextScreen_RemovedFromManagerAddr, &HelpTextScreen_RemovedFromManager, &old_HelpTextScreen_RemovedFromManager);
     homura::HookFunc(HelpTextScreen__constructorAddr, &HelpTextScreen::_constructor, &old_HelpTextScreen__constructor);
@@ -589,6 +595,7 @@ void InitHookFunction() {
     homura::HookFunc(LawnMower_StartMowerAddr, &LawnMower::StartMower, &old_LawnMower_StartMower);
     homura::HookFunc(ConfirmBackToMainDialog_ButtonDepressAddr, &ConfirmBackToMainDialog_ButtonDepress, &old_ConfirmBackToMainDialog_ButtonDepress);
     homura::HookFunc(ConfirmBackToMainDialog_AddedToManagerAddr, &ConfirmBackToMainDialog_AddedToManager, &old_ConfirmBackToMainDialog_AddedToManager);
+    homura::HookFunc(ConfirmBackToMainDialog_RemovedFromManagerAddr, &ConfirmBackToMainDialog_RemovedFromManager, &old_ConfirmBackToMainDialog_RemovedFromManager);
     // homura::HookFunc(FilterEffectDisposeForAppAddr, FilterEffectDisposeForApp, nullptr);
     // homura::HookFunc(FilterEffectGetImageAddr, FilterEffectGetImage, nullptr);
     homura::HookFunc(Reanimation_DrawTrackAddr, &Reanimation::DrawTrack, &old_Reanimation_DrawTrack);

@@ -106,6 +106,7 @@ public:
     }
 
     void SetPage(AlmanacPage thePage);
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
     void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void ButtonDepress(int theId);
     void DrawPlants_Unmodified(Sexy::Graphics *g);
@@ -128,6 +129,8 @@ protected:
 
 
 inline void (*old_AlmanacDialog_AlmanacDialog)(AlmanacDialog *almanacDialog, LawnApp *lawnApp);
+
+inline void (*old_AlmanacDialog_AddedToManager)(AlmanacDialog *almanacDialog, Sexy::WidgetManager *manager);
 
 inline void (*old_AlmanacDialog_SetPage)(AlmanacDialog *almanacDialog, AlmanacPage thePage);
 

@@ -36,12 +36,20 @@ public:
 
 inline void (*old_HelpOptionsDialog_ButtonDepress)(HelpOptionsDialog *a, int a2);
 
+inline void (*old_HelpOptionsDialog_AddedToManager)(HelpOptionsDialog *a, Sexy::WidgetManager *a2);
+
+inline void (*old_HelpOptionsDialog_RemovedFromManager)(HelpOptionsDialog *a, Sexy::WidgetManager *a2);
+
 inline void (*old_HelpOptionsDialog_HelpOptionsDialog)(HelpOptionsDialog *a, LawnApp *a2);
 
 inline void (*old_HelpOptionsDialog_Resize)(HelpOptionsDialog *a, int a2, int a3, int a4, int a5);
 
 
 void HelpOptionsDialog_ButtonDepress(HelpOptionsDialog *a, int a2);
+
+void HelpOptionsDialog_AddedToManager(HelpOptionsDialog *a, Sexy::WidgetManager *a2);
+
+void HelpOptionsDialog_RemovedFromManager(HelpOptionsDialog *a, Sexy::WidgetManager *a2);
 
 void HelpOptionsDialog_HelpOptionsDialog(HelpOptionsDialog *a, LawnApp *a2);
 

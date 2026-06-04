@@ -36,8 +36,15 @@ protected:
     };
 
 public:
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void ButtonDepress(int theId);
 };
+
+inline void (*old_NewOptionsDialog_AddedToManager)(NewOptionsDialog *a1, Sexy::WidgetManager *a2);
+
+inline void (*old_NewOptionsDialog_RemovedFromManager)(NewOptionsDialog *a1, Sexy::WidgetManager *a2);
+
 inline void (*old_NewOptionsDialog_ButtonDepress)(NewOptionsDialog *a1, int a2);
 
 #endif // PVZ_LAWN_WIDGET_NEWOPTIONSDIALOG_H

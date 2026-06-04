@@ -39,30 +39,31 @@ void MailScreen::_constructor(LawnApp *theApp) {
 
     gMailScreenReadButton = MakeButton(1002, this, this, "[MARK_MESSAGE_READ]");
     gMailScreenReadButton->Resize(-150, 450, 170, 80);
-    AddWidget(gMailScreenReadButton);
 
     gMailScreenSwitchButton = MakeButton(1001, this, this, "[GO_TO_READ_MAIL]");
     gMailScreenSwitchButton->Resize(-150, 520, 170, 80);
-    AddWidget(gMailScreenSwitchButton);
 
 
     gMailScreenCloseButton = MakeButton(1000, this, this, "[CLOSE]");
     gMailScreenCloseButton->Resize(800, 520, 170, 80);
-    AddWidget(gMailScreenCloseButton);
 
     Resize(0, 0, 800, 600);
 }
 
 void MailScreen::AddedToManager(WidgetManager *theWidgetManager) {
     old_MailScreen_AddedToManager(this, theWidgetManager);
+
+    AddWidget(gMailScreenReadButton);
+    AddWidget(gMailScreenSwitchButton);
+    AddWidget(gMailScreenCloseButton);
     // Sexy_Widget_Resize(mailScreen, -240, -60, 1280, 720);
 }
 
 void MailScreen::RemovedFromManager(WidgetManager *theWidgetManager) {
     // 修复MailScreen的可触控区域不为全屏
     RemoveWidget(gMailScreenCloseButton);
-    RemoveWidget(gMailScreenReadButton);
     RemoveWidget(gMailScreenSwitchButton);
+    RemoveWidget(gMailScreenReadButton);
 
     old_MailScreen_RemovedFromManager(this, theWidgetManager);
 }

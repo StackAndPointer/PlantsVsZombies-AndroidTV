@@ -27,6 +27,16 @@
 #include "PvZ/Lawn/Widget/VSResultsMenu.h"
 #include "PvZ/NetPlay.h"
 
+using namespace Sexy;
+
+void NewOptionsDialog::AddedToManager(WidgetManager *theWidgetManager) {
+    old_NewOptionsDialog_AddedToManager(this, theWidgetManager);
+}
+
+void NewOptionsDialog::RemovedFromManager(WidgetManager *theWidgetManager) {
+    old_NewOptionsDialog_RemovedFromManager(this, theWidgetManager);
+}
+
 void NewOptionsDialog::ButtonDepress(int theId) {
     if (theId == NewOptionsDialog::NewOptionsDialog_MainMenu && (gTcpConnected || gTcpClientSocket >= 0)) {
         // 对战时返回主菜单，加一层退出确认
