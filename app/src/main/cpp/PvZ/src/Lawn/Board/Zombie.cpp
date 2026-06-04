@@ -6114,8 +6114,20 @@ void Zombie::UpdateZombieBungee() {
 
             case ZombiePhase::PHASE_BUNGEE_GRABBING:
                 if (mApp->ReanimationGet(mBodyReanimID)->mLoopCount > 0) {
+                    if (mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
+                        return;
+                    }
+
                     BungeeLiftTarget();
                     mZombiePhase = ZombiePhase::PHASE_BUNGEE_RISING;
+
+                    if (gTcpClientSocket >= 0) {
+                        U16U16_Event event{};
+                        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_LIFT_TARGET;
+                        event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+                        event.data2 = uint16_t(mTargetPlantID);
+                        netplay::PutEvent(event);
+                    }
                 }
                 break;
 

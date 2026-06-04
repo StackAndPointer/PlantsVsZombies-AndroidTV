@@ -1350,7 +1350,7 @@ Zombie *Board::AddZombieInRow(ZombieType theZombieType, int theRow, int theFromW
                     GamepadControls *aGamepad = mGamepadControls[0]->mIsZombie ? mGamepadControls[0] : mGamepadControls[1];
                     int aTargetCol = PixelToGridXKeepOnBoard(aGamepad->mCursorPositionX, aGamepad->mCursorPositionY);
                     U16UNI32UNI32_Event event{};
-                    event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_STEAL;
+                    event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_SET_STEAL_GRID;
                     event.data1 = uint16_t(mZombies.DataArrayGetID(aZombie));
                     event.data2.u8x4.u8_1 = uint8_t(aTargetCol);
                     event.data2.u8x4.u8_2 = uint8_t(theRow);
@@ -1931,7 +1931,7 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aFollowerZombie->mPosX = eventZombieBobseldAdd->data4[i + 1].f32;
             }
         } break;
-        case EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_STEAL: {
+        case EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_SET_STEAL_GRID: {
             auto *eventZombieBungeeAdd = static_cast<const U16UNI32UNI32_Event *>(event);
 
             int aTargetCol = eventZombieBungeeAdd->data2.u8x4.u8_1;
@@ -1945,6 +1945,26 @@ void Board::processServerEvent(const BaseEvent *event) {
             aZombie->mPosX = float(GridToPixelX(aTargetCol, aRow));
             aZombie->mPosY = aZombie->GetPosYBasedOnRow(aRow);
             aZombie->mRenderOrder = Board::MakeRenderOrder(RENDER_LAYER_GRAVE_STONE, aRow, 7);
+        } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_LIFT_TARGET: {
+            auto *eventBungeeLiftTarget = static_cast<const U16U16_Event *>(event);
+            uint16_t serverZombieID = eventBungeeLiftTarget->data1;
+            uint16_t serverPlantID = eventBungeeLiftTarget->data2;
+            uint16_t clientZombieID;
+            if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                if (serverPlantID == PlantID::PLANTID_NULL) {
+                    aZombie->mTargetPlantID = PlantID::PLANTID_NULL;
+                } else {
+                    uint16_t clientPlantID;
+                    if (!homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
+                        break;
+                    }
+                    aZombie->mTargetPlantID = PlantID(clientPlantID);
+                }
+                aZombie->BungeeLiftTarget();
+                aZombie->mZombiePhase = ZombiePhase::PHASE_BUNGEE_RISING;
+            }
         } break;
 
         case EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_DROP_ZOMBIE: {

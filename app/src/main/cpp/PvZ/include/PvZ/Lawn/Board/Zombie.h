@@ -181,7 +181,7 @@ public:
     float mScaleZombie;                               // 75
     float mVelZ;                                      // 76
     float mOriginalAnimRate;                          // 77
-    Plant *mTargetPlantID;                            // 78
+    PlantID mTargetPlantID;                           // 78
     int mBossMode;                                    // 79
     int mTargetRow;                                   // 80
     int mBossBungeeCounter;                           // 81
