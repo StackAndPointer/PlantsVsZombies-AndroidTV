@@ -465,6 +465,7 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_UpdateYuckyFaceAddr, &Zombie::UpdateYuckyFace, &old_Zombie_UpdateYuckyFace);
     homura::HookFunc(Zombie_UpdateZombiePoolAddr, &Zombie::UpdateZombiePool, nullptr);
     homura::HookFunc(Zombie_SummonBackupDancersAddr, &Zombie::SummonBackupDancers, nullptr);
+    homura::HookFunc(Zombie_UpdateZombieBungeeAddr, &Zombie::UpdateZombieBungee, nullptr);
     homura::HookFunc(Zombie_UpdateZombiePogoAddr, &Zombie::UpdateZombiePogo, nullptr);
     homura::HookFunc(Zombie_UpdateZombieCatapultAddr, &Zombie::UpdateZombieCatapult, nullptr);
     homura::HookFunc(Zombie_BungeeLandingAddr, &Zombie::BungeeLanding, nullptr);

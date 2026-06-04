@@ -329,8 +329,11 @@ public:
     void UpdateZombieWalkingIntoHouse() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_UpdateZombieWalkingIntoHouseAddr)(this);
     }
-    void UpdateZombieBungee() {
-        reinterpret_cast<void (*)(Zombie *)>(Zombie_UpdateZombieBungeeAddr)(this);
+    void BungeeStealTarget() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_BungeeStealTargetAddr)(this);
+    }
+    void BungeeLiftTarget() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_BungeeLiftTargetAddr)(this);
     }
     void Animate() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_AnimateAddr)(this);
@@ -486,6 +489,7 @@ public:
     void UpdateZombieBobsled();
     void UpdateZombiePool();
     void DoSpecial();
+    void UpdateZombieBungee();
     void UpdateZombieCatapult();
     void BungeeLanding();
     void UpdateLadder();

@@ -6091,6 +6091,63 @@ void Zombie::BungeeLanding() {
     }
 }
 
+void Zombie::UpdateZombieBungee() {
+    if (IsDeadOrDying() || IsImmobilizied()) {
+        return;
+    }
+
+    if (mZombiePhase == ZombiePhase::PHASE_BUNGEE_DIVING || mZombiePhase == ZombiePhase::PHASE_BUNGEE_DIVING_SCREAMING) {
+        float oldAltitude = mAltitude;
+        mAltitude -= 8.0f;
+        if (mAltitude <= 2596.0f && oldAltitude > 2596.0f && mRelatedZombieID == ZombieID::ZOMBIEID_NULL) {
+            mApp->PlayFoley(FoleyType::FOLEY_GRASSSTEP);
+        }
+        BungeeLanding();
+    } else {
+        switch (mZombiePhase) {
+            case ZombiePhase::PHASE_BUNGEE_AT_BOTTOM:
+                if (mPhaseCounter <= 0) {
+                    BungeeStealTarget();
+                    mZombiePhase = ZombiePhase::PHASE_BUNGEE_GRABBING;
+                }
+                break;
+
+            case ZombiePhase::PHASE_BUNGEE_GRABBING:
+                if (mApp->ReanimationGet(mBodyReanimID)->mLoopCount > 0) {
+                    BungeeLiftTarget();
+                    mZombiePhase = ZombiePhase::PHASE_BUNGEE_RISING;
+                }
+                break;
+
+            case ZombiePhase::PHASE_BUNGEE_HIT_OUCHY:
+                if (mPhaseCounter <= 0) {
+                    DieWithLoot();
+                }
+                break;
+
+            case ZombiePhase::PHASE_BUNGEE_RISING:
+                mAltitude += 8.0f;
+                if (mAltitude >= 600.0f) {
+                    DieNoLoot();
+                }
+                break;
+
+            case ZombiePhase::PHASE_BUNGEE_CUTSCENE:
+                if (mPhaseCounter <= 0) {
+                    mPhaseCounter = 200;
+                }
+                mAltitude = static_cast<float>(TodAnimateCurve(200, 0, mPhaseCounter, 40, 0, TodCurves::CURVE_SIN_WAVE));
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    mX = int(mPosX);
+    mY = int(mPosY);
+}
+
 
 void Zombie::UpdateZombieCatapult() {
     auto syncCatapultPhase = [this](ZombiePhase phase, int phaseCounter, int summonCounter) {
