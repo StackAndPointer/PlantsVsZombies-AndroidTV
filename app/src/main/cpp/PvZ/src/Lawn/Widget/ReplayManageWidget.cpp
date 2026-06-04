@@ -1,4 +1,4 @@
-﻿﻿/*
+﻿/*
  * Copyright (C) 2023-2026  PvZ TV Touch Team
  *
  * This file is part of PlantsVsZombies-AndroidTV.
