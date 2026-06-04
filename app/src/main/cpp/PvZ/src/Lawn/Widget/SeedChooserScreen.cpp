@@ -952,7 +952,7 @@ void SeedChooserScreen::ButtonDepress_Origin(int theId) {
 
     if (theId == SeedChooserScreen_Page) {
         mPageIndex = (mPageIndex == 0) ? 1 : 0;
-        // 翻页后光标移动回第一张卡
+        // 翻至第一页时光标移动回第一张卡，翻至第二页时光标移动至最后一张卡
         int x, y;
         int aSeedIndex = mPageIndex ? (NUM_ZOMBIE_SEED_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE - 26) : 0;
         GetSeedPositionInChooser(aSeedIndex, x, y);
