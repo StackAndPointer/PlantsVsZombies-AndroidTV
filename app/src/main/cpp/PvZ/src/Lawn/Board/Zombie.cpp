@@ -1209,7 +1209,7 @@ void Zombie::UpdateZombieJackInTheBox() {
     if (mZombiePhase == ZombiePhase::PHASE_JACK_IN_THE_BOX_RUNNING) {
         if (mHasHead) {
             bool doPop = false;
-            if (!(mApp->IsVSMode() && gTcpConnected)) {
+            if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
                 if (mApp->IsVSMode()) {
                     if (VSSetupAddonWidget::msBalancePatchMode) {
                         int aPosX = mX + mWidth / 2;
