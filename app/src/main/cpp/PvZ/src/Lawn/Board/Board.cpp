@@ -106,7 +106,7 @@ void Board::_constructor(LawnApp *theApp) {
     }
     AddWidget(gBoardMenuButton);
     AddWidget(gBoardStoreButton);
-    mAdvice->~CustomMessageWidget();
+    delete mAdvice;
     mAdvice = new CustomMessageWidget(mApp);
 
     if (theApp->IsVSMode()) {

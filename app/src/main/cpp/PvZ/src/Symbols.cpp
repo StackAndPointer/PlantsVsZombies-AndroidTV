@@ -608,7 +608,7 @@ bool LoadGameMain() {
 
     SeedBank_DrawAddr = libGameMain.GetSymbol("_ZN8SeedBank4DrawEPN4Sexy8GraphicsE");
     SeedBank_SeedBankAddr = libGameMain.GetSymbol("_ZN8SeedBankC2Eb");
-    SeedBank_DeleteAddr = libGameMain.GetSymbol("_ZN8SeedBankD0Ev");
+    SeedBank_DeleteAddr = libGameMain.GetSymbol("_ZN8SeedBankD2Ev");
     SeedBank_UpdateWidthAddr = libGameMain.GetSymbol("_ZN8SeedBank11UpdateWidthEv");
     SeedBank_MoveAddr = libGameMain.GetSymbol("_ZN8SeedBank4MoveEii");
     SeedBank_MouseHitTestAddr = libGameMain.GetSymbol("_ZN8SeedBank12MouseHitTestEiiP9HitResult");
@@ -850,7 +850,6 @@ bool LoadGameMain() {
     Sexy_Graphics_DeleteAddr = libGameMain.GetSymbol("_ZN4Sexy8GraphicsD2Ev");
     Sexy_Graphics_TranslateAddr = libGameMain.GetSymbol("_ZN4Sexy8Graphics9TranslateEii");
     Sexy_Graphics_ClearRectAddr = libGameMain.GetSymbol("_ZN4Sexy8Graphics9ClearRectEiiii");
-    // Sexy_Graphics_Delete2Addr = libGameMain.GetSymbol("_ZN4Sexy8GraphicsD0Ev");
     Sexy_Graphics_SetColorAddr = libGameMain.GetSymbol("_ZN4Sexy8Graphics8SetColorERKNS_5ColorE");
     Sexy_Graphics_DrawTrianglesTexAddr = libGameMain.GetSymbol("_ZN4Sexy8Graphics16DrawTrianglesTexEPNS_5ImageEPA3_KNS_12SexyVertex2DEi");
     Sexy_Graphics_GetColorAddr = libGameMain.GetSymbol("_ZN4Sexy8Graphics8GetColorEv");
@@ -1059,7 +1058,7 @@ bool LoadGameMain() {
     TrashBin_TrashBinAddr = libGameMain.GetSymbol("_ZN8TrashBinC2E13TrashPileTypef");
     TrashBin_DeleteAddr = libGameMain.GetSymbol("_ZN8TrashBinD0Ev");
     MessageWidget_MessageWidgetAddr = libGameMain.GetSymbol("_ZN13MessageWidgetC2EP7LawnApp");
-    MessageWidget_DeleteAddr = libGameMain.GetSymbol("_ZN13MessageWidgetD0Ev");
+    MessageWidget_DeleteAddr = libGameMain.GetSymbol("_ZN13MessageWidgetD2Ev");
     MessageWidget_GetFontAddr = libGameMain.GetSymbol("_ZN13MessageWidget7GetFontEv");
     MessageWidget_DrawAddr = libGameMain.GetSymbol("_ZN13MessageWidget4DrawEPN4Sexy8GraphicsE");
     MessageWidget_ClearLabelAddr = libGameMain.GetSymbol("_ZN13MessageWidget10ClearLabelEv");
