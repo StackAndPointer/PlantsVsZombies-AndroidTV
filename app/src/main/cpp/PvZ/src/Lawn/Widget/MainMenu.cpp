@@ -166,7 +166,7 @@ void MainMenu::Update() {
             gAchievementState = SHOWING;
             gMainMenuAchievementsBack = MakeButton(ACHIEVEMENTS_BACK_BUTTON, this, this, "[CLOSE]");
             gMainMenuAchievementsBack->Resize(1000, 564 + 720, 170, 50);
-            AddWidget((Widget *)gMainMenuAchievementsBack);
+            AddWidget(gMainMenuAchievementsBack);
         }
     }
 
@@ -187,8 +187,8 @@ void MainMenu::Update() {
             gMainMenuAchievementsWidget->~AchievementsWidget();
             gMainMenuAchievementsWidget = nullptr;
             if (gMainMenuAchievementsBack != nullptr) {
-                RemoveWidget((Widget *)gMainMenuAchievementsBack);
-                gMainMenuAchievementsBack->~GameButton();
+                RemoveWidget(gMainMenuAchievementsBack);
+                mApp->SafeDeleteWidget(gMainMenuAchievementsBack);
                 gMainMenuAchievementsBack = nullptr;
             }
             Sexy::Widget *achievementsButton = FindWidget(ACHIEVEMENTS_BUTTON);

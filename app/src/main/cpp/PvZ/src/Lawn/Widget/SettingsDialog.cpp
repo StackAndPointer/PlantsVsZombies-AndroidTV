@@ -33,18 +33,20 @@ void SettingsDialog::_constructor(LawnApp *theApp) {
     old_SettingsDialog__constructor(this, theApp);
 
     mHardwareAccelerationCheckbox = MakeNewCheckbox(SettingsDialog::SettingsDialog_HardwareAcceleration, &mCheckboxListener, this, theApp->Is3DAccelerated());
-    mHapticFeedbackCheckbox = MakeNewCheckbox(SettingsDialog::SettingsDialog_HapticFeedback, &mCheckboxListener, this, !theApp->mPlayerInfo->mIsHapticFeedbackClosed);
-
     mHardwareAccelerationCheckbox->Resize(80, 260, 300, 50);
+
+    mHapticFeedbackCheckbox = MakeNewCheckbox(SettingsDialog::SettingsDialog_HapticFeedback, &mCheckboxListener, this, !theApp->mPlayerInfo->mIsHapticFeedbackClosed);
     mHapticFeedbackCheckbox->Resize(80, 320, 300, 50);
 
     mSoundSlider->mFocusLinks[1] = mHardwareAccelerationCheckbox;
-    mHardwareAccelerationCheckbox->mFocusLinks[1] = mHapticFeedbackCheckbox;
-    mHapticFeedbackCheckbox->mFocusLinks[1] = mBackButton;
 
     mBackButton->mFocusLinks[0] = mHapticFeedbackCheckbox;
-    mHapticFeedbackCheckbox->mFocusLinks[0] = mHardwareAccelerationCheckbox;
+
     mHardwareAccelerationCheckbox->mFocusLinks[0] = mSoundSlider;
+    mHardwareAccelerationCheckbox->mFocusLinks[1] = mHapticFeedbackCheckbox;
+
+    mHapticFeedbackCheckbox->mFocusLinks[0] = mHardwareAccelerationCheckbox;
+    mHapticFeedbackCheckbox->mFocusLinks[1] = mBackButton;
 }
 
 void SettingsDialog::AddedToManager(WidgetManager *theWidgetManager) {
@@ -62,10 +64,9 @@ void SettingsDialog::RemovedFromManager(WidgetManager *theWidgetManager) {
 }
 
 void SettingsDialog::_destructor() {
+    mApp->SafeDeleteWidget(mHapticFeedbackCheckbox);
+    mApp->SafeDeleteWidget(mHardwareAccelerationCheckbox);
     old_SettingsDialog__destructor(this);
-
-    delete mHardwareAccelerationCheckbox;
-    delete mHapticFeedbackCheckbox;
 }
 
 void SettingsDialog::Draw(Sexy::Graphics *g) {

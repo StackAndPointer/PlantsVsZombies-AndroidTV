@@ -56,8 +56,8 @@ public:
         _destructor();
     };
 
-    void AddedToManager(Sexy::WidgetManager *manager);
-    void RemovedFromManager(Sexy::WidgetManager *manager);
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void Draw(Sexy::Graphics *g);
     void CheckboxChecked(int theId, bool isChecked);
 
@@ -68,13 +68,13 @@ protected:
     void _destructor();
 };
 
-inline void (*old_SettingsDialog_AddedToManager)(SettingsDialog *settingsDialog, Sexy::WidgetManager *manager);
+inline void (*old_SettingsDialog__constructor)(SettingsDialog *, LawnApp *);
 
-inline void (*old_SettingsDialog_RemovedFromManager)(SettingsDialog *settingsDialog, Sexy::WidgetManager *manager);
+inline void (*old_SettingsDialog__destructor)(SettingsDialog *);
 
-inline void (*old_SettingsDialog__constructor)(SettingsDialog *settingsDialog, LawnApp *theApp);
+inline void (*old_SettingsDialog_AddedToManager)(SettingsDialog *, Sexy::WidgetManager *);
 
-inline void (*old_SettingsDialog__destructor)(SettingsDialog *settingsDialog);
+inline void (*old_SettingsDialog_RemovedFromManager)(SettingsDialog *, Sexy::WidgetManager *);
 
 inline void (*old_SettingsDialog_Draw)(SettingsDialog *settingsDialog, Sexy::Graphics *graphics);
 
