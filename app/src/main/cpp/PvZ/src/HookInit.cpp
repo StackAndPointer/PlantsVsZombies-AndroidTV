@@ -662,6 +662,7 @@ void InitVTableHookFunction() {
     homura::HookVirtualFunc(vTableForCursorObjectAddr, 4, &CursorObject::BeginDraw, &old_CursorObject_BeginDraw);
     homura::HookVirtualFunc(vTableForCursorObjectAddr, 5, &CursorObject::EndDraw, &old_CursorObject_EndDraw);
 
+    homura::HookVirtualFunc(vTableForBoardAddr, 31, &Board::AddedToManager, &old_Board_AddedToManager);
     homura::HookVirtualFunc(vTableForBoardAddr, 77, &Board::MouseMove, &old_Board_MouseMove);
     homura::HookVirtualFunc(vTableForBoardAddr, 78, &Board::MouseDown, &old_Board_MouseDown);
     homura::HookVirtualFunc(vTableForBoardAddr, 81, &Board::MouseUp, &old_Board_MouseUp);

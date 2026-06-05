@@ -104,8 +104,6 @@ void Board::_constructor(LawnApp *theApp) {
             gBoardStoreButton->mDisabled = true;
         }
     }
-    AddWidget(gBoardMenuButton);
-    AddWidget(gBoardStoreButton);
     delete mAdvice;
     mAdvice = new CustomMessageWidget(mApp);
 
@@ -118,18 +116,27 @@ void Board::_constructor(LawnApp *theApp) {
 }
 
 void Board::_destructor() {
-    old_Board__destructor(this);
-}
-
-void Board::RemovedFromManager(WidgetManager *theManager) {
-    RemoveWidget(gBoardMenuButton);
-    mApp->SafeDeleteWidget(gBoardMenuButton);
-    gBoardMenuButton = nullptr;
-    RemoveWidget(gBoardStoreButton);
     mApp->SafeDeleteWidget(gBoardStoreButton);
     gBoardStoreButton = nullptr;
 
-    old_Board_RemovedFromManager(this, theManager);
+    mApp->SafeDeleteWidget(gBoardMenuButton);
+    gBoardMenuButton = nullptr;
+
+    old_Board__destructor(this);
+}
+
+void Board::AddedToManager(WidgetManager *theWidgetManager) {
+    old_Board_AddedToManager(this, theWidgetManager);
+
+    AddWidget(gBoardMenuButton);
+    AddWidget(gBoardStoreButton);
+}
+
+void Board::RemovedFromManager(WidgetManager *theWidgetManager) {
+    old_Board_RemovedFromManager(this, theWidgetManager);
+
+    RemoveWidget(gBoardMenuButton);
+    RemoveWidget(gBoardStoreButton);
 }
 
 void Board::InitLevel() {

@@ -496,7 +496,8 @@ public:
     void SetGrids();
     void StartLevel();
     void Update();
-    void RemovedFromManager(Sexy::WidgetManager *theManager);
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void UpdateButtons();
     int GetNumSeedsInBank(bool isZombieBank);
     void RemoveParticleByType(ParticleEffect theEffectType);
@@ -771,7 +772,9 @@ inline void (*old_Board_PickZombieWaves)(Board *board);
 
 inline ZombieType (*old_Board_PickZombieType)(Board *board, int theZombiePoints, int theWaveIndex, ZombiePicker *theZombiePicker);
 
-inline void (*old_Board_RemovedFromManager)(Board *board, Sexy::WidgetManager *manager);
+inline void (*old_Board_AddedToManager)(Board *, Sexy::WidgetManager *);
+
+inline void (*old_Board_RemovedFromManager)(Board *, Sexy::WidgetManager *);
 
 inline void (*old_Board_InitLevel)(Board *board);
 
