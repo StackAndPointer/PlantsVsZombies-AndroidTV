@@ -802,7 +802,8 @@ bool LoadGameMain() {
     WaitForSecondPlayerDialog_WaitForSecondPlayerDialogAddr = libGameMain.GetSymbol("_ZN25WaitForSecondPlayerDialogC2EP7LawnApp");
     WaitForSecondPlayerDialog_GameButtonDownAddr = libGameMain.GetSymbol("_ZN25WaitForSecondPlayerDialog14GameButtonDownEN4Sexy13GamepadButtonEij");
     WaitForSecondPlayerDialog_KeyDownAddr = libGameMain.GetSymbol("_ZN25WaitForSecondPlayerDialog7KeyDownEN4Sexy7KeyCodeE");
-    WaitForSecondPlayerDialog_DeleteAddr = libGameMain.GetSymbol("_ZN25WaitForSecondPlayerDialogD0Ev");
+    WaitForSecondPlayerDialog__destructorAddr = libGameMain.GetSymbol("_ZN25WaitForSecondPlayerDialogD2Ev");
+    WaitForSecondPlayerDialog__destructor2Addr = libGameMain.GetSymbol("_ZN25WaitForSecondPlayerDialogD0Ev");
 
 
     Sexy_Dialog_AddedToManagerWidgetManagerAddr = libGameMain.GetSymbol("_ZN4Sexy6Dialog14AddedToManagerEPNS_13WidgetManagerE");

@@ -121,6 +121,7 @@ static const char *CampNameFromSide(int side) {
 
 void VSResultsMenu::_constructor() {
     old_VSResultsMenu_Constructor(this);
+
     mIsReplaySession = gIsReplayMode;
     mIsOnlineSession = !mIsReplaySession && IsOnlineResultsSessionActive();
     gVSResultRequestState = -1;
@@ -140,10 +141,7 @@ void VSResultsMenu::_constructor() {
 }
 
 void VSResultsMenu::_destructor() {
-    //    if (mBackButton) {
-    //        RemoveWidget(mBackButton);
-    //    }
-    //    delete mBackButton;
+    gLawnApp->SafeDeleteWidget(mBackButton);
 
     old_VSResultsMenu_Destructor(this);
 }
@@ -152,13 +150,16 @@ void VSResultsMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
     old_VSResultsMenu_AddedToManager(this, theWidgetManager);
 
     AddWidget(mBackButton);
-    if (mBackButton != nullptr) {
-        mBackButton->SetLabel("[BACK_TO_MODE_SELECT]");
-    }
     if (Sexy::Widget *quitVsWidget = FindWidget(VSResultsMenu::VSResultsMenu_Quit_VS)) {
-        auto *quitVsButton = reinterpret_cast<GameButton *>(quitVsWidget);
+        auto *quitVsButton = static_cast<GameButton *>(quitVsWidget);
         quitVsButton->SetLabel(mIsOnlineSession && IsOnlineResultsSessionActive() ? "[DISCONNECT]" : "[QUIT_VS]");
     }
+}
+
+void VSResultsMenu::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
+    old_VSResultsMenu_AddedToManager(this, theWidgetManager);
+
+    RemoveWidget(mBackButton);
 }
 
 void VSResultsMenu::processClientEvent(const BaseEvent *event) {

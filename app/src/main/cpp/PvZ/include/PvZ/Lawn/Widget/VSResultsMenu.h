@@ -81,6 +81,8 @@ public:
     }
     ~VSResultsMenu() = delete;
 
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void Update();
     void OnExit();
     void ButtonDepress(int theId);
@@ -88,7 +90,6 @@ public:
     void DrawInfoBox(Sexy::Graphics *a2, int a3);
     void HideReplayButton(bool forceHide);
     void HandleOpponentDisconnected();
-    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
     void InitFromBoard(Board *board);
     void ShowReplayButton();
 
@@ -169,7 +170,7 @@ public:
         if (mParentMenu != nullptr && mParentMenu->mWidgetManager != nullptr) {
             mParentMenu->RemoveWidget(mSendPlayerNameCheckbox);
         }
-        delete mSendPlayerNameCheckbox;
+        gLawnApp->SafeDeleteWidget(mSendPlayerNameCheckbox);
         mSendPlayerNameCheckbox = nullptr;
         mParentMenu = nullptr;
     }
@@ -189,6 +190,8 @@ inline void (*old_VSResultsMenu_DrawInfoBox)(VSResultsMenu *a, Sexy::Graphics *a
 inline void (*old_VSResultsMenu_Constructor)(VSResultsMenu *);
 
 inline void (*old_VSResultsMenu_AddedToManager)(VSResultsMenu *, Sexy::WidgetManager *);
+
+inline void (*old_VSResultsMenu_RemovedFromManager)(VSResultsMenu *, Sexy::WidgetManager *);
 
 inline void (*old_VSResultsMenu_Destructor)(VSResultsMenu *);
 

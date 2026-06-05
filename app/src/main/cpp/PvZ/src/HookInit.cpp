@@ -585,7 +585,8 @@ void InitHookFunction() {
     homura::HookFunc(HelpOptionsDialog_ResizeAddr, &HelpOptionsDialog_Resize, &old_HelpOptionsDialog_Resize);
 
     homura::HookFunc(WaitForSecondPlayerDialog_WaitForSecondPlayerDialogAddr, &WaitForSecondPlayerDialog::_constructor, &old_WaitForSecondPlayerDialog_WaitForSecondPlayerDialog);
-    homura::HookFunc(WaitForSecondPlayerDialog_DeleteAddr, &WaitForSecondPlayerDialog::_destructor, &old_WaitForSecondPlayerDialog_Delete);
+    homura::HookFunc(WaitForSecondPlayerDialog__destructorAddr, &WaitForSecondPlayerDialog::_destructor, &old_WaitForSecondPlayerDialog__destructorAddr);
+    homura::HookFunc(WaitForSecondPlayerDialog__destructor2Addr, &WaitForSecondPlayerDialog::_destructor2, &old_WaitForSecondPlayerDialog__destructor2Addr);
 
 
     homura::HookFunc(Sexy_WidgetManager_MouseDownAddr, &Sexy::WidgetManager::MouseDown, &old_Sexy_WidgetManager_MouseDown);
@@ -687,6 +688,7 @@ void InitVTableHookFunction() {
     // homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 78, &VSResultsMenu::MouseDown,nullptr);
     // homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 81, &VSResultsMenu::MouseUp,nullptr);
     // homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 83, &VSResultsMenu::MouseDrag,nullptr);
+    homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 32, &VSResultsMenu::RemovedFromManager, &old_VSResultsMenu_AddedToManager);
 
 
     homura::HookVirtualFunc(vTableForVSSetupMenuAddr, 78, &VSSetupMenu::MouseDown, nullptr);

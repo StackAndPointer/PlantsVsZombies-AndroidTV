@@ -834,10 +834,22 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     SetMode(UIMode::MODE1_INIT);
 }
 
+WaitForSecondPlayerDialog::~WaitForSecondPlayerDialog() {
+    CloseReplayManageWidget();
+    ServerDisconnect("dialog destroy");
+    old_WaitForSecondPlayerDialog__destructorAddr(this);
+}
+
 void WaitForSecondPlayerDialog::_destructor() {
     CloseReplayManageWidget();
     ServerDisconnect("dialog destroy");
-    old_WaitForSecondPlayerDialog_Delete(this);
+    mServerP2PStatusText.~basic_string();
+    mServerStatusText.~basic_string();
+    old_WaitForSecondPlayerDialog__destructorAddr(this);
+}
+
+void WaitForSecondPlayerDialog::_destructor2() {
+    delete this;
 }
 
 void WaitForSecondPlayerDialog::Draw(Graphics *g) {

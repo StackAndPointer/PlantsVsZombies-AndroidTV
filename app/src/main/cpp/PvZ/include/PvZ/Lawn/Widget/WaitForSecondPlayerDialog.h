@@ -209,9 +209,7 @@ public:
     WaitForSecondPlayerDialog(LawnApp *theApp) {
         _constructor(theApp);
     }
-    ~WaitForSecondPlayerDialog() {
-        _destructor();
-    }
+    ~WaitForSecondPlayerDialog();
 
     void Update();
     void Draw(Sexy::Graphics *g);
@@ -240,17 +238,20 @@ protected:
 
     void _constructor(LawnApp *theApp);
     void _destructor();
+    void _destructor2();
 
     bool GetActiveBroadcast(sockaddr_in &out_bcast, std::string *out_ifname);
     bool ServerSendU8(uint8_t b);
 };
 
-inline void (*old_WaitForSecondPlayerDialog_WaitForSecondPlayerDialog)(WaitForSecondPlayerDialog *a, LawnApp *theApp);
+inline void (*old_WaitForSecondPlayerDialog_WaitForSecondPlayerDialog)(WaitForSecondPlayerDialog *, LawnApp *);
+
+inline void (*old_WaitForSecondPlayerDialog__destructorAddr)(WaitForSecondPlayerDialog *);
+
+inline void (*old_WaitForSecondPlayerDialog__destructor2Addr)(WaitForSecondPlayerDialog *);
 
 inline void (*old_WaitForSecondPlayerDialog_Draw)(WaitForSecondPlayerDialog *dialog, Sexy::Graphics *graphics);
 
 inline void (*old_WaitForSecondPlayerDialog_ButtonDepress)(Sexy::ButtonListener &listener, int id);
-
-inline void (*old_WaitForSecondPlayerDialog_Delete)(WaitForSecondPlayerDialog *dialog);
 
 #endif // PVZ_LAWN_WIDGET_WAIT_FOR_SECOND_PLAYER_DIALOG_H

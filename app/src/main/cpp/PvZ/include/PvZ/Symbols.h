@@ -804,7 +804,8 @@ inline void *VSResultsMenu_GetPlayerRecordAddr;
 inline void *WaitForSecondPlayerDialog_WaitForSecondPlayerDialogAddr;
 inline void *WaitForSecondPlayerDialog_GameButtonDownAddr;
 inline void *WaitForSecondPlayerDialog_KeyDownAddr;
-inline void *WaitForSecondPlayerDialog_DeleteAddr;
+inline void *WaitForSecondPlayerDialog__destructorAddr;
+inline void *WaitForSecondPlayerDialog__destructor2Addr;
 
 
 inline void *Sexy_Dialog_AddedToManagerWidgetManagerAddr;
