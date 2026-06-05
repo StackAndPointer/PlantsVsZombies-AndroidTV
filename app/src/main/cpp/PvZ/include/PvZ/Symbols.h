@@ -1110,6 +1110,8 @@ inline void *Sexy_Widget_MoveAddr;
 inline void *Sexy_WidgetContainer_SetFocusAddr;
 inline void *Sexy_WidgetContainer_AddWidgetAddr;
 inline void *Sexy_WidgetContainer_RemoveWidgetAddr;
+inline void *Sexy_WidgetContainer_AddedToManagerAddr;
+inline void *Sexy_WidgetContainer_RemovedFromManagerAddr;
 inline void *Sexy_WidgetContainer_BringToFrontAddr;
 inline void *Sexy_WidgetContainer_BringToBackAddr;
 inline void *Sexy_WidgetManager_GetWidgetAtAddr;

@@ -1110,6 +1110,8 @@ bool LoadGameMain() {
     Sexy_WidgetManager_SetFocusAddr = libGameMain.GetSymbol("_ZN4Sexy13WidgetManager8SetFocusEPNS_6WidgetE");
     Sexy_WidgetContainer_AddWidgetAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer9AddWidgetEPNS_6WidgetE");
     Sexy_WidgetContainer_RemoveWidgetAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer12RemoveWidgetEPNS_6WidgetE");
+    Sexy_WidgetContainer_AddedToManagerAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer14AddedToManagerEPNS_13WidgetManagerE");
+    Sexy_WidgetContainer_RemovedFromManagerAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer18RemovedFromManagerEPNS_13WidgetManagerE");
     Sexy_WidgetContainer_BringToFrontAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer12BringToFrontEPNS_6WidgetE");
     Sexy_WidgetContainer_BringToBackAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer11BringToBackEPNS_6WidgetE");
     Sexy_WidgetContainer_SetFocusAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer8SetFocusEPNS_6WidgetE");

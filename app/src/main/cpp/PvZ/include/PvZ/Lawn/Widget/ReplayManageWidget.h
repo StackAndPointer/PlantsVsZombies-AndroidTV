@@ -57,6 +57,8 @@ public:
     explicit ReplayManageWidget(LawnApp *app, Sexy::ButtonListener *buttonListener);
     ~ReplayManageWidget();
 
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void Draw(Sexy::Graphics *g);
     void SelectReplayIndex(int index);
     void RefreshReplayList();

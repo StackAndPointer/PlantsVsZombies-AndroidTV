@@ -239,6 +239,8 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
         std::memcpy(sReplayManageWidgetVTable, vTable, sizeof(sReplayManageWidgetVTable));
         sReplayManageWidgetVTable[0] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::_destructor);
         sReplayManageWidgetVTable[1] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::_destructor2);
+        sReplayManageWidgetVTable[29] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::AddedToManager);
+        sReplayManageWidgetVTable[30] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::RemovedFromManager);
         sReplayManageWidgetVTable[36] = (void *)homura::ExtractMemFuncPtr(&ReplayManageWidget::Draw);
     });
     vTable = sReplayManageWidgetVTable;
@@ -252,11 +254,9 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
     mScrollWidget->Resize(0, 150, mWidth, mHeight - 150);
     mScrollWidget->SetScrollMode(ScrollWidget::ScrollMode::SCROLL_VERTICAL);
     mScrollWidget->EnableBounce(false);
-    AddWidget(mScrollWidget);
     mScrollContent = new ReplayListContentWidget(this);
     mScrollContent->Resize(0, 0, mScrollWidget->mWidth, mScrollContent->mTotalItems * kReplayRowHeight);
 
-    mScrollWidget->AddWidget(mScrollContent);
     mScrollWidget->ScrollToMin(false);
     mPlayButton = MakeButton(ReplayManageWidget_Play, buttonListener, this, "[REPLAY_PLAY]");
     mPlayButton->Resize(120, 564, 170, 50);
@@ -273,11 +273,6 @@ ReplayManageWidget::ReplayManageWidget(LawnApp *app, ButtonListener *buttonListe
 
     mSelectedReplayIndex = mScrollContent->mTotalItems > 0 ? 0 : -1;
     mNeedRefreshList = false;
-    AddWidget(mCloseButton);
-    AddWidget(mImportButton);
-    AddWidget(mExportButton);
-    AddWidget(mDeleteButton);
-    AddWidget(mPlayButton);
     TodLoadResources("DelayLoad_Almanac");
 }
 
@@ -286,21 +281,12 @@ ReplayManageWidget::~ReplayManageWidget() {
 }
 
 void ReplayManageWidget::_destructor() {
-    RemoveWidget(mPlayButton);
     mApp->SafeDeleteWidget(mPlayButton);
-    RemoveWidget(mDeleteButton);
     mApp->SafeDeleteWidget(mDeleteButton);
-    RemoveWidget(mExportButton);
     mApp->SafeDeleteWidget(mExportButton);
-    RemoveWidget(mImportButton);
     mApp->SafeDeleteWidget(mImportButton);
-    RemoveWidget(mCloseButton);
     mApp->SafeDeleteWidget(mCloseButton);
-
-    mScrollWidget->RemoveWidget(mScrollContent);
     mApp->SafeDeleteWidget(mScrollContent);
-
-    RemoveWidget(mScrollWidget);
     mApp->SafeDeleteWidget(mScrollWidget);
 
     Widget::_destructor();
@@ -308,6 +294,30 @@ void ReplayManageWidget::_destructor() {
 
 void ReplayManageWidget::_destructor2() {
     delete this;
+}
+
+void ReplayManageWidget::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
+    WidgetContainer::AddedToManager(theWidgetManager);
+
+    AddWidget(mScrollWidget);
+    mScrollWidget->AddWidget(mScrollContent);
+    AddWidget(mCloseButton);
+    AddWidget(mImportButton);
+    AddWidget(mExportButton);
+    AddWidget(mDeleteButton);
+    AddWidget(mPlayButton);
+}
+
+void ReplayManageWidget::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
+    WidgetContainer::RemovedFromManager(theWidgetManager);
+
+    RemoveWidget(mScrollWidget);
+    mScrollWidget->RemoveWidget(mScrollContent);
+    RemoveWidget(mCloseButton);
+    RemoveWidget(mImportButton);
+    RemoveWidget(mExportButton);
+    RemoveWidget(mDeleteButton);
+    RemoveWidget(mPlayButton);
 }
 
 void ReplayManageWidget::Draw(Graphics *g) {

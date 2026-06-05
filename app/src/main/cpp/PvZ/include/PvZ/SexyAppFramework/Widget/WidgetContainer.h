@@ -71,6 +71,12 @@ public:
     void RemoveWidget(Widget *theWidget) { // vTable + 28
         reinterpret_cast<void (*)(WidgetContainer *, Widget *)>(Sexy_WidgetContainer_RemoveWidgetAddr)(this, theWidget);
     }
+    void AddedToManager(WidgetManager *theWidgetManager) {
+        reinterpret_cast<void (*)(WidgetContainer *, WidgetManager *)>(Sexy_WidgetContainer_AddedToManagerAddr)(this, theWidgetManager);
+    }
+    void RemovedFromManager(WidgetManager *theWidgetManager) {
+        reinterpret_cast<void (*)(WidgetContainer *, WidgetManager *)>(Sexy_WidgetContainer_RemovedFromManagerAddr)(this, theWidgetManager);
+    }
     void BringToFront(Widget *theWidget) { // vTable + 60
         reinterpret_cast<void (*)(WidgetContainer *, Widget *)>(Sexy_WidgetContainer_BringToFrontAddr)(this, theWidget);
     }
