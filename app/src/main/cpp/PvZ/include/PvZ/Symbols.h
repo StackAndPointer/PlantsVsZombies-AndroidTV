@@ -953,7 +953,7 @@ inline void *DaveHelp_DrawAddr;
 inline void *DaveHelp_Delete2Addr;
 inline void *DaveHelp_DealClickAddr;
 inline void *TrashBin_TrashBinAddr;
-inline void *TrashBin_DeleteAddr;
+inline void *TrashBin__destructorAddr;
 inline void *MessageWidget_MessageWidgetAddr;
 inline void *MessageWidget_DeleteAddr;
 inline void *MessageWidget_GetFontAddr;

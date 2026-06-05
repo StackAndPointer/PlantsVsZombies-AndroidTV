@@ -1057,7 +1057,7 @@ bool LoadGameMain() {
     DaveHelp_Delete2Addr = libGameMain.GetSymbol("_ZN8DaveHelpD2Ev");
     DaveHelp_DealClickAddr = libGameMain.GetSymbol("_ZN8DaveHelp9DealClickEN4Sexy7KeyCodeE");
     TrashBin_TrashBinAddr = libGameMain.GetSymbol("_ZN8TrashBinC2E13TrashPileTypef");
-    TrashBin_DeleteAddr = libGameMain.GetSymbol("_ZN8TrashBinD0Ev");
+    TrashBin__destructorAddr = libGameMain.GetSymbol("_ZN8TrashBinD0Ev");
     MessageWidget_MessageWidgetAddr = libGameMain.GetSymbol("_ZN13MessageWidgetC2EP7LawnApp");
     MessageWidget_DeleteAddr = libGameMain.GetSymbol("_ZN13MessageWidgetD2Ev");
     MessageWidget_GetFontAddr = libGameMain.GetSymbol("_ZN13MessageWidget7GetFontEv");

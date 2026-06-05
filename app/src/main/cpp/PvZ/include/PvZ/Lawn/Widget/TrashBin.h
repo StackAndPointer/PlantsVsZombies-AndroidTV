@@ -56,7 +56,7 @@ protected:
     void _constructor(TrashPileType theTrashPileType, float theHeight);
 
     void _destructor() {
-        reinterpret_cast<void (*)(TrashBin *)>(TrashBin_DeleteAddr)(this);
+        reinterpret_cast<void (*)(TrashBin *)>(TrashBin__destructorAddr)(this);
     }
 };
 
