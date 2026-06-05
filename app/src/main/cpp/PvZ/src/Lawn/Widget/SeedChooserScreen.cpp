@@ -199,7 +199,6 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
         if (mIsZombieChooser && mShowExtendedSeeds) {
             mPageButton = MakeNewButton(SeedChooserScreen::SeedChooserScreen_Page, this, this, "", nullptr, Sexy::IMAGE_ZEN_NEXTGARDEN, Sexy::IMAGE_ZEN_NEXTGARDEN, Sexy::IMAGE_ZEN_NEXTGARDEN);
             mPageButton->Resize(225, 525, 60, 60);
-            AddWidget(mPageButton);
         }
     } else {
         if (mStoreButton) {
@@ -219,16 +218,42 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     if (mApp->mGameMode != GameMode::GAMEMODE_MP_VS && !mIsZombieChooser) {
         gSeedChooserScreenMainMenuButton = MakeButton(104, this, this, "[MENU_BUTTON]");
         gSeedChooserScreenMainMenuButton->Resize(mApp->IsCoopMode() ? 345 : 650, -3, 120, 80);
-        AddWidget(gSeedChooserScreenMainMenuButton);
     }
 }
 
 void SeedChooserScreen::_destructor() {
-    old_SeedChooserScreen__destructor(this);
+    if (gSeedChooserScreenMainMenuButton != nullptr) {
+        mApp->SafeDeleteWidget(gSeedChooserScreenMainMenuButton);
+        gSeedChooserScreenMainMenuButton = nullptr;
+    }
+    if (mPageButton != nullptr) {
+        mApp->SafeDeleteWidget(mPageButton);
+    }
 
-    delete mPageButton;
+    old_SeedChooserScreen__destructor(this);
 }
 
+void SeedChooserScreen::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
+    old_SeedChooserScreen_AddedToManager(this, theWidgetManager);
+
+    if (mPageButton != nullptr) {
+        AddWidget(mPageButton);
+    }
+    if (gSeedChooserScreenMainMenuButton != nullptr) {
+        AddWidget(gSeedChooserScreenMainMenuButton);
+    }
+}
+
+void SeedChooserScreen::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
+    old_SeedChooserScreen_RemovedFromManager(this, theWidgetManager);
+
+    if (mPageButton != nullptr) {
+        RemoveWidget(mPageButton);
+    }
+    if (gSeedChooserScreenMainMenuButton != nullptr) {
+        RemoveWidget(gSeedChooserScreenMainMenuButton);
+    }
+}
 
 void SeedChooserScreen::RebuildHelpbar() {
     // 拓宽Widget大小

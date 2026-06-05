@@ -177,6 +177,8 @@ public:
         return reinterpret_cast<bool (*)(SeedChooserScreen *, int)>(SeedChooserScreen_ShouldDisplayCursorAddr)(this, thePlayerIndex);
     }
 
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void EnableStartButton(int theIsEnabled);
     void RebuildHelpbar();
     SeedType GetZombieSeedType(int theSeedIndex);
@@ -226,8 +228,13 @@ protected:
 inline GameButton *gSeedChooserScreenMainMenuButton;
 inline SeedChooserTouchState gSeedChooserTouchState = SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_NONE;
 
-/***************************************************************************************************************/
 inline bool daveNoPickSeeds;
+
+/***************************************************************************************************************/
+
+inline void (*old_SeedChooserScreen_AddedToManager)(SeedChooserScreen *, Sexy::WidgetManager *);
+
+inline void (*old_SeedChooserScreen_RemovedFromManager)(SeedChooserScreen *, Sexy::WidgetManager *);
 
 inline bool (*old_SeedChooserScreen_KeyDown)(SeedChooserScreen *seedChooserScreen, Sexy::KeyCode theKey);
 

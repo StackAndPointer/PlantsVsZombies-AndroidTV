@@ -693,6 +693,8 @@ void InitVTableHookFunction() {
     homura::HookVirtualFunc(vTableForVSSetupMenuAddr, 81, &VSSetupMenu::MouseUp, nullptr);
     homura::HookVirtualFunc(vTableForVSSetupMenuAddr, 83, &VSSetupMenu::MouseDrag, nullptr);
 
+    homura::HookVirtualFunc(vTableForSeedChooserScreenAddr, 31, &SeedChooserScreen::AddedToManager, &old_SeedChooserScreen_AddedToManager);
+    homura::HookVirtualFunc(vTableForSeedChooserScreenAddr, 32, &SeedChooserScreen::RemovedFromManager, &old_SeedChooserScreen_RemovedFromManager);
     homura::HookVirtualFunc(vTableForSeedChooserScreenAddr, 77, &SeedChooserScreen::MouseMove, &old_SeedChooserScreen_MouseMove);
     homura::HookVirtualFunc(vTableForSeedChooserScreenAddr, 78, &SeedChooserScreen::MouseDown, &old_SeedChooserScreen_MouseDown);
     homura::HookVirtualFunc(vTableForSeedChooserScreenAddr, 81, &SeedChooserScreen::MouseUp, &old_SeedChooserScreen_MouseUp);
