@@ -60,31 +60,35 @@ public:
     double mScrollPositionY1;         // 90 ~ 91
     double mScrollPositionY2;         // 92 ~ 93
     bool mIsFromMainMenu;             // 376,即94
+
     // 大小95个整数
 
     void PauseCredits() {
         reinterpret_cast<void (*)(CreditScreen *)>(CreditScreen_PauseCreditsAddr)(this);
     }
 
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void ButtonDepress(int theId);
+
+protected:
+    friend void InitHookFunction();
+
+    CreditScreen() = default;
+    ~CreditScreen() = default;
+
+    void _constructor(LawnApp *theApp, bool theBool);
+    void _destructor();
 };
 
 inline GameButton *gCreditScreenBackButton;
 
-inline void (*old_CreditScreen_CreditScreen)(Sexy::Widget *a, LawnApp *a2, bool a3);
+inline void (*old_CreditScreen__constructor)(CreditScreen *, LawnApp *, bool);
 
-inline void (*old_CreditScreen_AddedToManager)(Sexy::Widget *creditScreen, Sexy::WidgetManager *a2);
+inline void (*old_CreditScreen__destructor)(CreditScreen *);
 
-inline void (*old_CreditScreen_RemovedFromManager)(Sexy::Widget *creditScreen, Sexy::WidgetManager *a2);
+inline void (*old_CreditScreen_AddedToManager)(CreditScreen *, Sexy::WidgetManager *);
 
-inline void (*old_CreditScreen_Delete2)(Sexy::Widget *creditScreen);
-
-void CreditScreen_CreditScreen(Sexy::Widget *creditScreen, LawnApp *a2, bool a3);
-
-void CreditScreen_AddedToManager(Sexy::Widget *creditScreen, Sexy::WidgetManager *a2);
-
-void CreditScreen_RemovedFromManager(Sexy::Widget *creditScreen, Sexy::WidgetManager *a2);
-
-void CreditScreen_Delete2(Sexy::Widget *creditScreen);
+inline void (*old_CreditScreen_RemovedFromManager)(CreditScreen *, Sexy::WidgetManager *);
 
 #endif // PVZ_LAWN_WIDGET_CREDIT_SCREEN_H

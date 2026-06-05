@@ -222,7 +222,7 @@ void InitHookFunction() {
 
     homura::HookFunc(ChallengeScreen_AddedToManagerAddr, &ChallengeScreen::AddedToManager, &old_ChallengeScreen_AddedToManager);
     homura::HookFunc(ChallengeScreen_RemovedFromManagerAddr, &ChallengeScreen::RemovedFromManager, &old_ChallengeScreen_RemovedFromManager);
-    homura::HookFunc(ChallengeScreen_Delete2Addr, &ChallengeScreen::_destructor2, &old_ChallengeScreen_Delete2);
+    homura::HookFunc(ChallengeScreen_Delete2Addr, &ChallengeScreen::_destructor, &old_ChallengeScreen__destructor);
     homura::HookFunc(ChallengeScreen_UpdateAddr, &ChallengeScreen::Update, &old_ChallengeScreen_Update);
     homura::HookFunc(ChallengeScreen_ChallengeScreenAddr, &ChallengeScreen::_constructor, &old_ChallengeScreen_ChallengeScreen);
     homura::HookFunc(ChallengeScreen_DrawAddr, &ChallengeScreen::Draw, &old_ChallengeScreen_Draw);
@@ -568,10 +568,10 @@ void InitHookFunction() {
 
     homura::HookFunc(CustomScrollbarWidget_RemoveScrollButtonsAddr, &Sexy::CustomScrollbarWidget::RemoveScrollButtons, nullptr);
 
-    homura::HookFunc(CreditScreen_CreditScreenAddr, &CreditScreen_CreditScreen, &old_CreditScreen_CreditScreen);
-    homura::HookFunc(CreditScreen_AddedToManagerAddr, &CreditScreen_AddedToManager, &old_CreditScreen_AddedToManager);
-    homura::HookFunc(CreditScreen_RemovedFromManagerAddr, &CreditScreen_RemovedFromManager, &old_CreditScreen_RemovedFromManager);
-    homura::HookFunc(CreditScreen_Delete2Addr, &CreditScreen_Delete2, &old_CreditScreen_Delete2);
+    homura::HookFunc(CreditScreen_CreditScreenAddr, &CreditScreen::_constructor, &old_CreditScreen__constructor);
+    homura::HookFunc(CreditScreen_Delete2Addr, &CreditScreen::_destructor, &old_CreditScreen__destructor);
+    homura::HookFunc(CreditScreen_AddedToManagerAddr, &CreditScreen::AddedToManager, &old_CreditScreen_AddedToManager);
+    homura::HookFunc(CreditScreen_RemovedFromManagerAddr, &CreditScreen::RemovedFromManager, &old_CreditScreen_RemovedFromManager);
 
     homura::HookFunc(HelpOptionsDialog_AddedToManagerAddr, &HelpOptionsDialog_AddedToManager, &old_HelpOptionsDialog_AddedToManager);
     homura::HookFunc(HelpOptionsDialog_RemovedFromManagerAddr, &HelpOptionsDialog_RemovedFromManager, &old_HelpOptionsDialog_RemovedFromManager);

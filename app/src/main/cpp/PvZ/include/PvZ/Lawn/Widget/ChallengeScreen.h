@@ -112,7 +112,7 @@ protected:
     friend void InitHookFunction();
 
     void _constructor(LawnApp *theApp, ChallengePage thePage);
-    void _destructor2();
+    void _destructor();
 };
 
 class ChallengeDefinition {
@@ -144,7 +144,7 @@ inline void (*old_ChallengeScreen_Update)(ChallengeScreen *a);
 
 inline void (*old_ChallengeScreen_RemovedFromManager)(ChallengeScreen *a, Sexy::WidgetManager *a2);
 
-inline void (*old_ChallengeScreen_Delete2)(ChallengeScreen *challengeScreen);
+inline void (*old_ChallengeScreen__destructor)(ChallengeScreen *challengeScreen);
 
 inline void (*old_ChallengeScreen_MouseDown)(ChallengeScreen *challengeScreen, int x, int y, int theClickCount);
 
