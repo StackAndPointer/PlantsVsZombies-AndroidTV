@@ -157,7 +157,7 @@ void VSResultsMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
 }
 
 void VSResultsMenu::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
-    old_VSResultsMenu_AddedToManager(this, theWidgetManager);
+    old_VSResultsMenu_RemovedFromManager(this, theWidgetManager);
 
     RemoveWidget(mBackButton);
 }

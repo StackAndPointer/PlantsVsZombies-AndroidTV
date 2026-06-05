@@ -688,7 +688,7 @@ void InitVTableHookFunction() {
     // homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 78, &VSResultsMenu::MouseDown,nullptr);
     // homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 81, &VSResultsMenu::MouseUp,nullptr);
     // homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 83, &VSResultsMenu::MouseDrag,nullptr);
-    homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 32, &VSResultsMenu::RemovedFromManager, &old_VSResultsMenu_AddedToManager);
+    homura::HookVirtualFunc(vTableForVSResultsMenuAddr, 32, &VSResultsMenu::RemovedFromManager, &old_VSResultsMenu_RemovedFromManager);
 
 
     homura::HookVirtualFunc(vTableForVSSetupMenuAddr, 78, &VSSetupMenu::MouseDown, nullptr);
