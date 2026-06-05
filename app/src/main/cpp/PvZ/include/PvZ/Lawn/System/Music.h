@@ -140,14 +140,6 @@ public:
         reinterpret_cast<void (*)(Music *, MusicTune)>(Music2_MakeSureMusicIsPlayingAddr)(this, theMusicTune);
     }
 
-    // 大小26个整数
-    Music2() {
-        _constructor();
-    }
-    ~Music2() {
-        _destructor();
-    }
-
     void StopAllMusic();
     void StartGameMusic(bool theStart);
     void GameMusicPause(bool thePause);
@@ -156,10 +148,13 @@ public:
 protected:
     friend void InitHookFunction();
 
+    Music2() = default;
+    ~Music2() = default;
+
     void _constructor();
     void _destructor() {
-        reinterpret_cast<void (*)(Music2 *)>(Music2_DeleteAddr)(this);
-    };
+        reinterpret_cast<void (*)(Music2 *)>(Music2__destructorAddr)(this);
+    }
 };
 
 inline void (*old_Music_StartGameMusic)(Music *music, bool a2);

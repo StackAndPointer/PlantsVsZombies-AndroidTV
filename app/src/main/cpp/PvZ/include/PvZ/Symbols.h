@@ -1016,7 +1016,7 @@ inline void *NewOptionsDialog_ButtonDepressAddr;
 inline void *NewOptionsDialog_AddedToManagerAddr;
 inline void *NewOptionsDialog_RemovedFromManagerAddr;
 
-inline void *Music2_DeleteAddr;
+inline void *Music2__destructorAddr;
 inline void *Music_MusicAddr;
 inline void *Music_PlayMusicAddr;
 inline void *Music_MusicUpdateAddr;

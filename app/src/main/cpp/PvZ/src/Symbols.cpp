@@ -1011,7 +1011,7 @@ bool LoadGameMain() {
     NewOptionsDialog_ButtonDepressAddr = libGameMain.GetSymbol("_ZN16NewOptionsDialog13ButtonDepressEi");
     NewOptionsDialog_AddedToManagerAddr = libGameMain.GetSymbol("_ZN16NewOptionsDialog14AddedToManagerEPN4Sexy13WidgetManagerE");
     NewOptionsDialog_RemovedFromManagerAddr = libGameMain.GetSymbol("_ZN16NewOptionsDialog18RemovedFromManagerEPN4Sexy13WidgetManagerE");
-    Music2_DeleteAddr = libGameMain.GetSymbol("_ZN6Music2D0Ev");
+    Music2__destructorAddr = libGameMain.GetSymbol("_ZN6Music2D2Ev");
     Music_MusicAddr = libGameMain.GetSymbol("_ZN5MusicC2Ev");
     Music2_Music2Addr = libGameMain.GetSymbol("_ZN6Music2C2Ev");
     Sexy_AudiereMusicInterface_SetVolumeAddr = libGameMain.GetSymbol("_ZN4Sexy21AudiereMusicInterface9SetVolumeEd");
