@@ -24,9 +24,9 @@
 #include "HouseChooserDialog.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
-#include "TrashBin.h"
 
 class Reanimation;
+class TrashBin;
 
 class GameStats {
 public:
@@ -59,12 +59,6 @@ struct LeaderboardReanimations {
 
 class LeaderboardsWidget : public Sexy::Widget {
 public:
-    LeaderboardsWidget(LawnApp *theApp);
-
-    void ButtonPress(this LeaderboardsWidget &self, int id, int theCount) {}
-
-    void ButtonDepress(this LeaderboardsWidget &self, int id);
-
     LawnApp *mApp;                                     // 64
     TrashBin *mZombieTrashBin;                         // 65
     TrashBin *mPlantTrashBin;                          // 66
@@ -76,6 +70,28 @@ public:
     int mFocusedAchievementIndex;
     bool mHighLightAchievement;
 
+    LeaderboardsWidget(LawnApp *theApp);
+    ~LeaderboardsWidget() = delete;
+
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
+    void Update();
+    void Draw(Sexy::Graphics *g);
+    void MouseDown(int x, int y, int theClickCount);
+    void MouseDrag(int x, int y);
+    void MouseUp(int x, int y);
+    void DealClick(Sexy::KeyCode theKey);
+    void KeyDown(Sexy::KeyCode theKey);
+
+    void ButtonPress(this LeaderboardsWidget &self, int id, int theCount) {}
+    void ButtonDepress(this LeaderboardsWidget &self, int id);
+
+protected:
+    friend void InitHookFunction();
+
+    void _constructor(LawnApp *theApp);
+    void _destructor();
+
 private:
     static inline const Sexy::ButtonListener::VTable sButtonListenerVtable{
         // .ButtonPress = (void *)LeaderboardsWidget_ButtonPress;
@@ -84,9 +100,9 @@ private:
     };
 
     static inline Sexy::ButtonListener sButtonListener{&sButtonListenerVtable};
+};
 
-}; // 我想用LeaderboardsWidget取代DaveHelp。
-
+// 使用 LeaderboardsWidget 取代 DaveHelp
 class DaveHelp : public Sexy::Widget {
 public:
     DaveHelp(LawnApp *theApp) {
@@ -100,24 +116,5 @@ protected:
         reinterpret_cast<void (*)(DaveHelp *, LawnApp *)>(DaveHelp_DaveHelpAddr)(this, theApp);
     }
 };
-
-
-inline void (*old_DaveHelp_Delete2)(LeaderboardsWidget *leaderboardsWidget);
-
-void DaveHelp_Delete2(LeaderboardsWidget *leaderboardsWidget);
-
-void DaveHelp_Update(LeaderboardsWidget *leaderboardsWidget);
-
-void DaveHelp_Draw(LeaderboardsWidget *leaderboardsWidget, Sexy::Graphics *g);
-
-void DaveHelp_DealClick(LeaderboardsWidget *leaderboardsWidget, int id);
-
-void DaveHelp_MouseDown(LeaderboardsWidget *leaderboardsWidget, int x, int y, int theClickCount);
-
-void DaveHelp_MouseUp(LeaderboardsWidget *leaderboardsWidget, int x, int y);
-
-void DaveHelp_MouseDrag(LeaderboardsWidget *leaderboardsWidget, int x, int y);
-
-void DaveHelp_KeyDown(LeaderboardsWidget *leaderboardsWidget, int keyCode);
 
 #endif // PVZ_LAWN_WIDGET_LEADERBOARDS_WIDGET_H

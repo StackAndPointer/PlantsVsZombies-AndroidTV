@@ -58,6 +58,7 @@
 #include "PvZ/Lawn/Widget/SettingsDialog.h"
 #include "PvZ/Lawn/Widget/StoreScreen.h"
 #include "PvZ/Lawn/Widget/TitleScreen.h"
+#include "PvZ/Lawn/Widget/TrashBin.h"
 #include "PvZ/Lawn/Widget/VSResultsMenu.h"
 #include "PvZ/Lawn/Widget/VSSetupMenu.h"
 #include "PvZ/Lawn/Widget/WaitForSecondPlayerDialog.h"
@@ -629,11 +630,12 @@ void InitHookFunction() {
     homura::HookFunc(LawnPlayerInfo_AddCoinsAddr, &LawnPlayerInfo::AddCoins, nullptr);
     homura::HookFunc(MaskHelpWidget_UpdateAddr, &MaskHelpWidget_Update, nullptr);
     homura::HookFunc(MaskHelpWidget_DrawAddr, &MaskHelpWidget_Draw, nullptr);
-    // homura::HookFunc(DaveHelp_DaveHelpAddr,  DaveHelp_DaveHelp,  &old_DaveHelp_DaveHelp);
-    homura::HookFunc(DaveHelp_UpdateAddr, &DaveHelp_Update, nullptr);
-    homura::HookFunc(DaveHelp_DrawAddr, &DaveHelp_Draw, nullptr);
-    homura::HookFunc(DaveHelp_Delete2Addr, &DaveHelp_Delete2, &old_DaveHelp_Delete2);
-    homura::HookFunc(DaveHelp_DealClickAddr, &DaveHelp_DealClick, nullptr);
+
+    homura::HookFunc(DaveHelp__destructorAddr, &LeaderboardsWidget::_destructor, nullptr);
+    homura::HookFunc(DaveHelp_UpdateAddr, &LeaderboardsWidget::Update, nullptr);
+    homura::HookFunc(DaveHelp_DrawAddr, &LeaderboardsWidget::Draw, nullptr);
+    homura::HookFunc(DaveHelp_DealClickAddr, &LeaderboardsWidget::DealClick, nullptr);
+
     homura::HookFunc(TrashBin_TrashBinAddr, &TrashBin::_constructor, &old_TrashBin_TrashBin);
     homura::HookFunc(Sexy_SexyAppBase_Is3DAcceleratedAddr, &LawnApp::Is3DAccelerated, nullptr);
     homura::HookFunc(Sexy_SexyAppBase_SexyAppBaseAddr, &Sexy::SexyAppBase::_constructor, &old_Sexy_SexyAppBase_SexyAppBase);
@@ -747,10 +749,12 @@ void InitVTableHookFunction() {
     homura::HookVirtualFunc(vTableForMaskHelpWidgetAddr, 83, &MaskHelpWidget_MouseDrag, nullptr);
 
 
-    homura::HookVirtualFunc(vTableForDaveHelpAddr, 78, &DaveHelp_MouseDown, nullptr);
-    homura::HookVirtualFunc(vTableForDaveHelpAddr, 81, &DaveHelp_MouseUp, nullptr);
-    homura::HookVirtualFunc(vTableForDaveHelpAddr, 83, &DaveHelp_MouseDrag, nullptr);
-    homura::HookVirtualFunc(vTableForDaveHelpAddr, 73, &DaveHelp_KeyDown, nullptr);
+    homura::HookVirtualFunc(vTableForDaveHelpAddr, 31, &LeaderboardsWidget::AddedToManager, nullptr);
+    homura::HookVirtualFunc(vTableForDaveHelpAddr, 32, &LeaderboardsWidget::RemovedFromManager, nullptr);
+    homura::HookVirtualFunc(vTableForDaveHelpAddr, 78, &LeaderboardsWidget::MouseDown, nullptr);
+    homura::HookVirtualFunc(vTableForDaveHelpAddr, 81, &LeaderboardsWidget::MouseUp, nullptr);
+    homura::HookVirtualFunc(vTableForDaveHelpAddr, 83, &LeaderboardsWidget::MouseDrag, nullptr);
+    homura::HookVirtualFunc(vTableForDaveHelpAddr, 73, &LeaderboardsWidget::KeyDown, nullptr);
 
     homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 2, &ZombatarWidget::_destructor, nullptr);
     homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 3, &ZombatarWidget::_destructor2, nullptr);

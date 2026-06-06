@@ -948,7 +948,7 @@ inline void *MaskHelpWidget_DrawAddr;
 inline void *DaveHelp_DaveHelpAddr;
 inline void *DaveHelp_UpdateAddr;
 inline void *DaveHelp_DrawAddr;
-inline void *DaveHelp_Delete2Addr;
+inline void *DaveHelp__destructorAddr;
 inline void *DaveHelp_DealClickAddr;
 inline void *TrashBin_TrashBinAddr;
 inline void *TrashBin__destructorAddr;
