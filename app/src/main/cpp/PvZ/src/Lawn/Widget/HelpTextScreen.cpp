@@ -87,12 +87,6 @@ void HelpTextScreen::Draw(Sexy::Graphics *g) {
 }
 
 void HelpTextScreen::MouseDown(int x, int y, int theClickCount) {
-    // 修复MailScreen的可触控区域不为全屏
-
-    // LOGD("D%d %d", x, y);
-    // prevPageButtonX = x;
-    // prevPageButtonY = y;
-
     int imageWidth = (Sexy::IMAGE_ZEN_NEXTGARDEN)->GetCelWidth();
     int imageHeight = (Sexy::IMAGE_ZEN_NEXTGARDEN)->GetHeight();
 

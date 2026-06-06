@@ -59,7 +59,6 @@ void MailScreen::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void MailScreen::RemovedFromManager(WidgetManager *theWidgetManager) {
-    // 修复MailScreen的可触控区域不为全屏
     RemoveWidget(gMailScreenCloseButton);
     RemoveWidget(gMailScreenSwitchButton);
     RemoveWidget(gMailScreenReadButton);
