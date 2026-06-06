@@ -153,9 +153,9 @@ void VSResultsMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
 }
 
 void VSResultsMenu::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
-    old_VSResultsMenu_RemovedFromManager(this, theWidgetManager);
-
     RemoveWidget(mBackButton);
+
+    old_VSResultsMenu_RemovedFromManager(this, theWidgetManager);
 }
 
 void VSResultsMenu::processClientEvent(const BaseEvent *event) {

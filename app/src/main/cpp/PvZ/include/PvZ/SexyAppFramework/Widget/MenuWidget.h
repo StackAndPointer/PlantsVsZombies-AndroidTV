@@ -39,9 +39,12 @@ public:
     void AddedToManager(WidgetManager *theWidgetManager) {
         reinterpret_cast<void (*)(MenuWidget *, WidgetManager *)>(Sexy_MenuWidget_AddedToManagerAddr)(this, theWidgetManager);
     }
+
+    // Warning: 此函数调用了 RemoveAllWidgets
     void RemovedFromManager(WidgetManager *theWidgetManager) {
         reinterpret_cast<void (*)(MenuWidget *, WidgetManager *)>(Sexy_MenuWidget_RemovedFromManagerAddr)(this, theWidgetManager);
     }
+
     void Draw(Graphics *g) {
         reinterpret_cast<void (*)(MenuWidget *, Graphics *)>(Sexy_MenuWidget_DrawAddr)(this, g);
     }

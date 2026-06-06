@@ -311,8 +311,8 @@ void ReplayManageWidget::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
 void ReplayManageWidget::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
     WidgetContainer::RemovedFromManager(theWidgetManager);
 
-    RemoveWidget(mScrollWidget);
     mScrollWidget->RemoveWidget(mScrollContent);
+    RemoveWidget(mScrollWidget);
     RemoveWidget(mCloseButton);
     RemoveWidget(mImportButton);
     RemoveWidget(mExportButton);

@@ -57,10 +57,10 @@ void SettingsDialog::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void SettingsDialog::RemovedFromManager(WidgetManager *theWidgetManager) {
-    old_SettingsDialog_RemovedFromManager(this, theWidgetManager);
-
     RemoveWidget(mHardwareAccelerationCheckbox);
     RemoveWidget(mHapticFeedbackCheckbox);
+
+    old_SettingsDialog_RemovedFromManager(this, theWidgetManager);
 }
 
 void SettingsDialog::_destructor() {

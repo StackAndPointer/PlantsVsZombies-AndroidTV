@@ -22,11 +22,9 @@
 using namespace Sexy;
 
 void Dialog::AddedToManager(WidgetManager *theWidgetManager) {
-    // 记录当前游戏状态
     old_Sexy_Dialog_AddedToManager(this, theWidgetManager);
 }
 
 void Dialog::RemovedFromManager(WidgetManager *theWidgetManager) {
-    // 记录当前游戏状态
     old_Sexy_Dialog_RemovedFromManager(this, theWidgetManager);
 }

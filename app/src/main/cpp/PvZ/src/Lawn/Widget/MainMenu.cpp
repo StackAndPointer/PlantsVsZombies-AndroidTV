@@ -532,14 +532,14 @@ void MainMenu::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void MainMenu::RemovedFromManager(WidgetManager *theWidgetManager) {
-    old_MainMenu_RemovedFromManager(this, theWidgetManager);
-
     if (gMainMenuAchievementsWidget != nullptr) {
         RemoveWidget(gMainMenuAchievementsWidget);
     }
     if (gMainMenuAchievementsBack != nullptr) {
         RemoveWidget(gMainMenuAchievementsBack);
     }
+
+    old_MainMenu_RemovedFromManager(this, theWidgetManager);
 }
 
 void MainMenu::_destructor2() {

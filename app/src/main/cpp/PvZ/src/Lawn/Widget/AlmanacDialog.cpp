@@ -86,7 +86,6 @@ void AlmanacDialog::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
 }
 
 void AlmanacDialog::RemovedFromManager(WidgetManager *theWidgetManager) {
-    // 记录当前游戏状态
     RemoveWidget(gAlmanacCloseButton);
     RemoveWidget(gAlmanacBackButton);
 

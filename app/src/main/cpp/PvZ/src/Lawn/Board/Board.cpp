@@ -133,10 +133,10 @@ void Board::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void Board::RemovedFromManager(WidgetManager *theWidgetManager) {
-    old_Board_RemovedFromManager(this, theWidgetManager);
-
     RemoveWidget(gBoardMenuButton);
     RemoveWidget(gBoardStoreButton);
+
+    old_Board_RemovedFromManager(this, theWidgetManager);
 }
 
 void Board::InitLevel() {

@@ -44,10 +44,10 @@ void CreditScreen::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void CreditScreen::RemovedFromManager(WidgetManager *theWidgetManager) {
-    old_CreditScreen_RemovedFromManager(this, theWidgetManager);
-
     mFocusedChildWidget = gCreditScreenBackButton; // 修复触摸CreditScreen后点击按钮退出就会闪退的BUG,虽然不知道为什么
     RemoveWidget(gCreditScreenBackButton);
+
+    old_CreditScreen_RemovedFromManager(this, theWidgetManager);
 }
 
 void CreditScreen::ButtonDepress(int theId) {

@@ -141,13 +141,11 @@ void ZombatarWidget::_destructor() {
     mPreviewZombie->DieNoLoot();
     delete mPreviewZombie;
 
-    // FIXME: 解决五个按钮的内存泄露问题.
-    //  SafeDeleteWidget 会闪退, 暂不清楚原因.
-    // mApp->SafeDeleteWidget(mDeleteButton);
-    // mApp->SafeDeleteWidget(mNewButton);
-    // mApp->SafeDeleteWidget(mViewPortraitButton);
-    // mApp->SafeDeleteWidget(mFinishButton);
-    // mApp->SafeDeleteWidget(mBackButton);
+    mApp->SafeDeleteWidget(mDeleteButton);
+    mApp->SafeDeleteWidget(mNewButton);
+    mApp->SafeDeleteWidget(mViewPortraitButton);
+    mApp->SafeDeleteWidget(mFinishButton);
+    mApp->SafeDeleteWidget(mBackButton);
 
     MenuWidget::_destructor();
 }
@@ -163,13 +161,13 @@ void ZombatarWidget::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void ZombatarWidget::RemovedFromManager(WidgetManager *theWidgetManager) {
-    MenuWidget::RemovedFromManager(theWidgetManager);
-
     RemoveWidget(mBackButton);
     RemoveWidget(mFinishButton);
     RemoveWidget(mViewPortraitButton);
     RemoveWidget(mNewButton);
     RemoveWidget(mDeleteButton);
+
+    MenuWidget::RemovedFromManager(theWidgetManager);
 }
 
 void ZombatarWidget::SetDefault() {

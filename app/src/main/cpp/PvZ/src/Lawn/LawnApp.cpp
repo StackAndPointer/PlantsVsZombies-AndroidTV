@@ -652,12 +652,10 @@ void LawnApp::UpdateApp() {
 }
 
 void LawnApp::ShowAwardScreen(AwardType theAwardType) {
-    // 记录当前游戏状态
     old_LawnApp_ShowAwardScreen(this, theAwardType);
 }
 
 void LawnApp::KillAwardScreen() {
-    // 记录当前游戏状态
     old_LawnApp_KillAwardScreen(this);
 }
 

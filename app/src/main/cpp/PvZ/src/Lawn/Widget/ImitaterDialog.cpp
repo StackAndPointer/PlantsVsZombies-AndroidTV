@@ -25,7 +25,6 @@
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 
 void ImitaterDialog_ImitaterDialog(ImitaterDialog *instance, int playerIndex) {
-    // 记录当前游戏状态
     old_ImitaterDialog_ImitaterDialog(instance, playerIndex);
 }
 

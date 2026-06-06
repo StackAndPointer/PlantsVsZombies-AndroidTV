@@ -71,7 +71,6 @@ void HelpTextScreen::AddedToManager(WidgetManager *theWidgetNanager) {
 void HelpTextScreen::RemovedFromManager(WidgetManager *theWidgetManager) {
     RemoveWidget(gHelpTextScreenCloseButton);
 
-    // 调用了 RemoveAllWidgets, 放最后
     old_HelpTextScreen_RemovedFromManager(this, theWidgetManager);
 }
 

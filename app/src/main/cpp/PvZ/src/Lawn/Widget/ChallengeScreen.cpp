@@ -508,7 +508,6 @@ void ChallengeScreen::Update() {
 }
 
 void ChallengeScreen::AddedToManager(WidgetManager *theWidgetManager) {
-    // 记录当前游戏状态
     old_ChallengeScreen_AddedToManager(this, theWidgetManager);
 
     AddWidget(mBackButton);
@@ -519,10 +518,9 @@ void ChallengeScreen::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void ChallengeScreen::RemovedFromManager(WidgetManager *theWidgetManager) {
-    // 记录当前游戏状态
-    old_ChallengeScreen_RemovedFromManager(this, theWidgetManager);
-
     RemoveWidget(mBackButton);
+
+    old_ChallengeScreen_RemovedFromManager(this, theWidgetManager);
 }
 
 void ChallengeScreen::ButtonPress(int theButtonId) {
