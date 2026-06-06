@@ -33,13 +33,34 @@ public:
     int *mSourceFileName; // 67
     int unkInt1;          // 68
     Image *mImage;        // 69
+
     // 大小70个整数
 
+    void AddedToManager(WidgetManager *theWidgetManager) {
+        reinterpret_cast<void (*)(MenuWidget *, WidgetManager *)>(Sexy_MenuWidget_AddedToManagerAddr)(this, theWidgetManager);
+    }
+    void RemovedFromManager(WidgetManager *theWidgetManager) {
+        reinterpret_cast<void (*)(MenuWidget *, WidgetManager *)>(Sexy_MenuWidget_RemovedFromManagerAddr)(this, theWidgetManager);
+    }
     void Draw(Graphics *g) {
         reinterpret_cast<void (*)(MenuWidget *, Graphics *)>(Sexy_MenuWidget_DrawAddr)(this, g);
     }
     void Exit() {
         reinterpret_cast<void (*)(MenuWidget *)>(Sexy_MenuWidget_ExitAddr)(this);
+    }
+
+protected:
+    MenuWidget() = default;
+    ~MenuWidget() = default;
+
+    void _constructor() {
+        reinterpret_cast<void (*)(MenuWidget *)>(Sexy_MenuWidget__constructorAddr)(this);
+    }
+    void _destructor() {
+        reinterpret_cast<void (*)(MenuWidget *)>(Sexy_MenuWidget__destructorAddr)(this);
+    }
+    void _destructor2() {
+        reinterpret_cast<void (*)(MenuWidget *)>(Sexy_MenuWidget__destructor2Addr)(this);
     }
 };
 

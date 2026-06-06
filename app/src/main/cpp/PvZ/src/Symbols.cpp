@@ -1124,6 +1124,11 @@ bool LoadGameMain() {
     Sexy_Image_GetCelHeightAddr = libGameMain.GetSymbol("_ZN4Sexy5Image12GetCelHeightEv");
     Sexy_Image_SetWrapModeAddr = libGameMain.GetSymbol("_ZN4Sexy5Image11SetWrapModeENS_8WrapModeES1_");
     Sexy_WidgetContainer_MarkDirtyAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer9MarkDirtyEv");
+    Sexy_MenuWidget__constructorAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidgetC2Ev");
+    Sexy_MenuWidget__destructorAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidgetD2Ev");
+    Sexy_MenuWidget__destructor2Addr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidgetD0Ev");
+    Sexy_MenuWidget_AddedToManagerAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidget14AddedToManagerEPNS_13WidgetManagerE");
+    Sexy_MenuWidget_RemovedFromManagerAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidget18RemovedFromManagerEPNS_13WidgetManagerE");
     Sexy_MenuWidget_DrawAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidget4DrawEPNS_8GraphicsE");
     Sexy_MenuWidget_ExitAddr = libGameMain.GetSymbol("_ZN4Sexy10MenuWidget4ExitEv");
     Sexy_Widget_DeferOverlayAddr = libGameMain.GetSymbol("_ZN4Sexy6Widget12DeferOverlayEi");
