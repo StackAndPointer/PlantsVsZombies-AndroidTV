@@ -26,6 +26,7 @@
 #include "PvZ/NetPlay.h"
 #include "PvZ/ReplaySystem.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
+#include "PvZ/SexyAppFramework/Widget/ImageWidget.h"
 #include "PvZ/TodLib/Common/TodCommon.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 
@@ -34,11 +35,6 @@
 #include <unistd.h>
 
 using namespace Sexy;
-
-class ImageWidgetLike : public Sexy::Widget {
-public:
-    Sexy::Image *mImage;
-};
 
 namespace {
 constexpr int kVSResultRequestStateReplaySaved = -2;
@@ -190,15 +186,82 @@ void VSResultsMenu::processServerEvent(const BaseEvent *event) {
     }
 }
 
-void VSResultsMenu::InitFromBoard(Board *board) {
-    mBoardMainCounter = board->mMainCounter;
-    mBoardBackground = Challenge::msVSShuffleMode ? BackgroundType(-1) : board->mBackground;
-    int aSeedNum = board->mSeedBank[0]->mNumPackets;
+void VSResultsMenu::InitFromBoard(Board *theBoard) {
+    mBoardMainCounter = theBoard->mMainCounter;
+    mBoardBackground = Challenge::msVSShuffleMode ? BackgroundType(-1) : theBoard->mBackground;
+
+    int aSeedNum = theBoard->mSeedBank[0]->mNumPackets;
     for (int i = 1; i < aSeedNum; ++i) {
-        mPlantSeeds[i - 1] = board->mSeedBank[0]->mSeedPackets[i].mPacketType;
-        mZombieSeeds[i - 1] = board->mSeedBank[1]->mSeedPackets[i].mPacketType;
+        mPlantSeeds[i - 1] = theBoard->mSeedBank[0]->mSeedPackets[i].mPacketType;
+        mZombieSeeds[i - 1] = theBoard->mSeedBank[1]->mSeedPackets[i].mPacketType;
     }
-    old_VSResultsMenu_InitFromBoard(this, board);
+
+    const BoardResult aBoardResult = gLawnApp->mBoardResult;
+    const auto *controls0 = theBoard->mGamepadControls[0];
+    const auto *controls1 = theBoard->mGamepadControls[1];
+
+    mPlayerIndices[0] = controls0->mPlayerIndex2;
+    mPlayerIndices[1] = controls1->mPlayerIndex2;
+    mSides[0] = WinSide(controls0->mIsZombie);
+    mSides[1] = WinSide(controls1->mIsZombie);
+
+    for (int slot = 0; slot < 2; ++slot) {
+        int *playerRecord = GetPlayerRecord(mPlayerIndices[slot]);
+        if (playerRecord == nullptr) {
+            continue;
+        }
+
+        if (aBoardResult == BoardResult::BOARDRESULT_VS_PLANT_WON && mSides[slot] == WinSide::WIN_SIDE_PLANT) {
+            playerRecord[0] = 0;
+            ++playerRecord[1];
+            ++playerRecord[3];
+        } else if (aBoardResult == BoardResult::BOARDRESULT_VS_ZOMBIE_WON && mSides[slot] == WinSide::WIN_SIDE_ZOMBIE) {
+            playerRecord[0] = 1;
+            ++playerRecord[2];
+            ++playerRecord[3];
+        } else {
+            playerRecord[0] = -1;
+            playerRecord[3] = 0;
+        }
+    }
+
+    Sexy::Widget *widget4 = FindWidget(VSResultsMenu::VSResultsMenu_Plant_Side);
+    Sexy::Widget *widget5 = FindWidget(VSResultsMenu::VSResultsMenu_Plant_Side_Front);
+    Sexy::Widget *widget6 = FindWidget(VSResultsMenu::VSResultsMenu_Zombie_Side);
+    Sexy::Widget *widget7 = FindWidget(VSResultsMenu::VSResultsMenu_Zombie_Side_Front);
+    auto setImageWidgetAlpha = [](Sexy::Widget *widget, int alpha) {
+        if (widget == nullptr) {
+            return;
+        }
+        reinterpret_cast<Sexy::ImageWidget *>(widget)->mAlpha = alpha;
+    };
+    if (aBoardResult == BoardResult::BOARDRESULT_VS_PLANT_WON) {
+        setImageWidgetAlpha(widget4, 255);
+        setImageWidgetAlpha(widget5, 255);
+        setImageWidgetAlpha(widget6, 0);
+        setImageWidgetAlpha(widget7, 0);
+    } else {
+        setImageWidgetAlpha(widget4, 0);
+        setImageWidgetAlpha(widget5, 0);
+        setImageWidgetAlpha(widget6, 255);
+        setImageWidgetAlpha(widget7, 255);
+    }
+
+    Sexy::Widget *winnerWidget = nullptr;
+    if (VSResultsMenu::msPlayerRecords[0][0] == -1) {
+        if (mPlayerIndices[1] != -1) {
+            winnerWidget = FindWidget(VSResultsMenu::VSResultsMenu_Info_Box_P2);
+        }
+    } else {
+        winnerWidget = FindWidget(VSResultsMenu::VSResultsMenu_Info_Box_P1);
+    }
+    if (winnerWidget != nullptr) {
+        mTrophyPosX = 94.0f + float(Sexy::IMAGE_MP_TROPHY_BASE->mWidth) / 2.0f;
+        mTrophyPosY = float(-60 - winnerWidget->mY - Sexy::IMAGE_MP_TROPHY_BASE->mHeight - Sexy::IMAGE_MP_PLANT_TROPHY->mHeight);
+        if (TodParticleSystem *sparkle = gLawnApp->AddTodParticle(mTrophyPosX, mTrophyPosY, 0, ParticleEffect::PARTICLE_TROPHY_SPARKLE)) {
+            mSparkleParticleID = gLawnApp->ParticleGetID(sparkle);
+        }
+    }
 }
 
 void VSResultsMenu::Update() {
@@ -230,7 +293,7 @@ void VSResultsMenu::HandleOpponentDisconnected() {
 }
 
 void VSResultsMenu::HideReplayButton(bool forceHide) {
-    Sexy::Widget *saveBtn = FindWidget(VSResultsMenu_Save_Replay);
+    Sexy::Widget *saveBtn = FindWidget(VSResultsMenu::VSResultsMenu_Save_Replay);
     if (saveBtn == nullptr) {
         return;
     }
@@ -258,7 +321,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
     if (mIsFading)
         return;
 
-    if (theId == VSResultsMenu_Save_Replay) {
+    if (theId == VSResultsMenu::VSResultsMenu_Save_Replay) {
         if (mIsReplaySession) {
             LOG_INFO("[REPLAY] ignore save replay in replay session");
             return;
@@ -279,7 +342,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
             if (sideInSlot < 0 || sideInSlot > 1) {
                 continue;
             }
-            const int this76Side = unk2[sideInSlot];
+            const int this76Side = mPlayerIndices[sideInSlot];
             if (int *playerRecord = GetPlayerRecord((unsigned int)this76Side)) {
                 if (winnerSide == -1 && (playerRecord[0] == 0 || playerRecord[0] == 1)) {
                     winnerSide = playerRecord[0];
@@ -321,7 +384,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
         return;
     }
 
-    if (theId == VSResultsMenu_Play_Again && mVSResultsCounter < 300) { // 3秒后才能点再来一句
+    if (theId == VSResultsMenu::VSResultsMenu_Play_Again && mVSResultsCounter < 300) { // 3秒后才能点再来一局
         return;
     }
 
@@ -337,7 +400,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
                 auto *quitVsButton = reinterpret_cast<GameButton *>(quitVsWidget);
                 quitVsButton->SetLabel("[QUIT_VS]");
             }
-            if (Sexy::Widget *playAgain = FindWidget(VSResultsMenu_Play_Again)) {
+            if (Sexy::Widget *playAgain = FindWidget(VSResultsMenu::VSResultsMenu_Play_Again)) {
                 playAgain->mDisabled = true;
             }
             return;
@@ -416,7 +479,7 @@ void VSResultsMenu::ShowReplayButton() {
         return;
     }
 
-    mSaveReplayButton = MakeButton(VSResultsMenu_Save_Replay, this, this, "[SAVE_REPLAY]");
+    mSaveReplayButton = MakeButton(VSResultsMenu::VSResultsMenu_Save_Replay, this, this, "[SAVE_REPLAY]");
     mSaveReplayButton->mDrawStoneButton = false;
     mSaveReplayButton->mButtonImage = addonImages.VS_Button;
     mSaveReplayButton->mOverImage = addonImages.VS_Button_selected;
@@ -448,7 +511,7 @@ void VSResultsMenu::DrawInfoBox(Sexy::Graphics *a2, int a3) {
         return;
     }
 
-    auto *infoWidget = reinterpret_cast<ImageWidgetLike *>(slotWidget);
+    auto *infoWidget = reinterpret_cast<Sexy::ImageWidget *>(slotWidget);
     a2->PushState();
     a2->Translate(slotWidget->mX, slotWidget->mY);
 
@@ -457,7 +520,7 @@ void VSResultsMenu::DrawInfoBox(Sexy::Graphics *a2, int a3) {
         a2->PopState();
         return;
     }
-    int this76Side = unk2[sideInSlot];
+    int this76Side = mPlayerIndices[sideInSlot];
     int *playerRecord = GetPlayerRecord((unsigned int)this76Side);
     DefaultProfileMgr *profileMgr = gLawnApp->mProfileMgr;
     PlayerInfo *profileObj = gLawnApp->mPlayerInfo;
@@ -500,8 +563,8 @@ void VSResultsMenu::DrawInfoBox(Sexy::Graphics *a2, int a3) {
             a2->DrawString(StrFormat(streakFmt.c_str(), winStreak), 263, 78);
         }
     }
-    float trophyX = unk3[0];
-    float trophyY = unk3[1];
+    float trophyX = mTrophyPosX;
+    float trophyY = mTrophyPosY;
     if (mSmokeCounter > 49) {
         trophyY = (float)TodAnimateCurve(50, 60, mSmokeCounter, 82, 74, TodCurves::CURVE_EASE_IN_OUT);
     } else {

@@ -45,19 +45,34 @@ public:
     enum {
         VSResultsMenu_Play_Again = 0,
         VSResultsMenu_Quit_VS = 1,
+        VSResultsMenu_Info_Box_P1 = 2,
+        VSResultsMenu_Info_Box_P2 = 3,
+        VSResultsMenu_Plant_Side = 4,
+        VSResultsMenu_Plant_Side_Front = 5,
+        VSResultsMenu_Zombie_Side = 6,
+        VSResultsMenu_Zombie_Side_Front = 7,
+        VSResultsMenu_Win_Image = 8,
         VSResultsMenu_Back = 9,
         VSResultsMenu_Save_Replay = 1200,
     };
 
+    enum WinSide {
+        INVALID_WIN_SIDE = -1,
+        WIN_SIDE_PLANT = 0,
+        WIN_SIDE_ZOMBIE = 1,
+    };
+
+    // [记录槽] -> [胜负方, 植物胜场, 僵尸胜场, 连胜数, playerIndex2]
     static int (&msPlayerRecords)[2][5];
 
     int unk[3];                          // 70 ~ 72
     int mSparkleCounter;                 // 73
     int mSmokeCounter;                   // 74
     int mResultsButtonId;                // 75
-    int unk2[2];                         // 76 ~ 77
-    int mSides[2];                       // 78 ~ 79
-    float unk3[2];                       // 80 ~ 81
+    int mPlayerIndices[2];               // 76 ~ 77, P1 / P2 的 playerIndex2
+    WinSide mSides[2];                   // 78 ~ 79
+    float mTrophyPosX;                   // 80, 奖杯中心 X
+    float mTrophyPosY;                   // 81, 奖杯中心 Y
     ParticleSystemID mSparkleParticleID; // 82
     ParticleSystemID mSmokeParticleID;   // 83
     int mUpdateCounter;                  // 84
@@ -90,7 +105,7 @@ public:
     void DrawInfoBox(Sexy::Graphics *a2, int a3);
     void HideReplayButton(bool forceHide);
     void HandleOpponentDisconnected();
-    void InitFromBoard(Board *board);
+    void InitFromBoard(Board *theBoard);
     void ShowReplayButton();
     void KillReplayButton();
 
@@ -195,7 +210,5 @@ inline void (*old_VSResultsMenu_AddedToManager)(VSResultsMenu *, Sexy::WidgetMan
 inline void (*old_VSResultsMenu_RemovedFromManager)(VSResultsMenu *, Sexy::WidgetManager *);
 
 inline void (*old_VSResultsMenu_Destructor)(VSResultsMenu *);
-
-inline void (*old_VSResultsMenu_InitFromBoard)(VSResultsMenu *, Board *);
 
 #endif // PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H
