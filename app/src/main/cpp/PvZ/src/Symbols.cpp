@@ -1164,10 +1164,10 @@ bool LoadGameMain() {
     FilterEffectDisposeForAppAddr = libGameMain.GetSymbol("_Z25FilterEffectDisposeForAppv");
     FilterEffectGetImageAddr = libGameMain.GetSymbol("_Z20FilterEffectGetImagePN4Sexy5ImageE12FilterEffect");
     HelpTextScreen__constructorAddr = libGameMain.GetSymbol("_ZN14HelpTextScreenC2EP7LawnAppi");
+    HelpTextScreen__destructorAddr = libGameMain.GetSymbol("_ZN14HelpTextScreenD2Ev");
     HelpTextScreen_AddedToManagerAddr = libGameMain.GetSymbol("_ZN14HelpTextScreen14AddedToManagerEPN4Sexy13WidgetManagerE");
     HelpTextScreen_RemovedFromManagerAddr = libGameMain.GetSymbol("_ZN14HelpTextScreen18RemovedFromManagerEPN4Sexy13WidgetManagerE");
     HelpTextScreen_UpdateAddr = libGameMain.GetSymbol("_ZN14HelpTextScreen6UpdateEv");
-    HelpTextScreen_Delete2Addr = libGameMain.GetSymbol("_ZN14HelpTextScreenD2Ev");
     HelpTextScreen_KeyDownAddr = libGameMain.GetSymbol("_ZN14HelpTextScreen7KeyDownEN4Sexy7KeyCodeE");
     HouseChooserDialog_GameButtonDownAddr = libGameMain.GetSymbol("_ZN18HouseChooserDialog14GameButtonDownEN4Sexy13GamepadButtonEij");
     ReanimAtlas_GetEncodedReanimAtlasAddr = libGameMain.GetSymbol("_ZN11ReanimAtlas21GetEncodedReanimAtlasEPN4Sexy5ImageE");

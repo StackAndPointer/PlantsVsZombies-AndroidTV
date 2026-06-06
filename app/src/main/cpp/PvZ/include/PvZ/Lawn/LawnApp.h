@@ -49,6 +49,7 @@ class PottedPlant;
 class VSSetupMenu;
 class VSResultsMenu;
 class HelpBarWidget;
+class HelpTextScreen;
 
 class LawnApp : public Sexy::GamepadApp {
 public:
@@ -58,7 +59,7 @@ public:
     TitleScreen *mTitleScreen;               // 553
     MainMenu *mGameSelector;                 // 554
     int unk1[2];                             // 555 ~ 556
-    int *mHelpTextScreen;                    // 557
+    HelpTextScreen *mHelpTextScreen;         // 557
     int unkUnk;                              // 558
     VSSetupMenu *mVSSetupMenu;               // 559
     VSResultsMenu *mVSResultsMenu;           // 560
@@ -221,7 +222,7 @@ public:
     void HideHelpBarWidget() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_HideHelpBarWidgetAddr)(this);
     }
-    void ShowHelpTextScreen(HelpTextPage thePage) {
+    void ShowHelpTextScreen(int thePage) {
         reinterpret_cast<void (*)(LawnApp *, int)>(LawnApp_ShowHelpTextScreenAddr)(this, thePage);
     }
     void CrazyDaveStopTalking() {

@@ -21,56 +21,59 @@
 #define PVZ_LAWN_WIDGET_HELP_TEXT_SCREEN_H
 
 #include "PvZ/Lawn/Common/ConstEnums.h"
-#include "PvZ/SexyAppFramework/Widget/Widget.h"
+#include "PvZ/Lawn/Widget/LawnMenuWidget.h"
 
-class HelpTextScreen : public Sexy::Widget {
+class HelpBarWidget;
+
+class HelpTextScreen : public LawnMenuWidget {
 public:
+    LawnApp *mApp;
+    float float128;
+    float float12C;
+    float float130;
+    int mPage;
+    HelpBarWidget *mHelpBarWidget;
+
+    HelpTextScreen(LawnApp *theApp, int thePage) {
+        _constructor(theApp, thePage);
+    }
+
+    ~HelpTextScreen() = delete;
+
     void KeyDown(Sexy::KeyCode theKey) {
         reinterpret_cast<void (*)(HelpTextScreen *, Sexy::KeyCode)>(HelpTextScreen_KeyDownAddr)(this, theKey);
     }
 
-    HelpTextScreen(LawnApp *theApp, HelpTextPage thePage) {
-        _constructor(theApp, thePage);
-    }
+    void AddedToManager(Sexy::WidgetManager *theWidgetNanager);
+    void RemovedFromManager(Sexy::WidgetManager *theWidgetNanager);
+    void Update();
+    void Draw(Sexy::Graphics *g);
+    void ButtonDepress(int theId);
 
     void MouseDown(int x, int y, int theClickCount);
 
 protected:
     friend void InitHookFunction();
 
-    void _constructor(LawnApp *theApp, HelpTextPage thePage);
+    void _constructor(LawnApp *theApp, int thePage);
+    void _destructor();
 };
 
 
-inline void (*old_HelpTextScreen_Update)(HelpTextScreen *helpTextScreen);
+inline void (*old_HelpTextScreen__constructor)(HelpTextScreen *, LawnApp *, int);
 
-inline void (*old_HelpTextScreen_Draw)(HelpTextScreen *helpTextScreen, Sexy::Graphics *graphics);
+inline void (*old_HelpTextScreen__destructor)(HelpTextScreen *);
 
-inline void (*old_HelpTextScreen__constructor)(HelpTextScreen *helpTextScreen, LawnApp *lawnApp, HelpTextPage pageIndex);
+inline void (*old_HelpTextScreen_AddedToManager)(HelpTextScreen *, Sexy::WidgetManager *);
 
-inline void (*old_HelpTextScreen_AddedToManager)(HelpTextScreen *helpTextScreen, Sexy::WidgetManager *manager);
+inline void (*old_HelpTextScreen_RemovedFromManager)(HelpTextScreen *, Sexy::WidgetManager *);
 
-inline void (*old_HelpTextScreen_MouseDown)(HelpTextScreen *helpTextScreen, int x, int y, int theClickCount);
+inline void (*old_HelpTextScreen_Update)(HelpTextScreen *);
 
-inline void (*old_HelpTextScreen_RemovedFromManager)(HelpTextScreen *helpTextScreen, Sexy::WidgetManager *widgetManager);
+inline void (*old_HelpTextScreen_Draw)(HelpTextScreen *, Sexy::Graphics *);
 
-inline void (*old_HelpTextScreen_Delete2)(HelpTextScreen *helpTextScreen);
+inline void (*old_HelpTextScreen_MouseDown)(HelpTextScreen *, int, int, int);
 
-inline void (*old_HelpTextScreen_ButtonDepress)(HelpTextScreen *helpTextScreen, int);
-
-
-void HelpTextScreen_Update(HelpTextScreen *helpTextScreen);
-
-void HelpTextScreen_Draw(HelpTextScreen *helpTextScreen, Sexy::Graphics *graphics);
-
-void HelpTextScreen_AddedToManager(HelpTextScreen *helpTextScreen, Sexy::WidgetManager *theWidgetNanager);
-
-void HelpTextScreen_MouseDown(HelpTextScreen *helpTextScreen, int x, int y, int theClickCount);
-
-void HelpTextScreen_RemovedFromManager(HelpTextScreen *helpTextScreen, Sexy::WidgetManager *widgetManager);
-
-void HelpTextScreen_Delete2(HelpTextScreen *helpTextScreen);
-
-void HelpTextScreen_ButtonDepress(HelpTextScreen *helpTextScreen, int id);
+inline void (*old_HelpTextScreen_ButtonDepress)(HelpTextScreen *, int);
 
 #endif // PVZ_LAWN_WIDGET_HELP_TEXT_SCREEN_H

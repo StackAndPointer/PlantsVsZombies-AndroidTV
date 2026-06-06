@@ -576,14 +576,15 @@ void InitHookFunction() {
 
     homura::HookFunc(HelpOptionsDialog_AddedToManagerAddr, &HelpOptionsDialog_AddedToManager, &old_HelpOptionsDialog_AddedToManager);
     homura::HookFunc(HelpOptionsDialog_RemovedFromManagerAddr, &HelpOptionsDialog_RemovedFromManager, &old_HelpOptionsDialog_RemovedFromManager);
-    homura::HookFunc(HelpTextScreen_AddedToManagerAddr, &HelpTextScreen_AddedToManager, &old_HelpTextScreen_AddedToManager);
-    homura::HookFunc(HelpTextScreen_RemovedFromManagerAddr, &HelpTextScreen_RemovedFromManager, &old_HelpTextScreen_RemovedFromManager);
-    homura::HookFunc(HelpTextScreen__constructorAddr, &HelpTextScreen::_constructor, &old_HelpTextScreen__constructor);
-    homura::HookFunc(HelpTextScreen_Delete2Addr, &HelpTextScreen_Delete2, &old_HelpTextScreen_Delete2);
-    homura::HookFunc(HelpTextScreen_UpdateAddr, &HelpTextScreen_Update, &old_HelpTextScreen_Update);
     homura::HookFunc(HelpOptionsDialog_ButtonDepressAddr, &HelpOptionsDialog_ButtonDepress, &old_HelpOptionsDialog_ButtonDepress);
     homura::HookFunc(HelpOptionsDialog_HelpOptionsDialogAddr, &HelpOptionsDialog_HelpOptionsDialog, &old_HelpOptionsDialog_HelpOptionsDialog);
     homura::HookFunc(HelpOptionsDialog_ResizeAddr, &HelpOptionsDialog_Resize, &old_HelpOptionsDialog_Resize);
+
+    homura::HookFunc(HelpTextScreen_AddedToManagerAddr, &HelpTextScreen::AddedToManager, &old_HelpTextScreen_AddedToManager);
+    homura::HookFunc(HelpTextScreen_RemovedFromManagerAddr, &HelpTextScreen::RemovedFromManager, &old_HelpTextScreen_RemovedFromManager);
+    homura::HookFunc(HelpTextScreen__constructorAddr, &HelpTextScreen::_constructor, &old_HelpTextScreen__constructor);
+    homura::HookFunc(HelpTextScreen__destructorAddr, &HelpTextScreen::_destructor, &old_HelpTextScreen__destructor);
+    homura::HookFunc(HelpTextScreen_UpdateAddr, &HelpTextScreen::Update, &old_HelpTextScreen_Update);
 
     homura::HookFunc(WaitForSecondPlayerDialog_WaitForSecondPlayerDialogAddr, &WaitForSecondPlayerDialog::_constructor, &old_WaitForSecondPlayerDialog_WaitForSecondPlayerDialog);
     homura::HookFunc(WaitForSecondPlayerDialog__destructorAddr, &WaitForSecondPlayerDialog::_destructor, &old_WaitForSecondPlayerDialog__destructorAddr);
@@ -704,11 +705,11 @@ void InitVTableHookFunction() {
     homura::HookVirtualFunc(vTableForSeedChooserScreenAddr, 135, &SeedChooserScreen::ButtonPress, nullptr);
 
 
-    homura::HookVirtualFunc(vTableForHelpTextScreenAddr, 38, &HelpTextScreen_Draw, &old_HelpTextScreen_Draw);
+    homura::HookVirtualFunc(vTableForHelpTextScreenAddr, 38, &HelpTextScreen::Draw, &old_HelpTextScreen_Draw);
     homura::HookVirtualFunc(vTableForHelpTextScreenAddr, 78, &HelpTextScreen::MouseDown, &old_HelpTextScreen_MouseDown);
     // VTableHookFunction(vTableForHelpTextScreenAddr, 81, (void *) HelpTextScreen_MouseUp,(void **) &old_HelpTextScreen_MouseUp);
     // VTableHookFunction(vTableForHelpTextScreenAddr, 83, (void *) HelpTextScreen_MouseDrag,(void **) &old_HelpTextScreen_MouseDrag);
-    homura::HookVirtualFunc(vTableForHelpTextScreenAddr, 136, &HelpTextScreen_ButtonDepress, &old_HelpTextScreen_ButtonDepress);
+    homura::HookVirtualFunc(vTableForHelpTextScreenAddr, 136, &HelpTextScreen::ButtonDepress, &old_HelpTextScreen_ButtonDepress);
 
     homura::HookVirtualFunc(vTableForAlmanacDialogAddr, 83, &AlmanacDialog::MouseDrag, &old_AlmanacDialog_MouseDrag);
 

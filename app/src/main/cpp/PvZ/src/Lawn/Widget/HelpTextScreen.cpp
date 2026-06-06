@@ -37,42 +37,59 @@ constexpr int prevPageButtonY = 318;
 GameButton *gHelpTextScreenCloseButton;
 } // namespace
 
-void HelpTextScreen::_constructor(LawnApp *theApp, HelpTextPage thePage) {
-    if (theApp->mBoard && theApp->IsVSMode()) {
-        thePage = HelpTextPage::HELP_TEXT_PAGE_VS;
+void HelpTextScreen::_constructor(LawnApp *theApp, int thePage) {
+    if (theApp->mBoard) {
+        if (theApp->IsCoopMode()) {
+            thePage = HelpTextPage::HELP_TEXT_PAGE_COOP;
+        } else if (theApp->IsVSMode()) {
+            thePage = HelpTextPage::HELP_TEXT_PAGE_VS;
+        }
     }
 
-    if (theApp->mBoard && theApp->IsCoopMode()) {
-        thePage = HelpTextPage::HELP_TEXT_PAGE_COOP;
-    }
-
+    // 这个HelpTextScreen是全屏的，但触控事件并不会分发到此处，而是发给子控件。只有内容外侧的点击事件才能收到
     old_HelpTextScreen__constructor(this, theApp, thePage);
-    // 这个HelpTextScreen是全屏的，但触控事件并不会分发到此处，而是发给子控件。只有内容外侧的点击事件才能收到。
+
+    gHelpTextScreenCloseButton = MakeButton(1000, this, this, "[CLOSE]");
+    gHelpTextScreenCloseButton->Resize(650 - mX, 540 - mY, 170, 50);
 
     Resize(mX, mY, 4000, mHeight);
 }
 
-void HelpTextScreen_Update(HelpTextScreen *helpTextScreen) {
-    if (gHelpTextScreenCloseButton == nullptr) {
-        gHelpTextScreenCloseButton = MakeButton(1000, (Sexy::ButtonListener *)helpTextScreen + 64, helpTextScreen, "[CLOSE]");
-        helpTextScreen->AddWidget(gHelpTextScreenCloseButton);
-    }
-    gHelpTextScreenCloseButton->Resize(650 - helpTextScreen->mX, 540 - helpTextScreen->mY, 170, 50);
-    old_HelpTextScreen_Update(helpTextScreen);
+void HelpTextScreen::_destructor() {
+    mApp->SafeDeleteWidget(gHelpTextScreenCloseButton);
+    gHelpTextScreenCloseButton = nullptr;
+
+    old_HelpTextScreen__destructor(this);
 }
 
-void HelpTextScreen_Draw(HelpTextScreen *helpTextScreen, Sexy::Graphics *g) {
-    old_HelpTextScreen_Draw(helpTextScreen, g);
+void HelpTextScreen::AddedToManager(WidgetManager *theWidgetNanager) {
+    old_HelpTextScreen_AddedToManager(this, theWidgetNanager);
+
+    AddWidget(gHelpTextScreenCloseButton);
+}
+
+void HelpTextScreen::RemovedFromManager(WidgetManager *theWidgetManager) {
+    RemoveWidget(gHelpTextScreenCloseButton);
+
+    // 调用了 RemoveAllWidgets, 放最后
+    old_HelpTextScreen_RemovedFromManager(this, theWidgetManager);
+}
+
+void HelpTextScreen::Update() {
+    gHelpTextScreenCloseButton->Move(650 - mX, 540 - mY);
+
+    old_HelpTextScreen_Update(this);
+}
+
+void HelpTextScreen::Draw(Sexy::Graphics *g) {
+    old_HelpTextScreen_Draw(this, g);
     g->DrawImage(Sexy::IMAGE_ZEN_NEXTGARDEN, nextPageButtonX, nextPageButtonY);
     g->DrawImageMirror(Sexy::IMAGE_ZEN_NEXTGARDEN, prevPageButtonX, prevPageButtonY, true);
 }
 
-void HelpTextScreen_AddedToManager(HelpTextScreen *helpTextScreen, WidgetManager *theWidgetNanager) {
-    // 创建按钮
-    old_HelpTextScreen_AddedToManager(helpTextScreen, theWidgetNanager);
-}
-
 void HelpTextScreen::MouseDown(int x, int y, int theClickCount) {
+    // 修复MailScreen的可触控区域不为全屏
+
     // LOGD("D%d %d", x, y);
     // prevPageButtonX = x;
     // prevPageButtonY = y;
@@ -93,26 +110,10 @@ void HelpTextScreen::MouseDown(int x, int y, int theClickCount) {
     }
 }
 
-void HelpTextScreen_RemovedFromManager(HelpTextScreen *helpTextScreen, WidgetManager *theWidgetManager) {
-    // 修复MailScreen的可触控区域不为全屏
-    if (gHelpTextScreenCloseButton != nullptr) {
-        helpTextScreen->RemoveWidget(gHelpTextScreenCloseButton);
-    }
-
-    old_HelpTextScreen_RemovedFromManager(helpTextScreen, theWidgetManager);
-}
-
-void HelpTextScreen_Delete2(HelpTextScreen *helpTextScreen) {
-    old_HelpTextScreen_Delete2(helpTextScreen);
-    if (gHelpTextScreenCloseButton != nullptr) {
-        gHelpTextScreenCloseButton->~GameButton();
-        gHelpTextScreenCloseButton = nullptr;
-    }
-}
-
-void HelpTextScreen_ButtonDepress(HelpTextScreen *helpTextScreen, int id) {
-    if (id == 1000) {
+void HelpTextScreen::ButtonDepress(int theId) {
+    if (theId == 1000) {
         gLawnApp->KillHelpTextScreen();
-    } else
-        old_HelpTextScreen_ButtonDepress(helpTextScreen, id);
+        return;
+    }
+    old_HelpTextScreen_ButtonDepress(this, theId);
 }
