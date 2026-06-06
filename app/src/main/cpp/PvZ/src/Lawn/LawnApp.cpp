@@ -273,6 +273,7 @@ void LawnApp::DoConfirmBackToMain(bool theIsSave) {
 
 void LawnApp::ClearSecondPlayer() {
     gIsServerModeNetplay = false;
+    gIsConnectedToServer = false;
     gServerModeTransport = ServerModeTransport::NONE;
     gIsServerModeSpectator = false;
     gIsReplayMode = false;
@@ -592,6 +593,7 @@ void LawnApp::UpdateFrames() {
                 gTcpServerSocket = -1;
                 gTcpConnecting = false;
                 gTcpConnected = false;
+                gIsConnectedToServer = false;
                 gIsServerModeSpectator = false;
                 clientRecvBuffer.clear();
                 serverRecvBuffer.clear();
@@ -616,6 +618,7 @@ void LawnApp::UpdateFrames() {
                     gTcpServerSocket = -1;
                     gTcpConnecting = false;
                     gTcpConnected = false;
+                    gIsConnectedToServer = false;
                     clientRecvBuffer.clear();
                     serverRecvBuffer.clear();
                     netplay::ClearSendBuffer();

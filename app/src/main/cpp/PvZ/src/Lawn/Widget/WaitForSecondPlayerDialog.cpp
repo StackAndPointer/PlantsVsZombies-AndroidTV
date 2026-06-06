@@ -3167,6 +3167,8 @@ void WaitForSecondPlayerDialog::ServerAdoptP2PSocket() {
     CloseSocketFd(mServerP2PListenSock, false);
     CloseSocketFd(mServerSock);
 
+    // Once the match is handed off to a direct P2P socket, the lobby server is no longer active.
+    gIsConnectedToServer = false;
     mServerConnected = false;
     mServerConnecting = false;
     mServerP2PStatusText = "P2P: direct channel active";
@@ -3778,6 +3780,7 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
     CloseSocketFd(mServerSock);
     ServerResetP2PState(false);
 
+    gIsConnectedToServer = false;
     mServerConnecting = false;
     mServerConnected = false;
 
