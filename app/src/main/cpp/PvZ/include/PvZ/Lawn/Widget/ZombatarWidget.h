@@ -92,9 +92,11 @@ public:
     unsigned char mSelectedBackgroundPage = 0;
 
     ZombatarWidget(LawnApp *theApp);
-    ~ZombatarWidget();
+    ~ZombatarWidget() {
+        _destructor();
+    }
 
-    void Delete();
+    void AddedToManager(Sexy::WidgetManager *theWidgetManager);
     void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void SetDefault();
     void Update();
@@ -168,6 +170,14 @@ public:
 
     void ButtonDepress(this ZombatarWidget &self, int theId);
 
+protected:
+    friend void InitVTableHookFunction();
+
+    void _destructor();
+    void _destructor2() {
+        delete this;
+    }
+
 private:
     static inline const Sexy::ButtonListener::VTable sButtonListenerVtable{
         // .ButtonPress = (void *)LeaderboardsWidget_ButtonPress;
@@ -176,9 +186,9 @@ private:
     };
 
     static inline Sexy::ButtonListener sButtonListener{&sButtonListenerVtable};
+};
 
-}; // 我想用ZombatarWidget取代TestMenuWidget。;
-
+// 使用 ZombatarWidget 取代 TestMenuWidget
 class TestMenuWidget : public Sexy::MenuWidget {
 public:
     TestMenuWidget() {
@@ -191,20 +201,5 @@ protected:
         reinterpret_cast<void (*)(TestMenuWidget *)>(TestMenuWidget_TestMenuWidgetAddr)(this);
     }
 };
-
-inline void (*old_TestMenuWidget_RemovedFromManager)(ZombatarWidget *zombatarWidget, Sexy::WidgetManager *manager);
-inline void (*old_TestMenuWidget_Delete2)(ZombatarWidget *zombatarWidget);
-inline void (*old_TestMenuWidget_Delete)(ZombatarWidget *zombatarWidget);
-
-
-void TestMenuWidget_Delete(ZombatarWidget *zombatarWidget);
-void TestMenuWidget_Delete2(ZombatarWidget *zombatarWidget);
-void TestMenuWidget_RemovedFromManager(ZombatarWidget *zombatarWidget, Sexy::WidgetManager *manager);
-void TestMenuWidget_Update(ZombatarWidget *zombatarWidget);
-void TestMenuWidget_Draw(ZombatarWidget *zombatarWidget, Sexy::Graphics *graphics);
-void TestMenuWidget_MouseDown(ZombatarWidget *zombatarWidget, int x, int y);
-void TestMenuWidget_MouseUp(ZombatarWidget *zombatarWidget, int x, int y);
-void TestMenuWidget_MouseDrag(ZombatarWidget *zombatarWidget, int x, int y);
-void TestMenuWidget_KeyDown(ZombatarWidget *zombatarWidget, Sexy::KeyCode keyCode);
 
 #endif // PVZ_LAWN_WIDGET_ZOMBATAR_WIDGET_H

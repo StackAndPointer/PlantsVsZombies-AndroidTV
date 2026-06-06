@@ -88,7 +88,6 @@ ZombatarWidget::ZombatarWidget(LawnApp *theApp) {
     mApp = theApp;
     mBackButton = MakeButton(ZombatarWidget::ZombatarWidget_Back, mButtonListener, this, "[CLOSE]");
     mBackButton->Resize(471, 628, addonZombatarImages.zombatar_mainmenuback_highlight->mWidth, addonZombatarImages.zombatar_mainmenuback_highlight->mHeight);
-    AddWidget(mBackButton);
     mBackButton->mDrawStoneButton = false;
     mBackButton->mButtonImage = IMAGE_BLANK;
     mBackButton->mDownImage = addonZombatarImages.zombatar_mainmenuback_highlight;
@@ -96,7 +95,6 @@ ZombatarWidget::ZombatarWidget(LawnApp *theApp) {
 
     mFinishButton = MakeButton(ZombatarWidget::ZombatarWidget_Finish, mButtonListener, nullptr, "[OK]");
     mFinishButton->Resize(160 + 523, 565, addonZombatarImages.zombatar_finished_button->mWidth, addonZombatarImages.zombatar_finished_button->mHeight);
-    AddWidget(mFinishButton);
     mFinishButton->mDrawStoneButton = false;
     mFinishButton->mButtonImage = addonZombatarImages.zombatar_finished_button;
     mFinishButton->mDownImage = addonZombatarImages.zombatar_finished_button_highlight;
@@ -104,7 +102,6 @@ ZombatarWidget::ZombatarWidget(LawnApp *theApp) {
 
     mViewPortraitButton = MakeButton(ZombatarWidget::ZombatarWidget_ViewPortrait, mButtonListener, nullptr, "[OK]");
     mViewPortraitButton->Resize(160 + 75, 565, addonZombatarImages.zombatar_view_button->mWidth, addonZombatarImages.zombatar_view_button->mHeight);
-    AddWidget(mViewPortraitButton);
     mViewPortraitButton->mDrawStoneButton = false;
     mViewPortraitButton->mButtonImage = addonZombatarImages.zombatar_view_button;
     mViewPortraitButton->mDownImage = addonZombatarImages.zombatar_view_button_highlight;
@@ -112,11 +109,9 @@ ZombatarWidget::ZombatarWidget(LawnApp *theApp) {
 
     mNewButton = MakeButton(ZombatarWidget::ZombatarWidget_New, mButtonListener, nullptr, "[ZOMBATAR_NEW_BUTTON]");
     mNewButton->Resize(578, 490, 170, 50);
-    AddWidget(mNewButton);
 
     mDeleteButton = MakeButton(ZombatarWidget::ZombatarWidget_Delete, mButtonListener, nullptr, "[ZOMBATAR_DELETE_BUTTON]");
     mDeleteButton->Resize(314, 490, 170, 50);
-    AddWidget(mDeleteButton);
 
     auto *aZombie = new Zombie;
     aZombie->mBoard = nullptr;
@@ -142,43 +137,33 @@ ZombatarWidget::ZombatarWidget(LawnApp *theApp) {
     mZombatarReanim->SetZombatarReanim();
 }
 
-ZombatarWidget::~ZombatarWidget() {
-    // TODO:解决五个按钮的内存泄露问题。GameButton_Delete会闪退，暂不清楚原因。
+void ZombatarWidget::_destructor() {
     mPreviewZombie->DieNoLoot();
-    (*((void (**)(Zombie *))mPreviewZombie->vTable + 1))(mPreviewZombie); // Delete();
+    delete mPreviewZombie;
 
-    (*((void (**)(Sexy::Widget *, Sexy::Widget *))vTable + 7))(this, mBackButton);
-    mBackButton->mDrawStoneButton = true;
-    mBackButton->mButtonImage = nullptr;
-    mBackButton->mDownImage = nullptr;
-    mBackButton->mOverImage = nullptr;
-    // GameButton_Delete(mBackButton);
+    // FIXME: 解决五个按钮的内存泄露问题.
+    //  SafeDeleteWidget 会闪退, 暂不清楚原因.
+    // mApp->SafeDeleteWidget(mDeleteButton);
+    // mApp->SafeDeleteWidget(mNewButton);
+    // mApp->SafeDeleteWidget(mViewPortraitButton);
+    // mApp->SafeDeleteWidget(mFinishButton);
+    // mApp->SafeDeleteWidget(mBackButton);
 
-    (*((void (**)(Sexy::Widget *, Sexy::Widget *))vTable + 7))(this, mFinishButton);
-    mFinishButton->mDrawStoneButton = true;
-    mFinishButton->mButtonImage = nullptr;
-    mFinishButton->mDownImage = nullptr;
-    mFinishButton->mOverImage = nullptr;
-    // GameButton_Delete(mFinishButton);
-
-    (*((void (**)(Sexy::Widget *, Sexy::Widget *))vTable + 7))(this, mViewPortraitButton);
-    mViewPortraitButton->mDrawStoneButton = true;
-    mViewPortraitButton->mButtonImage = nullptr;
-    mViewPortraitButton->mDownImage = nullptr;
-    mViewPortraitButton->mOverImage = nullptr;
-    // GameButton_Delete(mViewPortraitButton);
-
-    // GameButton_Delete(mNewButton);
-    // GameButton_Delete(mDeleteButton);
-    old_TestMenuWidget_Delete2(this);
+    MenuWidget::_destructor();
 }
 
-void ZombatarWidget::Delete() {
-    delete this;
+void ZombatarWidget::AddedToManager(WidgetManager *theWidgetManager) {
+    MenuWidget::AddedToManager(theWidgetManager);
+
+    AddWidget(mBackButton);
+    AddWidget(mFinishButton);
+    AddWidget(mViewPortraitButton);
+    AddWidget(mNewButton);
+    AddWidget(mDeleteButton);
 }
 
 void ZombatarWidget::RemovedFromManager(WidgetManager *theWidgetManager) {
-    old_TestMenuWidget_RemovedFromManager(this, theWidgetManager);
+    MenuWidget::RemovedFromManager(theWidgetManager);
 
     RemoveWidget(mBackButton);
     RemoveWidget(mFinishButton);
@@ -1991,40 +1976,4 @@ void ZombatarWidget::KeyDown(KeyCode theKey) {
     if (theKey == KeyCode::KEYCODE_UP || theKey == KeyCode::KEYCODE_DOWN || theKey == KeyCode::KEYCODE_LEFT || theKey == KeyCode::KEYCODE_RIGHT) {
         return;
     }
-}
-
-void TestMenuWidget_Delete(ZombatarWidget *zombatarWidget) {
-    zombatarWidget->Delete();
-}
-
-void TestMenuWidget_Delete2(ZombatarWidget *zombatarWidget) {
-    zombatarWidget->~ZombatarWidget();
-}
-
-void TestMenuWidget_RemovedFromManager(ZombatarWidget *zombatarWidget, Sexy::WidgetManager *manager) {
-    zombatarWidget->RemovedFromManager(manager);
-}
-
-void TestMenuWidget_Update(ZombatarWidget *zombatarWidget) {
-    zombatarWidget->Update();
-}
-
-void TestMenuWidget_Draw(ZombatarWidget *zombatarWidget, Sexy::Graphics *graphics) {
-    zombatarWidget->Draw(graphics);
-}
-
-void TestMenuWidget_MouseDown(ZombatarWidget *zombatarWidget, int x, int y) {
-    zombatarWidget->MouseDown(x, y);
-}
-
-void TestMenuWidget_MouseUp(ZombatarWidget *zombatarWidget, int x, int y) {
-    zombatarWidget->MouseUp(x, y);
-}
-
-void TestMenuWidget_MouseDrag(ZombatarWidget *zombatarWidget, int x, int y) {
-    zombatarWidget->MouseDrag(x, y);
-}
-
-void TestMenuWidget_KeyDown(ZombatarWidget *zombatarWidget, KeyCode keyCode) {
-    zombatarWidget->KeyDown(keyCode);
 }

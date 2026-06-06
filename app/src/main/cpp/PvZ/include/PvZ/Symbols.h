@@ -941,8 +941,6 @@ inline void *Sexy_AudiereSoundManager_LoadSoundAddr;
 inline void *ReanimatorLoadDefinitionsAddr;
 inline void *DefinitionGetCompiledFilePathFromXMLFilePathAddr;
 inline void *TestMenuWidget_TestMenuWidgetAddr;
-inline void *TestMenuWidget_DeleteAddr;
-inline void *TestMenuWidget_Delete2Addr;
 inline void *MaskHelpWidget_MaskHelpWidgetAddr;
 inline void *MaskHelpWidget_DeleteAddr;
 inline void *MaskHelpWidget_UpdateAddr;

@@ -1043,8 +1043,6 @@ bool LoadGameMain() {
     TodReplaceNumberStringAddr = libGameMain.GetSymbol("_Z22TodReplaceNumberStringRKSsPKci");
     Sexy_AudiereSoundManager_LoadSoundAddr = libGameMain.GetSymbol("_ZN4Sexy19AudiereSoundManager9LoadSoundERKSs");
     TestMenuWidget_TestMenuWidgetAddr = libGameMain.GetSymbol("_ZN14TestMenuWidgetC2Ev");
-    TestMenuWidget_DeleteAddr = libGameMain.GetSymbol("_ZN14TestMenuWidgetD0Ev");
-    TestMenuWidget_Delete2Addr = libGameMain.GetSymbol("_ZN14TestMenuWidgetD2Ev");
     ReanimatorLoadDefinitionsAddr = libGameMain.GetSymbol("_Z25ReanimatorLoadDefinitionsP17ReanimationParamsi");
     DefinitionGetCompiledFilePathFromXMLFilePathAddr = libGameMain.GetSymbol("_Z44DefinitionGetCompiledFilePathFromXMLFilePathRKSs");
     MaskHelpWidget_MaskHelpWidgetAddr = libGameMain.GetSymbol("_ZN14MaskHelpWidgetC2EP7LawnApp");

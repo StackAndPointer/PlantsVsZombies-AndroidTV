@@ -646,8 +646,6 @@ void InitHookFunction() {
     homura::HookFunc(SettingsDialog_DrawAddr, &SettingsDialog::Draw, &old_SettingsDialog_Draw);
     homura::HookFunc(ReanimatorLoadDefinitionsAddr, &ReanimatorLoadDefinitions, &old_ReanimatorLoadDefinitions);
     homura::HookFunc(DefinitionGetCompiledFilePathFromXMLFilePathAddr, &DefinitionGetCompiledFilePathFromXMLFilePath, &old_DefinitionGetCompiledFilePathFromXMLFilePath);
-    homura::HookFunc(TestMenuWidget_DeleteAddr, &TestMenuWidget_Delete, &old_TestMenuWidget_Delete);
-    homura::HookFunc(TestMenuWidget_Delete2Addr, &TestMenuWidget_Delete2, &old_TestMenuWidget_Delete2);
     homura::HookFunc(SaveGameContext_SyncReanimationDefAddr, &SaveGameContext::SyncReanimationDef, nullptr);
     homura::HookFunc(PoolEffect_PoolEffectDrawAddr, &PoolEffect::PoolEffectDraw, nullptr);
     homura::HookFunc(Sexy_MemoryImage_ClearRectAddr, &Sexy::MemoryImage::ClearRect, nullptr);
@@ -754,14 +752,16 @@ void InitVTableHookFunction() {
     homura::HookVirtualFunc(vTableForDaveHelpAddr, 83, &DaveHelp_MouseDrag, nullptr);
     homura::HookVirtualFunc(vTableForDaveHelpAddr, 73, &DaveHelp_KeyDown, nullptr);
 
-
-    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 32, &TestMenuWidget_RemovedFromManager, &old_TestMenuWidget_RemovedFromManager);
-    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 33, &TestMenuWidget_Update, nullptr);
-    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 38, &TestMenuWidget_Draw, nullptr);
-    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 78, &TestMenuWidget_MouseDown, nullptr);
-    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 81, &TestMenuWidget_MouseUp, nullptr);
-    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 83, &TestMenuWidget_MouseDrag, nullptr);
-    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 73, &TestMenuWidget_KeyDown, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 2, &ZombatarWidget::_destructor, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 3, &ZombatarWidget::_destructor2, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 31, &ZombatarWidget::AddedToManager, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 32, &ZombatarWidget::RemovedFromManager, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 33, &ZombatarWidget::Update, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 38, &ZombatarWidget::Draw, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 78, &ZombatarWidget::MouseDown, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 81, &ZombatarWidget::MouseUp, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 83, &ZombatarWidget::MouseDrag, nullptr);
+    homura::HookVirtualFunc(vTableForTestMenuWidgetAddr, 73, &ZombatarWidget::KeyDown, nullptr);
 
 
     homura::HookVirtualFunc(vTableForTrashBinAddr, 38, &TrashBin::Draw, nullptr);
