@@ -392,7 +392,7 @@ inline int gNetDelayNow = 0;
 inline bool gNetPingHasValidDelay = false;
 inline bool gNetPingAwaitingPong = false;
 inline int gNetPingSendCounter = 0;
-inline uint16_t gNetPingNowTick = 0;
+inline uint32_t gNetPingNowTick = 0;
 inline uint16_t gNetPingLatestSentTick = 0;
 inline uint16_t gNetPingLastPongTick = 0;
 
