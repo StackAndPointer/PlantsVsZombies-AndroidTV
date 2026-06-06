@@ -92,6 +92,7 @@ public:
     void HandleOpponentDisconnected();
     void InitFromBoard(Board *board);
     void ShowReplayButton();
+    void KillReplayButton();
 
     void processClientEvent(const BaseEvent *event);
     void processServerEvent(const BaseEvent *event);

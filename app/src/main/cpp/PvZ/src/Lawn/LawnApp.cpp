@@ -1252,23 +1252,20 @@ void LawnApp::ShowVSResultsScreen() {
 }
 
 void LawnApp::KillVSResultsScreen() {
-    if (mVSResultsMenu) {
-        if (mVSResultsMenu->mCheckboxController != nullptr) {
-            mVSResultsMenu->mCheckboxController->DestroyCheckboxWidget();
-            delete mVSResultsMenu->mCheckboxController;
-            mVSResultsMenu->mCheckboxController = nullptr;
-        }
-        if (mVSResultsMenu->mSaveReplayButton != nullptr) {
-            mVSResultsMenu->RemoveWidget(mVSResultsMenu->mSaveReplayButton);
-            delete mVSResultsMenu->mSaveReplayButton;
-            mVSResultsMenu->mSaveReplayButton = nullptr;
-        }
-        if (!mVSResultsMenu->mIsFading) {
-            mWidgetManager->RemoveWidget(mVSResultsMenu);
-            SafeDeleteWidget(mVSResultsMenu);
-        }
-        mVSResultsMenu = nullptr;
+    if (mVSResultsMenu == nullptr) {
+        return;
     }
+    if (mVSResultsMenu->mCheckboxController != nullptr) {
+        mVSResultsMenu->mCheckboxController->DestroyCheckboxWidget();
+        delete mVSResultsMenu->mCheckboxController;
+        mVSResultsMenu->mCheckboxController = nullptr;
+    }
+    mVSResultsMenu->KillReplayButton();
+    if (!mVSResultsMenu->mIsFading) {
+        mWidgetManager->RemoveWidget(mVSResultsMenu);
+        SafeDeleteWidget(mVSResultsMenu);
+    }
+    mVSResultsMenu = nullptr;
 }
 
 void LawnApp::PreNewGame(GameMode theGameMode, bool theLookForSavedGame) {

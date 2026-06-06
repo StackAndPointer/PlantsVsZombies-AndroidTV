@@ -422,18 +422,23 @@ void VSResultsMenu::ShowReplayButton() {
     mSaveReplayButton->mOverImage = addonImages.VS_Button_selected;
     mSaveReplayButton->mDownImage = addonImages.VS_Button_selected;
 
+    // mSaveReplayButton->mTextOffsetX = -2;
+    // mSaveReplayButton->mTextOffsetY = -4;
+    // mSaveReplayButton->mTextDownOffsetX = 1;
+    // mSaveReplayButton->mTextDownOffsetY = 1;
+    mSaveReplayButton->SetFont(Sexy::FONT_DWARVENTODCRAFT24);
+    (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
+    (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
+    mSaveReplayButton->mLabelJustify = BUTTON_LABEL_WRAP_CENTER;
+    mSaveReplayButton->GameButton::Resize(660, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
+    AddWidget(mSaveReplayButton);
+}
 
+void VSResultsMenu::KillReplayButton() {
     if (mSaveReplayButton != nullptr) {
-        //            mSaveReplayButton->mTextOffsetX = -2;
-        //            mSaveReplayButton->mTextOffsetY = -4;
-        //            mSaveReplayButton->mTextDownOffsetX = 1;
-        //            mSaveReplayButton->mTextDownOffsetY = 1;
-        mSaveReplayButton->SetFont(Sexy::FONT_DWARVENTODCRAFT24);
-        (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
-        (*mSaveReplayButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
-        mSaveReplayButton->mLabelJustify = BUTTON_LABEL_WRAP_CENTER;
-        mSaveReplayButton->GameButton::Resize(660, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
-        AddWidget(mSaveReplayButton);
+        RemoveWidget(mSaveReplayButton);
+        gLawnApp->SafeDeleteWidget(mSaveReplayButton);
+        mSaveReplayButton = nullptr;
     }
 }
 
