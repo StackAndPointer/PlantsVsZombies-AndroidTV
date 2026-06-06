@@ -20,7 +20,6 @@
 #ifndef PVZ_LAWN_WIDGET_ACHIEVEMENTS_WIDGET_H
 #define PVZ_LAWN_WIDGET_ACHIEVEMENTS_WIDGET_H
 
-#include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 #include "PvZ/Symbols.h"
 
@@ -67,10 +66,10 @@ namespace Sexy {
 class Graphics;
 }
 
-class AchievementsWidget : public Sexy::Widget, public Sexy::ButtonListener {
+class AchievementsWidget : public Sexy::Widget {
 public:
-    LawnApp *mApp; // 65
-    int mDragStartPointerScreenY;
+    int mDragStartPointerScreenY; // mUnkNum100
+    LawnApp *mApp;                // 0x101
     int mDragStartWidgetY;
     int mLastPointerScreenY;
     long mLastSampleTimeMs;
@@ -80,37 +79,35 @@ public:
     bool mIsScrolling;
 
     AchievementsWidget(LawnApp *theApp);
-    ~AchievementsWidget();
+    ~AchievementsWidget() {
+        _destructor();
+    }
 
     void Update();
     void Draw(Sexy::Graphics *g);
     void MouseDown(int x, int y, int theClickCount);
     void MouseUp(int x, int y);
     void MouseDrag(int x, int y);
+
+protected:
+    void _destructor();
 };
 
+// 使用 AchievementsWidget 取代 MaskHelpWidget
 class MaskHelpWidget : public Sexy::Widget {
 public:
+    int mUnkNum100;
+    LawnApp *mApp;
+
     MaskHelpWidget(LawnApp *theApp) {
         _constructor(theApp);
     }
-    ~MaskHelpWidget() {
-        _destructor();
-    }
+    ~MaskHelpWidget() = delete;
 
 protected:
     void _constructor(LawnApp *theApp) {
         reinterpret_cast<void (*)(MaskHelpWidget *, LawnApp *)>(MaskHelpWidget_MaskHelpWidgetAddr)(this, theApp);
     }
-    void _destructor() {
-        reinterpret_cast<void (*)(MaskHelpWidget *)>(MaskHelpWidget_DeleteAddr)(this);
-    }
 };
-
-void MaskHelpWidget_Update(AchievementsWidget *achievementsWidget);
-void MaskHelpWidget_Draw(AchievementsWidget *achievementsWidget, Sexy::Graphics *g);
-void MaskHelpWidget_MouseDown(AchievementsWidget *achievementsWidget, int x, int y, int theClickCount);
-void MaskHelpWidget_MouseUp(AchievementsWidget *achievementsWidget, int x, int y);
-void MaskHelpWidget_MouseDrag(AchievementsWidget *achievementsWidget, int x, int y);
 
 #endif // PVZ_LAWN_WIDGET_ACHIEVEMENTS_WIDGET_H

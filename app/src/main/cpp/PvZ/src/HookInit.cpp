@@ -628,8 +628,8 @@ void InitHookFunction() {
     homura::HookFunc(Music2_Music2Addr, &Music2::_constructor, &old_Music2_Music2);
 
     homura::HookFunc(LawnPlayerInfo_AddCoinsAddr, &LawnPlayerInfo::AddCoins, nullptr);
-    homura::HookFunc(MaskHelpWidget_UpdateAddr, &MaskHelpWidget_Update, nullptr);
-    homura::HookFunc(MaskHelpWidget_DrawAddr, &MaskHelpWidget_Draw, nullptr);
+    homura::HookFunc(MaskHelpWidget_UpdateAddr, &AchievementsWidget::Update, nullptr);
+    homura::HookFunc(MaskHelpWidget_DrawAddr, &AchievementsWidget::Draw, nullptr);
 
     homura::HookFunc(DaveHelp__destructorAddr, &LeaderboardsWidget::_destructor, nullptr);
     homura::HookFunc(DaveHelp_UpdateAddr, &LeaderboardsWidget::Update, nullptr);
@@ -744,9 +744,9 @@ void InitVTableHookFunction() {
 
 
     // VTableHookFunction(vTableForMaskHelpWidgetAddr, 71, (void *) MaskHelpWidget_KeyDown,nullptr);
-    homura::HookVirtualFunc(vTableForMaskHelpWidgetAddr, 78, &MaskHelpWidget_MouseDown, nullptr);
-    homura::HookVirtualFunc(vTableForMaskHelpWidgetAddr, 81, &MaskHelpWidget_MouseUp, nullptr);
-    homura::HookVirtualFunc(vTableForMaskHelpWidgetAddr, 83, &MaskHelpWidget_MouseDrag, nullptr);
+    homura::HookVirtualFunc(vTableForMaskHelpWidgetAddr, 78, &AchievementsWidget::MouseDown, nullptr);
+    homura::HookVirtualFunc(vTableForMaskHelpWidgetAddr, 81, &AchievementsWidget::MouseUp, nullptr);
+    homura::HookVirtualFunc(vTableForMaskHelpWidgetAddr, 83, &AchievementsWidget::MouseDrag, nullptr);
 
 
     homura::HookVirtualFunc(vTableForDaveHelpAddr, 31, &LeaderboardsWidget::AddedToManager, nullptr);

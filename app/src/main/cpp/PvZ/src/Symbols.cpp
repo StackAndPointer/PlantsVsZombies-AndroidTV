@@ -1047,7 +1047,6 @@ bool LoadGameMain() {
     DefinitionGetCompiledFilePathFromXMLFilePathAddr = libGameMain.GetSymbol("_Z44DefinitionGetCompiledFilePathFromXMLFilePathRKSs");
     MaskHelpWidget_MaskHelpWidgetAddr = libGameMain.GetSymbol("_ZN14MaskHelpWidgetC2EP7LawnApp");
     MaskHelpWidget_UpdateAddr = libGameMain.GetSymbol("_ZN14MaskHelpWidget6UpdateEv");
-    MaskHelpWidget_DeleteAddr = libGameMain.GetSymbol("_ZN14MaskHelpWidgetD0Ev");
     MaskHelpWidget_DrawAddr = libGameMain.GetSymbol("_ZN14MaskHelpWidget4DrawEPN4Sexy8GraphicsE");
     DaveHelp_DaveHelpAddr = libGameMain.GetSymbol("_ZN8DaveHelpC2EP7LawnApp");
     DaveHelp_UpdateAddr = libGameMain.GetSymbol("_ZN8DaveHelp6UpdateEv");

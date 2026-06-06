@@ -51,7 +51,7 @@ int ClampScrollY(int y) {
 } // namespace
 
 AchievementsWidget::AchievementsWidget(LawnApp *theApp) {
-    reinterpret_cast<void (*)(MaskHelpWidget *, LawnApp *)>(MaskHelpWidget_MaskHelpWidgetAddr)(reinterpret_cast<MaskHelpWidget *>(this), theApp);
+    new (this) MaskHelpWidget{theApp};
     mApp = theApp;
     mDragStartPointerScreenY = 0;
     mDragStartWidgetY = 0;
@@ -63,8 +63,8 @@ AchievementsWidget::AchievementsWidget(LawnApp *theApp) {
     mIsScrolling = false;
 }
 
-AchievementsWidget::~AchievementsWidget() {
-    reinterpret_cast<void (*)(MaskHelpWidget *)>(MaskHelpWidget_DeleteAddr)(reinterpret_cast<MaskHelpWidget *>(this));
+void AchievementsWidget::_destructor() {
+    Widget::_destructor();
 }
 
 void AchievementsWidget::Draw(Graphics *g) {
@@ -129,8 +129,6 @@ void AchievementsWidget::Draw(Graphics *g) {
 }
 
 void AchievementsWidget::MouseDown(int x, int y, int theClickCount) {
-    (void)x;
-    (void)theClickCount;
     if (gAchievementState != SHOWING)
         return;
     mIsDragging = true;
@@ -144,7 +142,6 @@ void AchievementsWidget::MouseDown(int x, int y, int theClickCount) {
 }
 
 void AchievementsWidget::MouseDrag(int x, int y) {
-    (void)x;
     if (gAchievementState != SHOWING || !mIsDragging)
         return;
     const int pointerScreenY = mY + y;
@@ -164,7 +161,6 @@ void AchievementsWidget::MouseDrag(int x, int y) {
 }
 
 void AchievementsWidget::MouseUp(int x, int y) {
-    (void)x;
     if (!mIsDragging)
         return;
     mIsDragging = false;
@@ -214,24 +210,4 @@ void AchievementsWidget::Update() {
         }
     }
     MarkDirty();
-}
-
-void MaskHelpWidget_Update(AchievementsWidget *achievementsWidget) {
-    achievementsWidget->Update();
-}
-
-void MaskHelpWidget_Draw(AchievementsWidget *achievementsWidget, Graphics *g) {
-    achievementsWidget->Draw(g);
-}
-
-void MaskHelpWidget_MouseDown(AchievementsWidget *achievementsWidget, int x, int y, int theClickCount) {
-    achievementsWidget->MouseDown(x, y, theClickCount);
-}
-
-void MaskHelpWidget_MouseUp(AchievementsWidget *achievementsWidget, int x, int y) {
-    achievementsWidget->MouseUp(x, y);
-}
-
-void MaskHelpWidget_MouseDrag(AchievementsWidget *achievementsWidget, int x, int y) {
-    achievementsWidget->MouseDrag(x, y);
 }

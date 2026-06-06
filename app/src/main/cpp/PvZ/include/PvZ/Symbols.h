@@ -942,7 +942,6 @@ inline void *ReanimatorLoadDefinitionsAddr;
 inline void *DefinitionGetCompiledFilePathFromXMLFilePathAddr;
 inline void *TestMenuWidget_TestMenuWidgetAddr;
 inline void *MaskHelpWidget_MaskHelpWidgetAddr;
-inline void *MaskHelpWidget_DeleteAddr;
 inline void *MaskHelpWidget_UpdateAddr;
 inline void *MaskHelpWidget_DrawAddr;
 inline void *DaveHelp_DaveHelpAddr;

@@ -184,7 +184,7 @@ void MainMenu::Update() {
         if (gMainMenuAchievementCounter == 0) {
             gAchievementState = NOT_SHOWING;
             RemoveWidget(gMainMenuAchievementsWidget);
-            gMainMenuAchievementsWidget->~AchievementsWidget();
+            mApp->SafeDeleteWidget(gMainMenuAchievementsWidget);
             gMainMenuAchievementsWidget = nullptr;
             if (gMainMenuAchievementsBack != nullptr) {
                 RemoveWidget(gMainMenuAchievementsBack);
@@ -284,8 +284,7 @@ void MainMenu::ButtonDepress(MainMenuButtonId theSelectedButton) {
             if (gMainMenuAchievementsWidget == nullptr) {
                 gAchievementState = SLIDING_IN;
                 gMainMenuAchievementCounter = 100;
-                gMainMenuAchievementsWidget = (AchievementsWidget *)operator new(sizeof(AchievementsWidget));
-                new (gMainMenuAchievementsWidget) AchievementsWidget{mApp};
+                gMainMenuAchievementsWidget = new AchievementsWidget{mApp};
                 gMainMenuAchievementsWidget->mIsScrolling = false;
                 gMainMenuAchievementsWidget->Resize(0, MAIN_MENU_HEIGHT, 1280, addonImages.hole->mHeight * (ACHIEVEMENT_HOLE_LENGTH + 1));
                 gMainMenuAchievementsWidget->mWidgetId = ACHIEVEMENTS_BUTTON;
@@ -533,29 +532,27 @@ void MainMenu::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void MainMenu::RemovedFromManager(WidgetManager *theWidgetManager) {
-    // 记录当前游戏状态
+    old_MainMenu_RemovedFromManager(this, theWidgetManager);
+
     if (gMainMenuAchievementsWidget != nullptr) {
         RemoveWidget(gMainMenuAchievementsWidget);
     }
     if (gMainMenuAchievementsBack != nullptr) {
-        RemoveWidget((Widget *)gMainMenuAchievementsBack);
+        RemoveWidget(gMainMenuAchievementsBack);
     }
-
-    old_MainMenu_RemovedFromManager(this, theWidgetManager);
 }
 
 void MainMenu::_destructor2() {
-    old_MainMenu_Delete2(this);
     if (gMainMenuAchievementsWidget != nullptr) {
-        gMainMenuAchievementsWidget->~AchievementsWidget();
+        mApp->SafeDeleteWidget(gMainMenuAchievementsWidget);
         gMainMenuAchievementsWidget = nullptr;
     }
-
     if (gMainMenuAchievementsBack != nullptr) {
-        gMainMenuAchievementsBack->~GameButton();
-        ;
+        mApp->SafeDeleteWidget(gMainMenuAchievementsBack);
         gMainMenuAchievementsBack = nullptr;
     }
+
+    old_MainMenu_Delete2(this);
 }
 
 void MainMenu::Draw(Sexy::Graphics *g) {
