@@ -185,7 +185,6 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
         bool aIsBalancePatch = VSSetupAddonWidget::msBalancePatchMode;
         bool aIsStageNight = mBoard->StageIsNight();
         switch (theSeedType) {
-            case SEED_PUFFSHROOM:
             case SEED_ZOMBIE_NORMAL:
                 if (aIsBalancePatch) {
                     mRefreshTime = 1000;
@@ -206,8 +205,9 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
                 }
                 break;
             case SEED_ZOMBIE_TRAFFIC_CONE:
+            case SEED_ZOMBIE_BOBSLED:
                 if (aIsBalancePatch) {
-                    mRefreshTime = 4000; // 20 -> 40
+                    mRefreshTime = 3500; // 20 -> 35
                 }
                 break;
             case SEED_BEGHOULED_BUTTON_SHUFFLE:

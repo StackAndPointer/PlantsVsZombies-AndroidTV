@@ -1233,9 +1233,9 @@ GridItem *Plant::FindTargetGridItem(int theRow, PlantWeapon thePlantWeapon) {
                     continue;
                 }
                 if (mSeedType == SeedType::SEED_PUFFSHROOM || mSeedType == SeedType::SEED_SEASHROOM) {
-                    if (VSSetupAddonWidget::msBalancePatchMode && aGridX - mPlantCol > 2) {
-                        continue;
-                    }
+                    //                    if (VSSetupAddonWidget::msBalancePatchMode && aGridX - mPlantCol > 2) {
+                    //                        continue;
+                    //                    }
                     // 如果是小喷菇或水兵菇，则索敌三格以内的墓碑
                     if (aGridX - mPlantCol > 3) {
                         continue;
@@ -1337,13 +1337,13 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_GARLIC:
         case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
         case SeedType::SEED_ZOMBIE_BOBSLED:
-        case SeedType::SEED_ZOMBIE_BALLOON:
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX:
+        case SeedType::SEED_ZOMBIE_BALLOON:
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
             return 100;
         case SeedType::SEED_TORCHWOOD:
@@ -1449,13 +1449,14 @@ static int GetVSCostBalanced(SeedType theSeedType) {
             aCost = 0;
             break;
         case SeedType::SEED_ICESHROOM: // 75 -> 25
+        case SeedType::SEED_ZOMBIE_TRASHCAN: // 50 -> 25
             aCost = 25;
             break;
-            //        case SeedType::SEED_GRAVEBUSTER:         // 75 -> 50
         case SeedType::SEED_HYPNOSHROOM:         // 75 -> 50
         case SeedType::SEED_BLOVER:              // 100 -> 50
         case SeedType::SEED_PUMPKINSHELL:        // 125 -> 50
         case SeedType::SEED_ZOMBIE_TRAFFIC_CONE: // 75 -> 50
+        case SeedType::SEED_ZOMBIE_BOBSLED:      // 75 -> 50
         case SeedType::SEED_ZOMBIE_SNORKEL:      // 125 -> 50
             aCost = 50;
             break;
@@ -1463,7 +1464,6 @@ static int GetVSCostBalanced(SeedType theSeedType) {
         case SeedType::SEED_KERNELPULT:             // 100 -> 75
         case SeedType::SEED_UMBRELLA:               // 100 -> 75
         case SeedType::SEED_ZOMBIE_POLEVAULTER:     // 100 -> 75
-        case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX: // 100 -> 75
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:   // 125 -> 75
             aCost = 75;
             break;
@@ -1498,6 +1498,31 @@ static int GetVSCostBalanced(SeedType theSeedType) {
             break;
     }
 
+    if (VSSetupAddonWidget::msExtraPacketMode) {
+        switch (theSeedType) {
+            case SeedType::SEED_ICESHROOM:
+                aCost = 50; // 75 -> 50
+                break;
+            case SeedType::SEED_HYPNOSHROOM:
+                aCost = 75;
+                break;
+            case SeedType::SEED_TORCHWOOD:
+                aCost = 125;
+                break;
+            case SeedType::SEED_CHOMPER:
+                aCost = 150;
+                break;
+            case SeedType::SEED_ZOMBONI:
+                aCost = 125; // 175 -> 125
+                break;
+            case SeedType::SEED_ZOMBIE_GARGANTUAR:
+                aCost = 200; // 250 -> 200
+                break;
+            default:
+                break;
+        }
+    }
+
     if (gLawnApp->mBoard && gLawnApp->mBoard->StageIsNight() && Plant::IsNocturnal(theSeedType)) {
         aCost += 25;
     }
@@ -1530,6 +1555,7 @@ static int GetVSRefreshTimeBalanced(SeedType theSeedType) {
         case SeedType::SEED_PEASHOOTER:             // 7.5 -> 15
         case SeedType::SEED_SNOWPEA:                // 7.5 -> 15
         case SeedType::SEED_REPEATER:               // 7.5 -> 15
+        case SeedType::SEED_PUFFSHROOM:             // 7.5 -> 15
         case SeedType::SEED_SPLITPEA:               // 7.5 -> 15
         case SeedType::SEED_KERNELPULT:             // 7.5 -> 15
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX: // 30 -> 15

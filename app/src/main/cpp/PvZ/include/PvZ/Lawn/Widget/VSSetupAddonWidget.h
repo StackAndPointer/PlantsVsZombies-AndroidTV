@@ -55,6 +55,7 @@ public:
     };
 
     static inline bool msBalancePatchMode = false;
+    static inline bool msExtraPacketMode = false;
     static inline int msGlobalBpMode = GlobalBpMode::GLOBALBP_CLOSED;
     static inline bool msGlobalBpSeedsInitialized = false;
     static inline int msGlobalBpWins[2] = {0, 0};
