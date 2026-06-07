@@ -103,7 +103,6 @@ enum class ServerModeTransport {
     P2P = 2,
 };
 
-inline bool gIsServerModeNetplay = false;
 inline ServerModeTransport gServerModeTransport = ServerModeTransport::NONE;
 inline bool gIsServerModeSpectator = false;
 inline bool gIsReplayMode = false;

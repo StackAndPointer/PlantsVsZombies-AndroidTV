@@ -420,6 +420,7 @@ inline std::unordered_map<int, int> gMetricsZombieUseCount;
 
 // TODO: 完善服务器连接判断
 inline bool gIsConnectedToServer = false;
+inline bool gIsServerModeNetplay = false;
 
 inline bool IsOnlineModeActive() noexcept {
     return gTcpConnected || gTcpClientSocket >= 0;
