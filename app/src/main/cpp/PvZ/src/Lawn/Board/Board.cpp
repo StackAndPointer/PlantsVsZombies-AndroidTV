@@ -3670,7 +3670,9 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
         mChallenge->IZombieMouseDownWithZombie(x, y, theClickCount, thePlayerIndex);
         return;
     }
-
+    if (mApp->mGameMode == GAMEMODE_CHALLENGE_ZOMBIQUARIUM || mApp->mGameMode == GAMEMODE_CHALLENGE_HEAVY_WEAPON) {
+        return;
+    }
     CursorObject *cursor = mCursorObject[thePlayerIndex];
     GamepadControls *gamepad;
     SeedBank *seedBank;
