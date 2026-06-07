@@ -84,6 +84,12 @@ inline float gGamepadP1VelY;
 inline float gGamepadP2VelX;
 inline float gGamepadP2VelY;
 
+
+enum TouchPlayerIndex {
+    TOUCHPLAYER_NONE = -1,
+    TOUCHPLAYER_PLAYER1 = 0,
+    TOUCHPLAYER_PLAYER2 = 1,
+};
 inline TouchPlayerIndex gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_NONE;
 inline TouchPlayerIndex gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_NONE;
 

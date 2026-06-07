@@ -48,6 +48,7 @@ inline constexpr int MAX_RENDER_ITEMS = 2048;
 inline constexpr int PROGRESS_METER_COUNTER = 150;
 
 class LawnApp;
+struct BaseEvent;
 class CursorObject;
 class CursorPreview;
 class GameButton;
@@ -130,12 +131,6 @@ enum TouchState {
     TOUCHSTATE_ZEN_GARDEN_TOOLS = 13,
     TOUCHSTATE_BOARD_MOVED_FROM_ZEN_GARDEN_TOOLS = 14,
     TOUCHSTATE_VALID_COBCONON_SECOND = 15,
-};
-
-enum TouchPlayerIndex {
-    TOUCHPLAYER_NONE = -1,
-    TOUCHPLAYER_PLAYER1 = 0,
-    TOUCHPLAYER_PLAYER2 = 1,
 };
 
 class Board : public Sexy::Widget, public Sexy::ButtonListener {
