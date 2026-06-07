@@ -635,7 +635,7 @@ void LawnApp::UpdateFrames() {
 
 void LawnApp::UpdateApp() {
     if (doCheatDialog) {
-        if (!isMainMenu && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+        if (mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
             DoCheatDialog();
         }
         doCheatDialog = false;
