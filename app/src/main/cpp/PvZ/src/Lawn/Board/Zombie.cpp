@@ -264,12 +264,6 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             }
             break;
 
-        case ZombieType::ZOMBIE_TRASHCAN:
-            if (VSSetupAddonWidget::msBalancePatchMode) {
-                mShieldHealth = 1100; // 800 -> 1100
-            }
-            break;
-
         default:
             break;
     }
@@ -5383,33 +5377,35 @@ void Zombie::HitIceTrap() {
     }
 
     ApplyChill(true);
-    if (!CanBeFrozen())
-        return;
+    uint16_t aIceTrapCounter = 0;
+    if (CanBeFrozen()) {
+        if (mInPool) {
+            aIceTrapCounter = 300;
+        } else if (cold) {
+            aIceTrapCounter = RandRangeInt(300, 400);
+        } else {
+            aIceTrapCounter = RandRangeInt(400, 600);
+        }
 
-    if (mInPool) {
-        mIceTrapCounter = 300;
-    } else if (cold) {
-        mIceTrapCounter = RandRangeInt(300, 400);
-    } else {
-        mIceTrapCounter = RandRangeInt(400, 600);
-    }
+        mIceTrapCounter = aIceTrapCounter;
 
-    StopZombieSound();
-    if (mZombieType == ZombieType::ZOMBIE_BALLOON) {
-        BalloonPropellerHatSpin(false);
-    }
-    if (mZombiePhase == ZombiePhase::PHASE_BOSS_HEAD_SPIT) {
-        mBoard->RemoveParticleByType(ParticleEffect::PARTICLE_ZOMBIE_BOSS_FIREBALL);
-    }
+        StopZombieSound();
+        if (mZombieType == ZombieType::ZOMBIE_BALLOON) {
+            BalloonPropellerHatSpin(false);
+        }
+        if (mZombiePhase == ZombiePhase::PHASE_BOSS_HEAD_SPIT) {
+            mBoard->RemoveParticleByType(ParticleEffect::PARTICLE_ZOMBIE_BOSS_FIREBALL);
+        }
 
-    TakeDamage(20, 1U);
-    UpdateAnimSpeed();
+        TakeDamage(20, 1U);
+        UpdateAnimSpeed();
+    }
 
     if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
         U16U16_Event event{};
         event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_ICE_TRAP;
         event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
-        event.data2 = uint16_t(mIceTrapCounter);
+        event.data2 = aIceTrapCounter;
         netplay::PutEvent(event);
     }
 }
@@ -5429,6 +5425,7 @@ void Zombie::ApplySyncedIceTrap(int theIceTrapCounter) {
         mBoard->RemoveParticleByType(ParticleEffect::PARTICLE_ZOMBIE_BOSS_FIREBALL);
     }
 
+    TakeDamage(20, 1U);
     UpdateAnimSpeed();
 }
 
@@ -5500,7 +5497,7 @@ bool Zombie::ZombieNotWalking() {
 }
 
 bool Zombie::IsMovingAtChilledSpeed() {
-    if (mChilledCounter > 0)
+    if (mChilledCounter > 0 || mIceTrapCounter > 0)
         return true;
 
     if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER) {
@@ -5512,13 +5509,13 @@ bool Zombie::IsMovingAtChilledSpeed() {
         }
 
         if (aLeader && !aLeader->IsDeadOrDying()) {
-            if (aLeader->mChilledCounter > 0) {
+            if (aLeader->mChilledCounter > 0 || aLeader->mIceTrapCounter > 0) {
                 return true;
             }
 
             for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
                 Zombie *aDancer = mBoard->ZombieTryToGet(aLeader->mFollowerZombieID[i]);
-                if (aDancer && !aDancer->IsDeadOrDying() && aDancer->mChilledCounter > 0) {
+                if (aDancer && !aDancer->IsDeadOrDying() && (aDancer->mChilledCounter > 0 || aDancer->mIceTrapCounter > 0)) {
                     return true;
                 }
             }
@@ -5534,13 +5531,13 @@ bool Zombie::IsMovingAtChilledSpeed() {
         }
 
         if (aLeader && !aLeader->IsDeadOrDying()) {
-            if (aLeader->mChilledCounter > 0) {
+            if (aLeader->mChilledCounter > 0 || aLeader->mIceTrapCounter > 0) {
                 return true;
             }
 
             for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
                 Zombie *aDancer = mBoard->ZombieTryToGet(aLeader->mFollowerZombieID[i]);
-                if (aDancer && !aDancer->IsDeadOrDying() && aDancer->mChilledCounter > 0) {
+                if (aDancer && !aDancer->IsDeadOrDying() && (aDancer->mChilledCounter > 0 || aDancer->mIceTrapCounter > 0)) {
                     return true;
                 }
             }
