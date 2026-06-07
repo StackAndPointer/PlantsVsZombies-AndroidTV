@@ -116,12 +116,6 @@ void Board::_constructor(LawnApp *theApp) {
 }
 
 void Board::_destructor() {
-    mApp->SafeDeleteWidget(gBoardStoreButton);
-    gBoardStoreButton = nullptr;
-
-    mApp->SafeDeleteWidget(gBoardMenuButton);
-    gBoardMenuButton = nullptr;
-
     old_Board__destructor(this);
 }
 
@@ -133,8 +127,15 @@ void Board::AddedToManager(WidgetManager *theWidgetManager) {
 }
 
 void Board::RemovedFromManager(WidgetManager *theWidgetManager) {
-    RemoveWidget(gBoardMenuButton);
     RemoveWidget(gBoardStoreButton);
+    // 在 LawnApp::MakeNewBoard 中, 旧 Board 对象的析构可能在新 Board 对象的构造之后 (因为 SafeDeleteWidget 不会立即销毁)
+    // 所以子控件的销毁从 Board::_destructor 提前到 Board::RemovedFromManager
+    mApp->SafeDeleteWidget(gBoardStoreButton);
+    gBoardStoreButton = nullptr;
+
+    RemoveWidget(gBoardMenuButton);
+    mApp->SafeDeleteWidget(gBoardMenuButton);
+    gBoardMenuButton = nullptr;
 
     old_Board_RemovedFromManager(this, theWidgetManager);
 }
