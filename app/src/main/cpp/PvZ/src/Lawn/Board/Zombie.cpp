@@ -109,7 +109,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     mRevived = false;
     mIsDeadFollowers = false;
 
-    if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineServerModeActive() && !gIsReplayMode) {
         mScaleZombie = 0.2 * zombieSetScale;
         UpdateAnimSpeed();
         float theRatio = mScaleZombie * mScaleZombie;
@@ -340,12 +340,12 @@ bool Zombie::IsOnBoard() {
 }
 
 void Zombie::Update() {
-    if (zombieBloated && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (zombieBloated && !IsOnlineServerModeActive() && !gIsReplayMode) {
         // 如果开启了“普僵必噎死”
         mBloated = mZombieType == ZombieType::ZOMBIE_NORMAL && !mInPool;
     }
 
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
         // 如果开了高级暂停
         return;
     }
@@ -2642,7 +2642,7 @@ void Zombie::Draw(Sexy::Graphics *g) {
     old_Zombie_Draw(this, g);
     int drawHeightOffset = 0;
     if (showZombieBodyHealth || (showGargantuarHealth && (mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR))) { // 如果玩家开了"僵尸显血"
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineServerModeActive()) {
             g->SetColor(gColorWhite);
             g->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
             if (mZombieType == ZombieType::ZOMBIE_BOSS) {
@@ -2656,7 +2656,7 @@ void Zombie::Draw(Sexy::Graphics *g) {
             drawHeightOffset += 20;
         }
     }
-    if (showHelmAndShieldHealth && !IsOnlineModeActiveAndConnectedToServer()) {
+    if (showHelmAndShieldHealth && !IsOnlineServerModeActive()) {
         if (mHelmHealth > 0) { // 如果有头盔，绘制头盔血量
             g->SetColor(gColorYellow);
             g->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
@@ -2805,7 +2805,7 @@ void Zombie::DrawBossPart(Sexy::Graphics *g, int theBossPart) {
     if (theBossPart == 3) {
         // 每次绘制Boss都会调用四次本函数，且theBossPart从0到3依次增加，代表绘制Boss的不同Part。
         // 我们只在theBossPart==3时(绘制最后一个部分时)绘制一次血量，免去每次都绘制。
-        if (showZombieBodyHealth && !IsOnlineModeActiveAndConnectedToServer()) { // 如果玩家开了"僵尸显血"
+        if (showZombieBodyHealth && !IsOnlineServerModeActive()) { // 如果玩家开了"僵尸显血"
             pvzstl::string str = StrFormat("%d/%d", mBodyHealth, mBodyMaxHealth);
             g->SetColor(gColorWhite);
             g->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
@@ -2826,7 +2826,7 @@ int Zombie::GetDancerFrame() {
         return 0;
 
     // 女仆秘籍
-    if (maidCheats > 0 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (maidCheats > 0 && !IsOnlineServerModeActive() && !gIsReplayMode) {
         switch (maidCheats) {
             case 1:
                 return 11; // 保持前进 (DancerDancingLeft)
@@ -2993,7 +2993,7 @@ void Zombie::CheckForBoardEdge() {
         // 如果是除上述僵尸外的僵尸
         boardEdge = -50;
     }
-    if (boardEdgeAdjust > 0 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (boardEdgeAdjust > 0 && !IsOnlineServerModeActive() && !gIsReplayMode) {
         boardEdge -= boardEdgeAdjust; // 支持任意调整进家线
     }
     if (mX <= boardEdge && mHasHead) {

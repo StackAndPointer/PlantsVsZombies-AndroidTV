@@ -133,7 +133,7 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
 }
 
 void Plant::SetSleeping(bool theIsAsleep) {
-    if (mushroomsNoSleep && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (mushroomsNoSleep && !IsOnlineServerModeActive() && !gIsReplayMode) {
         // 如果开启"蘑菇免唤醒"
         theIsAsleep = false;
     }
@@ -265,7 +265,7 @@ bool Plant::IsInPlay() {
 void Plant::Update() {
     // 用于修复植物受击闪光、生产发光、铲子下方植物发光，同时实现技能无冷却
 
-    if (abilityFastCoolDown && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode && mSeedType != SeedType::SEED_SPIKEWEED
+    if (abilityFastCoolDown && !IsOnlineServerModeActive() && !gIsReplayMode && mSeedType != SeedType::SEED_SPIKEWEED
         && mSeedType != SeedType::SEED_SPIKEROCK) { // 修复地刺和地刺王开启技能无冷却后不攻击敌人
         if (mStateCountdown > 10) {
             mStateCountdown = 10;
@@ -273,7 +273,7 @@ void Plant::Update() {
     }
 
     int mHighLightCounter = mEatenFlashCountdown;
-    int cancelHighLightLimit = 999 - ((speedUpMode > 0 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) ? 10 : 0); // 铲子的发光计数是1000。这段代码用于在铲子移走之后的1ms内取消植物发光
+    int cancelHighLightLimit = 999 - ((speedUpMode > 0 && !IsOnlineServerModeActive() && !gIsReplayMode) ? 10 : 0); // 铲子的发光计数是1000。这段代码用于在铲子移走之后的1ms内取消植物发光
     if (mHighLightCounter >= 900 && mHighLightCounter <= cancelHighLightLimit) {
         mBeghouledFlashCountdown = 0;
         mEatenFlashCountdown = 0;
@@ -288,7 +288,7 @@ void Plant::Update() {
         return;
     }
 
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
         // 如果开了高级暂停
         UpdateReanimColor();
         if (mHighLightCounter == 1000) {
@@ -490,7 +490,7 @@ void Plant::Draw(Sexy::Graphics *g) {
                 mSeedType == SeedType::SEED_PUMPKINSHELL || //
                 mSeedType == SeedType::SEED_GARLIC ||       //
                 mSeedType == SeedType::SEED_SPIKEROCK))) {  // 如果玩家开了 植物显血
-        if (!IsOnlineModeActiveAndConnectedToServer()) {
+        if (!IsOnlineServerModeActive()) {
             pvzstl::string str = StrFormat("%d/%d", mPlantHealth, mPlantMaxHealth);
             g->SetFont(Sexy::FONT_DWARVENTODCRAFT12);
             if (mSeedType == SeedType::SEED_PUMPKINSHELL) {
@@ -1618,7 +1618,7 @@ int Plant::GetCost(SeedType theSeedType, SeedType theImitaterType) {
 }
 
 int Plant::GetRefreshTime(SeedType theSeedType, SeedType theImitaterType) {
-    if (seedPacketFastCoolDown && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (seedPacketFastCoolDown && !IsOnlineServerModeActive() && !gIsReplayMode) {
         return 0;
     }
 

@@ -25,6 +25,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "GlobalVariable.h"
 #include <concepts>
 #include <string>
 #include <unordered_map>
@@ -425,8 +426,8 @@ inline bool IsOnlineModeActive() noexcept {
     //    return gTcpConnecting || gTcpConnected || gTcpClientSocket >= 0 || gTcpServerSocket >= 0 || gTcpListenSocket >= 0;
 }
 
-inline bool IsOnlineModeActiveAndConnectedToServer() noexcept {
-    return IsOnlineModeActive() && gIsConnectedToServer;
+inline bool IsOnlineServerModeActive() noexcept {
+    return IsOnlineModeActive() && gIsServerModeNetplay;
 }
 
 namespace netplay {

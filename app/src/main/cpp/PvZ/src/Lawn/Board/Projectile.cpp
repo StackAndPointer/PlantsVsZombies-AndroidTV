@@ -72,10 +72,10 @@ void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, in
             old_Projectile_ProjectileInitialize(this, theX, theY, theRenderOrder, theRow, theProjectileType);
             return;
         }
-        if (bulletSpinnerChosenNum != -1 && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+        if (bulletSpinnerChosenNum != -1 && !IsOnlineServerModeActive() && !gIsReplayMode) {
             theProjectileType = ProjectileType(bulletSpinnerChosenNum);
         }
-        if (randomBullet && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+        if (randomBullet && !IsOnlineServerModeActive() && !gIsReplayMode) {
             int aNumProjectile = PROJECTILE_ZOMBIE_PEA - 1 - banCobCannon;
             theProjectileType = ProjectileType(RandRangeInt(PROJECTILE_SNOWPEA, aNumProjectile));
             if (banCobCannon && theProjectileType == ProjectileType::PROJECTILE_COBBIG) {
@@ -188,7 +188,7 @@ Rect Projectile::GetProjectileRect() {
 }
 
 void Projectile::ConvertToFireball(int theGridX) {
-    if (isOnlyTouchFireWood && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (isOnlyTouchFireWood && !IsOnlineServerModeActive() && !gIsReplayMode) {
         if (bulletSpinnerChosenNum != -1) {
             mProjectileType = (ProjectileType)bulletSpinnerChosenNum;
             return;
@@ -221,7 +221,7 @@ void Projectile::ConvertToFireball(int theGridX) {
 }
 
 void Projectile::ConvertToPea(int theGridX) {
-    if (ColdPeaCanPassFireWood && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (ColdPeaCanPassFireWood && !IsOnlineServerModeActive() && !gIsReplayMode) {
         if (mHitTorchwoodGridX != theGridX) {
             AttachmentDie(mAttachmentID);
             mHitTorchwoodGridX = theGridX;
@@ -235,7 +235,7 @@ void Projectile::ConvertToPea(int theGridX) {
 }
 
 void Projectile::Update() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
         // 如果开了高级暂停
         return;
     }
@@ -446,7 +446,7 @@ void Projectile::DoImpact(Zombie *theZombie) {
     }
 
 
-    if (!projectilePierce || IsOnlineModeActiveAndConnectedToServer()) {
+    if (!projectilePierce || IsOnlineServerModeActive()) {
         old_Projectile_DoImpact(this, theZombie);
         return;
     }

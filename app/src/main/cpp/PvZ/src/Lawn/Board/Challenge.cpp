@@ -75,7 +75,7 @@ void Challenge::_constructor() {
         // 如果玩家按了无尽跳关
         if (mSurvivalStage > 0 || mApp->mGameScene == GameScenes::SCENE_PLAYING) {
             // 需要玩家至少已完成选种子，才能跳关。否则有BUG
-            if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+            if (!IsOnlineServerModeActive() && !gIsReplayMode) {
                 mSurvivalStage = targetWavesToJump;
             }
         }
@@ -121,7 +121,7 @@ void Challenge::Update() {
         // 如果玩家按了无尽跳关
         if (mSurvivalStage > 0 || mApp->mGameScene == GameScenes::SCENE_PLAYING) {
             // 需要玩家至少已完成选种子，才能跳关。否则有BUG
-            if (!IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+            if (!IsOnlineServerModeActive() && !gIsReplayMode) {
                 mSurvivalStage = targetWavesToJump;
             }
         }
@@ -155,7 +155,7 @@ void Challenge::Update() {
         }
     }
 
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
         return;
     }
 
@@ -678,7 +678,7 @@ void Challenge::DrawHeavyWeapon(Sexy::Graphics *g) {
 }
 
 bool Challenge::UpdateZombieSpawning() {
-    if (stopSpawning && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (stopSpawning && !IsOnlineServerModeActive() && !gIsReplayMode) {
         return true;
     }
 

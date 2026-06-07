@@ -3779,7 +3779,7 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
     CloseSocketFd(mServerSock);
     ServerResetP2PState(false);
 
-
+    gIsConnectedToServer = false;
     mServerConnecting = false;
     mServerConnected = false;
 
@@ -3814,7 +3814,7 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
         gSecondPlayerName[0] = '\0';
         gServerHostName[0] = '\0';
         gIsServerModeNetplay = false;
-        gIsConnectedToServer = false;
+
         gServerModeTransport = ServerModeTransport::NONE;
         gIsServerModeSpectator = false;
     }

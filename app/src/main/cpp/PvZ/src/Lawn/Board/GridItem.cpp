@@ -276,7 +276,7 @@ void GridItem::DrawScaryPot(Sexy::Graphics *g) {
 }
 
 void GridItem::Update() {
-    if (requestPause && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
         return; // 高级暂停
     }
 
@@ -385,7 +385,7 @@ void GridItem::Update() {
 void GridItem::UpdateScaryPot() {
     old_GridItem_UpdateScaryPot(this);
 
-    if (transparentVase && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) { // 如果玩家开启“罐子透视”
+    if (transparentVase && !IsOnlineServerModeActive() && !gIsReplayMode) { // 如果玩家开启“罐子透视”
         if (mTransparentCounter < 50) {
             // 透明度如果小于50，则为透明度加2
             mTransparentCounter += 2;

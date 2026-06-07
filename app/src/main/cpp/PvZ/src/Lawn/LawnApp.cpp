@@ -635,13 +635,13 @@ void LawnApp::UpdateFrames() {
 
 void LawnApp::UpdateApp() {
     if (doCheatDialog) {
-        if (mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+        if (mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineServerModeActive() && !gIsReplayMode) {
             DoCheatDialog();
         }
         doCheatDialog = false;
     }
     if (doCheatCodeDialog) {
-        if (!isMainMenu && !IsOnlineModeActiveAndConnectedToServer() && !gIsReplayMode) {
+        if (!isMainMenu && !IsOnlineServerModeActive() && !gIsReplayMode) {
             DoCheatCodeDialog();
         }
         doCheatCodeDialog = false;
