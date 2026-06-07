@@ -56,6 +56,18 @@ void VSSetupMenu::_destructor() {
     old_VSSetupMenu_Destructor(this);
 }
 
+void VSSetupMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
+    old_VSSetupMenu_AddedToManager(this, theWidgetManager);
+
+    // 缩小Widget，使得触控可传递给VSSetupMenu自身
+    for (int i = 0; i < 9; ++i) {
+        Sexy::Widget *aWidget = FindWidget(i);
+        if (aWidget) {
+            aWidget->Resize(aWidget->mX, aWidget->mY, 0, 0);
+        }
+    }
+}
+
 static int GetControllerSideAnchorX(VSSide theSide) {
     if (theSide == VS_SIDE_PLANT) {
         return 240;
@@ -224,19 +236,6 @@ void VSSetupMenu::DrawOverlay(Graphics *g) {
 
     if (mAddonWidget) {
         mAddonWidget->Draw(g);
-    }
-}
-
-
-void VSSetupMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
-    old_VSSetupMenu_AddedToManager(this, theWidgetManager);
-
-    // 缩小Widget，使得触控可传递给VSSetupMenu自身
-    for (int i = 0; i < 9; ++i) {
-        Sexy::Widget *aWidget = FindWidget(i);
-        if (aWidget) {
-            aWidget->Resize(aWidget->mX, aWidget->mY, 0, 0);
-        }
     }
 }
 
@@ -633,7 +632,7 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 break;
             }
             if (isZombieChooser) {
-                if (seedType < SeedType::SEED_ZOMBIE_GRAVESTONE || seedType >= SeedType::NUM_ZOMBIE_SEED_IN_CHOOSER) {
+                if (seedType < SeedType::SEED_ZOMBIE_GRAVESTONE || seedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER) {
                     break;
                 }
             } else {
@@ -772,7 +771,7 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
                 break;
             }
             if (isZombieChooser) {
-                if (seedType < SeedType::SEED_ZOMBIE_GRAVESTONE || seedType >= SeedType::NUM_ZOMBIE_SEED_IN_CHOOSER) {
+                if (seedType < SeedType::SEED_ZOMBIE_GRAVESTONE || seedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER) {
                     break;
                 }
             } else {
@@ -1149,6 +1148,7 @@ void VSSetupMenu::ButtonDepress_Origin(int theId) {
 
     switch (theId) {
         case VSSetupAddonWidget::VSSetupAddonWidget_Back: // 返回模式选择
+        case VSSetupAddonWidget::VSSetupAddonWidget_GlobalBP:
             mAddonWidget->ButtonDepress(theId);
             break;
         default:

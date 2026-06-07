@@ -27,10 +27,10 @@
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 
 inline int VS_ADDON_BUTTON_X = 800;
-inline int VS_BUTTON_EXTRA_PACKET_Y = 200;
+inline int VS_BUTTON_EXTRA_PACKET_Y = 280;
 inline int VS_BUTTON_EXTENDED_SEEDS_Y = 240;
-inline int VS_BUTTON_BAN_MODE_Y = 280;
-inline int VS_BUTTON_BALANCE_PATCH_Y = 320;
+inline int VS_BUTTON_BAN_MODE_Y = 320;
+inline int VS_BUTTON_BALANCE_PATCH_Y = 200;
 
 namespace Sexy {
 class ButtonWidget;
@@ -45,14 +45,26 @@ public:
         VSSetupAddonWidget_BanMode,
         VSSetupAddonWidget_BalancePatch,
         VSSetupAddonWidget_Back,
+        VSSetupAddonWidget_GlobalBP,
+    };
+
+    enum GlobalBpMode {
+        GLOBALBP_CLOSED = -1,
+        GLOBALBP_BO3,
+        GLOBALBP_BO5,
     };
 
     static inline bool msBalancePatchMode = false;
+    static inline int msGlobalBpMode = GlobalBpMode::GLOBALBP_CLOSED;
+    static inline bool msGlobalBpSeedsInitialized = false;
+    static inline int msGlobalBpWins[2] = {0, 0};
+    static inline SeedType msGlobalBpSeeds[2][NUM_ZOMBIE_SEEDS_IN_CHOOSER];
 
     LawnApp *mApp = gLawnApp;
     Board *mBoard = mApp->mBoard;
     Sexy::ButtonListener *mButtonListener;
     NewLawnButton *mBackButton = nullptr;
+    GameButton *mGlobalBpButton = nullptr;
     Sexy::Checkbox *mExtraPacketCheckbox = nullptr;
     Sexy::Checkbox *mExtendedSeedsCheckbox = nullptr;
     Sexy::Checkbox *mBanModeCheckbox = nullptr;
@@ -73,6 +85,8 @@ public:
     void SetAddonMode(int theId, bool checked, bool saveDetails);
 
 private:
+    void UpdateGlobalBpButtonState();
+
     static inline const Sexy::ButtonListener::VTable sButtonListenerVtable{
         .ButtonDepress = (void *)&VSSetupAddonWidget::ButtonDepress,
     };

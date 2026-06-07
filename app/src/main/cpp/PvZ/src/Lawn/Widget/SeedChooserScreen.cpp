@@ -92,6 +92,76 @@ inline void NormalizeLocalPoint(SeedChooserScreen *screen, int &x, int &y) {
 }
 } // namespace
 
+int SeedChooserScreen::ResolveGlobalBpPlayerIndex() const {
+    if (mApp == nullptr || !mApp->IsVSMode()) {
+        return -1;
+    }
+
+    const auto *vsSetup = mApp->mVSSetupMenu;
+    if (vsSetup == nullptr) {
+        return (mPlayerIndex >= 0 && mPlayerIndex <= 1) ? mPlayerIndex : -1;
+    }
+
+    const VSSide chooserSide = mIsZombieChooser ? VSSide::VS_SIDE_ZOMBIE : VSSide::VS_SIDE_PLANT;
+    for (int slot = 0; slot < 2; ++slot) {
+        if (vsSetup->mSides[slot] == chooserSide) {
+            const int playerIndex = vsSetup->mControllerIndex[slot];
+            if (playerIndex >= 0 && playerIndex <= 1) {
+                return playerIndex;
+            }
+        }
+    }
+
+    return -1;
+}
+
+void SeedChooserScreen::ApplyGlobalBpBans() {
+    if (!mApp->IsVSMode()) {
+        return;
+    }
+
+    if (VSSetupAddonWidget::msGlobalBpMode == VSSetupAddonWidget::GLOBALBP_CLOSED) {
+        return;
+    }
+
+    const int playerIndex = ResolveGlobalBpPlayerIndex();
+    if (playerIndex < 0 || playerIndex > 1) {
+        return;
+    }
+
+    for (SeedType selectedSeedType : VSSetupAddonWidget::msGlobalBpSeeds[playerIndex]) {
+        if (selectedSeedType == SeedType::SEED_NONE) {
+            continue;
+        }
+        if (!mIsZombieChooser && (int(selectedSeedType) < 0 || int(selectedSeedType) >= NUM_SEEDS_IN_CHOOSER)) {
+            continue;
+        }
+        if (mIsZombieChooser && (int(selectedSeedType) < int(SEED_ZOMBIE_GRAVESTONE) || int(selectedSeedType) >= NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
+            continue;
+        }
+        const int bannedSeedIndex = int(selectedSeedType);
+        if (bannedSeedIndex < 0 || bannedSeedIndex >= NUM_ZOMBIE_SEED_TYPES) {
+            continue;
+        }
+
+        const int chooserSeedIndex = GetSeedPacketIndex(selectedSeedType);
+        if (chooserSeedIndex < 0) {
+            continue;
+        }
+        if (!mIsZombieChooser && chooserSeedIndex >= NUM_SEEDS_IN_CHOOSER) {
+            continue;
+        }
+        if (mIsZombieChooser && chooserSeedIndex >= NUM_ZOMBIE_SEEDS_IN_CHOOSER) {
+            continue;
+        }
+
+        BannedSeed &bannedSeed = mBannedSeed[bannedSeedIndex];
+        bannedSeed.mSeedType = selectedSeedType;
+        GetSeedPositionInChooser(chooserSeedIndex, bannedSeed.mX, bannedSeed.mY);
+        bannedSeed.mSeedState = BannedSeedState::SEED_BANNED;
+    }
+}
+
 
 void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     // 修复在没解锁商店图鉴时依然显示相应按钮的问题、对战选种子界面的按钮问题；
@@ -273,6 +343,11 @@ void SeedChooserScreen::Update() {
         m1PChoosingSeeds = mSeedsIn1PBank < 4;
     }
 
+    if (!mGlobalBpBansApplied) {
+        ApplyGlobalBpBans();
+        mGlobalBpBansApplied = true;
+    }
+
     old_SeedChooserScreen_Update(this);
 }
 
@@ -345,7 +420,7 @@ SeedType SeedChooserScreen::GetZombieSeedType(int theSeedIndex) {
     int aSeedType = theSeedIndex + SEED_ZOMBIE_GRAVESTONE;
     // 解锁更多对战僵尸
     // return aSeedType > SEED_ZOMBIE_GARGANTUAR ? SEED_NONE : SeedType(aSeedType);
-    return aSeedType < NUM_ZOMBIE_SEED_IN_CHOOSER ? SeedType(aSeedType) : SEED_NONE;
+    return aSeedType < NUM_ZOMBIE_SEEDS_IN_CHOOSER ? SeedType(aSeedType) : SEED_NONE;
 }
 
 int SeedChooserScreen::GetSeedPacketIndex(int theSeedIndex) {
@@ -526,6 +601,7 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
 
     // 确定实际玩家索引
     int aActualPlayerIndex;
+    int aGlobalBpPlayerIndex = -1;
     if (mApp->IsAdventureMode()) {
         aActualPlayerIndex = 0;
         theChosenSeed.mChosenPlayerIndex = 0;
@@ -534,6 +610,7 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
             VSSetupMenu *aVSSetupScreen = mApp->mVSSetupMenu;
             aActualPlayerIndex = (thePlayerIndex == 1) ? aVSSetupScreen->mSides[1] : aVSSetupScreen->mSides[0];
             theChosenSeed.mChosenPlayerIndex = aActualPlayerIndex;
+            aGlobalBpPlayerIndex = thePlayerIndex;
         } else {
             aActualPlayerIndex = thePlayerIndex;
             theChosenSeed.mChosenPlayerIndex = thePlayerIndex;
@@ -546,6 +623,19 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
     // 更新种子状态和计数
     theChosenSeed.mSeedIndexInBank = aSeedsInBank;
     theChosenSeed.mSeedState = SEED_FLYING_TO_BANK;
+
+    if (mApp->IsVSMode() && !mBanningPhase && VSSetupAddonWidget::msGlobalBpMode != VSSetupAddonWidget::GLOBALBP_CLOSED && aGlobalBpPlayerIndex >= 0 && aGlobalBpPlayerIndex <= 1) {
+        SeedType *globalBpSeeds = VSSetupAddonWidget::msGlobalBpSeeds[aGlobalBpPlayerIndex];
+        for (int i = 0; i < NUM_ZOMBIE_SEEDS_IN_CHOOSER; ++i) {
+            if (globalBpSeeds[i] == theChosenSeed.mSeedType) {
+                break;
+            }
+            if (globalBpSeeds[i] == SeedType::SEED_NONE) {
+                globalBpSeeds[i] = theChosenSeed.mSeedType;
+                break;
+            }
+        }
+    }
 
     mSeedsInFlight++;
     mSeedsInBank++;
@@ -979,7 +1069,7 @@ void SeedChooserScreen::ButtonDepress_Origin(int theId) {
         mPageIndex = (mPageIndex == 0) ? 1 : 0;
         // 翻至第一页时光标移动回第一张卡，翻至第二页时光标移动至最后一张卡
         int x, y;
-        int aSeedIndex = mPageIndex ? (NUM_ZOMBIE_SEED_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE - 26) : 0;
+        int aSeedIndex = mPageIndex ? (NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE - 26) : 0;
         GetSeedPositionInChooser(aSeedIndex, x, y);
         mCursorPositionX1 = mCursorPositionX2 = x;
         mCursorPositionY1 = mCursorPositionY2 = y;
@@ -1063,7 +1153,7 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
                 aToolTip->SetWarningText(aToolTipSeed == SEED_ZOMBIE_GRAVESTONE ? "[ZOMBIE_BOSS_WANTS]" : "");
             }
             // 对战显示隐藏僵尸卡信息
-            if (aSeedType > SeedType::SEED_ZOMBIE_GARGANTUAR && aSeedType < SeedType::NUM_ZOMBIE_SEED_IN_CHOOSER) {
+            if (aSeedType > SeedType::SEED_ZOMBIE_GARGANTUAR && aSeedType < SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER) {
                 const char *aTitle = nullptr;
                 const char *aLabel = nullptr;
                 switch (aSeedType) {
@@ -1150,7 +1240,7 @@ void SeedChooserScreen::MouseMove(int x, int y) {
     }
 
     if (mIsZombieChooser) {
-        if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEED_IN_CHOOSER)) {
+        if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
             return;
         }
         if (mPageIndex == 1) {
@@ -1286,7 +1376,7 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
     }
 
     if (mIsZombieChooser) {
-        if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEED_IN_CHOOSER)) {
+        if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
             return;
         }
         if (mPageIndex == 1) {
@@ -1339,7 +1429,7 @@ void SeedChooserScreen::MouseDrag(int x, int y) {
             return;
         }
         if (mIsZombieChooser) {
-            if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEED_IN_CHOOSER)) {
+            if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
                 return;
             }
             if (mPageIndex == 1) {
@@ -1458,7 +1548,7 @@ int SeedChooserScreen::GetNextSeedInDir(int theNumSeed, SeedDir theMoveDirection
         } else {
             if ((theNumSeed == 4 && theMoveDirection == SeedDir::SEED_DIR_DOWN) || //
                 (theNumSeed == 5 && theMoveDirection == SeedDir::SEED_DIR_RIGHT)) {
-                return NUM_ZOMBIE_SEED_IN_CHOOSER - SEED_ZOMBIE_BALLOON - 2;
+                return NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_BALLOON - 2;
             }
         }
     }
@@ -1564,7 +1654,7 @@ void SeedChooserScreen::Draw(Graphics *g) {
             if (mPageIndex == 0) {
                 aNumSeeds = 25;
             } else if (mPageIndex == 1) {
-                aNumSeeds = NUM_ZOMBIE_SEED_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE;
+                aNumSeeds = NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE;
             }
         }
     }

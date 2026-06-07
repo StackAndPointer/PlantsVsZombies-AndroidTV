@@ -23,6 +23,7 @@
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
+#include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/ReplaySystem.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
@@ -133,7 +134,6 @@ void VSResultsMenu::_constructor() {
     (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
     mBackButton->mLabelJustify = BUTTON_LABEL_WRAP_CENTER;
     mBackButton->Resize(-60, BUTTON_Y, BUTTON_WIDTH, BUTTON_HEIGHT);
-    mBackButton->SetLabel("[BACK_TO_MODE_SELECT]");
 }
 
 void VSResultsMenu::_destructor() {
@@ -156,6 +156,19 @@ void VSResultsMenu::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
     RemoveWidget(mBackButton);
 
     old_VSResultsMenu_RemovedFromManager(this, theWidgetManager);
+}
+
+void VSResultsMenu::ClearPlayerRecords() {
+    old_VSResultsMenu_ClearPlayerRecords(this);
+
+    VSSetupAddonWidget::msGlobalBpMode = VSSetupAddonWidget::GLOBALBP_CLOSED;
+    VSSetupAddonWidget::msGlobalBpWins[0] = 0;
+    VSSetupAddonWidget::msGlobalBpWins[1] = 0;
+    for (auto &row : VSSetupAddonWidget::msGlobalBpSeeds) {
+        for (SeedType &seedType : row) {
+            seedType = SeedType::SEED_NONE;
+        }
+    }
 }
 
 void VSResultsMenu::processClientEvent(const BaseEvent *event) {
@@ -222,6 +235,40 @@ void VSResultsMenu::InitFromBoard(Board *theBoard) {
         } else {
             playerRecord[0] = -1;
             playerRecord[3] = 0;
+        }
+    }
+
+    int globalBpTarget = 0;
+    if (VSSetupAddonWidget::msGlobalBpMode == VSSetupAddonWidget::GLOBALBP_BO3) {
+        globalBpTarget = 2;
+    } else if (VSSetupAddonWidget::msGlobalBpMode == VSSetupAddonWidget::GLOBALBP_BO5) {
+        globalBpTarget = 3;
+    }
+    if (globalBpTarget > 0) {
+        bool shouldClearGlobalBpSeeds = false;
+        for (int slot = 0; slot < 2; ++slot) {
+            int playerIndex = mPlayerIndices[slot];
+            if (playerIndex < 0 || playerIndex > 1) {
+                continue;
+            }
+
+            if ((aBoardResult == BoardResult::BOARDRESULT_VS_PLANT_WON && mSides[slot] == WinSide::WIN_SIDE_PLANT)
+                || (aBoardResult == BoardResult::BOARDRESULT_VS_ZOMBIE_WON && mSides[slot] == WinSide::WIN_SIDE_ZOMBIE)) {
+                ++VSSetupAddonWidget::msGlobalBpWins[playerIndex];
+                if (VSSetupAddonWidget::msGlobalBpWins[playerIndex] >= globalBpTarget) {
+                    shouldClearGlobalBpSeeds = true;
+                    break;
+                }
+            }
+        }
+        if (shouldClearGlobalBpSeeds) {
+            for (auto &row : VSSetupAddonWidget::msGlobalBpSeeds) {
+                for (SeedType &seedType : row) {
+                    seedType = SeedType::SEED_NONE;
+                }
+            }
+            VSSetupAddonWidget::msGlobalBpWins[0] = 0;
+            VSSetupAddonWidget::msGlobalBpWins[1] = 0;
         }
     }
 

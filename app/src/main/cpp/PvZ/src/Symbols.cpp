@@ -797,6 +797,7 @@ bool LoadGameMain() {
     VSResultsMenu_ButtonDepressAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu13ButtonDepressEi");
     VSResultsMenu_InitFromBoardAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu13InitFromBoardEP5Board");
     VSResultsMenu_GetPlayerRecordAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu15GetPlayerRecordEj");
+    VSResultsMenu_ClearPlayerRecordsAddr = libGameMain.GetSymbol("_ZN13VSResultsMenu18ClearPlayerRecordsEv");
 
 
     WaitForSecondPlayerDialog_WaitForSecondPlayerDialogAddr = libGameMain.GetSymbol("_ZN25WaitForSecondPlayerDialogC2EP7LawnApp");

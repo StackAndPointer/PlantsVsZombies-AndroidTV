@@ -33,6 +33,15 @@ using namespace Sexy;
 VSSetupAddonWidget::VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu) {
     mButtonListener = theVSSetupMenu;
 
+    if (!msGlobalBpSeedsInitialized) {
+        for (auto &row : msGlobalBpSeeds) {
+            for (SeedType &seedType : row) {
+                seedType = SeedType::SEED_NONE;
+            }
+        }
+        msGlobalBpSeedsInitialized = true;
+    }
+
     mBackButton = MakeNewButton(VSSetupAddonWidget::VSSetupAddonWidget_Back,
                                 mButtonListener,
                                 theVSSetupMenu,
@@ -49,6 +58,10 @@ VSSetupAddonWidget::VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu) {
     (*mBackButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(0, 205, 0);
     mBackButton->Resize(800, 520, 160, 50);
     mBoard->AddWidget(mBackButton);
+
+    mGlobalBpButton = MakeButton(VSSetupAddonWidget::VSSetupAddonWidget_GlobalBP, mButtonListener, theVSSetupMenu, "[VS_UI_GLOBAL_BP_CLOSED]");
+    mGlobalBpButton->Resize(VS_ADDON_BUTTON_X, 360, 175, 50);
+    mBoard->AddWidget(mGlobalBpButton);
 
     mExtraPacketMode = mApp->mPlayerInfo->mVSExtraPacketMode;
     mExtendedSeedsMode = mApp->mPlayerInfo->mVSExtendedSeedsMode;
@@ -71,11 +84,14 @@ VSSetupAddonWidget::VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu) {
     mBanModeCheckbox->Resize(VS_ADDON_BUTTON_X, VS_BUTTON_BAN_MODE_Y, 175, 50);
     mBalancePatchCheckbox->Resize(VS_ADDON_BUTTON_X, VS_BUTTON_BALANCE_PATCH_Y, 175, 50);
 
+    UpdateGlobalBpButtonState();
+
     if (Challenge::msVSShuffleMode) {
         SetDisable(mExtraPacketCheckbox);
         SetDisable(mExtendedSeedsCheckbox);
         SetDisable(mBanModeCheckbox);
         SetDisable(mBalancePatchCheckbox);
+        SetDisable(mGlobalBpButton);
         mBanMode = false;
     }
 }
@@ -97,6 +113,9 @@ VSSetupAddonWidget::~VSSetupAddonWidget() {
         if (mBalancePatchCheckbox) {
             mBoard->RemoveWidget(mBalancePatchCheckbox);
         }
+        if (mGlobalBpButton) {
+            mBoard->RemoveWidget(mGlobalBpButton);
+        }
     }
 
     delete mBackButton;
@@ -104,11 +123,37 @@ VSSetupAddonWidget::~VSSetupAddonWidget() {
     delete mExtendedSeedsCheckbox;
     delete mBanModeCheckbox;
     delete mBalancePatchCheckbox;
+    gLawnApp->SafeDeleteWidget(mGlobalBpButton);
 }
 
 void VSSetupAddonWidget::SetDisable(Sexy::Widget *theWidget) {
     theWidget->mDisabled = true;
     theWidget->SetVisible(false);
+    if (theWidget == mBanModeCheckbox) {
+        UpdateGlobalBpButtonState();
+    }
+}
+
+void VSSetupAddonWidget::UpdateGlobalBpButtonState() {
+    if (mGlobalBpButton == nullptr) {
+        return;
+    }
+
+    const bool enabled = !mBanModeCheckbox->mDisabled && mBanMode && mExtendedSeedsMode;
+    mGlobalBpButton->SetVisible(enabled);
+    mGlobalBpButton->mDisabled = !enabled;
+    switch (msGlobalBpMode) {
+        case GLOBALBP_BO3:
+            mGlobalBpButton->SetLabel("[VS_UI_GLOBAL_BP_BO3]");
+            break;
+        case GLOBALBP_BO5:
+            mGlobalBpButton->SetLabel("[VS_UI_GLOBAL_BP_BO5]");
+            break;
+        case GLOBALBP_CLOSED:
+        default:
+            mGlobalBpButton->SetLabel("[VS_UI_GLOBAL_BP_CLOSED]");
+            break;
+    }
 }
 
 void VSSetupAddonWidget::ButtonDepress(this VSSetupAddonWidget &self, int theId) {
@@ -116,6 +161,24 @@ void VSSetupAddonWidget::ButtonDepress(this VSSetupAddonWidget &self, int theId)
         self.mApp->mVSSetupMenu->CloseVSSetup(true);
         self.mApp->KillBoard();
         self.mApp->ShowChallengeScreen(ChallengePage::CHALLENGE_PAGE_VS);
+        return;
+    }
+    if (theId == VSSetupAddonWidget_GlobalBP) {
+        self.mApp->PlaySample(Sexy::SOUND_BUTTONCLICK);
+        switch (msGlobalBpMode) {
+            case GLOBALBP_CLOSED:
+                msGlobalBpMode = GLOBALBP_BO3;
+                break;
+            case GLOBALBP_BO3:
+                // 当前卡池太浅，暂不支持BO5玩法
+                //                msGlobalBpMode = GLOBALBP_BO5;
+                //                break;
+                //            case GLOBALBP_BO5:
+            default:
+                msGlobalBpMode = GLOBALBP_CLOSED;
+                break;
+        }
+        self.UpdateGlobalBpButtonState();
     }
 }
 
@@ -175,6 +238,10 @@ void VSSetupAddonWidget::SetAddonMode(int theId, bool checked, bool saveDetails)
             if (saveDetails) {
                 mApp->mPlayerInfo->mVSExtendedSeedsMode = mExtendedSeedsMode;
             }
+            if (!mExtendedSeedsMode) {
+                msGlobalBpMode = GlobalBpMode::GLOBALBP_CLOSED;
+            }
+            UpdateGlobalBpButtonState();
             break;
         case VSSetupAddonWidget_BanMode:
             mBanMode = checked;
@@ -182,6 +249,10 @@ void VSSetupAddonWidget::SetAddonMode(int theId, bool checked, bool saveDetails)
             if (saveDetails) {
                 mApp->mPlayerInfo->mVSBanMode = mBanMode;
             }
+            if (!mBanMode) {
+                msGlobalBpMode = GlobalBpMode::GLOBALBP_CLOSED;
+            }
+            UpdateGlobalBpButtonState();
             break;
         case VSSetupAddonWidget_BalancePatch:
             mBalancePatchMode = checked;

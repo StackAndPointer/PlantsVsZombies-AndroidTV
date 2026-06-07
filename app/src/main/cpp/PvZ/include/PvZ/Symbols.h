@@ -799,6 +799,7 @@ inline void *VSResultsMenu_ButtonDepressAddr;
 inline void *VSResultsMenu_AddedToManagerAddr;
 inline void *VSResultsMenu_InitFromBoardAddr;
 inline void *VSResultsMenu_GetPlayerRecordAddr;
+inline void *VSResultsMenu_ClearPlayerRecordsAddr;
 
 
 inline void *WaitForSecondPlayerDialog_WaitForSecondPlayerDialogAddr;

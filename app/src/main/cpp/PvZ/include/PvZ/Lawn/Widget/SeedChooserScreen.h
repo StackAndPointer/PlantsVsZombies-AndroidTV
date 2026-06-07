@@ -136,6 +136,7 @@ public:
     bool mBanningPhase = false;
     bool mShowExtendedSeeds = false;
     bool mHas7Packets = false;
+    bool mGlobalBpBansApplied = false;
 
     SeedChooserScreen(bool theIsZombieChooser) {
         _constructor(theIsZombieChooser);
@@ -207,6 +208,8 @@ public:
     SeedType SeedHitTest(int x, int y);
     SeedType SeedHitTest_Origin(int x, int y);
     void VSAutoPickResourceGen();
+    int ResolveGlobalBpPlayerIndex() const;
+    void ApplyGlobalBpBans();
     bool KeyDown(Sexy::KeyCode theKey);
     bool KeyUp(Sexy::KeyCode theKey);
 

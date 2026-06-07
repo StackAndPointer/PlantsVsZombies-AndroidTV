@@ -1295,7 +1295,7 @@ enum SeedType { // 直接从WP复制过来的，怀疑其中有错误，因为TV
     SEED_ZOMBIE_JACKSON,
     SEED_ZOMBIE_GIGA_POLEVAULTER,
     // extended end
-    NUM_ZOMBIE_SEED_IN_CHOOSER,
+    NUM_ZOMBIE_SEEDS_IN_CHOOSER,
     // extended begin
     SEED_ZOMBIE_WALLNUT_HEAD,
     SEED_ZOMBIE_BOSS,
