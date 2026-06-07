@@ -1595,20 +1595,27 @@ void Zombie::UpdateGigaPolevaulter() {
     auto findNearestVaultPlant = [this]() -> Plant * {
         Rect aAttackRect = GetZombieAttackRect();
         Plant *aBestPlant = nullptr;
+        int aBestPlantLeft = BOARD_WIDTH + 1;
 
         Plant *aPlant = nullptr;
         while (mBoard->IteratePlants(aPlant)) {
-            if (aPlant->mRow != mRow) {
+            if (aPlant->mRow != mRow || !CanTargetPlant(aPlant, ZombieAttackType::ATTACKTYPE_VAULT)) {
                 continue;
             }
 
             Rect aPlantRect = aPlant->GetPlantRect();
-            if (GetRectOverlap(aAttackRect, aPlantRect) < 20 || !CanTargetPlant(aPlant, ZombieAttackType::ATTACKTYPE_VAULT)) {
+            if (GetRectOverlap(aAttackRect, aPlantRect) < 0) {
                 continue;
             }
 
-            if (aBestPlant == nullptr || aPlant->mX > aBestPlant->mX) {
+            if (aPlant->mSeedType == SeedType::SEED_TALLNUT) {
+                return aPlant;
+            }
+
+            int aPlantLeft = aPlantRect.mX;
+            if (aBestPlant == nullptr || aPlantLeft < aBestPlantLeft) {
                 aBestPlant = aPlant;
+                aBestPlantLeft = aPlantLeft;
             }
         }
 
@@ -1691,7 +1698,7 @@ void Zombie::UpdateGigaPolevaulter() {
         bool aJumpEnds = false;
         if (!gTcpConnected) {
             if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
-                Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
+                Plant *aPlant = findNearestVaultPlant();
                 if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
                     mApp->PlayFoley(FoleyType::FOLEY_BONK);
                     aJumpEnds = true;
