@@ -17,6 +17,8 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
+
 #include "PvZ/Lawn/Board/SeedPacket.h"
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
@@ -322,7 +324,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
         g->SetColor(theColor);
         g->SetColorizeImages(true);
     }
-    int celToDraw;
+    int celToDraw = 0;
     if (theSeedType == SeedType::SEED_IMITATER) {
         celToDraw = 0;
     } else if (Plant::IsUpgrade(realSeedType)) {
@@ -362,7 +364,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
         }
     }
     bool isPlant = theSeedType < SeedType::SEED_BEGHOULED_BUTTON_SHUFFLE || theSeedType > SeedType::SEED_ZOMBIQUARIUM_TROPHY;
-    float offsetY, offsetX, theDrawScale;
+    float offsetY = NAN, offsetX = NAN, theDrawScale = NAN;
     switch (realSeedType) {
         case SeedType::SEED_TALLNUT:
             offsetY = 22.0;
@@ -574,7 +576,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
             break;
     }
     LawnApp *lawnApp = gLawnApp;
-    float v28, v29;
+    float v28 = NAN, v29 = NAN;
     if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BIG_TIME) {
         if (realSeedType == SeedType::SEED_SUNFLOWER || realSeedType == SeedType::SEED_WALLNUT || realSeedType == SeedType::SEED_MARIGOLD) {
             offsetY = 34.0;

@@ -45,7 +45,7 @@ void PoolEffect::UpdateWaterEffect() {
             int a0 = (unsigned char)BilinearLookupFixedPoint(timeU + timePool0 / 10, timeV0);
             auto a = (unsigned char)((a0 + a1) / 2);
 
-            unsigned char alpha;
+            unsigned char alpha = 0;
             if (a >= 160U) {
                 alpha = 255 - 2 * (a - 160U);
             } else if (a >= 128U) {

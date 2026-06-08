@@ -22,9 +22,9 @@
 using namespace Sexy;
 
 void MemoryImage::ClearRect(const Rect &theRect) {
-    int mY;     // r4
-    int *mBits; // r7
-    int v7;     // r0
+    int mY = 0;           // r4
+    int *mBits = nullptr; // r7
+    int v7 = 0;           // r0
 
     mBits = (int *)(*((int (**)(Sexy::Image *))this->vTable + 13))(this);
     mY = theRect.mY;

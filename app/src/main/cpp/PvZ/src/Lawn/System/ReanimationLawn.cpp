@@ -102,7 +102,7 @@ void ReanimatorCache::DrawCachedPlant(Graphics *g, float thePosX, float thePosY,
         } else if (theDrawVariation == DrawVariation::VARIATION_IMITATER_LESS) {
             aPlantImage = FilterEffectGetImage(aPlantImage, FilterEffect::FILTEREFFECT_LESS_WASHED_OUT);
         }
-        int a, b, c, d;
+        int a = 0, b = 0, c = 0, d = 0;
         GetPlantImageSize(theSeedType, a, b, c, d);
         float xScaled = g->mScaleX;
         float yScaled = g->mScaleY;

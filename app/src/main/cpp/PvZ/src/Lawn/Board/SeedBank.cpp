@@ -195,7 +195,7 @@ void SeedBank::Draw(Sexy::Graphics *g) {
             g->DrawImage(Sexy::IMAGE_SLOTMACHINE_OVERLAY, 189, -2);
     }
     if (!mBoard->HasConveyorBeltSeedBank(0)) {
-        int theMoney;
+        int theMoney = 0;
         if (mIsZombie) {
             theMoney = mBoard->mDeathMoney & ~mBoard->mDeathMoney >> 31; // mDeathMoney
         } else {

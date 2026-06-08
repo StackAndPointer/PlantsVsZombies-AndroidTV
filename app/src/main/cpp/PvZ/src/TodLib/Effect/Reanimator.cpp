@@ -188,7 +188,7 @@ void Reanimation::SetZombatarFHair(unsigned char theFacialHair, unsigned char th
 void Reanimation::SetZombatarAccessories(unsigned char theAccessories, unsigned char theColor) {
     HideTrackByPrefix("accessories", true);
     if (theAccessories != 255) {
-        unsigned char accessoriesFix;
+        unsigned char accessoriesFix = 0;
         switch (theAccessories) {
             case 5:
                 accessoriesFix = 14;

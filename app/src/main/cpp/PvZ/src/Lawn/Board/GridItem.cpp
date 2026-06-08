@@ -635,7 +635,7 @@ void GridItem::DrawGraveStone(Graphics *g) const {
     int aCelWidth = (IMAGE_TOMBSTONES)->GetCelWidth();
     int aCelHeight = (IMAGE_TOMBSTONES)->GetCelHeight();
     int aGraveCol = aGridCelLook % 5;
-    int aGraveRow;
+    int aGraveRow = 0;
     if (mGridY == 0) {
         aGraveRow = 1; // 第一列固定用低矮墓碑贴图
     } else if (mGridItemState == GridItemState::GRIDITEM_STATE_GRAVESTONE_SPECIAL) {
@@ -714,7 +714,7 @@ void GridItem::DrawBurialMound(Sexy::Graphics *g) const {
     int aCelWidth = addonImages.burial_mound->GetCelWidth();
     int aCelHeight = addonImages.burial_mound->GetCelHeight();
     int aGraveCol = 0;
-    int aGraveRow;
+    int aGraveRow = 0;
     if (mGridY == 0) {
         aGraveRow = 1;
     } else if (mGridItemState == GridItemState::GRIDITEM_STATE_GRAVESTONE_SPECIAL) {

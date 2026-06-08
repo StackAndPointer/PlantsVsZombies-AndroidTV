@@ -56,7 +56,7 @@ SpecialGridPlacement *ZenGarden::GetSpecialGridPlacements(int &theCount) const {
 }
 
 int ZenGarden::GridToPixelX(int theGridX, int theGridY) {
-    int aCount;
+    int aCount = 0;
     SpecialGridPlacement *aSpecialGrids = GetSpecialGridPlacements(aCount);
     for (int i = 0; i < aCount; i++) {
         SpecialGridPlacement &aGrid = aSpecialGrids[i];
@@ -68,7 +68,7 @@ int ZenGarden::GridToPixelX(int theGridX, int theGridY) {
 }
 
 int ZenGarden::GridToPixelY(int theGridX, int theGridY) {
-    int aCount;
+    int aCount = 0;
     SpecialGridPlacement *aSpecialGrids = GetSpecialGridPlacements(aCount);
     for (int i = 0; i < aCount; i++) {
         SpecialGridPlacement &aGrid = aSpecialGrids[i];

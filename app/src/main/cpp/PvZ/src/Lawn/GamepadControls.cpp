@@ -36,6 +36,8 @@
 #include "PvZ/TodLib/Effect/Attachment.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
 #include <cmath>
+
+#include <cmath>
 #include <cstdint>
 
 using namespace Sexy;
@@ -310,7 +312,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
     }
     gamepadControls->mCursorLabelLiftOffset = rise;
 
-    float yJitter;
+    float yJitter = NAN;
     if (GamepadButtonDown(gamepadControls->mGameObject->mApp, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_A) || gamepadControls->mButterZombie != nullptr) {
         yJitter = 3.0f;
     } else {

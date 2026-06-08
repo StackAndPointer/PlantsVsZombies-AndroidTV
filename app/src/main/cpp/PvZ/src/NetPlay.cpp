@@ -102,7 +102,7 @@ void netplay::ClearSendBuffer() noexcept {
 }
 
 std::size_t netplay::ParseEventSize(const std::byte *data) {
-    decltype(BaseEvent::size) sz;
+    decltype(BaseEvent::size) sz = 0;
     std::memcpy(&sz, data + offsetof(BaseEvent, size), sizeof(sz));
     return sz;
 }

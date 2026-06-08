@@ -182,7 +182,7 @@ void AlmanacDialog::DrawPlants_Unmodified(Sexy::Graphics *g) {
     Color aHeaderColor = {213, 159, 43, 255};
     TodDrawString(g, "[SUBURBAN_ALMANAC_PLANTS]", 400, 50, Sexy::FONT_HOUSEOFTERROR20, aHeaderColor, DrawStringJustification::DS_ALIGN_CENTER);
     int theAlpha = std::sin((mUpdateCnt % 100) * 0.01 * std::numbers::pi) * 255.0;
-    int x, y;
+    int x = 0, y = 0;
     for (SeedType aSeedType = SeedType::SEED_PEASHOOTER; aSeedType < SeedType::NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
         GetSeedPosition(aSeedType, x, y);
         if (aSeedType == SeedType::SEED_IMITATER) {
@@ -313,7 +313,7 @@ void AlmanacDialog::DrawPlants(Sexy::Graphics *g) {
 
     int aAlpha = sin((mUpdateCnt % 100) * 0.01 * std::numbers::pi) * 255.0;
     for (SeedType aSeedType = SeedType::SEED_PEASHOOTER; aSeedType < NUM_ALMANAC_SEEDS; aSeedType = (SeedType)(aSeedType + 1)) {
-        int aPosX, aPosY;
+        int aPosX = 0, aPosY = 0;
         GetSeedPosition(aSeedType, aPosX, aPosY);
         if (mApp->HasSeedType(aSeedType, false)) {
             if (aSeedType == SeedType::SEED_IMITATER) {
@@ -416,7 +416,7 @@ void AlmanacDialog::DrawZombies(Graphics *g) {
     ZombieType aSelectedZombie = mSelectedZombie;
     for (int i = 0; i < NUM_ALMANAC_ZOMBIES; ++i) {
         ZombieType aZombieType = GetZombieType(i);
-        int aPosX, aPosY;
+        int aPosX = 0, aPosY = 0;
         GetZombiePosition(aZombieType, aPosX, aPosY);
         if (aZombieType == ZombieType::ZOMBIE_INVALID) {
             continue;

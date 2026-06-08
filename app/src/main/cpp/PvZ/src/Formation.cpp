@@ -437,7 +437,7 @@ std::string GenerateFormationStrFromMap(const FormationMap &theMap) {
     while (it != end) {
         std::uint32_t key = it->first;
         int aSeedType = key & 0x3F;
-        std::ostringstream *ssPtr;
+        std::ostringstream *ssPtr = nullptr;
         switch (aSeedType) {
             case SeedType::SEED_LILYPAD:
             case SeedType::SEED_FLOWERPOT:
@@ -513,10 +513,10 @@ static void ApplyFormationSnippet(Board *theBoard, std::string_view theSnippetSt
     int aDamageState = 0;
 
     SeedType aSeedType;
-    const char *aCursor;
+    const char *aCursor = nullptr;
     errno = 0;
     {
-        char *end;
+        char *end = nullptr;
         long number = std::strtol(theSnippetStr.data(), &end, 10);
         if ((theSnippetStr.data() == end) || (errno == ERANGE)) {
             LOG_ERROR("Failed to parse SeedType");
@@ -543,8 +543,8 @@ static void ApplyFormationSnippet(Board *theBoard, std::string_view theSnippetSt
             }
         } else if (std::isdigit(*aCursor)) {
             // Parse coordinates
-            int x, y;
-            if (int n; std::sscanf(aCursor, "%d,%d%n", &x, &y, &n) == 2) {
+            int x = 0, y = 0;
+            if (int n = 0; std::sscanf(aCursor, "%d,%d%n", &x, &y, &n) == 2) {
                 aCursor += n; // Skip to next coordinate
             } else {
                 LOG_ERROR("Failed to parse coordinate");

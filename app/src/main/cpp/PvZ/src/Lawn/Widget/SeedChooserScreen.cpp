@@ -583,7 +583,7 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
     }
 
     // 确定种子栏
-    int aSeedsInBank;
+    int aSeedsInBank = 0;
     if (mApp->IsCoopMode() && thePlayerIndex == 1) {
         aSeedsInBank = mSeedsIn2PBank;
     } else {
@@ -600,7 +600,7 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
     }
 
     // 确定实际玩家索引
-    int aActualPlayerIndex;
+    int aActualPlayerIndex = 0;
     int aGlobalBpPlayerIndex = -1;
     if (mApp->IsAdventureMode()) {
         aActualPlayerIndex = 0;
@@ -1068,7 +1068,7 @@ void SeedChooserScreen::ButtonDepress_Origin(int theId) {
     if (theId == SeedChooserScreen_Page) {
         mPageIndex = (mPageIndex == 0) ? 1 : 0;
         // 翻至第一页时光标移动回第一张卡，翻至第二页时光标移动至最后一张卡
-        int x, y;
+        int x = 0, y = 0;
         int aSeedIndex = mPageIndex ? (NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE - 26) : 0;
         GetSeedPositionInChooser(aSeedIndex, x, y);
         mCursorPositionX1 = mCursorPositionX2 = x;
@@ -1141,7 +1141,7 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
             }
         }
 
-        int aSeedX, aSeedY;
+        int aSeedX = 0, aSeedY = 0;
         SeedType aZombieSeedType = GetZombieIndexBySeedType(aSeedType);
         GetSeedPositionInChooser(aZombieSeedType, aSeedX, aSeedY);
         if (mSeedsInFlight <= 0 && mIsZombieChooser && mPageIndex == 1) {
@@ -1554,8 +1554,8 @@ int SeedChooserScreen::GetNextSeedInDir(int theNumSeed, SeedDir theMoveDirection
     }
 
     const int aNumCol = NumColumns();
-    int aRow;
-    int aCol;
+    int aRow = 0;
+    int aCol = 0;
     if (theNumSeed == SeedType::SEED_IMITATER) {
         aCol = 8;
         aRow = 5;
@@ -1629,7 +1629,7 @@ void SeedChooserScreen::Draw(Graphics *g) {
 
     // Draw title text
     Color aTitleColor;
-    const char *aTitleText;
+    const char *aTitleText = nullptr;
     if (mIsZombieChooser) {
         aTitleColor = Color(0, 255, 0);
         aTitleText = "[CHOOSE_YOUR_ZOMBIES]";
@@ -1664,7 +1664,7 @@ void SeedChooserScreen::Draw(Graphics *g) {
         bool aDrawShadow = (aPass == 0);
 
         for (SeedType aSeedShadow = SEED_PEASHOOTER; aSeedShadow < aNumSeeds; aSeedShadow = SeedType(aSeedShadow + 1)) {
-            int x, y;
+            int x = 0, y = 0;
             GetSeedPositionInChooser(aSeedShadow, x, y);
             if (mPageIndex == 1) {
                 y -= 5 * (SEED_PACKET_HEIGHT + 3);
@@ -1703,7 +1703,7 @@ void SeedChooserScreen::Draw(Graphics *g) {
     int aNumSeedsInBank = mSeedBank1->mNumPackets;
     for (int anIndex = 0; anIndex < aNumSeedsInBank; anIndex++) {
         if (FindSeedInBank(anIndex, false) == SEED_NONE) {
-            int x, y;
+            int x = 0, y = 0;
             GetSeedPositionInBank(anIndex, x, y, 0);
             // 修复植物方选卡时僵尸方翻页后空卡槽绘制变暗
             if (mApp->IsVSMode()) {
@@ -1718,7 +1718,7 @@ void SeedChooserScreen::Draw(Graphics *g) {
     if (mApp->IsCoopMode() && mSeedBank2) {
         for (int anIndex = 0; anIndex < aNumSeedsInBank; anIndex++) {
             if (FindSeedInBank(anIndex, true) == SEED_NONE) {
-                int x, y;
+                int x = 0, y = 0;
                 GetSeedPositionInBank(anIndex, x, y, 1);
                 g->DrawImage(Sexy::IMAGE_SEEDPACKETSILHOUETTE, x, y);
             }
@@ -1819,7 +1819,7 @@ void SeedChooserScreen::Draw(Graphics *g) {
 
     // Draw dragging seeds for player 1
     if (mSeedIndex1 != SEED_NONE && ShouldDisplayCursor(0)) {
-        int x, y;
+        int x = 0, y = 0;
         GetSeedPositionInChooser(mSeedIndex1, x, y);
         auto aSeedType = SeedType(mSeedIndex1);
         SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(mSeedIndex1) : aSeedType;
@@ -1840,7 +1840,7 @@ void SeedChooserScreen::Draw(Graphics *g) {
 
     // Draw dragging seeds for player 2
     if (mSeedIndex2 != SEED_NONE && ShouldDisplayCursor(1)) {
-        int x, y;
+        int x = 0, y = 0;
         GetSeedPositionInChooser(mSeedIndex2, x, y);
         auto aSeedType = SeedType(mSeedIndex2);
         SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(mSeedIndex2) : aSeedType;
@@ -2044,7 +2044,7 @@ SeedType SeedChooserScreen::SeedHitTest_Origin(int x, int y) {
 
 void SeedChooserScreen::VSAutoPickResourceGen() {
     SeedType aSeedType;
-    int aX, aY;
+    int aX = 0, aY = 0;
     if (mSeedsInBank == 0) {
         if (mIsZombieChooser) {
             aSeedType = SeedType::SEED_ZOMBIE_GRAVESTONE;

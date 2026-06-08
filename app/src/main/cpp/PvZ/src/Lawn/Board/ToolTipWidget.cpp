@@ -22,6 +22,7 @@
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 #include <PvZ/Lawn/LawnApp.h>
+#include <cmath>
 #include <vector>
 
 using namespace Sexy;
@@ -86,7 +87,7 @@ void ToolTipWidget::Draw(Sexy::Graphics *g) {
     float transX = g->mTransX;
     float transY = g->mTransY;
 
-    float screenOffsetX;
+    float screenOffsetX = NAN;
     if (*(bool *)(gLawnApp->unkMem2[19] + 96))
         screenOffsetX = (float)LawnApp::FULLSCREEN_RECT.mX;
     else

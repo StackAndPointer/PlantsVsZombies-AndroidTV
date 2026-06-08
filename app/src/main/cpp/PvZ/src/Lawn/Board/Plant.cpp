@@ -38,6 +38,8 @@
 #include "PvZ/TodLib/Effect/Reanimator.h"
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
+#include <cmath>
+
 #include <algorithm>
 
 using namespace Sexy;
@@ -377,7 +379,7 @@ void Plant::Draw(Sexy::Graphics *g) {
     DrawShadow(g, aOffsetX, aOffsetY);
 
     if (IsFlying(mSeedType)) {
-        int num3;
+        int num3 = 0;
         if (IsOnBoard()) {
             num3 = mBoard->mMainCounter;
         } else {
@@ -549,7 +551,7 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
         }
     }
     LawnApp *lawnApp = gLawnApp;
-    float v24, v25;
+    float v24 = NAN, v25 = NAN;
     if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BIG_TIME
         && (theSeedType2 == SeedType::SEED_SUNFLOWER || theSeedType2 == SeedType::SEED_WALLNUT || theSeedType2 == SeedType::SEED_MARIGOLD)) {
         v24 = -40.0;
@@ -581,7 +583,7 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
             g->mScaleY = g->mScaleY * 1.4;
             TodDrawImageScaledF(g, Sexy::IMAGE_REANIM_WALLNUT_BODY, thePosX - 53.0, thePosY - 56.0, g->mScaleX, g->mScaleY);
         } else if (aPlantDef.mReanimationType == -1) {
-            int v29;
+            int v29 = 0;
             if (theSeedType2 == SeedType::SEED_KERNELPULT)
                 v29 = 2;
             else
@@ -589,7 +591,7 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
 
             Image *aImage = GetImage(theSeedType2);
             int v31 = aImage->mNumCols;
-            int v32;
+            int v32 = 0;
             if (v31 > 2)
                 v32 = 2;
             else
@@ -929,7 +931,7 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
         mApp->PlayFoley(FoleyType::FOLEY_PUFF);
     }
 
-    int aOriginX, aOriginY;
+    int aOriginX = 0, aOriginY = 0;
     if (mSeedType == SeedType::SEED_PUFFSHROOM) {
         aOriginX = mX + 40;
         aOriginY = mY + 40;
@@ -952,22 +954,22 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
         aOriginX = mX + 12;
         aOriginY = mY - 56;
     } else if (mSeedType == SeedType::SEED_PEASHOOTER || mSeedType == SeedType::SEED_SNOWPEA || mSeedType == SeedType::SEED_REPEATER) {
-        int aOffsetX, aOffsetY;
+        int aOffsetX = 0, aOffsetY = 0;
         GetPeaHeadOffset(aOffsetX, aOffsetY);
         aOriginX = mX + aOffsetX + 24;
         aOriginY = mY + aOffsetY - 33;
     } else if (mSeedType == SeedType::SEED_LEFTPEATER) {
-        int aOffsetX, aOffsetY;
+        int aOffsetX = 0, aOffsetY = 0;
         GetPeaHeadOffset(aOffsetX, aOffsetY);
         aOriginX = mX - aOffsetX + 27;
         aOriginY = mY + aOffsetY - 33;
     } else if (mSeedType == SeedType::SEED_GATLINGPEA) {
-        int aOffsetX, aOffsetY;
+        int aOffsetX = 0, aOffsetY = 0;
         GetPeaHeadOffset(aOffsetX, aOffsetY);
         aOriginX = mX + aOffsetX + 34;
         aOriginY = mY + aOffsetY - 33;
     } else if (mSeedType == SeedType::SEED_SPLITPEA) {
-        int aOffsetX, aOffsetY;
+        int aOffsetX = 0, aOffsetY = 0;
         GetPeaHeadOffset(aOffsetX, aOffsetY);
         aOriginY = mY + aOffsetY - 33;
 
@@ -1016,7 +1018,7 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
     aProjectile->mDamageRangeFlags = GetDamageRangeFlags(thePlantWeapon);
 
     if (mSeedType == SeedType::SEED_CABBAGEPULT || mSeedType == SeedType::SEED_KERNELPULT || mSeedType == SeedType::SEED_MELONPULT || mSeedType == SeedType::SEED_WINTERMELON) {
-        float aRangeX, aRangeY;
+        float aRangeX = NAN, aRangeY = NAN;
         if (theTargetZombie) {
             Rect aZombieRect = theTargetZombie->GetZombieRect();
             aRangeX = theTargetZombie->ZombieTargetLeadX(50.0f) - aOriginX - 30.0f;

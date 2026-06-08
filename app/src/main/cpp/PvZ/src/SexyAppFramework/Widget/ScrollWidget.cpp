@@ -766,9 +766,9 @@ Sexy::Widget *Sexy::ScrollWidget::GetClientWidgetAt(Touch touch) {
     int num = (int)touch.location.mX - mClient->mX;
     int num2 = (int)touch.location.mY - mClient->mY;
     int theFlags = 16 | mWidgetManager->GetWidgetFlags();
-    Widget *widgetAtHelper;
-    int num3;
-    int num4;
+    Widget *widgetAtHelper = nullptr;
+    int num3 = 0;
+    int num4 = 0;
     if (mClientLastDown != nullptr) {
         Point absPos = homura::CallVirtualFunc<Widget, 19, Point>(mClient) /*GetAbsPos*/;
         Point absPos2 = homura::CallVirtualFunc<Widget, 19, Point>(mClientLastDown) /*GetAbsPos*/;
@@ -778,7 +778,7 @@ Sexy::Widget *Sexy::ScrollWidget::GetClientWidgetAt(Touch touch) {
     } else {
         Widget *widget = mClient;
         widget->mWidgetFlagsMod.mRemoveFlags = (widget->mWidgetFlagsMod.mRemoveFlags & -17);
-        bool flag;
+        bool flag = false;
         widgetAtHelper = mClient->GetWidgetAtHelper(num, num2, theFlags, &flag, &num3, &num4);
         Widget *widget2 = mClient;
         widget2->mWidgetFlagsMod.mRemoveFlags = (widget2->mWidgetFlagsMod.mRemoveFlags | 16);

@@ -17,6 +17,8 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cmath>
+
 #include "PvZ/Lawn/System/Music.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
@@ -194,22 +196,22 @@ void Music::UpdateMusicBurst() {
 }
 
 void Music::UpdateMusicBurst2() {
-    int MusicOrder;                      // ebx
-    double v7;                           // st7
-    double v9;                           // st6
-    int v11;                             // eax
-    unsigned int v14;                    // eax
+    int MusicOrder = 0;                      // ebx
+    double v7 = NAN;                         // st7
+    double v9 = NAN;                         // st6
+    int v11 = 0;                             // eax
+    unsigned int v14 = 0;                    // eax
     [[maybe_unused]] MusicTune v15;      // ebx
-    int v16;                             // edi
-    int aQueuedDrumTrackPackedOrder_low; // ecx
-    int v18;                             // eax
-    float aPositionStart;                // [esp+4h] [ebp-2Ch]
-    float aPositionEnd;                  // [esp+8h] [ebp-28h]
-    float aFadeTrackVolume;              // [esp+1Ch] [ebp-14h]
-    float aMainTrackVolume;              // [esp+20h] [ebp-10h]
-    float aDrumsJumpOrder;               // [esp+24h] [ebp-Ch]
-    unsigned int aPackedOrderMain;       // [esp+28h] [ebp-8h]
-    unsigned short v29;                  // [esp+2Ch] [ebp-4h]
+    int v16 = 0;                             // edi
+    int aQueuedDrumTrackPackedOrder_low = 0; // ecx
+    int v18 = 0;                             // eax
+    float aPositionStart = NAN;              // [esp+4h] [ebp-2Ch]
+    float aPositionEnd = NAN;                // [esp+8h] [ebp-28h]
+    float aFadeTrackVolume = NAN;            // [esp+1Ch] [ebp-14h]
+    float aMainTrackVolume = NAN;            // [esp+20h] [ebp-10h]
+    float aDrumsJumpOrder = NAN;             // [esp+24h] [ebp-Ch]
+    unsigned int aPackedOrderMain = 0;       // [esp+28h] [ebp-8h]
+    unsigned short v29 = 0;                  // [esp+2Ch] [ebp-4h]
 
     if (mApp->mBoard == nullptr || mApp->mGameMode == GameMode::GAMEMODE_INTRO) {
         return;

@@ -37,6 +37,8 @@
 #include "PvZ/TodLib/Effect/Reanimator.h"
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
+#include <cmath>
+
 #include <cstring>
 
 #include <numbers>
@@ -1044,8 +1046,8 @@ void Zombie::UpdateZombieJackson() {
             mZombiePhase = ZombiePhase::PHASE_DANCER_DANCING_LEFT;
             UpdateAnimSpeed();
 
-            for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
-                Zombie *aDancer = mBoard->ZombieTryToGet(mFollowerZombieID[i]);
+            for (auto &i : mFollowerZombieID) {
+                Zombie *aDancer = mBoard->ZombieTryToGet(i);
 
                 if (aDancer && !aDancer->IsDeadOrDying() && !aDancer->IsImmobilizied() && !aDancer->mIsEating) {
                     aDancer->PlayZombieReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 20, 18.0f);
@@ -1124,7 +1126,7 @@ void Zombie::RaiseDeadZombies() {
 
     for (int i = 0; i < msDeadFollowers.size(); i++) {
         if (!msDeadFollowers.empty()) {
-            int aRow, aCol;
+            int aRow = 0, aCol = 0;
             if (i < 5) {
                 aRow = i;
                 aCol = mMindControlled ? 4 : 6;
@@ -1642,7 +1644,7 @@ void Zombie::UpdateGigaPolevaulter() {
             reinterpret_cast<ZombieID &>(aPole->mZombieType) = mBoard->ZombieGetID(this);
             syncGigaPolevaulterPhaseCounter();
             return;
-        } else if (mHasArm == false && FindGigaPolevaulterTarget()) {
+        } else if (!mHasArm && FindGigaPolevaulterTarget()) {
             PlayZombieReanim("anim_throw", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 36.0f);
             mZombiePhase = ZombiePhase::PHASE_POLEVAULTER_THROW;
             syncGigaPolevaulterPhaseCounter();
@@ -1930,7 +1932,7 @@ void Zombie::UpdateZombieGargantuar() {
             }
 
             if (gTcpClientSocket >= 0) {
-                U16U16U16UNI32UNI32_Event event;
+                U16U16U16UNI32UNI32_Event event{};
                 event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_IMP_THROWN;
                 event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
                 event.data2 = uint16_t(mBoard->mZombies.DataArrayGetID(aZombieImp));
@@ -2595,7 +2597,7 @@ void Zombie::PlayDeathAnim(unsigned int theDamageFlags) {
         mZombieHeight = ZombieHeight::HEIGHT_FALLING;
     }
 
-    float aDeathAnimRate;
+    float aDeathAnimRate = NAN;
     if (mZombieType == ZombieType::ZOMBIE_FOOTBALL) {
         aDeathAnimRate = 24.0f;
     } else if (mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR) {
@@ -2977,7 +2979,7 @@ void Zombie::CheckForBoardEdge() {
         DieNoLoot();
         return;
     }
-    int boardEdge;
+    int boardEdge = 0;
     if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR
         || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
         // 如果是撑杆、巨人、红眼巨人
@@ -5501,7 +5503,7 @@ bool Zombie::IsMovingAtChilledSpeed() {
         return true;
 
     if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER) {
-        Zombie *aLeader;
+        Zombie *aLeader = nullptr;
         if (mZombieType == ZombieType::ZOMBIE_DANCER) {
             aLeader = this;
         } else {
@@ -5523,7 +5525,7 @@ bool Zombie::IsMovingAtChilledSpeed() {
     }
 
     if (mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON) {
-        Zombie *aLeader;
+        Zombie *aLeader = nullptr;
         if (mZombieType == ZombieType::ZOMBIE_JACKSON) {
             aLeader = this;
         } else {
@@ -5598,7 +5600,7 @@ void Zombie::UpdateZombieWalking() {
 
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
     if (aBodyReanim) {
-        float aSpeed;
+        float aSpeed = NAN;
         if (IsBouncingPogo() || mZombiePhase == ZombiePhase::PHASE_BALLOON_FLYING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING || mZombiePhase == ZombiePhase::PHASE_SNORKEL_WALKING_IN_POOL
             || mZombieType == ZombieType::ZOMBIE_CATAPULT) {
             aSpeed = mVelX;
@@ -5623,7 +5625,7 @@ void Zombie::UpdateZombieWalking() {
         }
 
         if (mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON) {
-            Zombie *aLeader;
+            Zombie *aLeader = nullptr;
             if (mZombieType == ZombieType::ZOMBIE_JACKSON) {
                 aLeader = this;
             } else {

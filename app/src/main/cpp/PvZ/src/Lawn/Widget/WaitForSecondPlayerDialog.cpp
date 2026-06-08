@@ -2315,8 +2315,8 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
     }
 
     // 3) 解析帧并处理
-    uint8_t type;
-    uint16_t len;
+    uint8_t type = 0;
+    uint16_t len = 0;
     uint8_t payload[2048];
 
     while (ServerTryReadOneFrame(type, payload, len)) {

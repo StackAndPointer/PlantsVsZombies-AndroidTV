@@ -45,10 +45,10 @@ void TrashBin::_constructor(TrashPileType theTrashPileType, float theHeight) {
 }
 
 Sexy::Image *TrashBin::GetZombieTrashPiece(int theLevel) {
-    int v3; // r0
-    int v4; // r2
-    int v5; // r3
-    int v6; // r3
+    int v3 = 0; // r0
+    int v4 = 0; // r2
+    int v5 = 0; // r3
+    int v6 = 0; // r3
 
     v3 = RandRangeInt(0, 100);
     v4 = mPileNum;

@@ -23,7 +23,7 @@
 void SaveGameContext::SyncReanimationDef(ReanimatorDefinition *&theDefinition) {
     // 解决大头贴动画的读档问题
     if (mReading) {
-        int aReanimType;
+        int aReanimType = 0;
         SyncInt(aReanimType);
         if (aReanimType == ReanimationType::REANIM_NONE) {
             theDefinition = nullptr;
