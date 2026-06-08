@@ -19,10 +19,12 @@
 
 #include "PvZ/Lawn/Board/CutScene.h"
 #include "PvZ/Lawn/Board/Board.h"
+#include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/ChallengeScreen.h"
+#include "PvZ/Lawn/Widget/SeedChooserScreen.h"
 #include "PvZ/Lawn/Widget/WaitForSecondPlayerDialog.h"
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
 
@@ -198,4 +200,30 @@ void CutScene::PlaceLawnItems() {
 void CutScene::LoadUpsellChallengeScreen() {
     ClearUpsellBoard();
     mUpsellChallengeScreen = new ChallengeScreen(mApp, ChallengePage::CHALLENGE_PAGE_CHALLENGE);
+}
+
+namespace {
+int TimeSeedChoserSlideOnEnd = 4250;
+int TimePanLeftEnd = 6000;
+} // namespace
+
+void CutScene::EndSeedChooser() {
+    if (mApp->mSeedChooserScreen) {
+        mApp->mSeedChooserScreen->mMouseVisible = false;
+    }
+
+    if (mApp->mZombieChooserScreen) {
+        mApp->mZombieChooserScreen->mMouseVisible = false;
+    }
+    mSeedChoosing = false;
+    mCutsceneTime = TimeSeedChoserSlideOnEnd + mCrazyDaveTime + 10;
+    if (IsNonScrollingCutscene()) {
+        mCutsceneTime = mCrazyDaveTime + TimePanLeftEnd;
+    }
+    mApp->mWidgetManager->SetFocus(mBoard);
+    if (mApp->mGameMode == GAMEMODE_MP_VS) {
+        //        mBoard->mChallenge->mSuddenDeathStartTick =  Sexy::GetTickCount();
+        mBoard->mChallenge->mSuddenDeathCounter = 0;
+        mBoard->mEnableGraveStones = true;
+    }
 }

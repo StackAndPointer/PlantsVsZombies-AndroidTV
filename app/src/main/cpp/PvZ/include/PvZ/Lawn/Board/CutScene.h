@@ -82,6 +82,9 @@ public:
     void MouseDown(int x, int y) {
         reinterpret_cast<bool (*)(CutScene *, int, int)>(CutScene_MouseDownAddr)(this, x, y);
     }
+    bool IsNonScrollingCutscene() {
+        return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsNonScrollingCutsceneAddr)(this);
+    }
 
     void ShowShovel();
     void Update();
@@ -92,6 +95,7 @@ public:
     void PlaceLawnItems();
     void AddFlowerPots();
     void LoadUpsellChallengeScreen();
+    void EndSeedChooser();
 };
 
 

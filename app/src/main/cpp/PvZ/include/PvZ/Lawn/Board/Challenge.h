@@ -97,8 +97,8 @@ public:
     int mTreeOfWisdomTalkIndex;                             // 52
     int unk53[3];                                           // 53 ~ 55
     int mBobSledMPCounter;                                  // 56
-    int mSuddenDeathStartTick;                              // 57
-    int mPauseStartTick;                                    // 58
+    int mSuddenDeathCounter;                                // 57, 原 mSuddenDeathStartTick，现改为 mSuddenDeathCounter。将导致VS_HIDE中的计时胜利模式不可用。
+    int mPauseStartTick;                                    // 58, 废弃
     bool mIsMPSuddenDeathNow;                               // 59 * 4
     SeedType mSuddenDeathDisableSeeds1[3];                  // 60 ~ 62
     SeedType mSuddenDeathDisableSeeds2[3];                  // 63 ~ 65
@@ -189,9 +189,7 @@ public:
     void TreeOfWisdomUpdate() {
         reinterpret_cast<void (*)(Challenge *)>(Challenge_TreeOfWisdomUpdateAddr)(this);
     }
-    int GetSuddenDeathCount() {
-        return reinterpret_cast<int (*)(Challenge *)>(Challenge_GetSuddenDeathCountAddr)(this);
-    }
+    int GetSuddenDeathCount();
     void IZombieMouseDownWithZombie(int x, int y, int theClickCount, int thePlayerIndex) {
         reinterpret_cast<void (*)(Challenge *, int, int, int, int)>(Challenge_IZombieMouseDownWithZombieAddr)(this, x, y, theClickCount, thePlayerIndex);
     }

@@ -194,6 +194,7 @@ void InitHookFunction() {
 
     homura::HookFunc(Challenge_UpdateAddr, &Challenge::Update, &old_Challenge_Update);
     homura::HookFunc(Challenge_IsMPSuddenDeathAddr, &Challenge::IsMPSuddenDeath, nullptr);
+    homura::HookFunc(Challenge_GetSuddenDeathCountAddr, &Challenge::GetSuddenDeathCount, nullptr);
     homura::HookFunc(Challenge_ChallengeAddr, &Challenge::_constructor, &old_Challenge_Challenge);
     homura::HookFunc(Challenge_HeavyWeaponFireAddr, &Challenge::HeavyWeaponFire, &old_Challenge_HeavyWeaponFire);
     homura::HookFunc(Challenge_IZombieDrawPlantAddr, &Challenge::IZombieDrawPlant, nullptr);
@@ -550,6 +551,7 @@ void InitHookFunction() {
     homura::HookFunc(CutScene_PlaceStreetZombiesAddr, &CutScene::PlaceStreetZombies, nullptr);
     homura::HookFunc(CutScene_AddFlowerPotsAddr, &CutScene::AddFlowerPots, &old_CutScene_AddFlowerPots);
     homura::HookFunc(CutScene_LoadUpsellChallengeScreenAddr, &CutScene::LoadUpsellChallengeScreen, nullptr);
+    homura::HookFunc(CutScene_EndSeedChooserAddr, &CutScene::EndSeedChooser, nullptr);
 
 
     homura::HookFunc(NewOptionsDialog_ButtonDepressAddr, &NewOptionsDialog::ButtonDepress, &old_NewOptionsDialog_ButtonDepress);

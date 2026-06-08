@@ -224,6 +224,7 @@ bool LoadGameMain() {
     CutScene_IsSurvivalRepickAddr = libGameMain.GetSymbol("_ZN8CutScene16IsSurvivalRepickEv");
     CutScene_ShouldRunUpsellBoardAddr = libGameMain.GetSymbol("_ZN8CutScene20ShouldRunUpsellBoardEv");
     CutScene_OnKeyDownAddr = libGameMain.GetSymbol("_ZN8CutScene9OnKeyDownEN4Sexy7KeyCodeEj");
+    CutScene_IsNonScrollingCutsceneAddr = libGameMain.GetSymbol("_ZN8CutScene22IsNonScrollingCutsceneEv");
     CutScene_MouseDownAddr = libGameMain.GetSymbol("_ZN8CutScene9MouseDownEii");
     CutScene_IsBeforePreloadingAddr = libGameMain.GetSymbol("_ZN8CutScene18IsBeforePreloadingEv");
     CutScene_AddFlowerPotsAddr = libGameMain.GetSymbol("_ZN8CutScene13AddFlowerPotsEv");
@@ -232,6 +233,7 @@ bool LoadGameMain() {
     CutScene_PlaceStreetZombiesAddr = libGameMain.GetSymbol("_ZN8CutScene18PlaceStreetZombiesEv");
     CutScene_StartLevelIntroAddr = libGameMain.GetSymbol("_ZN8CutScene15StartLevelIntroEv");
     CutScene_ClearUpsellBoardAddr = libGameMain.GetSymbol("_ZN8CutScene16ClearUpsellBoardEv");
+    CutScene_EndSeedChooserAddr = libGameMain.GetSymbol("_ZN8CutScene14EndSeedChooserEv");
     CutScene_LoadUpsellChallengeScreenAddr = libGameMain.GetSymbol("_ZN8CutScene25LoadUpsellChallengeScreenEv");
 
 

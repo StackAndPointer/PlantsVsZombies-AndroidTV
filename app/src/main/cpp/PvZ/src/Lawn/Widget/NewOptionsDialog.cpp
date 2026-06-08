@@ -42,6 +42,7 @@ void NewOptionsDialog::ButtonDepress(int theId) {
         // 对战时返回主菜单，加一层退出确认
         mApp->DoConfirmBackToMain(false);
         auto aConfirmDialog = reinterpret_cast<ConfirmBackToMainDialog *>(mApp->GetDialog(DIALOG_CONFIRM_BACK_TO_MAIN));
+        *aConfirmDialog->mDialogLines = TodStringTranslate("[QUIT_WHEN_ONLINE_WARNING]");
         aConfirmDialog->mRestartButton->mDisabled = true;
         return;
     }

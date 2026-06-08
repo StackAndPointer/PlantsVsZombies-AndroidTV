@@ -43,6 +43,12 @@
 
 using namespace Sexy;
 
+namespace {
+constexpr int MP_SUDDEN_DEATH_SECONDS = 300;
+constexpr int MP_SUDDEN_DEATH_TICKS_PER_SECOND = 100;
+constexpr int MP_SUDDEN_DEATH_START_COUNTER = MP_SUDDEN_DEATH_SECONDS * MP_SUDDEN_DEATH_TICKS_PER_SECOND;
+} // namespace
+
 SeedType gArtChallengeWallnut[MAX_GRID_SIZE_Y][MAX_GRID_SIZE_X] = {
     {SEED_NONE, SEED_NONE, SEED_NONE, SEED_NONE, SEED_WALLNUT, SEED_WALLNUT, SEED_WALLNUT, SEED_NONE, SEED_NONE},
     {SEED_NONE, SEED_NONE, SEED_NONE, SEED_WALLNUT, SEED_NONE, SEED_NONE, SEED_NONE, SEED_WALLNUT, SEED_NONE},
@@ -85,6 +91,8 @@ void Challenge::_constructor() {
     old_Challenge_Challenge(this);
 
     if (mApp->IsVSMode()) {
+        mSuddenDeathCounter = -1;
+        mPauseStartTick = -1;
         Zombie::msDeadFollowers.clear();
         if (mBoard->mDanceMode) {
             mBoard->mDanceMode = false;
@@ -117,15 +125,17 @@ void Challenge::_destructor() {
 }
 
 bool Challenge::IsMPSuddenDeath() const {
-    if (gLawnApp->mGameMode != GameMode::GAMEMODE_MP_VS || mSuddenDeathStartTick == -1) {
+    if (gLawnApp->mGameMode != GameMode::GAMEMODE_MP_VS || mSuddenDeathCounter < 0) {
         return false;
     }
+    return mSuddenDeathCounter > MP_SUDDEN_DEATH_START_COUNTER;
+}
 
-    int aSuddenDeathCount = (Sexy::GetTickCount() - mSuddenDeathStartTick) / 1000u;
-    if (mBoard->mPaused && mPauseStartTick != -1) {
-        aSuddenDeathCount -= (Sexy::GetTickCount() - mPauseStartTick) / 1000u;
+int Challenge::GetSuddenDeathCount() {
+    if (!IsMPSuddenDeath()) {
+        return -1;
     }
-    return aSuddenDeathCount > 300;
+    return mSuddenDeathCounter / MP_SUDDEN_DEATH_TICKS_PER_SECOND - MP_SUDDEN_DEATH_SECONDS;
 }
 
 void Challenge::Update() {
@@ -176,9 +186,6 @@ void Challenge::Update() {
     }
 
     if (mBoard->mPaused) {
-        if (mSuddenDeathStartTick != -1 && mPauseStartTick == -1) {
-            mPauseStartTick = Sexy::GetTickCount();
-        }
         if (mApp->mGameMode == GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
             mChallengeGridX = -1;
             mChallengeGridY = -1;
@@ -186,10 +193,8 @@ void Challenge::Update() {
         return;
     }
 
-    if (mSuddenDeathStartTick != -1 && mPauseStartTick != -1) {
-        int aTickCount = Sexy::GetTickCount();
-        mSuddenDeathStartTick = aTickCount + mSuddenDeathStartTick - mPauseStartTick;
-        mPauseStartTick = -1;
+    if (aGameMode == GAMEMODE_MP_VS && mSuddenDeathCounter >= 0) {
+        ++mSuddenDeathCounter;
     }
 
     if (mApp->mGameMode == GAMEMODE_CHALLENGE_RAINING_SEEDS || mApp->IsStormyNightLevel()) {
