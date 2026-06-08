@@ -518,7 +518,7 @@ void VSSetupMenu::Update() {
     }
 }
 
-void VSSetupMenu::PickRandomZombies(std::vector<SeedType> &theZombieSeeds) {
+void VSSetupMenu::PickRandomZombies(std::vector<SeedType> &theZombieSeeds) const {
     assert(theZombieSeeds.empty());
 
     // 原本选 5 个, 扩展为 (卡槽数 - 1) 个
@@ -548,7 +548,7 @@ void VSSetupMenu::PickRandomZombies(std::vector<SeedType> &theZombieSeeds) {
     }
 }
 
-void VSSetupMenu::PickRandomPlants(std::vector<SeedType> &thePlantSeeds, const std::vector<SeedType> &theZombieSeeds) {
+void VSSetupMenu::PickRandomPlants(std::vector<SeedType> &thePlantSeeds, const std::vector<SeedType> &theZombieSeeds) const {
     assert(thePlantSeeds.empty() && (theZombieSeeds.size() == mApp->mBoard->GetNumSeedsInBank(true) - 1));
 
     // 原本选 5 个, 扩展为 (卡槽数 - 1) 个

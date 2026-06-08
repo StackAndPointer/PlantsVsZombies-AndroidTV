@@ -62,10 +62,10 @@ public:
         reinterpret_cast<void (*)(ZenGarden *, int, int)>(ZenGarden_MouseDownWithFullWheelBarrowAddr)(this, x, y);
     }
 
-    SpecialGridPlacement *GetSpecialGridPlacements(int &theCount);
+    SpecialGridPlacement *GetSpecialGridPlacements(int &theCount) const;
     int GridToPixelX(int theGridX, int theGridY);
     int GridToPixelY(int theGridX, int theGridY);
-    GridItem *GetStinky();
+    GridItem *GetStinky() const;
     void DrawBackdrop(Sexy::Graphics *g);
 };
 

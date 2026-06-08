@@ -71,7 +71,7 @@ void StoreScreen::DrawItem(Sexy::Graphics *g, int a3, StoreItem theStoreItem) {
     old_StoreScreen_DrawItem(this, g, a3, theStoreItem);
 }
 
-bool StoreScreen::IsPageShown(StorePages thePage) {
+bool StoreScreen::IsPageShown(StorePages thePage) const {
     if (mApp->IsTrialStageLocked()) [[unlikely]] {
         return thePage == STORE_PAGE_SLOT_UPGRADES;
     }

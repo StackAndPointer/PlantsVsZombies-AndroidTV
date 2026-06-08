@@ -349,7 +349,7 @@ void LawnApp::OnSessionTaskFailed() {
     // 用此空函数替换游戏原有的LawnApp_OnSessionTaskFailed()函数，从而去除启动游戏时的“网络错误：255”弹窗
 }
 
-int LawnApp::GamepadToPlayerIndex(unsigned int thePlayerIndex) {
+int LawnApp::GamepadToPlayerIndex(unsigned int thePlayerIndex) const {
     // 实现双人结盟中1P选卡选满后自动切换为2P选卡DoConfirmBackToMain
     if (IsCoopMode()) {
         return !m1PChoosingSeeds;

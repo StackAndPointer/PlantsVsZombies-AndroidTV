@@ -21,19 +21,19 @@
 
 using namespace Sexy;
 
-int Image::GetWidth() {
+int Image::GetWidth() const {
     return mWidth;
 }
 
-int Image::GetHeight() {
+int Image::GetHeight() const {
     return mHeight;
 }
 
-int Image::GetCelHeight() {
+int Image::GetCelHeight() const {
     return mHeight / mNumRows;
 }
 
-int Image::GetCelWidth() {
+int Image::GetCelWidth() const {
     return mWidth / mNumCols;
 }
 

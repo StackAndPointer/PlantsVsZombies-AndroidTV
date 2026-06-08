@@ -38,7 +38,7 @@ void ZenGarden::DrawBackdrop(Graphics *g) {
     old_ZenGarden_DrawBackdrop(this, g);
 }
 
-SpecialGridPlacement *ZenGarden::GetSpecialGridPlacements(int &theCount) {
+SpecialGridPlacement *ZenGarden::GetSpecialGridPlacements(int &theCount) const {
     if (mBoard->mBackground == BackgroundType::BACKGROUND_MUSHROOM_GARDEN) {
         theCount = std::size(gMushroomGridPlacement);
         return gMushroomGridPlacement;
@@ -79,7 +79,7 @@ int ZenGarden::GridToPixelY(int theGridX, int theGridY) {
     return -1;
 }
 
-GridItem *ZenGarden::GetStinky() {
+GridItem *ZenGarden::GetStinky() const {
     GridItem *aGridItem = nullptr;
     while (mBoard->IterateGridItems(aGridItem)) {
         if (aGridItem->mGridItemType == GridItemType::GRIDITEM_STINKY) {

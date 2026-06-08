@@ -110,7 +110,7 @@ public:
     void Update();
     void SetupPage();
     void DrawItem(Sexy::Graphics *g, int a3, StoreItem theStoreItem);
-    bool IsPageShown(StorePages thePage);
+    bool IsPageShown(StorePages thePage) const;
     void ButtonDepress(int theId);
     void PurchaseItem(StoreItem theStoreItem);
     void Draw(Sexy::Graphics *g);

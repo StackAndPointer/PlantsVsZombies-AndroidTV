@@ -376,7 +376,7 @@ void Challenge::Update() {
     }
 }
 
-void Challenge::UpdateVSAddPlants() {
+void Challenge::UpdateVSAddPlants() const {
     if (gTcpConnected) {
         return;
     }
@@ -835,7 +835,7 @@ ZombieType Challenge::IZombieSeedTypeToZombieType(SeedType theSeedType) {
     }
 }
 
-void Challenge::IZombiePlaceZombie(ZombieType theZombieType, int theGridX, int theGridY) {
+void Challenge::IZombiePlaceZombie(ZombieType theZombieType, int theGridX, int theGridY) const {
     Zombie *aZombie = mBoard->AddZombieInRow(theZombieType, theGridY, 0, false);
     if (theZombieType == ZOMBIE_BUNGEE) {
         aZombie->mTargetCol = theGridX;

@@ -56,7 +56,7 @@ int Reanimation::HideTrack(const char *theTrackName, bool theIsHide) {
     return trackIndex;
 }
 
-void Reanimation::HideTrackById(int theTrackIndex, bool theIsHide) {
+void Reanimation::HideTrackById(int theTrackIndex, bool theIsHide) const {
     if (theTrackIndex != -1) {
         ReanimatorTrackInstance *reanimatorTrackInstance = mTrackInstances + theTrackIndex;
         reanimatorTrackInstance->mRenderGroup = theIsHide ? RENDER_GROUP_HIDDEN : RENDER_GROUP_NORMAL;
@@ -263,7 +263,7 @@ void Reanimation::SetZombatarTidBits(unsigned char theTidBits, unsigned char the
     Update(); // 一次Update是必要的，否则绘制出来是Empty
 }
 
-void Reanimation::GetZombatarTrackIndex(int *theIndexArray) {
+void Reanimation::GetZombatarTrackIndex(int *theIndexArray) const {
     int aTrackCount = mDefinition->mTrackCount;
     if (aTrackCount <= 0) {
         return;
@@ -287,7 +287,7 @@ void Reanimation::GetZombatarTrackIndex(int *theIndexArray) {
     }
 }
 
-int Reanimation::GetZombatarHatTrackIndex() {
+int Reanimation::GetZombatarHatTrackIndex() const {
     int aTrackCount = mDefinition->mTrackCount;
     if (aTrackCount <= 0) {
         return -1;
@@ -309,7 +309,7 @@ int Reanimation::GetZombatarHatTrackIndex() {
     return -1;
 }
 
-int Reanimation::GetZombatarEyeWearTrackIndex() {
+int Reanimation::GetZombatarEyeWearTrackIndex() const {
     int aTrackCount = mDefinition->mTrackCount;
     if (aTrackCount <= 0) {
         return -1;
@@ -338,7 +338,7 @@ void DefinitionGetCompiledFilePathFromXMLFilePath(homura::Storage<pvzstl::string
     old_DefinitionGetCompiledFilePathFromXMLFilePath(result, defPathString);
 }
 
-bool Reanimation::ShouldTriggerTimedEvent(float theEventTime) {
+bool Reanimation::ShouldTriggerTimedEvent(float theEventTime) const {
     if (mFrameCount == 0 || mLastFrameTime <= 0.0f || mAnimRate <= 0.0f) // 没有动画或倒放或未播放
         return false;
 
@@ -348,7 +348,7 @@ bool Reanimation::ShouldTriggerTimedEvent(float theEventTime) {
         return theEventTime >= mLastFrameTime || theEventTime < mAnimTime;
 }
 
-void Reanimation::AssignRenderGroupToTrack(const char *theTrackName, int theRenderGroup) {
+void Reanimation::AssignRenderGroupToTrack(const char *theTrackName, int theRenderGroup) const {
     for (int i = 0; i < mDefinition->mTrackCount; i++)
         if (strcasecmp(mDefinition->mTracks[i].mName, theTrackName) == 0) {
             mTrackInstances[i].mRenderGroup = theRenderGroup; // 仅设置首个名称恰好为 theTrackName 的轨道

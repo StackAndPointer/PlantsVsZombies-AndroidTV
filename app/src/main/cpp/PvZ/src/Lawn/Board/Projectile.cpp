@@ -699,7 +699,7 @@ void Projectile::CheckForCollision() {
     }
 }
 
-bool Projectile::CantHitHighGround() {
+bool Projectile::CantHitHighGround() const {
     if (mMotionType == ProjectileMotion::MOTION_BACKWARDS || mMotionType == ProjectileMotion::MOTION_HOMING)
         return false;
 
@@ -760,7 +760,7 @@ bool Projectile::IsGridItemHitBySplash(GridItem *theGridItem) {
     return GetRectOverlap(aProjectileRect, aGridItemRect) >= 0;
 }
 
-bool Projectile::IsSplashDamage(Zombie *theZombie) {
+bool Projectile::IsSplashDamage(Zombie *theZombie) const {
     if (mProjectileType && theZombie && theZombie->IsFireResistant())
         return false;
 
@@ -785,7 +785,7 @@ unsigned int Projectile::GetDamageFlags(Zombie *theZombie) {
     return aDamageFlags;
 }
 
-ProjectileDefinition &Projectile::GetProjectileDef() {
+ProjectileDefinition &Projectile::GetProjectileDef() const {
     ProjectileDefinition &aProjectileDef = gProjectileDefinition[(int)mProjectileType];
     if (mProjectileType >= NUM_PROJECTILES) {
         aProjectileDef = gExtendedProjectileDefinition[mProjectileType - NUM_PROJECTILES];

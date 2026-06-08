@@ -88,11 +88,11 @@ public:
     void CheckForCollision();
     Zombie *FindCollisionMindControlledTarget();
     GridItem *FindCollisionTargetGridItem();
-    ProjectileDefinition &GetProjectileDef();
+    ProjectileDefinition &GetProjectileDef() const;
     Sexy::Rect GetProjectileRect();
     Plant *FindCollisionTargetPlant();
-    bool CantHitHighGround();
-    bool IsSplashDamage(Zombie *theZombie);
+    bool CantHitHighGround() const;
+    bool IsSplashDamage(Zombie *theZombie) const;
     void PlayImpactSound(Zombie *theZombie);
     unsigned int GetDamageFlags(Zombie *theZombie);
     bool PeaAboutToHitTorchwood();

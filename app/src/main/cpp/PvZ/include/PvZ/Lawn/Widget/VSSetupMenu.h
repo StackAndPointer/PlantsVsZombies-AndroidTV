@@ -177,8 +177,8 @@ protected:
     void _constructor();
     void _destructor();
 
-    void PickRandomZombies(std::vector<SeedType> &theZombieSeeds);
-    void PickRandomPlants(std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> const &theZombieSeeds);
+    void PickRandomZombies(std::vector<SeedType> &theZombieSeeds) const;
+    void PickRandomPlants(std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> const &theZombieSeeds) const;
 
     //    void PickBackgroundImmediately();
 };

@@ -183,7 +183,7 @@ public:
     void ServerResetP2PState(bool keepListener);
     void ServerHandleP2PInfo(const uint8_t *payload, uint16_t len);
     void ServerAdoptP2PSocket();
-    bool ServerSendRelayReady(std::uint32_t relayEpoch);
+    bool ServerSendRelayReady(std::uint32_t relayEpoch) const;
 
 
     bool ServerTryReadOneFrame(uint8_t &outType, uint8_t *outPayload, uint16_t &outLen);
@@ -241,7 +241,7 @@ protected:
     void _destructor2();
 
     bool GetActiveBroadcast(sockaddr_in &out_bcast, std::string *out_ifname);
-    bool ServerSendU8(uint8_t b);
+    bool ServerSendU8(uint8_t b) const;
 };
 
 inline void (*old_WaitForSecondPlayerDialog_WaitForSecondPlayerDialog)(WaitForSecondPlayerDialog *, LawnApp *);

@@ -101,17 +101,17 @@ public:
     void SetDefault();
     void Update();
     void DrawZombieSelection(Sexy::Graphics *g);
-    void DrawSkin(Sexy::Graphics *graphics);
-    void DrawHair(Sexy::Graphics *g);
-    void DrawFHair(Sexy::Graphics *g);
-    void DrawTidBit(Sexy::Graphics *g);
-    void DrawEyeWear(Sexy::Graphics *g);
-    void DrawCloth(Sexy::Graphics *g);
-    void DrawAccessory(Sexy::Graphics *g);
-    void DrawHat(Sexy::Graphics *g);
-    void DrawBackground(Sexy::Graphics *g);
-    void DrawPortrait(Sexy::Graphics *g, int x, int y);
-    void DrawPreView(Sexy::Graphics *g);
+    void DrawSkin(Sexy::Graphics *graphics) const;
+    void DrawHair(Sexy::Graphics *g) const;
+    void DrawFHair(Sexy::Graphics *g) const;
+    void DrawTidBit(Sexy::Graphics *g) const;
+    void DrawEyeWear(Sexy::Graphics *g) const;
+    void DrawCloth(Sexy::Graphics *g) const;
+    void DrawAccessory(Sexy::Graphics *g) const;
+    void DrawHat(Sexy::Graphics *g) const;
+    void DrawBackground(Sexy::Graphics *g) const;
+    void DrawPortrait(Sexy::Graphics *g, int x, int y) const;
+    void DrawPreView(Sexy::Graphics *g) const;
     void Draw(Sexy::Graphics *g);
 
     static Sexy::Image *GetTabButtonImageByIndex(int index);

@@ -32,7 +32,7 @@ using namespace Sexy;
 
 namespace {
 long NowMs() {
-    timeval tp;
+    timeval tp{};
     gettimeofday(&tp, nullptr);
     return tp.tv_sec * 1000L + tp.tv_usec / 1000L;
 }
@@ -67,7 +67,7 @@ void AchievementsWidget::_destructor() {
     Widget::_destructor();
 }
 
-void AchievementsWidget::Draw(Graphics *g) {
+void AchievementsWidget::Draw(Graphics *g) const {
     int theY = 0;
     int theDiffY = addonImages.hole->mHeight;
     for (int i = 0; i < ACHIEVEMENT_HOLE_LENGTH; i++) {

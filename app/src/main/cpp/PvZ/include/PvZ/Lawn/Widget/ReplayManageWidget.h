@@ -63,10 +63,10 @@ public:
     void SelectReplayIndex(int index);
     void RefreshReplayList();
     void RequestImportReplay();
-    void RequestExportReplay();
+    void RequestExportReplay() const;
     void DeleteSelectedReplay();
     void PlaySelectedReplay();
-    void StartReplayByIndex(int index);
+    void StartReplayByIndex(int index) const;
 
 protected:
     void _destructor();

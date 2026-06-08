@@ -194,11 +194,11 @@ void Sexy::ScrollWidget::SetPage(int hpage, int vpage, bool animated) {
     // }
 }
 
-int Sexy::ScrollWidget::GetPageHorizontal() {
+int Sexy::ScrollWidget::GetPageHorizontal() const {
     return mCurrentPageHorizontal;
 }
 
-int Sexy::ScrollWidget::GetPageVertical() {
+int Sexy::ScrollWidget::GetPageVertical() const {
     return mCurrentPageVertical;
 }
 

@@ -141,7 +141,7 @@ void Plant::SetSleeping(bool theIsAsleep) {
     old_Plant_SetSleeping(this, theIsAsleep);
 }
 
-int Plant::GetDamageRangeFlags(PlantWeapon thePlantWeapon) {
+int Plant::GetDamageRangeFlags(PlantWeapon thePlantWeapon) const {
     switch (mSeedType) {
         case SeedType::SEED_CACTUS:
             return thePlantWeapon == PlantWeapon::WEAPON_SECONDARY ? 1 : 2;
@@ -217,7 +217,7 @@ void Plant::SpikeRockTakeDamage() {
     }
 }
 
-bool Plant::IsSpiky() {
+bool Plant::IsSpiky() const {
     return mSeedType == SeedType::SEED_SPIKEWEED || mSeedType == SeedType::SEED_SPIKEROCK;
 }
 
@@ -247,7 +247,7 @@ void Plant::UpdateReanimColor() {
     old_Plant_UpdateReanimColor(this);
 }
 
-bool Plant::IsOnBoard() {
+bool Plant::IsOnBoard() const {
     if (!mIsOnBoard)
         return false;
 
@@ -307,7 +307,7 @@ void Plant::Update() {
     old_Plant_Update(this);
 }
 
-bool Plant::NotOnGround() {
+bool Plant::NotOnGround() const {
     if (mSeedType == SeedType::SEED_SQUASH) {
         if (mState == PlantState::STATE_SQUASH_RISING || mState == PlantState::STATE_SQUASH_FALLING || mState == PlantState::STATE_SQUASH_DONE_FALLING)
             return true;
@@ -1852,7 +1852,7 @@ void Plant::BlowAwayFliers(int theX, int theRow) {
     mBoard->mFogBlownCountDown = 4000;
 }
 
-bool Plant::MakesSun() {
+bool Plant::MakesSun() const {
     return mSeedType == SeedType::SEED_SUNFLOWER || mSeedType == SeedType::SEED_TWINSUNFLOWER || mSeedType == SeedType::SEED_SUNSHROOM;
 }
 
@@ -2184,7 +2184,7 @@ bool Plant::IsDisposable(SeedType theSeedType) {
 }
 
 
-ReanimationID Plant::GetPlantReanimationIDByIndex(int index) {
+ReanimationID Plant::GetPlantReanimationIDByIndex(int index) const {
     switch (index) {
         case 0:
             return mBodyReanimID;

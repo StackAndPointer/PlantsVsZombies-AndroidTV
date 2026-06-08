@@ -113,7 +113,7 @@ public:
     void DrawPlants(Sexy::Graphics *g);
     void DrawZombies(Sexy::Graphics *g);
     bool ZombieIsShown(ZombieType theZombieType);
-    bool ZombieHasSilhouette(ZombieType theZombieType);
+    bool ZombieHasSilhouette(ZombieType theZombieType) const;
     void SetupLayoutPlants(Sexy::Graphics *g);
 
     void MouseDown(int x, int y, int theClickCount);

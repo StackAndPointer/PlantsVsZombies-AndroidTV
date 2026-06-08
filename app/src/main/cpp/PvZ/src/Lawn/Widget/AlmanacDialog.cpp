@@ -369,7 +369,7 @@ void AlmanacDialog::DrawPlants(Sexy::Graphics *g) {
     g->PopState();
 }
 
-bool AlmanacDialog::ZombieHasSilhouette(ZombieType theZombieType) {
+bool AlmanacDialog::ZombieHasSilhouette(ZombieType theZombieType) const {
     // 除雪人僵尸以外的其他僵尸，或者雪人僵尸已经可以刷出（已经到达或完成冒险模式二周目 4-10 关卡），则不会显示为剪影
     if (theZombieType != ZombieType::ZOMBIE_YETI || mApp->CanSpawnYetis())
         return false;

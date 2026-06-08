@@ -105,7 +105,7 @@ public:
     void MouseDrag(int x, int y);
     void KeyDown(Sexy::KeyCode theKey);
     void KeyDown_Origin(Sexy::KeyCode theKey);
-    void processClientEvent(const BaseEvent *event);
+    void processClientEvent(const BaseEvent *event) const;
     void processServerEvent(const BaseEvent *event);
 
 protected:

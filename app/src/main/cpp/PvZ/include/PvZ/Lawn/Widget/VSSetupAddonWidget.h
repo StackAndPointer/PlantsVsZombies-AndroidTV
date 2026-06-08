@@ -81,12 +81,12 @@ public:
     void SetDisable(Sexy::Widget *theWidget);
     void ButtonDepress(this VSSetupAddonWidget &self, int theId);
     void CheckboxChecked(int theId, bool checked) override;
-    void Draw(Sexy::Graphics *g);
+    void Draw(Sexy::Graphics *g) const;
     bool GetAddonMode(int theId) const;
     void SetAddonMode(int theId, bool checked, bool saveDetails);
 
 private:
-    void UpdateGlobalBpButtonState();
+    void UpdateGlobalBpButtonState() const;
 
     static inline const Sexy::ButtonListener::VTable sButtonListenerVtable{
         .ButtonDepress = (void *)&VSSetupAddonWidget::ButtonDepress,

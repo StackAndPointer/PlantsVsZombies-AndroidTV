@@ -46,7 +46,7 @@ void Sexy_Graphics_DrawImageColorizedScaled(Sexy::Graphics *g, Sexy::Image *imag
     g->SetColorizeImages(false);
 }
 
-Sexy::Font *Graphics::GetFont() {
+Sexy::Font *Graphics::GetFont() const {
     return mFont;
 }
 
@@ -58,7 +58,7 @@ void Graphics::SetColor(const Color &theColor) {
     mColor = theColor;
 }
 
-const Color &Graphics::GetColor() {
+const Color &Graphics::GetColor() const {
     return mColor;
 }
 
@@ -66,7 +66,7 @@ void Graphics::SetDrawMode(DrawMode theDrawMode) {
     mDrawMode = theDrawMode;
 }
 
-int Graphics::GetDrawMode() {
+int Graphics::GetDrawMode() const {
     return mDrawMode;
 }
 
@@ -74,7 +74,7 @@ void Graphics::SetColorizeImages(bool colorizeImages) {
     mColorizeImages = colorizeImages;
 }
 
-bool Graphics::GetColorizeImages() {
+bool Graphics::GetColorizeImages() const {
     return mColorizeImages;
 }
 
@@ -82,7 +82,7 @@ void Graphics::SetLinearBlend(bool linear) {
     mLinearBlend = linear;
 }
 
-bool Graphics::GetLinearBlend() {
+bool Graphics::GetLinearBlend() const {
     return mLinearBlend;
 }
 

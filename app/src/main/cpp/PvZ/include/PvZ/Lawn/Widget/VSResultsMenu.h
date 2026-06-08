@@ -100,7 +100,7 @@ public:
     void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void ClearPlayerRecords();
     void Update();
-    void OnExit();
+    void OnExit() const;
     void ButtonDepress(int theId);
     void Draw(Sexy::Graphics *g);
     void DrawInfoBox(Sexy::Graphics *a2, int a3);

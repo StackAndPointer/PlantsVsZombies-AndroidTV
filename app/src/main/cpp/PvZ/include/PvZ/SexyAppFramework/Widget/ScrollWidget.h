@@ -139,8 +139,8 @@ public:
     void SetPageHorizontal(int page, bool animated);
     void SetPageVertical(int page, bool animated);
     void SetPage(int hpage, int vpage, bool animated);
-    int GetPageHorizontal();
-    int GetPageVertical();
+    int GetPageHorizontal() const;
+    int GetPageVertical() const;
     void SetBackgroundImage(Image *image);
     void EnableBackgroundFill(bool enable);
     void AddOverlayImage(Image *image, FPoint offset);

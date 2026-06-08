@@ -331,7 +331,7 @@ void Zombie::CheckIfPreyCaught() {
     }
 }
 
-bool Zombie::IsOnBoard() {
+bool Zombie::IsOnBoard() const {
     if (mFromWave == Zombie::ZOMBIE_WAVE_CUTSCENE || mFromWave == Zombie::ZOMBIE_WAVE_UI) {
         return false;
     }
@@ -1081,7 +1081,7 @@ void Zombie::UpdateZombieJackson() {
     }
 }
 
-bool Zombie::CanRevived() {
+bool Zombie::CanRevived() const {
     if (mRevived)
         return false;
 
@@ -3218,7 +3218,7 @@ void Zombie::BossSpawnAttack() {
     mApp->PlayFoley(FoleyType::FOLEY_HYDRAULIC_SHORT);
 }
 
-bool Zombie::IsBouncingPogo() {
+bool Zombie::IsBouncingPogo() const {
     return mZombiePhase >= ZombiePhase::PHASE_POGO_BOUNCING && mZombiePhase <= ZombiePhase::PHASE_POGO_FORWARD_BOUNCE_7;
 }
 
@@ -3295,11 +3295,11 @@ void Zombie::UpdateZombiePogo() {
     }
 }
 
-bool Zombie::IsFlying() {
+bool Zombie::IsFlying() const {
     return mZombiePhase == ZombiePhase::PHASE_BALLOON_FLYING || mZombiePhase == ZombiePhase::PHASE_BALLOON_POPPING;
 }
 
-bool Zombie::IsImpFlying() {
+bool Zombie::IsImpFlying() const {
     return mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP && (mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN || mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_BLOCKED);
 }
 
@@ -3410,7 +3410,7 @@ void Zombie::UpdateZombieBobsled() {
     }
 }
 
-bool Zombie::IsDeadOrDying() {
+bool Zombie::IsDeadOrDying() const {
     return mDead || mZombiePhase == ZombiePhase::PHASE_ZOMBIE_DYING || mZombiePhase == ZombiePhase::PHASE_ZOMBIE_BURNED || mZombiePhase == ZombiePhase::PHASE_ZOMBIE_MOWERED;
 }
 
@@ -3530,7 +3530,7 @@ void Zombie::AddButter() {
     }
 }
 
-bool Zombie::IsWalkingBackwards() {
+bool Zombie::IsWalkingBackwards() const {
     if (mMindControlled)
         return true;
 
@@ -4518,7 +4518,7 @@ void Zombie::DropArm(unsigned int theDamageFlags) {
     old_Zombie_DropArm(this, theDamageFlags);
 }
 
-int Zombie::GetHelmDamageIndex() {
+int Zombie::GetHelmDamageIndex() const {
     if (mHelmHealth < mHelmMaxHealth / 3) {
         return 2;
     }
@@ -4530,7 +4530,7 @@ int Zombie::GetHelmDamageIndex() {
     return 0;
 }
 
-int Zombie::GetBodyDamageIndex() {
+int Zombie::GetBodyDamageIndex() const {
     if (mZombieType == ZombieType::ZOMBIE_BOSS) {
         if (mBodyHealth < mBodyMaxHealth / 2) {
             return 2;
@@ -4554,7 +4554,7 @@ int Zombie::GetBodyDamageIndex() {
     }
 }
 
-int Zombie::GetShieldDamageIndex() {
+int Zombie::GetShieldDamageIndex() const {
     if (mShieldHealth < mShieldMaxHealth / 3) {
         return 2;
     }
@@ -4566,7 +4566,7 @@ int Zombie::GetShieldDamageIndex() {
     return 0;
 }
 
-bool Zombie::IsFireResistant() {
+bool Zombie::IsFireResistant() const {
     return mZombieType == ZombieType::ZOMBIE_CATAPULT || mZombieType == ZombieType::ZOMBIE_ZAMBONI || mShieldType == ShieldType::SHIELDTYPE_DOOR || mShieldType == ShieldType::SHIELDTYPE_LADDER
         || mShieldType == ShieldType::SHIELDTYPE_TRASHCAN;
 }
@@ -5012,7 +5012,7 @@ void Zombie::UpdateReanim() {
     }
 }
 
-bool Zombie::IsImmobilizied() {
+bool Zombie::IsImmobilizied() const {
     return mIceTrapCounter > 0 || mButteredCounter > 0;
 }
 

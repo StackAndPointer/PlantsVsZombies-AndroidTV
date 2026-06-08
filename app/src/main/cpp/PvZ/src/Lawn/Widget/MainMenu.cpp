@@ -348,7 +348,7 @@ void MainMenu::KeyDown(Sexy::KeyCode theKeyCode) {
     old_MainMenu_KeyDown(this, theKeyCode);
 }
 
-void MainMenu::UpdateHouseReanim() {
+void MainMenu::UpdateHouseReanim() const {
     Reanimation *aMainMenuReanim = mApp->ReanimationTryToGet(mMainMenuReanimID);
     if (aMainMenuReanim == nullptr)
         return;

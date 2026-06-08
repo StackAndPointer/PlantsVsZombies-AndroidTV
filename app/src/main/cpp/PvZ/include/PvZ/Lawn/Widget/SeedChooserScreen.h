@@ -183,7 +183,7 @@ public:
     void EnableStartButton(int theIsEnabled);
     void RebuildHelpbar();
     SeedType GetZombieSeedType(int theSeedIndex);
-    int GetSeedPacketIndex(int theSeedIndex);
+    int GetSeedPacketIndex(int theSeedIndex) const;
     void OnPlayerPickedSeed(int thePlayerIndex);
     void ClickedSeedInChooser(ChosenSeed &theChosenSeed, int thePlayerIndex);
     void ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, int thePlayerIndex);
@@ -199,7 +199,7 @@ public:
     DrawPacket(Sexy::Graphics *g, int x, int y, SeedType theSeedType, SeedType theImitaterType, float thePercentDark, int theGrayness, Sexy::Color *theColor, bool theDrawCost, bool theUseCurrentCost);
     void GetSeedPositionInBank(int theIndex, int &x, int &y, int thePlayerIndex);
     void GetSeedPositionInChooser(int theIndex, int &x, int &y);
-    int NumColumns();
+    int NumColumns() const;
     void ShowToolTip(unsigned int thePlayerIndex);
     static SeedType GetZombieIndexBySeedType(SeedType theSeedType);
     int GetNextSeedInDir(int theNumSeed, SeedDir theMoveDirection);

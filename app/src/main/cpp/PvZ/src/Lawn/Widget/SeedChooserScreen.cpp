@@ -423,7 +423,7 @@ SeedType SeedChooserScreen::GetZombieSeedType(int theSeedIndex) {
     return aSeedType < NUM_ZOMBIE_SEEDS_IN_CHOOSER ? SeedType(aSeedType) : SEED_NONE;
 }
 
-int SeedChooserScreen::GetSeedPacketIndex(int theSeedIndex) {
+int SeedChooserScreen::GetSeedPacketIndex(int theSeedIndex) const {
     if (mIsZombieChooser)
         return theSeedIndex - SEED_ZOMBIE_GRAVESTONE;
     else
@@ -1119,7 +1119,7 @@ void SeedChooserScreen::GetSeedPositionInChooser(int theIndex, int &x, int &y) {
     }
 }
 
-int SeedChooserScreen::NumColumns() {
+int SeedChooserScreen::NumColumns() const {
     return mIsZombieChooser ? 5 : 8;
 }
 

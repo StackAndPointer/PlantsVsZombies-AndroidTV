@@ -57,10 +57,10 @@ public:
     int unkMems3;          // 27
     // 大小28个整数
 
-    int GetWidth();
-    int GetHeight();
-    int GetCelWidth();  // returns the width of just 1 cel in a strip of images
-    int GetCelHeight(); // like above but for vertical strips
+    int GetWidth() const;
+    int GetHeight() const;
+    int GetCelWidth() const;  // returns the width of just 1 cel in a strip of images
+    int GetCelHeight() const; // like above but for vertical strips
     void PushTransform(const SexyMatrix3 &theTransform, bool concatenate);
     void PopTransform();
 

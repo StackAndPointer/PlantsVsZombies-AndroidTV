@@ -81,7 +81,7 @@ void InitHookFunction() {
     homura::HookFunc(LawnApp_GetNumPreloadingTasksAddr, &LawnApp::GetNumPreloadingTasks, &old_LawnApp_GetNumPreloadingTasks);
     homura::HookFunc(LawnApp_DoConfirmBackToMainAddr, &LawnApp::DoConfirmBackToMain, nullptr);
     homura::HookFunc(LawnApp_TrophiesNeedForGoldSunflowerAddr, &LawnApp::TrophiesNeedForGoldSunflower, nullptr);
-    homura::HookFunc(LawnApp_GamepadToPlayerIndexAddr, &LawnApp::GamepadToPlayerIndex, &old_LawnApp_GamepadToPlayerIndex);
+    homura::HookFunc(LawnApp_GamepadToPlayerIndexAddr, &LawnApp::GamepadToPlayerIndex, nullptr);
     homura::HookFunc(LawnApp_ShowCreditScreenAddr, &LawnApp::ShowCreditScreen, &old_LawnApp_ShowCreditScreen);
     homura::HookFunc(LawnApp_OnSessionTaskFailedAddr, &LawnApp::OnSessionTaskFailed, nullptr);
     homura::HookFunc(LawnApp_UpdateAppAddr, &LawnApp::UpdateApp, &old_LawnApp_UpDateApp);

@@ -310,7 +310,7 @@ public:
     int GetNumPreloadingTasks();
     void DoConfirmBackToMain(bool theIsSave);
     int TrophiesNeedForGoldSunflower();
-    int GamepadToPlayerIndex(unsigned int thePlayerIndex);
+    int GamepadToPlayerIndex(unsigned int thePlayerIndex) const;
     void ShowCreditScreen(bool theIsFromMainMenu);
     void OnSessionTaskFailed();
     void UpdateApp();

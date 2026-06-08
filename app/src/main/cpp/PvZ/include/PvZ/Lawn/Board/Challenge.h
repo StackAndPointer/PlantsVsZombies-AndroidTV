@@ -198,7 +198,7 @@ public:
 
 
     void Update();
-    void UpdateVSAddPlants();
+    void UpdateVSAddPlants() const;
     bool IsMPSuddenDeath() const;
     int GetUnderPlantCol(int theRow) const;
     void HeavyWeaponFire(float a2, float a3);
@@ -218,7 +218,7 @@ public:
     static int IsZombieSeedType(SeedType theSeedType);
     void IZombieSetPlantFilterEffect(Plant *thePlant, FilterEffect theFilterEffect) const;
     static ZombieType IZombieSeedTypeToZombieType(SeedType theSeedType);
-    void IZombiePlaceZombie(ZombieType theZombieType, int theGridX, int theGridY);
+    void IZombiePlaceZombie(ZombieType theZombieType, int theGridX, int theGridY) const;
     void StartLevel();
     void ScaryPotterOpenPot(GridItem *theScaryPot);
     GridItem *IZombieGetBrainTarget(Zombie *theZombie);

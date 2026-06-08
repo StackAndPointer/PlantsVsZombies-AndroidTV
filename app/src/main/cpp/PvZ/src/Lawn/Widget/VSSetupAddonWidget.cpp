@@ -135,7 +135,7 @@ void VSSetupAddonWidget::SetDisable(Sexy::Widget *theWidget) {
     }
 }
 
-void VSSetupAddonWidget::UpdateGlobalBpButtonState() {
+void VSSetupAddonWidget::UpdateGlobalBpButtonState() const {
     if (mGlobalBpButton == nullptr) {
         return;
     }
@@ -273,7 +273,7 @@ void VSSetupAddonWidget::SetAddonMode(int theId, bool checked, bool saveDetails)
     }
 }
 
-void VSSetupAddonWidget::Draw(Graphics *g) {
+void VSSetupAddonWidget::Draw(Graphics *g) const {
     if (!mDrawString)
         return;
 

@@ -84,7 +84,7 @@ public:
     }
 
     void Update();
-    void Draw(Sexy::Graphics *g);
+    void Draw(Sexy::Graphics *g) const;
     void MouseDown(int x, int y, int theClickCount);
     void MouseUp(int x, int y);
     void MouseDrag(int x, int y);

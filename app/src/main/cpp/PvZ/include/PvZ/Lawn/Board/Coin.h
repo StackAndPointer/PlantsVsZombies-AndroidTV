@@ -100,7 +100,7 @@ public:
     void UpdateFallForAward();
     void UpdateFall();
     bool MouseHitTest(int theX, int theY, int **theHitResult, int thePlayerIndex);
-    bool IsSun();
+    bool IsSun() const;
     void Draw(Sexy::Graphics *g);
     Sexy::Color GetColor();
 };

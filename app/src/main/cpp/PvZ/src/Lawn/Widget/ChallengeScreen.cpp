@@ -729,7 +729,7 @@ void ChallengeScreen::KeyDown_Origin(Sexy::KeyCode theKey) {
     old_ChallengeScreen_KeyDown(this, theKey);
 }
 
-void ChallengeScreen::processClientEvent(const BaseEvent *event) {
+void ChallengeScreen::processClientEvent(const BaseEvent *event) const {
     LOG_DEBUG("TYPE:{}", (int)event->type);
     switch (event->type) {
         case EVENT_CLIENT_CHALLENGESCREEN_SELECT_MODE: {

@@ -351,7 +351,7 @@ void VSResultsMenu::HideReplayButton(bool forceHide) {
     }
 }
 
-void VSResultsMenu::OnExit() {
+void VSResultsMenu::OnExit() const {
     if (mResultsButtonId == VSResultsMenu_Quit_VS) {
         gLawnApp->ShowMainMenuScreen();
         gLawnApp->KillVSResultsScreen();

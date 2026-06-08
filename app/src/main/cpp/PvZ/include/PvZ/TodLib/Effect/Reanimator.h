@@ -292,15 +292,15 @@ public:
 
     void Draw(Sexy::Graphics *g);
     bool DrawTrack(Sexy::Graphics *g, int theTrackIndex, int theRenderGroup, TodTriangleGroup *theTriangleGroup);
-    bool ShouldTriggerTimedEvent(float theEventTime);
-    void AssignRenderGroupToTrack(const char *theTrackName, int theRenderGroup);
+    bool ShouldTriggerTimedEvent(float theEventTime) const;
+    void AssignRenderGroupToTrack(const char *theTrackName, int theRenderGroup) const;
     ReanimatorTrackInstance *GetTrackInstanceByName(const char *theTrackName);
-    int GetZombatarHatTrackIndex();
-    int GetZombatarEyeWearTrackIndex();
+    int GetZombatarHatTrackIndex() const;
+    int GetZombatarEyeWearTrackIndex() const;
     void SetImageOrigin(const char *theTrackName, Sexy::Image *theImage);
     void SetImageDefinition(const char *theTrackName, Sexy::Image *theImage);
     int HideTrack(const char *theTrackName, bool theIsHide);
-    void HideTrackById(int theTrackIndex, bool theIsHide);
+    void HideTrackById(int theTrackIndex, bool theIsHide) const;
     void HideTrackByPrefix(const char *theTrackPrefix, bool theIsHide);
     void SetZombatarReanim();
     void SetZombatarHats(unsigned char theHats, unsigned char theColor);
@@ -309,7 +309,7 @@ public:
     void SetZombatarAccessories(unsigned char theAccessories, unsigned char theColor);
     void SetZombatarEyeWear(unsigned char theEyeWear, unsigned char theColor);
     void SetZombatarTidBits(unsigned char theTidBits, unsigned char theColor);
-    void GetZombatarTrackIndex(int *theIndexArray);
+    void GetZombatarTrackIndex(int *theIndexArray) const;
 
 protected:
     void _constructor() {

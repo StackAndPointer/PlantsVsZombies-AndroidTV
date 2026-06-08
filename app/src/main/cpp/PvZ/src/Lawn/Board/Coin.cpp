@@ -271,7 +271,7 @@ bool Coin::MouseHitTest(int theX, int theY, int **theHitResult, int thePlayerInd
     return old_Coin_MouseHitTest(this, theX, theY, theHitResult, thePlayerIndex);
 }
 
-bool Coin::IsSun() {
+bool Coin::IsSun() const {
     return mType == CoinType::COIN_SUN || mType == CoinType::COIN_SMALLSUN || mType == CoinType::COIN_LARGESUN;
 }
 

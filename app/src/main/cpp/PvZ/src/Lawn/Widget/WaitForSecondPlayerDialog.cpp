@@ -3397,13 +3397,13 @@ void WaitForSecondPlayerDialog::DrawServerP2PStatus(Sexy::Graphics *g, int x, in
     }
 }
 
-bool WaitForSecondPlayerDialog::ServerSendU8(uint8_t b) {
+bool WaitForSecondPlayerDialog::ServerSendU8(uint8_t b) const {
     if (mServerSock < 0)
         return false;
     return SendAll(mServerSock, &b, 1);
 }
 
-bool WaitForSecondPlayerDialog::ServerSendRelayReady(std::uint32_t relayEpoch) {
+bool WaitForSecondPlayerDialog::ServerSendRelayReady(std::uint32_t relayEpoch) const {
     if (mServerSock < 0 || relayEpoch == 0) {
         return false;
     }

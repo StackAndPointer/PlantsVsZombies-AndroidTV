@@ -219,7 +219,7 @@ void ZombatarWidget::DrawZombieSelection(Sexy::Graphics *g) {
     };
 }
 
-void ZombatarWidget::DrawSkin(Sexy::Graphics *graphics) {
+void ZombatarWidget::DrawSkin(Sexy::Graphics *graphics) const {
     for (int i = 0; i < 12; ++i) {
         int theX = 160 + 285 + (i % 9) * 30;
         int theY = 432 + i / 9 * 30;
@@ -235,7 +235,7 @@ void ZombatarWidget::DrawSkin(Sexy::Graphics *graphics) {
     TodDrawStringWrapped(graphics, "[ZOMBATAR_START_TEXT]", rect, font, gColorYellow, DrawStringJustification::DS_ALIGN_CENTER, false);
 }
 
-void ZombatarWidget::DrawHair(Sexy::Graphics *g) {
+void ZombatarWidget::DrawHair(Sexy::Graphics *g) const {
     Color theAlphaColor = {255, 255, 255, 64};
     for (int i = 0; i < 16; ++i) {
         int theX = 160 + 198 + (i % 6) * 73;
@@ -293,7 +293,7 @@ void ZombatarWidget::DrawHair(Sexy::Graphics *g) {
     }
 }
 
-void ZombatarWidget::DrawFHair(Sexy::Graphics *g) {
+void ZombatarWidget::DrawFHair(Sexy::Graphics *g) const {
     if (mSelectedFHairPage == 0) {
         Color theAlphaColor = {255, 255, 255, 64};
         for (int i = 0; i < 17; ++i) {
@@ -396,7 +396,7 @@ void ZombatarWidget::DrawFHair(Sexy::Graphics *g) {
     TodDrawString(g, str, 160 + 410, 525, Sexy::FONT_BRIANNETOD16, gColorBlack, DrawStringJustification::DS_ALIGN_CENTER);
 }
 
-void ZombatarWidget::DrawTidBit(Sexy::Graphics *g) {
+void ZombatarWidget::DrawTidBit(Sexy::Graphics *g) const {
     Color theAlphaColor = {255, 255, 255, 64};
     for (int i = 0; i < 14; ++i) {
         int theX = 160 + 198 + (i % 6) * 73;
@@ -449,7 +449,7 @@ void ZombatarWidget::DrawTidBit(Sexy::Graphics *g) {
     }
 }
 
-void ZombatarWidget::DrawEyeWear(Sexy::Graphics *g) {
+void ZombatarWidget::DrawEyeWear(Sexy::Graphics *g) const {
     Color theAlphaColor = {255, 255, 255, 64};
     for (int i = 0; i < 16; ++i) {
         int theX = 160 + 198 + (i % 6) * 73;
@@ -503,7 +503,7 @@ void ZombatarWidget::DrawEyeWear(Sexy::Graphics *g) {
     }
 }
 
-void ZombatarWidget::DrawCloth(Sexy::Graphics *g) {
+void ZombatarWidget::DrawCloth(Sexy::Graphics *g) const {
     Color theAlphaColor = {255, 255, 255, 64};
     Color theAlphaColor2 = {255, 255, 255, 128};
     for (int i = 0; i < 12; ++i) {
@@ -549,7 +549,7 @@ void ZombatarWidget::DrawCloth(Sexy::Graphics *g) {
     }
 }
 
-void ZombatarWidget::DrawAccessory(Sexy::Graphics *g) {
+void ZombatarWidget::DrawAccessory(Sexy::Graphics *g) const {
     Color theAlphaColor = {255, 255, 255, 64};
     for (int i = 0; i < 15; ++i) {
         int theX = 160 + 198 + (i % 6) * 73;
@@ -596,7 +596,7 @@ void ZombatarWidget::DrawAccessory(Sexy::Graphics *g) {
     }
 }
 
-void ZombatarWidget::DrawHat(Sexy::Graphics *g) {
+void ZombatarWidget::DrawHat(Sexy::Graphics *g) const {
     Color theAlphaColor = {255, 255, 255, 64};
     for (int i = 0; i < 14; ++i) {
         int theX = 160 + 198 + (i % 6) * 73;
@@ -652,7 +652,7 @@ void ZombatarWidget::DrawHat(Sexy::Graphics *g) {
     }
 }
 
-void ZombatarWidget::DrawBackground(Sexy::Graphics *g) {
+void ZombatarWidget::DrawBackground(Sexy::Graphics *g) const {
     Color theAlphaColor = {255, 255, 255, 64};
     if (mSelectedBackgroundPage == 0) {
         for (int i = 0; i < 18; ++i) {
@@ -717,7 +717,7 @@ void ZombatarWidget::DrawBackground(Sexy::Graphics *g) {
     // StringDelete(holder);
 }
 
-void ZombatarWidget::DrawPortrait(Sexy::Graphics *g, int x, int y) {
+void ZombatarWidget::DrawPortrait(Sexy::Graphics *g, int x, int y) const {
     Sexy::Image *backgroundImage = ZombatarWidget::GetBackgroundImageByIndex(mSelectedBackground);
     if (ZombatarWidget::AccessoryIsColorized(ZombatarWidget::BACKGROUND, mSelectedBackground) && mSelectedBackgroundColor != 255) {
         Sexy_Graphics_DrawImageColorized(g, backgroundImage, &gZombatarAccessoryColor2[mSelectedBackgroundColor], x, y);
@@ -864,7 +864,7 @@ void ZombatarWidget::DrawPortrait(Sexy::Graphics *g, int x, int y) {
     }
 }
 
-void ZombatarWidget::DrawPreView(Sexy::Graphics *g) {
+void ZombatarWidget::DrawPreView(Sexy::Graphics *g) const {
     g->DrawImage(Sexy::IMAGE_ALMANAC_GROUNDDAY, 160 + 729, 376);
     float tmpX = g->mTransX;
     float tmpY = g->mTransY;

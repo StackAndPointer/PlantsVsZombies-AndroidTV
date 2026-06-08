@@ -136,7 +136,7 @@ public:
     void DrawFade(Sexy::Graphics *g);
     void Draw(Sexy::Graphics *g);
     void ButtonPress(MainMenuButtonId theSelectedButton);
-    void UpdateHouseReanim();
+    void UpdateHouseReanim() const;
     void EnableButtons();
 
 protected:

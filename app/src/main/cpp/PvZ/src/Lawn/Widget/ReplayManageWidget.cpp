@@ -374,7 +374,7 @@ void ReplayManageWidget::RequestImportReplay() {
     env->DeleteLocalRef(cls);
 }
 
-void ReplayManageWidget::RequestExportReplay() {
+void ReplayManageWidget::RequestExportReplay() const {
     if (mSelectedReplayIndex < 0 || mSelectedReplayIndex >= mScrollContent->mTotalItems) {
         return;
     }
@@ -418,7 +418,7 @@ void ReplayManageWidget::PlaySelectedReplay() {
     StartReplayByIndex(mSelectedReplayIndex);
 }
 
-void ReplayManageWidget::StartReplayByIndex(int index) {
+void ReplayManageWidget::StartReplayByIndex(int index) const {
     if (index < 0 || index >= mScrollContent->mTotalItems) {
         LOG_ERROR("[REPLAY] start failed invalid index={} size={}", index, mScrollContent->mTotalItems);
         return;

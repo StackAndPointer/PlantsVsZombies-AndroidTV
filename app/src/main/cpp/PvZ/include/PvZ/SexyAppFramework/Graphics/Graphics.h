@@ -172,15 +172,15 @@ public:
     }
 
     void SetFont(Font *theFont);
-    Font *GetFont();
+    Font *GetFont() const;
     void SetColor(const Color &theColor);
-    const Color &GetColor();
+    const Color &GetColor() const;
     void SetDrawMode(DrawMode theDrawMode);
-    int GetDrawMode();
+    int GetDrawMode() const;
     void SetColorizeImages(bool colorizeImages);
-    bool GetColorizeImages();
+    bool GetColorizeImages() const;
     void SetLinearBlend(bool linear); // for DrawImageMatrix, DrawImageTransform, etc...
-    bool GetLinearBlend();
+    bool GetLinearBlend() const;
     void Translate(int theTransX, int theTransY);
     void TranslateF(float theTransX, float theTransY);
     void SetScale(float theScaleX, float theScaleY, float theOrigX, float theOrigY);
