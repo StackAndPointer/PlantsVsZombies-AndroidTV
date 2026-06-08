@@ -4915,7 +4915,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             }
         } else {
             requestDrawButterInCursor = false; // 不再绘制黄油
-            if (isCobCannonSelected_2P) { // 如果拿着加农炮，将其放下
+            if (isCobCannonSelected_2P) {      // 如果拿着加农炮，将其放下
                 mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
             }
             if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
