@@ -835,7 +835,7 @@ void Plant::DoRowAreaDamage(int theDamage, unsigned int theDamageFlags) {
                 aGridItem = mBoard->GetGridItemAt(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE, aGridX, mRow);
             }
             if (aGridItem) {
-                aGridItem->TakeDamgae(theDamage, theDamageFlags);
+                aGridItem->TakeDamage(theDamage, theDamageFlags);
                 return;
             }
         }
@@ -858,7 +858,7 @@ void Plant::DoRowAreaDamage(int theDamage, unsigned int theDamageFlags) {
             continue;
         }
 
-        aGridItem->TakeDamgae(theDamage, theDamageFlags);
+        aGridItem->TakeDamage(theDamage, theDamageFlags);
         mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
     }
 }
@@ -2286,7 +2286,7 @@ void Plant::UpdateGraveBuster() {
         } else {
             GridItem *aMound = mBoard->GetMoundAt(mPlantCol, mRow);
             if (aMound) {
-                aMound->TakeDamgae(420, 0U);
+                aMound->TakeDamage(420, 0U);
                 if (aMound->mVSGraveStoneHealth <= 0) {
                     mBoard->mGravesCleared++;
                 }

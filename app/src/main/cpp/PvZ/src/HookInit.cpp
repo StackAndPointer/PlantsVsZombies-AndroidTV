@@ -193,6 +193,7 @@ void InitHookFunction() {
     homura::HookFunc(LawnLoadGameAddr, &LawnLoadGame, &old_LawnLoadGame);
 
     homura::HookFunc(Challenge_UpdateAddr, &Challenge::Update, &old_Challenge_Update);
+    homura::HookFunc(Challenge_IsMPSuddenDeathAddr, &Challenge::IsMPSuddenDeath, nullptr);
     homura::HookFunc(Challenge_ChallengeAddr, &Challenge::_constructor, &old_Challenge_Challenge);
     homura::HookFunc(Challenge_HeavyWeaponFireAddr, &Challenge::HeavyWeaponFire, &old_Challenge_HeavyWeaponFire);
     homura::HookFunc(Challenge_IZombieDrawPlantAddr, &Challenge::IZombieDrawPlant, nullptr);
@@ -266,7 +267,7 @@ void InitHookFunction() {
     homura::HookFunc(GridItem_DrawGraveStoneAddr, &GridItem::DrawGraveStone, nullptr);
     homura::HookFunc(GridItem_AddGraveStoneParticlesAddr, &GridItem::AddGraveStoneParticles, nullptr);
     //    homura::HookFunc(GridItem_DrawMPTargetAddr, &GridItem::DrawMPTarget, &old_GridItem_DrawMPTarget);
-    homura::HookFunc(GridItem_TakeDamgaeAddr, &GridItem::TakeDamgae, &old_GridItem_TakeDamage);
+    homura::HookFunc(GridItem_TakeDamgaeAddr, &GridItem::TakeDamage, &old_GridItem_TakeDamage);
 
 
     homura::HookFunc(AlmanacDialog_AddedToManagerAddr, &AlmanacDialog::AddedToManager, &old_AlmanacDialog_AddedToManager);

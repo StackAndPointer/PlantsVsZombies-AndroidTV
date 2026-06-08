@@ -126,9 +126,6 @@ public:
     void TreeOfWisdomOpenStore() {
         reinterpret_cast<void (*)(Challenge *)>(Challenge_TreeOfWisdomOpenStoreAddr)(this);
     }
-    bool IsMPSuddenDeath() {
-        return reinterpret_cast<bool (*)(Challenge *)>(Challenge_IsMPSuddenDeathAddr)(this);
-    };
     void IZombieScoreBrain(GridItem *theBrain) {
         reinterpret_cast<void (*)(Challenge *, GridItem *)>(Challenge_IZombieScoreBrainAddr)(this, theBrain);
     }
@@ -144,8 +141,20 @@ public:
     void DrawStormNight(Sexy::Graphics *g) {
         reinterpret_cast<void (*)(Challenge *, Sexy::Graphics *)>(Challenge_DrawStormNightAddr)(this, g);
     }
+    void UpdateRain() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_UpdateRainAddr)(this);
+    }
     void UpdateStormyNight() {
         reinterpret_cast<void (*)(Challenge *)>(Challenge_UpdateStormyNightAddr)(this);
+    }
+    void UpdateMPZombieBank() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_UpdateMPZombieBankAddr)(this);
+    }
+    void UpdateBeghouled() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_UpdateBeghouledAddr)(this);
+    }
+    void ScaryPotterUpdate() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_ScaryPotterUpdateAddr)(this);
     }
     int CanTargetZombieWithPortals(Plant *thePlant, Zombie *theZombie) {
         return reinterpret_cast<int (*)(Challenge *, Plant *, Zombie *)>(Challenge_CanTargetZombieWithPortalsAddr)(this, thePlant, theZombie);
@@ -156,6 +165,33 @@ public:
     void ZombieAtePlant(Zombie *theZombie, Plant *thePlant) {
         reinterpret_cast<void (*)(Challenge *, Zombie *, Plant *)>(Challenge_ZombieAtePlantAddr)(this, theZombie, thePlant);
     }
+    void WhackAZombieUpdate() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_WhackAZombieUpdateAddr)(this);
+    }
+    void IZombieUpdate() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_IZombieUpdateAddr)(this);
+    }
+    void UpdateSlotMachine() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_UpdateSlotMachineAddr)(this);
+    }
+    void UpdateRainingSeeds() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_UpdateRainingSeedsAddr)(this);
+    }
+    void UpdatePortalCombat() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_UpdatePortalCombatAddr)(this);
+    }
+    void SquirrelUpdate() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_SquirrelUpdateAddr)(this);
+    }
+    void ZombiquariumUpdate() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_ZombiquariumUpdateAddr)(this);
+    }
+    void TreeOfWisdomUpdate() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_TreeOfWisdomUpdateAddr)(this);
+    }
+    int GetSuddenDeathCount() {
+        return reinterpret_cast<int (*)(Challenge *)>(Challenge_GetSuddenDeathCountAddr)(this);
+    }
     void IZombieMouseDownWithZombie(int x, int y, int theClickCount, int thePlayerIndex) {
         reinterpret_cast<void (*)(Challenge *, int, int, int, int)>(Challenge_IZombieMouseDownWithZombieAddr)(this, x, y, theClickCount, thePlayerIndex);
     }
@@ -163,13 +199,14 @@ public:
 
     void Update();
     void UpdateVSAddPlants();
-    int GetUnderPlantCol(int theRow);
+    bool IsMPSuddenDeath() const;
+    int GetUnderPlantCol(int theRow) const;
     void HeavyWeaponFire(float a2, float a3);
-    void IZombieDrawPlant(Sexy::Graphics *g, Plant *thePlant);
+    void IZombieDrawPlant(Sexy::Graphics *g, Plant *thePlant) const;
     void HeavyWeaponUpdate();
     bool IZombieEatBrain(Zombie *theZombie);
-    void DrawArtChallenge(Sexy::Graphics *g);
-    PlantingReason CanPlantAt(int theGridX, int theGridY, SeedType theSeedType);
+    void DrawArtChallenge(Sexy::Graphics *g) const;
+    PlantingReason CanPlantAt(int theGridX, int theGridY, SeedType theSeedType) const;
     void InitLevel();
     void InitZombieWaves();
     void TreeOfWisdomFertilize();
@@ -179,19 +216,19 @@ public:
     void HeavyWeaponPacketClicked(SeedPacket *theSeedPacket);
     static int IsMPSeedType(SeedType theSeedType);
     static int IsZombieSeedType(SeedType theSeedType);
-    void IZombieSetPlantFilterEffect(Plant *thePlant, FilterEffect theFilterEffect);
+    void IZombieSetPlantFilterEffect(Plant *thePlant, FilterEffect theFilterEffect) const;
     static ZombieType IZombieSeedTypeToZombieType(SeedType theSeedType);
     void IZombiePlaceZombie(ZombieType theZombieType, int theGridX, int theGridY);
     void StartLevel();
     void ScaryPotterOpenPot(GridItem *theScaryPot);
     GridItem *IZombieGetBrainTarget(Zombie *theZombie);
     void IZombieSquishBrain(GridItem *theBrain);
-    int ScaryPotterCountSunInPot(GridItem *theScaryPot);
-    SeedType GetArtChallengeSeed(int theGridX, int theGridY);
-    void InitZombieWavesFromList(ZombieType *theZombieList, int theListLength);
-    void IZombieSetupPlant(Plant *thePlant);
-    void HeavyWeaponReanimUpdate();
-    void MouseDownWhackAZombie(int theX, int theY, int thePlayerIndex);
+    static int ScaryPotterCountSunInPot(GridItem *theScaryPot);
+    SeedType GetArtChallengeSeed(int theGridX, int theGridY) const;
+    void InitZombieWavesFromList(const ZombieType *theZombieList, int theListLength) const;
+    void IZombieSetupPlant(Plant *thePlant) const;
+    void HeavyWeaponReanimUpdate() const;
+    void MouseDownWhackAZombie(int theX, int theY, int thePlayerIndex) const;
     static bool IsMPResourceProducer(SeedType theSeedType);
     static bool IsMPZombieTypeAddInRow(ZombieType theZombieType);
     static bool IsMPZombieTypeCanGoInPool(ZombieType theZombieType);

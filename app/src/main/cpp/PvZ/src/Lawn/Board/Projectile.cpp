@@ -392,7 +392,7 @@ void Projectile::DoSplashDamage(Zombie *theZombie, GridItem *theGridItem) {
     aGridItem = nullptr;
     while (mBoard->IterateGridItems(aGridItem)) {
         if (IsGridItemHitBySplash(aGridItem) && aGridItem == theGridItem) {
-            aGridItem->TakeDamgae(aOriginalDamage, 0U);
+            aGridItem->TakeDamage(aOriginalDamage, 0U);
         }
     }
 }

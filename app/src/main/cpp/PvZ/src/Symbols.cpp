@@ -184,6 +184,7 @@ bool LoadGameMain() {
     Board_TryToSaveGameAddr = libGameMain.GetSymbol("_ZN5Board13TryToSaveGameEv");
     Board_GetSeedTypeInCursorAddr = libGameMain.GetSymbol("_ZN5Board19GetSeedTypeInCursorEi");
     Board_KillAllZombiesInRadiusAddr = libGameMain.GetSymbol("_ZN5Board22KillAllZombiesInRadiusEiiiiibi");
+    Board_CountSunBeingCollectedAddr = libGameMain.GetSymbol("_ZN5Board22CountSunBeingCollectedEi");
     Board_RemoveCutsceneZombiesAddr = libGameMain.GetSymbol("_ZN5Board21RemoveCutsceneZombiesEv");
     Board_CountZombiesOnScreenAddr = libGameMain.GetSymbol("_ZN5Board20CountZombiesOnScreenEv");
     Board_GetPosYBasedOnRowAddr = libGameMain.GetSymbol("_ZN5Board17GetPosYBasedOnRowEfi");
@@ -406,6 +407,7 @@ bool LoadGameMain() {
     Zombie_UpdateZombieJalapenoHeadAddr = libGameMain.GetSymbol("_ZN6Zombie24UpdateZombieJalapenoHeadEv");
     Zombie_UpdateZombieSquashHeadAddr = libGameMain.GetSymbol("_ZN6Zombie22UpdateZombieSquashHeadEv");
     Zombie_UpdateZombieDancerAddr = libGameMain.GetSymbol("_ZN6Zombie18UpdateZombieDancerEv");
+    Zombie_IsBobsledTeamWithSledAddr = libGameMain.GetSymbol("_ZN6Zombie21IsBobsledTeamWithSledEv");
     Zombie_UpdateZombieBobsledAddr = libGameMain.GetSymbol("_ZN6Zombie19UpdateZombieBobsledEv");
     Zombie_UpdateZombieRiseFromGraveAddr = libGameMain.GetSymbol("_ZN6Zombie25UpdateZombieRiseFromGraveEv");
     Zombie_GetZombieRectAddr = libGameMain.GetSymbol("_ZN6Zombie13GetZombieRectEv");
@@ -619,6 +621,7 @@ bool LoadGameMain() {
 
     Challenge_UpdateAddr = libGameMain.GetSymbol("_ZN9Challenge6UpdateEv");
     Challenge_UpdateStormyNightAddr = libGameMain.GetSymbol("_ZN9Challenge17UpdateStormyNightEv");
+    Challenge_UpdateRainAddr = libGameMain.GetSymbol("_ZN9Challenge10UpdateRainEv");
     Challenge_HeavyWeaponFireAddr = libGameMain.GetSymbol("_ZN9Challenge15HeavyWeaponFireEff");
     Challenge_IZombieDrawPlantAddr = libGameMain.GetSymbol("_ZN9Challenge16IZombieDrawPlantEPN4Sexy8GraphicsEP5Plant");
     Challenge_HeavyWeaponUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge17HeavyWeaponUpdateEv");
@@ -641,10 +644,16 @@ bool LoadGameMain() {
     Challenge_LastStandCompletedStageAddr = libGameMain.GetSymbol("_ZN9Challenge23LastStandCompletedStageEv");
     Challenge_TreeOfWisdomFertilizeAddr = libGameMain.GetSymbol("_ZN9Challenge21TreeOfWisdomFertilizeEv");
     Challenge_LastStandUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge14LastStandUpateEv");
+    Challenge_UpdateBeghouledAddr = libGameMain.GetSymbol("_ZN9Challenge15UpdateBeghouledEv");
+    Challenge_ScaryPotterUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge17ScaryPotterUpdateEv");
+    Challenge_IZombieUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge13IZombieUpdateEv");
+    Challenge_UpdateSlotMachineAddr = libGameMain.GetSymbol("_ZN9Challenge17UpdateSlotMachineEv");
+    Challenge_SquirrelUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge14SquirrelUpdateEv");
     Challenge_DrawHeavyWeaponAddr = libGameMain.GetSymbol("_ZN9Challenge15DrawHeavyWeaponEPN4Sexy8GraphicsE");
     Challenge_IsZombieSeedTypeAddr = libGameMain.GetSymbol("_ZN9Challenge16IsZombieSeedTypeE8SeedType");
     Challenge_IsMPSeedTypeAddr = libGameMain.GetSymbol("_ZN9Challenge12IsMPSeedTypeE8SeedType");
     Challenge_IsMPSuddenDeathAddr = libGameMain.GetSymbol("_ZN9Challenge15IsMPSuddenDeathEv");
+    Challenge_GetSuddenDeathCountAddr = libGameMain.GetSymbol("_ZN9Challenge19GetSuddenDeathCountEv");
     Challenge_InitZombieWavesFromListAddr = libGameMain.GetSymbol("_ZN9Challenge23InitZombieWavesFromListEP10ZombieTypei");
     Challenge_IZombieSeedTypeToZombieTypeAddr = libGameMain.GetSymbol("_ZN9Challenge27IZombieSeedTypeToZombieTypeE8SeedType");
     Challenge_ScaryPotterCountSunInPotAddr = libGameMain.GetSymbol("_ZN9Challenge24ScaryPotterCountSunInPotEP8GridItem");
@@ -660,11 +669,17 @@ bool LoadGameMain() {
     Challenge_DrawStormNightAddr = libGameMain.GetSymbol("_ZN9Challenge14DrawStormNightEPN4Sexy8GraphicsE");
     Challenge_CanTargetZombieWithPortalsAddr = libGameMain.GetSymbol("_ZN9Challenge26CanTargetZombieWithPortalsEP5PlantP6Zombie");
     Challenge_ScaryPotterJackExplodeAddr = libGameMain.GetSymbol("_ZN9Challenge22ScaryPotterJackExplodeEii");
+    Challenge_UpdateMPZombieBankAddr = libGameMain.GetSymbol("_ZN9Challenge18UpdateMPZombieBankEv");
+    Challenge_UpdateRainingSeedsAddr = libGameMain.GetSymbol("_ZN9Challenge18UpdateRainingSeedsEv");
     Challenge_UpdateConveyorBeltAddr = libGameMain.GetSymbol("_ZN9Challenge18UpdateConveyorBeltEi");
     Challenge_MouseDownWhackAZombieAddr = libGameMain.GetSymbol("_ZN9Challenge21MouseDownWhackAZombieEiii");
+    Challenge_WhackAZombieUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge18WhackAZombieUpdateEv");
     Challenge_IZombieMouseDownWithZombieAddr = libGameMain.GetSymbol("_ZN9Challenge26IZombieMouseDownWithZombieEiiii");
     Challenge_ZombieAtePlantAddr = libGameMain.GetSymbol("_ZN9Challenge14ZombieAtePlantEP6ZombieP5Plant");
+    Challenge_UpdatePortalCombatAddr = libGameMain.GetSymbol("_ZN9Challenge18UpdatePortalCombatEv");
     Challenge_UpdateMPGraveStonesAddr = libGameMain.GetSymbol("_ZN9Challenge19UpdateMPGraveStonesEv");
+    Challenge_ZombiquariumUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge18ZombiquariumUpdateEv");
+    Challenge_TreeOfWisdomUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge18TreeOfWisdomUpdateEv");
     Challenge_IsMPResourceProducerAddr = libGameMain.GetSymbol("_ZN9Challenge20IsMPResourceProducerE8SeedType");
     Challenge_ISMPSeedSuddenDeathDisabledAddr = libGameMain.GetSymbol("_ZN9Challenge27ISMPSeedSuddenDeathDisabledEi8SeedType");
 

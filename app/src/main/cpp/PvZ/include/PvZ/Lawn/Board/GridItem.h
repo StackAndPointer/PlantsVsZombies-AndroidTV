@@ -105,16 +105,16 @@ public:
     void UpdateScaryPot();
     void UpdateBurialMound();
     void UpdatePole();
-    int GetMoundUpgradeCost();
+    int GetMoundUpgradeCost() const;
     void DrawStinky(Sexy::Graphics *g);
-    void DrawSquirrel(Sexy::Graphics *g);
-    void DrawCrater(Sexy::Graphics *g);
-    void DrawGraveStone(Sexy::Graphics *g);
-    void DrawBurialMound(Sexy::Graphics *g);
-    void AddGraveStoneParticles();
+    void DrawSquirrel(Sexy::Graphics *g) const;
+    void DrawCrater(Sexy::Graphics *g) const;
+    void DrawGraveStone(Sexy::Graphics *g) const;
+    void DrawBurialMound(Sexy::Graphics *g) const;
+    void AddGraveStoneParticles() const;
     void DrawMPTarget(Sexy::Graphics *g);
-    void TakeDamgae(int theDamage, unsigned int theDamageFlags);
-    Sexy::Rect GetItemRect();
+    void TakeDamage(int theDamage, unsigned int theDamageFlags);
+    Sexy::Rect GetItemRect() const;
 
 protected:
     friend void InitHookFunction();

@@ -414,6 +414,9 @@ public:
     void NextWaveComing() {
         reinterpret_cast<void (*)(Board *)>(Board_NextWaveComingAddr)(this);
     }
+    int CountSunBeingCollected(int thePlayerIndex) {
+        return reinterpret_cast<int (*)(Board *, int)>(Board_CountSunBeingCollectedAddr)(this, thePlayerIndex);
+    }
     int GridCellWidth(int theGridX, int theGridY) {
         return reinterpret_cast<int (*)(Board *, int, int)>(Board_GridCellWidthAddr)(this, theGridX, theGridY);
     }
@@ -582,6 +585,9 @@ public:
     bool IsPoolSquare(int theGridX, int theGridY);
     void PutZombieInWave(ZombieType theZombieType, int theWaveNumber, ZombiePicker *theZombiePicker);
     int TotalZombiesHealthInWave(int theWaveIndex);
+    int KillAllZombiesInRadius(int theRow, int theX, int theY, int theRadius, int theRowRange, bool theBurn, int theDamageRangeFlags) {
+        return reinterpret_cast<int (*)(Board *, int, int, int, int, int, bool, int)>(Board_KillAllZombiesInRadiusAddr)(this, theRow, theX, theY, theRadius, theRowRange, theBurn, theDamageRangeFlags);
+    }
     int KillAllZombiesInRadius_Custom(int theRow, int theX, int theY, int theRadius, int theRowRange, bool theBurn, int theDamageRangeFlags);
     void KillAllPlantsInRadius(int theX, int theY, int theRadius);
     void KillAllPlantsInGrid(int theGridX, int theGridY);

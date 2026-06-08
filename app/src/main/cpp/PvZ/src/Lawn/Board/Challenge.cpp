@@ -116,6 +116,18 @@ void Challenge::_destructor() {
     }
 }
 
+bool Challenge::IsMPSuddenDeath() const {
+    if (gLawnApp->mGameMode != GameMode::GAMEMODE_MP_VS || mSuddenDeathStartTick == -1) {
+        return false;
+    }
+
+    int aSuddenDeathCount = (Sexy::GetTickCount() - mSuddenDeathStartTick) / 1000u;
+    if (mBoard->mPaused && mPauseStartTick != -1) {
+        aSuddenDeathCount -= (Sexy::GetTickCount() - mPauseStartTick) / 1000u;
+    }
+    return aSuddenDeathCount > 300;
+}
+
 void Challenge::Update() {
     if (requestJumpSurvivalStage) {
         // 如果玩家按了无尽跳关
@@ -159,25 +171,209 @@ void Challenge::Update() {
         return;
     }
 
-    if (mApp->IsVSMode()) {
-        if (mBoard->mPaused || mApp->mGameScene != SCENE_PLAYING || mBoard->HasLevelAwardDropped())
-            return old_Challenge_Update(this); // 执行旧函数，即可修复游戏不记录mPauseStartTick (SD的暂停Tick) 的BUG，
+    if (mApp->IsStormyNightLevel()) {
+        UpdateStormyNight();
+    }
 
-        if (mBoard->CanAddBobSledMP() && IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode == 1) {
-            mBobSledMPCounter -= 2; // SD模式雪橇车召唤倒计时缩减至 1/3
-            if (mBobSledMPCounter <= 0) {
-                mBobSledMPCounter = 1; // 由于没重写旧函数，此处需要手动将Counter对齐到1，以触发旧函数的(mBobSledMPCounter - 1) == 0判定
+    if (mBoard->mPaused) {
+        if (mSuddenDeathStartTick != -1 && mPauseStartTick == -1) {
+            mPauseStartTick = Sexy::GetTickCount();
+        }
+        if (mApp->mGameMode == GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+            mChallengeGridX = -1;
+            mChallengeGridY = -1;
+        }
+        return;
+    }
+
+    if (mSuddenDeathStartTick != -1 && mPauseStartTick != -1) {
+        int aTickCount = Sexy::GetTickCount();
+        mSuddenDeathStartTick = aTickCount + mSuddenDeathStartTick - mPauseStartTick;
+        mPauseStartTick = -1;
+    }
+
+    if (mApp->mGameMode == GAMEMODE_CHALLENGE_RAINING_SEEDS || mApp->IsStormyNightLevel()) {
+        UpdateRain();
+    }
+
+    if (mApp->mGameScene == SCENE_PLAYING) {
+        if (mApp->mGameMode == GAMEMODE_MULTI_PLAYER) {
+            UpdateMPZombieBank();
+        }
+    } else if (mApp->mGameMode != GAMEMODE_TREE_OF_WISDOM) {
+        return;
+    }
+
+    if (mBoard->HasConveyorBeltSeedBank(0)) {
+        UpdateConveyorBelt(0);
+        if (mApp->IsCoopMode()) {
+            UpdateConveyorBelt(1);
+        }
+    }
+
+    if (mApp->mGameMode == GAMEMODE_CHALLENGE_BEGHOULED || mApp->mGameMode == GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+        UpdateBeghouled();
+    }
+
+    if (mApp->IsScaryPotterLevel()) {
+        ScaryPotterUpdate();
+    }
+
+    if (mApp->IsScaryPotterLevel() || mApp->IsWhackAZombieLevel()) {
+        SeedBank *aSeedBank = mBoard->mSeedBank[0];
+        if (aSeedBank != nullptr && aSeedBank->mY < 0) {
+            int aSeedBankHeight = IMAGE_SEEDBANK != nullptr ? IMAGE_SEEDBANK->mHeight : 0;
+            if (mBoard->CountSunBeingCollected(0) + mBoard->mSunMoney1 > 0 || aSeedBank->mY > -aSeedBankHeight) {
+                aSeedBank->mY += 2;
+                if (aSeedBank->mY > 0) {
+                    aSeedBank->mY = 0;
+                }
+            }
+        }
+    }
+
+    if (mApp->IsWhackAZombieLevel()) {
+        WhackAZombieUpdate();
+    }
+    if (mApp->IsIZombieLevel()) {
+        IZombieUpdate();
+    }
+    if (mApp->IsSlotMachineLevel()) {
+        UpdateSlotMachine();
+    }
+
+    if (aGameMode == GAMEMODE_CHALLENGE_SPEED) {
+        mBoard->UpdateGame();
+    }
+    if (aGameMode == GAMEMODE_CHALLENGE_RAINING_SEEDS) {
+        UpdateRainingSeeds();
+    }
+    if (aGameMode == GAMEMODE_CHALLENGE_PORTAL_COMBAT) {
+        UpdatePortalCombat();
+    }
+
+    if (mApp->IsSquirrelLevel()) {
+        SquirrelUpdate();
+    }
+
+    if (aGameMode == GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
+        ZombiquariumUpdate();
+    }
+    if (aGameMode == GAMEMODE_TREE_OF_WISDOM) {
+        TreeOfWisdomUpdate();
+    }
+
+    if (aGameMode == GAMEMODE_CHALLENGE_ICE) {
+        if (mBoard->mMainCounter == 3000) {
+            mApp->PlayFoley(FOLEY_FLOOP);
+            mApp->PlaySample(Sexy::SOUND_LOSEMUSIC);
+        }
+    } else if (aGameMode == GAMEMODE_MP_VS) {
+        UpdateMPGraveStones();
+
+        bool aHasBobsledWithSled = false;
+        Zombie *aZombie = nullptr;
+        while (mBoard->IterateZombies(aZombie)) {
+            if (aZombie->IsBobsledTeamWithSled()) {
+                aHasBobsledWithSled = true;
+                break;
             }
         }
 
-        UpdateVSAddPlants();
+        if (!aHasBobsledWithSled && mBoard->CanAddBobSledMP()) {
+            int aBobSledStep = (IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode == 1) ? 3 : 1; // 死斗时加速雪橇小队的生成
+            mBobSledMPCounter -= aBobSledStep;
+            if (mBobSledMPCounter <= 0) {
+                mBobSledMPCounter = 6000;
+                mBoard->AddZombie(ZOMBIE_BOBSLED, Zombie::ZOMBIE_WAVE_VS, true);
+            }
+        }
 
+        bool aIsSuddenDeath = IsMPSuddenDeath();
+        if (!mIsMPSuddenDeathNow && aIsSuddenDeath && !mBoard->mLevelAwardSpawned) {
+            mIsMPSuddenDeathNow = true;
+            mBoard->DisplayAdvice(TodStringTranslate("[SUDDEN_DEATH]"), MESSAGE_STYLE_BIG_MIDDLE_FAST, ADVICE_NONE);
+        }
+
+        if (aIsSuddenDeath && Challenge::gVSSuddenDeathMode == 2) {
+            int aSuddenDeathCount = GetSuddenDeathCount();
+            if (aSuddenDeathCount > 0 && aSuddenDeathCount % 15 == 0 && aSuddenDeathCount > 15 * mSuddenDeathBoomCount) {
+                ++mSuddenDeathBoomCount;
+                int aGridX = Sexy::Rand(MAX_GRID_SIZE_X);
+                int aRowCount = mBoard->StageHas6Rows() ? MAX_GRID_SIZE_Y : 5;
+                int aGridY = Sexy::Rand(aRowCount);
+                int aCenterX = mBoard->GridToPixelX(aGridX, aGridY) + mBoard->GridCellWidth(aGridX, aGridY) / 2;
+                int aCenterY = mBoard->GridToPixelY(aGridX, aGridY) + mBoard->GridCellHeight(aGridX, aGridY) / 2;
+
+                mBoard->KillAllZombiesInRadius(aGridY, aCenterX, aCenterY, 1, 1, true, 127);
+                mBoard->KillAllPlantsInRadius(aCenterX, aCenterY, 1);
+                int aRenderOrder = Board::MakeRenderOrder(RENDER_LAYER_PARTICLE, aGridY, 0);
+                mApp->AddTodParticle((float)aCenterX + 20.0f, (float)aCenterY, aRenderOrder, PARTICLE_BLASTMARK);
+                mBoard->ShakeBoard(3, -4);
+
+                GridItem *aGraveStone = mBoard->GetGraveStoneAt(aGridX, aGridY);
+                if (aGraveStone != nullptr && aGraveStone->mGridItemType == GRIDITEM_GRAVESTONE) {
+                    aGraveStone->GridItemDie();
+                }
+
+                GridItem *aCrater = mBoard->AddACrater(aGridX, aGridY);
+                if (aCrater != nullptr) {
+                    aCrater->mGridItemCounter = 18000;
+                }
+                LOG_DEBUG("BOOOOOOM: ({},{})", aGridX, aGridY);
+            }
+        } else if (aIsSuddenDeath && Challenge::gVSSuddenDeathMode == 0) {
+            int aSuddenDeathCount = GetSuddenDeathCount();
+            if (aSuddenDeathCount > 0 && aSuddenDeathCount % 60 == 0) {
+                int aDisableRound = aSuddenDeathCount / 60 - 1;
+                if (aDisableRound >= 0 && aDisableRound < 3 && Sexy::GetTickCount() % 10 == 0) {
+                    for (int aPlayerIndex = 0; aPlayerIndex < 2; ++aPlayerIndex) {
+                        SeedBank *aSeedBank = mBoard->mSeedBank[aPlayerIndex];
+                        if (aSeedBank == nullptr) {
+                            continue;
+                        }
+
+                        SeedType aDisabledSeed = SEED_NONE;
+                        for (int aTryCount = 0; aTryCount < 64 && aDisabledSeed == SEED_NONE; ++aTryCount) {
+                            SeedType aSeedType = aSeedBank->mSeedPackets[Sexy::Rand(10)].mPacketType;
+                            if (aSeedType == SEED_NONE || ISMPSeedSuddenDeathDisabled(aPlayerIndex, aSeedType) || IsMPResourceProducer(aSeedType)) {
+                                continue;
+                            }
+                            aDisabledSeed = aSeedType;
+                        }
+
+                        if (aDisabledSeed != SEED_NONE) {
+                            if (aPlayerIndex == 0) {
+                                mSuddenDeathDisableSeeds1[aDisableRound] = aDisabledSeed;
+                            } else {
+                                mSuddenDeathDisableSeeds2[aDisableRound] = aDisabledSeed;
+                            }
+                            LOG_DEBUG("Disabling Seed Round({}) Chooser({}) Seed({})", aDisableRound, aPlayerIndex, static_cast<int>(aDisabledSeed));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (aGameMode == GAMEMODE_CHALLENGE_LAST_STAND) {
+        LastStandUpdate();
+    }
+    if (aGameMode == GAMEMODE_CHALLENGE_HEAVY_WEAPON) {
+        HeavyWeaponUpdate();
+    }
+
+    if (mApp->IsVSMode()) {
+        UpdateVSAddPlants();
         if (gOpeningEncounter) {
             gOpeningEncounter->Update();
         }
     }
 
-    old_Challenge_Update(this);
+    Reanimation *aChallengeReanim = mApp->ReanimationTryToGet(mReanimChallenge);
+    if (aChallengeReanim != nullptr && aChallengeReanim->mIsAttachment) {
+        aChallengeReanim->Update();
+    }
 }
 
 void Challenge::UpdateVSAddPlants() {
@@ -205,7 +401,7 @@ void Challenge::UpdateVSAddPlants() {
     }
 }
 
-int Challenge::GetUnderPlantCol(int theRow) {
+int Challenge::GetUnderPlantCol(int theRow) const {
     bool aHasBasePlant = false;
     int aTargetCol = -1;
 
@@ -240,7 +436,7 @@ void Challenge::HeavyWeaponFire(float a2, float a3) {
     old_Challenge_HeavyWeaponFire(this, a2, a3);
 }
 
-void Challenge::HeavyWeaponReanimUpdate() {
+void Challenge::HeavyWeaponReanimUpdate() const {
     Reanimation *heavyWeaponReanim = mApp->ReanimationTryToGet(mReanimHeavyWeaponID2);
     if (heavyWeaponReanim == nullptr)
         return;
@@ -264,7 +460,7 @@ void Challenge::HeavyWeaponUpdate() {
     }
 }
 
-void Challenge::IZombieDrawPlant(Sexy::Graphics *g, Plant *thePlant) {
+void Challenge::IZombieDrawPlant(Sexy::Graphics *g, Plant *thePlant) const {
     // 参照PC内测版源代码，在IZ模式绘制植物的函数开始前额外绘制纸板效果。
 
     Reanimation *mBodyReanim = mApp->ReanimationTryToGet(thePlant->mBodyReanimID);
@@ -336,7 +532,7 @@ bool Challenge::IZombieEatBrain(Zombie *theZombie) {
     return true;
 }
 
-void Challenge::DrawArtChallenge(Sexy::Graphics *g) {
+void Challenge::DrawArtChallenge(Sexy::Graphics *g) const {
     // 绘制坚果的两只大眼睛
     g->SetColorizeImages(true);
     Color theColor = {255, 255, 255, 100};
@@ -354,8 +550,8 @@ void Challenge::DrawArtChallenge(Sexy::Graphics *g) {
     }
 
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ART_CHALLENGE_WALLNUT) {
-        Color theColor = {255, 255, 255, 255};
-        g->SetColor(theColor);
+        Color theNewColor = {255, 255, 255, 255};
+        g->SetColor(theNewColor);
         int x1 = mBoard->GridToPixelX(4, 1);
         int y1 = mBoard->GridToPixelY(4, 1);
         g->DrawImage(addonImages.googlyeye, x1, y1);
@@ -367,7 +563,7 @@ void Challenge::DrawArtChallenge(Sexy::Graphics *g) {
     g->SetColorizeImages(false);
 }
 
-PlantingReason Challenge::CanPlantAt(int theGridX, int theGridY, SeedType theSeedType) {
+PlantingReason Challenge::CanPlantAt(int theGridX, int theGridY, SeedType theSeedType) const {
     if (mApp->IsWallnutBowlingLevel()) {
         return theGridX > 2 ? PLANTING_NOT_PASSED_LINE : PLANTING_OK;
     } else if (mApp->IsIZombieLevel()) {
@@ -548,7 +744,7 @@ int Challenge::IsZombieSeedType(SeedType theSeedType) {
     return theSeedType >= SEED_ZOMBIE_GRAVESTONE && theSeedType < NUM_ZOMBIE_SEED_TYPES;
 }
 
-void Challenge::IZombieSetPlantFilterEffect(Plant *thePlant, FilterEffect theFilterEffect) {
+void Challenge::IZombieSetPlantFilterEffect(Plant *thePlant, FilterEffect theFilterEffect) const {
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(thePlant->mBodyReanimID);
     Reanimation *aHeadReanim = mApp->ReanimationTryToGet(thePlant->mHeadReanimID);
     Reanimation *aHeadReanim2 = mApp->ReanimationTryToGet(thePlant->mHeadReanimID2);
@@ -737,7 +933,7 @@ int Challenge::ScaryPotterCountSunInPot(GridItem *theScaryPot) {
     return theScaryPot->mSunCount;
 }
 
-SeedType Challenge::GetArtChallengeSeed(int theGridX, int theGridY) {
+SeedType Challenge::GetArtChallengeSeed(int theGridX, int theGridY) const {
     if (theGridY < 6) {
 
         GameMode aGameMode = mApp->mGameMode;
@@ -751,13 +947,13 @@ SeedType Challenge::GetArtChallengeSeed(int theGridX, int theGridY) {
     return SEED_NONE;
 }
 
-void Challenge::InitZombieWavesFromList(ZombieType *theZombieList, int theListLength) {
+void Challenge::InitZombieWavesFromList(const ZombieType *theZombieList, int theListLength) const {
     for (int i = 0; i < theListLength; i++) {
         mBoard->mZombieAllowed[(int)theZombieList[i]] = true;
     }
 }
 
-void Challenge::IZombieSetupPlant(Plant *thePlant) {
+void Challenge::IZombieSetupPlant(Plant *thePlant) const {
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(thePlant->mBodyReanimID);
     Reanimation *aHeadReanim = mApp->ReanimationTryToGet(thePlant->mHeadReanimID);
     Reanimation *aHeadReanim2 = mApp->ReanimationTryToGet(thePlant->mHeadReanimID2);
@@ -780,7 +976,7 @@ void Challenge::IZombieSetupPlant(Plant *thePlant) {
     thePlant->UpdateReanim();
 }
 
-void Challenge::MouseDownWhackAZombie(int theX, int theY, int thePlayerIndex) {
+void Challenge::MouseDownWhackAZombie(int theX, int theY, int thePlayerIndex) const {
     CursorObject *aCursorObject = (thePlayerIndex == 4) ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
     mApp->ReanimationTryToGet(aCursorObject->mReanimCursorID)->mAnimTime = 0.2f;
     mApp->PlayFoley(FoleyType::FOLEY_SWING);

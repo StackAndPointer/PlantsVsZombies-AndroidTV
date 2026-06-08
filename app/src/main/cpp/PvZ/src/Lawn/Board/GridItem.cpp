@@ -220,7 +220,7 @@ void GridItem::DrawScaryPot(Sexy::Graphics *g) {
             }
             mApp->mReanimatorCache->DrawCachedZombie(aInsideGraphics, theOffsetX + aXPos, theOffsetY + aYPos, mZombieType);
         } else if (mScaryPotType == ScaryPotType::SCARYPOT_SUN) {
-            int aSuns = mBoard->mChallenge->ScaryPotterCountSunInPot(this);
+            int aSuns = Challenge::ScaryPotterCountSunInPot(this);
 
             Reanimation aReanim{};
             aReanim.ReanimationInitializeType(0.0, 0.0, ReanimationType::REANIM_SUN);
@@ -245,7 +245,10 @@ void GridItem::DrawScaryPot(Sexy::Graphics *g) {
                         aOffsetY -= 5.0f;
                         break;
                     case 4:
-                        aOffsetX += 5.0f; // aOffsetY -= 15.0f;          break;
+                        aOffsetX += 5.0f; // aOffsetY -= 15.0f;
+                        break;
+                    default:
+                        break;
                 }
 
                 aReanim.SetPosition(aXPos + aOffsetX, aYPos + aOffsetY);
@@ -480,7 +483,7 @@ void GridItem::UpdatePole() {
     }
 }
 
-int GridItem::GetMoundUpgradeCost() {
+int GridItem::GetMoundUpgradeCost() const {
     int aCost = 0;
     switch (mMoundLevel) {
         case 0:
@@ -531,7 +534,7 @@ void GridItem::DrawStinky(Sexy::Graphics *g) {
     old_GridItem_DrawStinky(this, g);
 }
 
-void GridItem::DrawSquirrel(Sexy::Graphics *g) {
+void GridItem::DrawSquirrel(Sexy::Graphics *g) const {
     // 绘制松鼠
     float aXPos = mBoard->GridToPixelX(mGridX, mGridY);
     float aYPos = mBoard->GridToPixelY(mGridX, mGridY);
@@ -558,7 +561,7 @@ void GridItem::DrawSquirrel(Sexy::Graphics *g) {
     g->DrawImage(addonImages.squirrel, aXPos, aYPos);
 }
 
-void GridItem::DrawCrater(Sexy::Graphics *g) {
+void GridItem::DrawCrater(Sexy::Graphics *g) const {
     // 绘制屋顶月夜弹坑
     float aXPos = mBoard->GridToPixelX(mGridX, mGridY) - 8.0f;
     float aYPos = mBoard->GridToPixelY(mGridX, mGridY) + 40.0f;
@@ -621,7 +624,7 @@ void GridItem::DrawCrater(Sexy::Graphics *g) {
     g->SetColorizeImages(false);
 }
 
-void GridItem::DrawGraveStone(Graphics *g) {
+void GridItem::DrawGraveStone(Graphics *g) const {
     if (mGridItemCounter <= 0)
         return;
 
@@ -700,7 +703,7 @@ void GridItem::DrawGraveStone(Graphics *g) {
     }
 }
 
-void GridItem::DrawBurialMound(Sexy::Graphics *g) {
+void GridItem::DrawBurialMound(Sexy::Graphics *g) const {
     if (mGridItemCounter <= 0)
         return;
 
@@ -770,7 +773,7 @@ void GridItem::DrawBurialMound(Sexy::Graphics *g) {
     }
 }
 
-void GridItem::AddGraveStoneParticles() {
+void GridItem::AddGraveStoneParticles() const {
     if (mBoard->StageHasRoof())
         return;
 
@@ -820,14 +823,14 @@ void GridItem::DrawMPTarget(Graphics *g) {
     old_GridItem_DrawMPTarget(this, g);
 }
 
-Rect GridItem::GetItemRect() {
+Rect GridItem::GetItemRect() const {
     if (mGridItemType == GridItemType::GRIDITEM_POLE) {
-        return Rect(int(mPosX), int(mPosY), 30, 160);
+        return {int(mPosX), int(mPosY), 30, 160};
     }
-    return Rect(mBoard->GridToPixelX(mGridX, mGridY), mBoard->GridToPixelY(mGridX, mGridY), 63, 80);
+    return {mBoard->GridToPixelX(mGridX, mGridY), mBoard->GridToPixelY(mGridX, mGridY), 63, 80};
 }
 
-void GridItem::TakeDamgae(int theDamage, unsigned int theDamageFlags) {
+void GridItem::TakeDamage(int theDamage, unsigned int theDamageFlags) {
     if (!mApp->IsVSMode()) {
         return;
     }
