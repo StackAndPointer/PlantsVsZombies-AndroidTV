@@ -1282,7 +1282,7 @@ void Zombie::UpdateZombiePolevaulter() {
             mHasObject = false;
 
             if (gTcpClientSocket >= 0) {
-                U16UNI32_Event event;
+                U16UNI32_Event event{};
                 event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_POLEVAULTER_IN_VAULT;
                 event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
                 event.data2.i16x2.i16_1 = int16_t(mX);
@@ -1299,7 +1299,7 @@ void Zombie::UpdateZombiePolevaulter() {
         Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
 
         bool aJumpEnds = false;
-        if (!gTcpConnected) {
+        if (!gTcpConnected && !gIsReplayMode) {
             if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
                 Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_VAULT);
                 if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
@@ -1690,7 +1690,7 @@ void Zombie::UpdateGigaPolevaulter() {
         Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
 
         bool aJumpEnds = false;
-        if (!gTcpConnected) {
+        if (!gTcpConnected && !gIsReplayMode) {
             if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
                 Plant *aPlant = findNearestVaultPlant();
                 if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
