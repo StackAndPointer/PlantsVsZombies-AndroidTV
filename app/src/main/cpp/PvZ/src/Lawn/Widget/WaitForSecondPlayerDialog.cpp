@@ -71,6 +71,7 @@ constexpr int kMode3StartTimeoutTicks = 1000; // ~10s
 constexpr int kSpectatorsTextX = 140;
 constexpr int kSpectatorsTextWidth = 520;
 constexpr int kSpectatorsTextHeight = 120;
+constexpr int kMaxSpectatorNamesShown = 6;
 constexpr const char *kOfficialServer1Addr = "8.163.89.131:26667";
 constexpr const char *kOfficialServer2Addr = "39.107.81.44:26667";
 
@@ -453,7 +454,7 @@ static bool Mode3CanSwitchGuestToSpectator(const WaitForSecondPlayerDialog *dial
     if (!dialog->mServerJoinedSpectateAllowed) {
         return false;
     }
-    return dialog->mServerSpectatorCount < 6;
+    return true;
 }
 
 static bool Mode3CanSwitchSpectatorToGuest(const WaitForSecondPlayerDialog *dialog) {
@@ -675,6 +676,26 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
         mLawnYesButton->SetLabel("[ASK_START]");
         mLawnYesButton->mDisabled = (!mServerConnected || mServerConnecting || mServerGameStarting);
     }
+}
+
+static pvzstl::string BuildSpectatorsText(const WaitForSecondPlayerDialog *dialog) {
+    pvzstl::string spectatorsText = StrFormat(TodStringTranslate("[SPECTATORS_NUM]").c_str(), dialog->mServerSpectatorCount);
+    if (dialog->mServerSpectatorCount <= 0) {
+        spectatorsText += "-";
+        return spectatorsText;
+    }
+
+    for (int i = 0; i < dialog->mServerSpectatorCount && i < kMaxSpectatorNamesShown; ++i) {
+        if (i > 0) {
+            spectatorsText += ", ";
+        }
+        const char *name = dialog->mServerSpectatorNames[i][0] != '\0' ? dialog->mServerSpectatorNames[i] : "-";
+        spectatorsText += name;
+    }
+    if (dialog->mServerSpectatorCount > kMaxSpectatorNamesShown) {
+        spectatorsText += ", ...";
+    }
+    return spectatorsText;
 }
 
 void WaitForSecondPlayerDialog::ShowTextInput(const char *titleKey, const char *hintKey) {
@@ -1084,18 +1105,7 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                     TodDrawString(g, "[CLIENT_WANT_START]", 400, wantStartY, g->GetFont(), Sexy::Color(0, 128, 255, 255), DS_ALIGN_CENTER);
                 }
                 if (showSpectators) {
-                    pvzstl::string spectatorsText = StrFormat(TodStringTranslate("[SPECTATORS_NUM]").c_str(), mServerSpectatorCount);
-                    if (mServerSpectatorCount <= 0) {
-                        spectatorsText += "-";
-                    } else {
-                        for (int i = 0; i < mServerSpectatorCount && i < 6; ++i) {
-                            if (i > 0) {
-                                spectatorsText += ", ";
-                            }
-                            const char *name = mServerSpectatorNames[i][0] != '\0' ? mServerSpectatorNames[i] : "-";
-                            spectatorsText += name;
-                        }
-                    }
+                    pvzstl::string spectatorsText = BuildSpectatorsText(this);
                     TodDrawStringWrapped(g, spectatorsText, Rect(kSpectatorsTextX, spectatorsY, kSpectatorsTextWidth, kSpectatorsTextHeight), g->GetFont(), g->GetColor(), DS_ALIGN_CENTER, false);
                 }
             } else if (mServerJoined) {
@@ -1126,18 +1136,7 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                     TodDrawString(g, "[ASKED_WANT_START]", 400, wantStartY, g->GetFont(), Sexy::Color(0, 128, 255, 255), DS_ALIGN_CENTER);
                 }
                 if (showSpectators) {
-                    pvzstl::string spectatorsText = StrFormat(TodStringTranslate("[SPECTATORS_NUM]").c_str(), mServerSpectatorCount);
-                    if (mServerSpectatorCount <= 0) {
-                        spectatorsText += "-";
-                    } else {
-                        for (int i = 0; i < mServerSpectatorCount && i < 6; ++i) {
-                            if (i > 0) {
-                                spectatorsText += ", ";
-                            }
-                            const char *name = mServerSpectatorNames[i][0] != '\0' ? mServerSpectatorNames[i] : "-";
-                            spectatorsText += name;
-                        }
-                    }
+                    pvzstl::string spectatorsText = BuildSpectatorsText(this);
                     TodDrawStringWrapped(g, spectatorsText, Rect(kSpectatorsTextX, spectatorsY, kSpectatorsTextWidth, kSpectatorsTextHeight), g->GetFont(), g->GetColor(), DS_ALIGN_CENTER, false);
                 }
             } else if (mServerSpectating) {
@@ -1148,18 +1147,7 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                 TodDrawString(g, TodStringTranslate("[SPECTATING]"), 400, 200, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
                 TodDrawString(g, StrFormat("%s: %s", TodStringTranslate("[HOST]").c_str(), hostName), 400, infoStartY, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
                 TodDrawString(g, StrFormat("%s: %s", TodStringTranslate("[CLIENT]").c_str(), guestName), 400, infoStartY + infoLineStep, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
-                pvzstl::string spectatorsText = StrFormat(TodStringTranslate("[SPECTATORS_NUM]").c_str(), mServerSpectatorCount);
-                if (mServerSpectatorCount <= 0) {
-                    spectatorsText += "-";
-                } else {
-                    for (int i = 0; i < mServerSpectatorCount && i < 6; ++i) {
-                        if (i > 0) {
-                            spectatorsText += ", ";
-                        }
-                        const char *name = mServerSpectatorNames[i][0] != '\0' ? mServerSpectatorNames[i] : "-";
-                        spectatorsText += name;
-                    }
-                }
+                pvzstl::string spectatorsText = BuildSpectatorsText(this);
                 TodDrawStringWrapped(
                     g, spectatorsText, Rect(kSpectatorsTextX, infoStartY + infoLineStep * 2 - 20, kSpectatorsTextWidth, kSpectatorsTextHeight), g->GetFont(), g->GetColor(), DS_ALIGN_CENTER, false);
             } else {
@@ -1346,10 +1334,44 @@ void WaitForSecondPlayerDialog::Update() {
         if (mServerGameStarting) {
             mServerGameStartingTick++;
             if (mServerGameStartingTick >= kMode3StartTimeoutTicks) {
+                const bool wasHosting = mServerHosting;
+                const bool wasJoinedOrSpectating = mServerJoined || mServerSpectating;
                 mServerGameStarting = false;
                 mServerGameStartingTick = 0;
                 mServerP2PStatusText = "P2P: start timeout";
                 mServerStatusText = TodStringTranslate("[STATUS_START_TIMEOUT]");
+
+                // Start timeout always forces local exit from the current room
+                // and returns MODE3 back to the room list.
+                if (wasHosting) {
+                    ServerSendU8(0x06); // EXIT_ROOM
+                    ExitRoom();
+                } else if (wasJoinedOrSpectating) {
+                    ServerSendU8(0x07); // LEAVE_ROOM
+                    LeaveRoom();
+                }
+
+                mServerHosting = false;
+                mServerJoined = false;
+                mServerSpectating = false;
+                gIsServerModeSpectator = false;
+                mServerCreatePending = false;
+                mServerHostProbeDone = false;
+                mServerGuestProbeDone = false;
+                mServerHostHasGuest = false;
+                mServerHostSpectateAllowed = false;
+                mServerJoinedSpectateAllowed = false;
+                mServerHostForceRelay = false;
+                mServerClientWantStart = false;
+                mServerAskedWantStart = false;
+                mServerHostedRoomId = 0;
+                mServerJoinedRoomId = 0;
+                mServerHostedRoomName[0] = '\0';
+                mServerJoinedRoomName[0] = '\0';
+                mServerSpectatorCount = 0;
+                std::memset(mServerSpectatorNames, 0, sizeof(mServerSpectatorNames));
+                gSecondPlayerName[0] = '\0';
+                gServerHostName[0] = '\0';
                 ServerResetP2PState(true);
                 if (mServerConnected) {
                     ServerSendQuery();
@@ -2572,9 +2594,9 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                     if (sameRoom) {
                         int cnt = payload[4] & 0xFF;
                         int off = 5;
-                        mServerSpectatorCount = 0;
+                        mServerSpectatorCount = cnt;
                         std::memset(mServerSpectatorNames, 0, sizeof(mServerSpectatorNames));
-                        for (int i = 0; i < cnt && i < 6 && off < len; ++i) {
+                        for (int i = 0; i < cnt && i < kMaxSpectatorNamesShown && off < len; ++i) {
                             int nlen = payload[off++] & 0xFF;
                             if (off + nlen > len) {
                                 break;
@@ -2588,7 +2610,6 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                             }
                             mServerSpectatorNames[i][copyLen] = '\0';
                             off += nlen;
-                            mServerSpectatorCount++;
                         }
                     }
                 }
