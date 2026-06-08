@@ -93,7 +93,7 @@ enum TouchPlayerIndex {
 inline TouchPlayerIndex gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_NONE;
 inline TouchPlayerIndex gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_NONE;
 
-inline bool keyboardMode;
+inline bool gKeyboardMode;
 
 inline LeaderboardsWidget *gMainMenuLeaderboardsWidget;
 inline ZombatarWidget *gMainMenuZombatarWidget;

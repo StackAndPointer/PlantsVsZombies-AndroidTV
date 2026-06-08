@@ -67,6 +67,22 @@ void HookFunc(void *symbol, R (T::*newFunc)(Args...), std::type_identity_t<R (**
     details::HookFuncImpl(symbol, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
 }
 
+
+/**
+ * @brief 替换 const 非静态成员函数.
+ *
+ * @tparam R 目标函数的返回值类型.
+ * @tparam T 目标函数所属类的类型.
+ * @tparam Args 目标函数的参数类型.
+ *
+ * @param [in] symbol 通过 dlsym 函数获取的函数符号地址.
+ * @param [in] newFunc 用于替换的新函数.
+ * @param [out] oldFuncAddr 一个函数指针的地址, 用于保留旧函数. (可传入 nullptr 字面量, 代表不保留)
+ */
+template <typename R, typename T, typename... Args>
+void HookFunc(void *symbol, R (T::*newFunc)(Args...) const, std::type_identity_t<R (**)(const T *, Args...)> oldFuncAddr) {
+    details::HookFuncImpl(symbol, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
+}
 /**
  * @brief 替换虚函数.
  *

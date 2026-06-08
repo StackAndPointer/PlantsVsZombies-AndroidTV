@@ -38,7 +38,7 @@ void Coin::CoinInitialize(int theX, int theY, CoinType theCoinType, CoinMotion t
 void Coin::GamepadCursorOver(int thePlayerIndex) {
     //*((uint32_t *)a + 29) == 16 则意味着是砸罐子种子雨老虎机中的植物卡片
 
-    if (!keyboardMode && mType == CoinType::COIN_USABLE_SEED_PACKET) {
+    if (!gKeyboardMode && mType == CoinType::COIN_USABLE_SEED_PACKET) {
         return;
     }
 

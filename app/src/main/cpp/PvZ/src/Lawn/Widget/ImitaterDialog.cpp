@@ -30,7 +30,7 @@ void ImitaterDialog_ImitaterDialog(ImitaterDialog *instance, int playerIndex) {
 
 void ImitaterDialog_ShowToolTip(ImitaterDialog *instance) {
     // 在触控模式下不显示ToolTip
-    if (!keyboardMode)
+    if (!gKeyboardMode)
         return;
     old_ImitaterDialog_ShowToolTip(instance);
 }

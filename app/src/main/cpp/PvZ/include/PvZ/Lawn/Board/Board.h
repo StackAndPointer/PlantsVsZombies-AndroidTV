@@ -518,7 +518,7 @@ public:
     void SpawnZombiesFromGraves();
     void SpawnZombieWave();
     void DrawProgressMeter(Sexy::Graphics *g, int theX, int theY);
-    int GetNumWavesPerFlag();
+    int GetNumWavesPerFlag() const;
     bool IsLevelDataLoaded();
     bool NeedSaveGame();
     void UpdateFwoosh();
@@ -533,13 +533,13 @@ public:
     int GetCurrentPlantCost(SeedType theSeedType, SeedType theImitaterType);
     void Pause(bool thePause);
     void AddSecondPlayer(int a2);
-    bool IsLastStandFinalStage();
+    bool IsLastStandFinalStage() const;
     bool MouseHitTest(int x, int y, HitResult *theHitResult, bool thePlayerIndex);
     void DrawShovel(Sexy::Graphics *g);
-    bool StageIsNight();
-    bool StageHasPool();
-    bool StageHasRoof();
-    bool StageHas6Rows();
+    bool StageIsNight() const;
+    bool StageHasPool() const;
+    bool StageHasRoof() const;
+    bool StageHas6Rows() const;
     Zombie *AddZombieInRow(ZombieType theZombieType, int theRow, int theFromWave, bool theIsRustle);
     Zombie *AddZombieInRow_Origin(ZombieType theZombieType, int theRow, int theFromWave, bool theIsRustle);
     Zombie *AddZombie(ZombieType theZombieType, int theFromWave, bool theIsRustle);
@@ -559,7 +559,7 @@ public:
     void ShovelDown();
     int PixelToGridXKeepOnBoard(int theX, int theY);
     int PixelToGridYKeepOnBoard(int theX, int theY);
-    int GridToPixelX(int theGridX, int theGridY);
+    int GridToPixelX(int theGridX, int theGridY) const;
     int GridToPixelY(int theGridX, int theGridY);
     static int MakeRenderOrder(RenderLayer theRenderLayer, int theRow, int theLayerOffset);
     int GetLiveGargantuarCount();
@@ -570,10 +570,10 @@ public:
     void DoPlantingAchievementCheck(SeedType theSeedType);
     bool GrantAchievement(AchievementType theAchievementId, bool theIsShow);
     int CountPlantByType(SeedType theSeedType);
-    bool ZenGardenItemNumIsZero(CursorType theCursorType);
+    [[nodiscard]] bool ZenGardenItemNumIsZero(CursorType theCursorType) const;
     int GetSeedBankExtraWidth();
     Sexy::Rect GetShovelButtonRect();
-    bool PlantUsesAcceleratedPricing(SeedType theSeedType);
+    [[nodiscard]] bool PlantUsesAcceleratedPricing(SeedType theSeedType) const;
     bool IsPlantInCursor();
     void RemoveAllPlants();
     void RemoveAllGridItems();
@@ -612,7 +612,7 @@ public:
     GridItem *AddAMound(int theGridX, int theGridY, int theMoundLevel);
     GridItem *AddAPole(int theX, int theY, int theGridY);
     GridItem *AddAPole_Origin(int theX, int theY, int theGridY);
-    ZombieType PickGraveRisingZombieTypeMP(int theMoundLevel);
+    [[nodiscard]] ZombieType PickGraveRisingZombieTypeMP(int theMoundLevel) const;
     static bool IsZombieTypeSpawnedOnly(ZombieType theZombieType);
 
     void MouseMove(int x, int y);
@@ -640,7 +640,7 @@ protected:
     void _destructor();
     void ClientMouseDownLocal(int x, int y, bool isInBank);
     void ClientMouseDragLocal(int x, int y);
-    void ClientMouseUpLocal(int x, int y);
+    static void ClientMouseUpLocal(int x, int y);
 };
 
 int GetRectOverlap(const Sexy::Rect &rect1, const Sexy::Rect &rect2);
@@ -684,7 +684,7 @@ inline int choiceSeedPacketIndex;
 inline SeedType choiceSeedType = SeedType::SEED_NONE;
 inline bool isImitaterSeed;
 inline bool setSeedPacket;
-inline Sexy::Rect mTouchVSShovelRect = {0, 90, 34, 56};
+inline Sexy::Rect gTouchVSShovelRect = {0, 90, 34, 56};
 
 inline bool hideCoverLayer;
 inline bool infiniteSun; // 无限阳光

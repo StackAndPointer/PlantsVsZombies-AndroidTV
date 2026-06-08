@@ -66,7 +66,7 @@ void ResetNetDelayState() {
 
 void TickNetDelayAwaitingPong() {
     if (gNetPingAwaitingPong) {
-        const uint16_t elapsedTicks = static_cast<uint16_t>(gNetPingNowTick - gNetPingLatestSentTick);
+        const auto elapsedTicks = static_cast<uint16_t>(gNetPingNowTick - gNetPingLatestSentTick);
         if (elapsedTicks >= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
             gNetDelayNow = kNetPingTimeoutTicks;
             gNetPingHasValidDelay = true;
@@ -76,7 +76,7 @@ void TickNetDelayAwaitingPong() {
     }
 
     if (gNetPingHasValidDelay) {
-        const uint16_t elapsedTicks = static_cast<uint16_t>(gNetPingNowTick - gNetPingLastPongTick);
+        const auto elapsedTicks = static_cast<uint16_t>(gNetPingNowTick - gNetPingLastPongTick);
         if (elapsedTicks >= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
             gNetPingHasValidDelay = false;
             gNetDelayNow = 0;
@@ -95,7 +95,7 @@ void SendPeriodicNetPing() {
         gNetPingLatestSentTick = gNetPingNowTick;
         gNetPingAwaitingPong = true;
     } else {
-        const uint16_t elapsedTicks = static_cast<uint16_t>(gNetPingNowTick - gNetPingLatestSentTick);
+        const auto elapsedTicks = static_cast<uint16_t>(gNetPingNowTick - gNetPingLatestSentTick);
         const uint16_t clampedElapsed = elapsedTicks > static_cast<uint16_t>(kNetPingTimeoutTicks) ? static_cast<uint16_t>(kNetPingTimeoutTicks) : elapsedTicks;
         if (!gNetPingHasValidDelay || clampedElapsed > static_cast<uint16_t>(gNetDelayNow)) {
             gNetDelayNow = static_cast<int>(clampedElapsed);
@@ -203,9 +203,7 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_REANIM_ZOMBIE_JACKSON_OUTERARM_HAND = GetImageByFileName("reanim/zombie_jackson_outerarm_hand");
     addonImages.IMAGE_REANIM_ZOMBIE_DANCER_INNERARM_HAND = GetImageByFileName("reanim/zombie_dancer_innerarm_hand");
     addonImages.IMAGE_SHOVELBANK_VERTICAL = GetImageByFileName("addonFiles/images/shovel_bank_vertical");
-    ;
     addonImages.IMAGE_SHOVEL_VERTICAL = GetImageByFileName("addonFiles/images/shovel_vertical");
-    ;
 
     //    int xClip = 130;
     //    int yClip = 130;
@@ -337,7 +335,7 @@ void LawnApp::DoNewOptions(bool theFromGameSelector, unsigned int a3) {
     }
 }
 
-bool LawnApp::Is3DAccelerated() {
+bool LawnApp::Is3DAccelerated() const {
     // 修复关闭3D加速后MV错位
     return mNewIs3DAccelerated || (mCreditScreen != nullptr);
 }
@@ -391,7 +389,7 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
         } else if (event->type == EVENT_SERVER_PONG) {
             auto *eventPong = static_cast<const U16_Event *>(event);
             if (gNetPingAwaitingPong && eventPong->data == gNetPingLatestSentTick) {
-                const uint16_t rttTicks = static_cast<uint16_t>(gNetPingNowTick - eventPong->data);
+                const auto rttTicks = static_cast<uint16_t>(gNetPingNowTick - eventPong->data);
                 if (rttTicks <= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
                     gNetDelayNow = static_cast<int>(rttTicks);
                     gNetPingHasValidDelay = true;
@@ -452,7 +450,7 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
         } else if (event->type == EVENT_SERVER_PONG) {
             auto *eventPong = static_cast<const U16_Event *>(event);
             if (gNetPingAwaitingPong && eventPong->data == gNetPingLatestSentTick) {
-                const uint16_t rttTicks = static_cast<uint16_t>(gNetPingNowTick - eventPong->data);
+                const auto rttTicks = static_cast<uint16_t>(gNetPingNowTick - eventPong->data);
                 if (rttTicks <= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
                     gNetDelayNow = static_cast<int>(rttTicks);
                     gNetPingHasValidDelay = true;
@@ -970,7 +968,7 @@ int LawnApp::TrophiesNeedForGoldSunflower() {
         - GetNumTrophies(ChallengePage::CHALLENGE_PAGE_PUZZLE);
 }
 
-void LawnApp::SetFoleyVolume(FoleyType theFoleyType, double theVolume) {
+void LawnApp::SetFoleyVolume(FoleyType theFoleyType, double theVolume) const {
     FoleyTypeData *foleyTypeData = &mSoundSystem->mTypeData[theFoleyType];
     for (FoleyInstance &foleyInstance : foleyTypeData->mFoleyInstances) {
         if (foleyInstance.mRefCount != 0) {
@@ -1042,7 +1040,7 @@ void LawnApp::SetHouseReanim(Reanimation *theHouseAnim) {
     theHouseAnim->HideTrackByPrefix("achievement", true);
 }
 
-bool LawnApp::IsIZombieLevel() {
+bool LawnApp::IsIZombieLevel() const {
     if (mBoard == nullptr)
         return false;
 
@@ -1052,7 +1050,7 @@ bool LawnApp::IsIZombieLevel() {
         || mGameMode == GameMode::GAMEMODE_PUZZLE_I_ZOMBIE_ENDLESS;
 }
 
-bool LawnApp::IsWallnutBowlingLevel() {
+bool LawnApp::IsWallnutBowlingLevel() const {
     if (mBoard == nullptr)
         return false;
 
@@ -1062,11 +1060,11 @@ bool LawnApp::IsWallnutBowlingLevel() {
     return IsAdventureMode() && mPlayerInfo->mLevel == 5;
 }
 
-bool LawnApp::IsAdventureMode() {
+bool LawnApp::IsAdventureMode() const {
     return mGameMode == GameMode::GAMEMODE_ADVENTURE;
 }
 
-bool LawnApp::IsPuzzleMode() {
+bool LawnApp::IsPuzzleMode() const {
     return mGameMode >= GameMode::GAMEMODE_SCARY_POTTER_1 && mGameMode <= GameMode::GAMEMODE_PUZZLE_I_ZOMBIE_ENDLESS;
 }
 
@@ -1093,22 +1091,22 @@ bool LawnApp::IsEndlessIZombie(GameMode theGameMode) {
     return theGameMode == GameMode::GAMEMODE_PUZZLE_I_ZOMBIE_ENDLESS;
 }
 
-bool LawnApp::IsLittleTroubleLevel() {
+bool LawnApp::IsLittleTroubleLevel() const {
     return (mBoard && (mGameMode == GameMode::GAMEMODE_CHALLENGE_LITTLE_TROUBLE || (mGameMode == GameMode::GAMEMODE_ADVENTURE && mPlayerInfo->mLevel == 25)));
 }
 
-bool LawnApp::IsScaryPotterLevel() {
+bool LawnApp::IsScaryPotterLevel() const {
     if (mGameMode >= GameMode::GAMEMODE_SCARY_POTTER_1 && mGameMode <= GameMode::GAMEMODE_SCARY_POTTER_ENDLESS)
         return true;
 
     return IsAdventureMode() && mPlayerInfo->mLevel == 35;
 }
 
-bool LawnApp::IsSlotMachineLevel() {
+bool LawnApp::IsSlotMachineLevel() const {
     return (mBoard && mGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE);
 }
 
-bool LawnApp::IsArtChallenge() {
+bool LawnApp::IsArtChallenge() const {
     if (mBoard == nullptr)
         return false;
 
@@ -1116,11 +1114,11 @@ bool LawnApp::IsArtChallenge() {
         || mGameMode == GameMode::GAMEMODE_CHALLENGE_SEEING_STARS;
 }
 
-bool LawnApp::IsSquirrelLevel() {
+bool LawnApp::IsSquirrelLevel() const {
     return mBoard && mGameMode == GameMode::GAMEMODE_CHALLENGE_SQUIRREL;
 }
 
-bool LawnApp::IsWhackAZombieLevel() {
+bool LawnApp::IsWhackAZombieLevel() const {
     if (mBoard == nullptr)
         return false;
 
@@ -1130,7 +1128,7 @@ bool LawnApp::IsWhackAZombieLevel() {
     return IsAdventureMode() && mPlayerInfo->mLevel == 15;
 }
 
-bool LawnApp::IsStormyNightLevel() {
+bool LawnApp::IsStormyNightLevel() const {
     if (mBoard == nullptr)
         return false;
 
@@ -1140,26 +1138,26 @@ bool LawnApp::IsStormyNightLevel() {
     return IsAdventureMode() && mPlayerInfo->mLevel == 40;
 }
 
-bool LawnApp::IsVSMode() {
+bool LawnApp::IsVSMode() const {
     return mGameMode == GameMode::GAMEMODE_MP_VS || mGameMode == GameMode::GAMEMODE_MP_VS_DEBUG || mGameMode == GameMode::GAMEMODE_MP_VS_IN_PAGE;
 }
 
-bool LawnApp::IsCoopMode() {
+bool LawnApp::IsCoopMode() const {
     return mGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && mGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS;
 }
 
-bool LawnApp::IsTwinSunbankMode() {
+bool LawnApp::IsTwinSunbankMode() const {
     return IsCoopMode();
 }
 
-bool LawnApp::IsMiniBossLevel() {
+bool LawnApp::IsMiniBossLevel() const {
     if (mBoard == nullptr)
         return false;
 
     return (IsAdventureMode() && mPlayerInfo->mLevel == 10) || (IsAdventureMode() && mPlayerInfo->mLevel == 20) || (IsAdventureMode() && mPlayerInfo->mLevel == 30);
 }
 
-bool LawnApp::IsFinalBossLevel() {
+bool LawnApp::IsFinalBossLevel() const {
     if (mBoard == nullptr)
         return false;
 
@@ -1169,7 +1167,7 @@ bool LawnApp::IsFinalBossLevel() {
     return IsAdventureMode() && mPlayerInfo->mLevel == 50;
 }
 
-PottedPlant *LawnApp::GetPottedPlantByIndex(int thePottedPlantIndex) {
+PottedPlant *LawnApp::GetPottedPlantByIndex(int thePottedPlantIndex) const {
     return &mPlayerInfo->mPottedPlants[thePottedPlantIndex];
 }
 
@@ -1303,7 +1301,7 @@ void LawnApp::NewGame() {
     mBoard->mCutScene->StartLevelIntro();
 }
 
-bool LawnApp::HasBeatenChallenge(GameMode theGameMode) {
+bool LawnApp::HasBeatenChallenge(GameMode theGameMode) const {
     if (mPlayerInfo == nullptr)
         return false;
 
@@ -1323,8 +1321,6 @@ bool LawnApp::HasBeatenChallenge(GameMode theGameMode) {
     }
     return mPlayerInfo->mChallengeRecords[aChallengeIndex] > 0;
 }
-
-void Sexy_InputManager_DispatchEvent(int a1, int a2, int a3, int a4) {}
 
 static bool zombatarResLoaded;
 

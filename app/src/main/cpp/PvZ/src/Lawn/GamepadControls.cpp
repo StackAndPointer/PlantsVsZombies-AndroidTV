@@ -398,7 +398,7 @@ void GamepadControls::_constructor(Board *theBoard, int thePlayerIndex1, int the
 
     GameMode aGameMode = mGameObject->mApp->mGameMode;
     bool isTwoSeedBankMode = (aGameMode == GameMode::GAMEMODE_MP_VS || (aGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && aGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS));
-    if (!keyboardMode && !isTwoSeedBankMode && aGameMode != GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) {
+    if (!gKeyboardMode && !isTwoSeedBankMode && aGameMode != GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) {
         mIsInShopSeedBank = true; // 是否在Shop栏。
     }
 }
@@ -497,7 +497,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
             g->mTransY -= thePixelY;
         }
     }
-    if (mIsCobCannonSelected && useNewCobCannon && !keyboardMode) {
+    if (mIsCobCannonSelected && useNewCobCannon && !gKeyboardMode) {
         Sexy::Image *cobcannon_1 = Sexy::IMAGE_COBCANNON_TARGET_1;
         Sexy::IMAGE_COBCANNON_TARGET_1 = addonImages.custom_cobcannon;
         old_GamepadControls_Draw(this, g);

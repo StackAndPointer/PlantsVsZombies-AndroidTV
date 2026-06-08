@@ -164,6 +164,14 @@ FuncPtr ExtractMemFuncPtr(Ret (T::*memFuncPtr)(Args...)) {
     return reinterpret_cast<FuncPtr &>(memFuncPtr);
 }
 
+template <typename T, typename Ret, typename... Args, typename FuncPtr = Ret (*)(const T *, Args...)>
+FuncPtr ExtractMemFuncPtr(Ret (T::*memFuncPtr)(Args...) const) {
+#ifdef PVZ_DEBUG
+    details::CheckVirtualFunc(reinterpret_cast<details::CppMemFuncPtr *>(&memFuncPtr));
+#endif
+    return reinterpret_cast<FuncPtr &>(memFuncPtr);
+}
+
 } // namespace homura
 
 #endif // HOMURA_MEMBERUTILS_H

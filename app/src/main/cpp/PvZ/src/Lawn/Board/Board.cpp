@@ -499,7 +499,7 @@ PlantingReason Board::CanPlantAt(int theGridX, int theGridY, SeedType theSeedTyp
         return aReason;
     }
 
-    PlantsOnLawn aPlantOnLawn;
+    PlantsOnLawn aPlantOnLawn{};
     GetPlantsOnLawn(theGridX, theGridY, &aPlantOnLawn);
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {
         if (aPlantOnLawn.mUnderPlant || aPlantOnLawn.mPumpkinPlant || aPlantOnLawn.mFlyingPlant || aPlantOnLawn.mNormalPlant) {
@@ -756,7 +756,7 @@ Plant *Board::AddPlant_Origin(int theGridX, int theGridY, SeedType theSeedType, 
     return aPlant;
 }
 
-bool Board::ZenGardenItemNumIsZero(CursorType theCursorType) {
+bool Board::ZenGardenItemNumIsZero(CursorType theCursorType) const {
     // 消耗性工具的数量是否为0个
     switch (theCursorType) {
         case CursorType::CURSOR_TYPE_FERTILIZER:
@@ -803,10 +803,10 @@ bool Board::KeyDown(KeyCode theKey) {
 
     // 用于切换键盘模式，自动开关砸罐子老虎机种子雨关卡内的"自动拾取植物卡片"功能
     if (theKey >= 37 && theKey <= 40) {
-        if (!keyboardMode) {
+        if (!gKeyboardMode) {
             patchlist::autoPickupSeedPacketDisable.Restore();
         }
-        keyboardMode = true;
+        gKeyboardMode = true;
         requestDrawShovelInCursor = false;
     }
 
@@ -1026,16 +1026,16 @@ void Board::DrawCoverLayer(Sexy::Graphics *g, int theRow) {
                 g->DrawImage(Sexy::IMAGE_BACKGROUND4_COVER, 672, 613);
                 break;
             case BackgroundType::BACKGROUND_5_ROOF: // 屋顶白天
-                g->DrawImage(Sexy::IMAGE_ROOF_TREE, mOffsetMoved * 1.5f + 628, -60);
+                g->DrawImage(Sexy::IMAGE_ROOF_TREE, mOffsetMoved + mOffsetMoved / 2 + 628, -60);
                 // 对战模式电线杆会遮挡僵尸卡槽，严重影响游戏体验
-                g->DrawImage(Sexy::IMAGE_ROOF_POLE, mOffsetMoved * 2.0f + 628 + (mApp->IsVSMode() ? 65 : 0), -60);
+                g->DrawImage(Sexy::IMAGE_ROOF_POLE, mOffsetMoved * 2 + 628 + (mApp->IsVSMode() ? 65 : 0), -60);
                 break;
             case BackgroundType::BACKGROUND_6_BOSS:
                 // 可在此处添加代码绘制月夜电线杆喔
                 // if(LawnApp_IsFinalBossLevel(mApp))  return;
 
-                g->DrawImage(addonImages.trees_night, mOffsetMoved * 1.5f + 628, -60);
-                g->DrawImage(addonImages.pole_night, mOffsetMoved * 2.0f + 628, -60);
+                g->DrawImage(addonImages.trees_night, mOffsetMoved + mOffsetMoved / 2 + 628, -60);
+                g->DrawImage(addonImages.pole_night, mOffsetMoved * 2 + 628, -60);
                 break;
             default:
                 return;
@@ -1195,27 +1195,27 @@ void Board::PickBackground() {
                 break;
             default:
                 old_Board_PickBackground(this);
-        };
+        }
     }
 }
 
-bool Board::StageIsNight() {
+bool Board::StageIsNight() const {
     // 关系到天上阳光掉落与否。
     return mBackground == BackgroundType::BACKGROUND_2_NIGHT || mBackground == BackgroundType::BACKGROUND_4_FOG || mBackground == BackgroundType::BACKGROUND_MUSHROOM_GARDEN
         || mBackground == BackgroundType::BACKGROUND_6_BOSS;
 }
 
-bool Board::StageHasPool() {
+bool Board::StageHasPool() const {
     // 关系到泳池特有的僵尸，如救生圈僵尸、海豚僵尸、潜水僵尸在本关出现与否。此处我们添加水族馆场景。
     return (mBackground == BackgroundType::BACKGROUND_ZOMBIQUARIUM && mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM && mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN)
         || mBackground == BackgroundType::BACKGROUND_3_POOL || mBackground == BackgroundType::BACKGROUND_4_FOG;
 }
 
-bool Board::StageHasRoof() {
+bool Board::StageHasRoof() const {
     return (mBackground == BackgroundType::BACKGROUND_5_ROOF || mBackground == BackgroundType::BACKGROUND_6_BOSS);
 }
 
-bool Board::StageHas6Rows() {
+bool Board::StageHas6Rows() const {
     // 关系到第六路可否操控（比如种植植物）。
     return mBackground == BackgroundType::BACKGROUND_3_POOL || mBackground == BackgroundType::BACKGROUND_4_FOG;
 }
@@ -2163,10 +2163,10 @@ void Board::processServerEvent(const BaseEvent *event) {
             uint16_t clientImpID;
             if (homura::FindInMap(serverZombieIDMap, serverImpID, clientImpID)) {
                 Zombie *aZombieImp = mZombies.DataArrayGet(clientImpID);
-                float atheKickingDistance = eventImpKicked->data2.f32;
+                float aKickingDistance = eventImpKicked->data2.f32;
                 if (aZombieImp) {
                     aZombieImp->mPosX = eventImpKicked->data3.f32;
-                    aZombieImp->ZombieImpKicked(atheKickingDistance);
+                    aZombieImp->ZombieImpKicked(aKickingDistance);
                 }
             }
         } break;
@@ -2773,14 +2773,14 @@ void Board::Update() {
     }
 
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BUTTERED_POPCORN && mApp->mGameScene == GameScenes::SCENE_PLAYING) {
-        Zombie *aZombieUnderButter = ZombieHitTest(mGamepadControls[0]->mCursorPositionX, mGamepadControls[0]->mCursorPositionY, 1);
-        if (aZombieUnderButter != nullptr) {
-            aZombieUnderButter->AddButter();
+        Zombie *aZombieUnderButter_1P = ZombieHitTest(mGamepadControls[0]->mCursorPositionX, mGamepadControls[0]->mCursorPositionY, 1);
+        if (aZombieUnderButter_1P != nullptr) {
+            aZombieUnderButter_1P->AddButter();
         }
         if (mGamepadControls[1]->mPlayerIndex2 != -1) {
-            Zombie *aZombieUnderButter = ZombieHitTest(mGamepadControls[1]->mCursorPositionX, mGamepadControls[1]->mCursorPositionY, 1);
-            if (aZombieUnderButter != nullptr) {
-                aZombieUnderButter->AddButter();
+            Zombie *aZombieUnderButter_2P = ZombieHitTest(mGamepadControls[1]->mCursorPositionX, mGamepadControls[1]->mCursorPositionY, 1);
+            if (aZombieUnderButter_2P != nullptr) {
+                aZombieUnderButter_2P->AddButter();
             }
         }
     }
@@ -2999,7 +2999,7 @@ void Board::Update() {
     old_Board_Update(this);
 }
 
-int Board::GetNumWavesPerFlag() {
+int Board::GetNumWavesPerFlag() const {
     // 修改此函数，以做到在进度条上正常绘制旗帜波的旗帜。
     if (mApp->IsFirstTimeAdventureMode() && mNumWaves < 10) {
         return mNumWaves;
@@ -3130,7 +3130,7 @@ bool Board::NeedSaveGame() {
 }
 
 void Board::DrawHammerButton(Sexy::Graphics *g, LawnApp *theApp) {
-    if (!keyboardMode)
+    if (!gKeyboardMode)
         return;
     float tmp = g->mTransY;
     Rect rect = GetButterButtonRect();
@@ -3165,7 +3165,7 @@ void Board::DrawButterButton(Sexy::Graphics *g, LawnApp *theApp) {
     if (!requestDrawButterInCursor) {
         g->DrawImage(Sexy::IMAGE_BUTTER_ICON, rect.mX - 7, rect.mY - 3);
     }
-    if (keyboardMode) {
+    if (gKeyboardMode) {
         g->DrawImageCel(Sexy::IMAGE_HELP_BUTTONS, rect.mX + 36, rect.mY + 40, 2);
     }
     g->SetColorizeImages(false);
@@ -3178,12 +3178,12 @@ void Board::DrawShovelButton(Sexy::Graphics *g, LawnApp *theApp) {
     if (theApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
         // LOGD("%d %d",rect[0],rect[1]);
         // return;  原版游戏在此处就return了，所以对战中不绘制铲子按钮。
-        if (keyboardMode)
+        if (gKeyboardMode)
             return;
         // 对战模式采用移动端铲子图标
-        TodDrawImageScaledF(g, addonImages.IMAGE_SHOVELBANK_VERTICAL, mTouchVSShovelRect.mX, mTouchVSShovelRect.mY, 0.8f, 0.8f);
+        TodDrawImageScaledF(g, addonImages.IMAGE_SHOVELBANK_VERTICAL, gTouchVSShovelRect.mX, gTouchVSShovelRect.mY, 0.8f, 0.8f);
         if (!requestDrawShovelInCursor)
-            TodDrawImageScaledF(g, addonImages.IMAGE_SHOVEL_VERTICAL, mTouchVSShovelRect.mX - 3, mTouchVSShovelRect.mY - 3, 0.9f, 0.9f);
+            TodDrawImageScaledF(g, addonImages.IMAGE_SHOVEL_VERTICAL, gTouchVSShovelRect.mX - 3, gTouchVSShovelRect.mY - 3, 0.9f, 0.9f);
         return;
     }
 
@@ -3211,7 +3211,7 @@ void Board::DrawShovelButton(Sexy::Graphics *g, LawnApp *theApp) {
         }
     }
 
-    if (keyboardMode) {
+    if (gKeyboardMode) {
         if (theApp->IsCoopMode()) {
             g->DrawImageCel(Sexy::IMAGE_HELP_BUTTONS, rect.mX + 40, rect.mY + 40, 1);
         } else {
@@ -3357,7 +3357,7 @@ void Board::AddSecondPlayer(int a2) {
     mUnkIntSecondPlayer2 = 0;
 }
 
-bool Board::IsLastStandFinalStage() {
+bool Board::IsLastStandFinalStage() const {
     // 无尽坚不可摧
     if (endlessLastStand && !IsOnlineServerModeActive() && !gIsReplayMode)
         return false;
@@ -3949,29 +3949,27 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
 }
 
 bool Board::MouseHitTest(int x, int y, HitResult *theHitResult, bool thePlayerIndex) {
-    GameMode mGameMode = mApp->mGameMode;
-    if (mGameMode == GameMode::GAMEMODE_MP_VS) {
-        if (mTouchVSShovelRect.Contains(x, y)) {
+    GameMode aGameMode = mApp->mGameMode;
+    if (aGameMode == GameMode::GAMEMODE_MP_VS) {
+        if (gTouchVSShovelRect.Contains(x, y)) {
             theHitResult->mObjectType = GameObjectType::OBJECT_TYPE_SHOVEL;
             return true;
         }
     } else {
-        Rect shovelButtonRect = GetShovelButtonRect();
-        if (mShowShovel && shovelButtonRect.Contains(x, y)) {
+        if (mShowShovel && GetShovelButtonRect().Contains(x, y)) {
             theHitResult->mObjectType = GameObjectType::OBJECT_TYPE_SHOVEL;
             return true;
         }
     }
 
     if (mApp->IsCoopMode()) {
-        Rect butterButtonRect = GetButterButtonRect();
-        if (mShowButter && butterButtonRect.Contains(x, y)) {
+        if (mShowButter && GetButterButtonRect().Contains(x, y)) {
             theHitResult->mObjectType = GameObjectType::OBJECT_TYPE_BUTTER;
             return true;
         }
     }
 
-    if (mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
+    if (aGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || aGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
         Rect rect;
         for (int i = GameObjectType::OBJECT_TYPE_WATERING_CAN; i <= GameObjectType::OBJECT_TYPE_TREE_OF_WISDOM_GARDEN; i++) {
             if (CanUseGameObject((GameObjectType)i)) {
@@ -3992,11 +3990,10 @@ bool Board::MouseHitTest(int x, int y, HitResult *theHitResult, bool thePlayerIn
         return true;
     }
 
-    SeedBank *mSeedBank = mGamepadControls[0]->GetSeedBank();
-    if (mSeedBank->ContainsPoint(x, y)) {
-        if (mSeedBank->SeedBank::MouseHitTest(x, y, theHitResult)) {
-            CursorType mCursorType = mCursorObject[0]->mCursorType;
-            if (mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK) {
+    SeedBank *aSeedBank = mGamepadControls[0]->GetSeedBank();
+    if (aSeedBank->ContainsPoint(x, y)) {
+        if (aSeedBank->MouseHitTest(x, y, theHitResult)) {
+            if (mCursorObject[0]->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK) {
                 RefreshSeedPacketFromCursor(0);
             }
             return true;
@@ -4005,12 +4002,11 @@ bool Board::MouseHitTest(int x, int y, HitResult *theHitResult, bool thePlayerIn
         return false;
     }
 
-    if (mGameMode == GameMode::GAMEMODE_MP_VS || mApp->IsCoopMode()) {
-        SeedBank *mSeedBank2 = mGamepadControls[1]->GetSeedBank();
-        if (mSeedBank2->ContainsPoint(x, y)) {
-            if (mSeedBank2->SeedBank::MouseHitTest(x, y, theHitResult)) {
-                CursorType mCursorType_2P = mCursorObject[1]->mCursorType;
-                if (mCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_BANK) {
+    if (aGameMode == GameMode::GAMEMODE_MP_VS || mApp->IsCoopMode()) {
+        SeedBank *aSeedBank2 = mGamepadControls[1]->GetSeedBank();
+        if (aSeedBank2->ContainsPoint(x, y)) {
+            if (aSeedBank2->MouseHitTest(x, y, theHitResult)) {
+                if (mCursorObject[1]->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK) {
                     RefreshSeedPacketFromCursor(1);
                 }
                 return true;
@@ -4025,18 +4021,18 @@ bool Board::MouseHitTest(int x, int y, HitResult *theHitResult, bool thePlayerIn
 
 
 namespace {
-constexpr int mTouchShovelRectWidth = 72;
-constexpr int mTouchButterRectWidth = 72;
-constexpr int mTouchTrigger = 40;
+constexpr int gTouchShovelRectWidth = 72;
+constexpr int gTouchButterRectWidth = 72;
+constexpr int gTouchTrigger = 40;
 
-int mTouchLastX;
-int mTouchLastY;
-int mTouchDownX;
-int mTouchDownY;
-bool mSendKeyWhenTouchUp;
-TouchState mTouchState = TouchState::TOUCHSTATE_NONE;
-float mHeavyWeaponX;
-Rect slotMachineRect = {250, 0, 320, 100};
+int gTouchLastX;
+int gTouchLastY;
+int gTouchDownX;
+int gTouchDownY;
+bool gSendKeyWhenTouchUp;
+TouchState gTouchState = TouchState::TOUCHSTATE_NONE;
+float gTouchHeavyWeaponX;
+Rect gSlotMachineRect = {250, 0, 320, 100};
 
 bool gClientMouseInBank = false;
 bool gClientMouseInBoard = false;
@@ -4095,9 +4091,9 @@ void Board::MouseDown(int x, int y, int theClickCount) {
     }
 
     bool inRangeOf1PSeedBank = (mGamepadControls[0]->mPlayerIndex2 == 1 && mSeedBank[1]->ContainsPoint(x, y))
-        || (mGamepadControls[0]->mPlayerIndex2 == 0 && (mSeedBank[0]->ContainsPoint(x, y) || mTouchVSShovelRect.Contains(x, y)));
+        || (mGamepadControls[0]->mPlayerIndex2 == 0 && (mSeedBank[0]->ContainsPoint(x, y) || gTouchVSShovelRect.Contains(x, y)));
     bool inRangeOf2PSeedBank = (mGamepadControls[1]->mPlayerIndex2 == 1 && mSeedBank[1]->ContainsPoint(x, y))
-        || (mGamepadControls[1]->mPlayerIndex2 == 0 && (mSeedBank[0]->ContainsPoint(x, y) || mTouchVSShovelRect.Contains(x, y)));
+        || (mGamepadControls[1]->mPlayerIndex2 == 0 && (mSeedBank[0]->ContainsPoint(x, y) || gTouchVSShovelRect.Contains(x, y)));
 
 
     // 如果是客户端
@@ -4127,48 +4123,48 @@ void Board::MouseDown(int x, int y, int theClickCount) {
 void Board::__MouseDown(int x, int y, int theClickCount) {
 
     old_Board_MouseDown(this, x, y, theClickCount);
-    mTouchDownX = x;
-    mTouchDownY = y;
-    mTouchLastX = x;
-    mTouchLastY = y;
+    gTouchDownX = x;
+    gTouchDownY = y;
+    gTouchLastX = x;
+    gTouchLastY = y;
     // xx = x;
     // yy = y;
     // LOGD("%d %d",x,y);
-    if (keyboardMode) {
+    if (gKeyboardMode) {
         patchlist::autoPickupSeedPacketDisable.Modify();
     }
-    keyboardMode = false;
-    SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
+    gKeyboardMode = false;
+    SeedBank *aSeedBank = mGamepadControls[0]->GetSeedBank();
     int currentSeedBankIndex = mGamepadControls[0]->mSelectedSeedIndex;
-    BaseGamepadControls::MovementState mGameState = mGamepadControls[0]->mGamepadState;
+    BaseGamepadControls::MovementState aGameState = mGamepadControls[0]->mGamepadState;
     bool isCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
 
-    SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
+    SeedBank *aSeedBank_2P = mGamepadControls[1]->GetSeedBank();
     int currentSeedBankIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
-    BaseGamepadControls::MovementState mGameState_2P = mGamepadControls[1]->mGamepadState;
+    BaseGamepadControls::MovementState aGameState_2P = mGamepadControls[1]->mGamepadState;
     bool isCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
     HitResult hitResult;
     MouseHitTest(x, y, &hitResult, false);
-    GameObjectType mObjectType = hitResult.mObjectType;
-    GameMode mGameMode = mApp->mGameMode;
-    bool isTwoSeedBankMode = (mGameMode == GameMode::GAMEMODE_MP_VS || mApp->IsCoopMode());
-    GameScenes mGameScene = mApp->mGameScene;
+    GameObjectType aObjectType = hitResult.mObjectType;
+    GameMode aGameMode = mApp->mGameMode;
+    bool isTwoSeedBankMode = (aGameMode == GameMode::GAMEMODE_MP_VS || mApp->IsCoopMode());
+    GameScenes aGameScene = mApp->mGameScene;
 
-    SeedChooserScreen *mSeedChooserScreen = mApp->mSeedChooserScreen;
-    if (mGameScene == GameScenes::SCENE_LEVEL_INTRO && mSeedChooserScreen != nullptr && mSeedChooserScreen->mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN) {
-        mSeedChooserScreen->GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
+    SeedChooserScreen *aSeedChooserScreen = mApp->mSeedChooserScreen;
+    if (aGameScene == GameScenes::SCENE_LEVEL_INTRO && aSeedChooserScreen != nullptr && aSeedChooserScreen->mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN) {
+        aSeedChooserScreen->GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
         return;
     }
-    if (mGameScene == GameScenes::SCENE_LEVEL_INTRO) {
+    if (aGameScene == GameScenes::SCENE_LEVEL_INTRO) {
         mCutScene->MouseDown(x, y);
     }
 
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_SEEDPACKET) {
-        if (mGameScene == GameScenes::SCENE_LEVEL_INTRO)
+    if (aObjectType == GameObjectType::OBJECT_TYPE_SEEDPACKET) {
+        if (aGameScene == GameScenes::SCENE_LEVEL_INTRO)
             return;
-        SeedPacket *seedPacket = (SeedPacket *)hitResult.mObject;
-        gPlayerIndex = (TouchPlayerIndex)seedPacket->GetPlayerIndex(); // 玩家1或玩家2
+        auto *aSeedPacket = (SeedPacket *)hitResult.mObject;
+        gPlayerIndex = (TouchPlayerIndex)aSeedPacket->GetPlayerIndex(); // 玩家1或玩家2
         if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             requestDrawShovelInCursor = false; // 不再绘制铲子
             if (gTcpClientSocket) {
@@ -4178,25 +4174,25 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             if (isCobCannonSelected) { // 如果拿着加农炮，将其放下
                 mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
             }
-            if (mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
-                || mGameMode == GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
-                if (seedPacket->CanPickUp()) {
-                    mSendKeyWhenTouchUp = true;
+            if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
+                || aGameMode == GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
+                if (aSeedPacket->CanPickUp()) {
+                    gSendKeyWhenTouchUp = true;
                 } else {
                     mApp->PlaySample(Sexy::SOUND_BUZZER);
                     return;
                 }
             }
-            if (mGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
+            if (aGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
                 mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_X_BUTTON, 1112);
                 return;
             }
-            mTouchState = TouchState::TOUCHSTATE_SEED_BANK; // 记录本次触控的状态
+            gTouchState = TouchState::TOUCHSTATE_SEED_BANK; // 记录本次触控的状态
             RefreshSeedPacketFromCursor(0);
-            int newSeedPacketIndex = seedPacket->mIndex;
+            int newSeedPacketIndex = aSeedPacket->mIndex;
             mGamepadControls[0]->mSelectedSeedIndex = newSeedPacketIndex;
-            seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
-            if (currentSeedBankIndex != newSeedPacketIndex || mGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+            aSeedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
+            if (currentSeedBankIndex != newSeedPacketIndex || aGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[0]->mIsInShopSeedBank = false;
                 bool isClientGamepadControl = mGamepadControls[0]->mPlayerIndex2 == 1;
@@ -4210,37 +4206,36 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
                         netplay::PutEvent(event);
                     }
                 }
-            } else if (currentSeedBankIndex == newSeedPacketIndex && mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+            } else if (currentSeedBankIndex == newSeedPacketIndex && aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 if (!isTwoSeedBankMode)
                     mGamepadControls[0]->mIsInShopSeedBank = true;
             }
         } else {
             requestDrawButterInCursor = false; // 不再绘制黄油
-            SeedPacket *seedPacket = (SeedPacket *)hitResult.mObject;
-            if (isCobCannonSelected_2P) { // 如果拿着加农炮，将其放下
+            if (isCobCannonSelected_2P) {      // 如果拿着加农炮，将其放下
                 mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
             }
-            if (mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
-                || mGameMode == GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
-                if (seedPacket->CanPickUp()) {
-                    mSendKeyWhenTouchUp = true;
+            if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
+                || aGameMode == GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
+                if (aSeedPacket->CanPickUp()) {
+                    gSendKeyWhenTouchUp = true;
                 } else {
                     mApp->PlaySample(Sexy::SOUND_BUZZER);
                     return;
                 }
             }
-            if (mGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
+            if (aGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
                 mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_X_BUTTON, 1112);
                 return;
             }
-            mTouchState = TouchState::TOUCHSTATE_SEED_BANK; // 记录本次触控的状态
+            gTouchState = TouchState::TOUCHSTATE_SEED_BANK; // 记录本次触控的状态
             RefreshSeedPacketFromCursor(1);
-            int newSeedPacketIndex_2P = seedPacket->mIndex;
+            int newSeedPacketIndex_2P = aSeedPacket->mIndex;
             mGamepadControls[1]->mSelectedSeedIndex = newSeedPacketIndex_2P;
-            seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
+            aSeedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
 
-            if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || mGameState_2P != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+            if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || aGameState_2P != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[1]->mIsInShopSeedBank = false;
                 bool isClientGamepadControl = mGamepadControls[1]->mPlayerIndex2 == 1;
@@ -4254,35 +4249,34 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
                         netplay::PutEvent(event);
                     }
                 }
-            } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+            } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && aGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 if (!isTwoSeedBankMode)
                     mGamepadControls[1]->mIsInShopSeedBank = true;
             }
         }
 
-        ShuffleButtonDown(seedPacket);
+        ShuffleButtonDown(aSeedPacket);
 
         return;
     }
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_SEED_BANK_BLANK) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_SEED_BANK_BLANK) {
         return;
     }
 
     CursorType mCursorType = mCursorObject[0]->mCursorType;
     CursorType mCursorType_2P = mCursorObject[1]->mCursorType;
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_SHOVEL) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_SHOVEL) {
         gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_PLAYER1; // 玩家1
-        mTouchState = TouchState::TOUCHSTATE_SHOVEL_RECT;
-        if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+        gTouchState = TouchState::TOUCHSTATE_SHOVEL_RECT;
+        if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
             mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             if (!isTwoSeedBankMode)
                 mGamepadControls[0]->mIsInShopSeedBank = true;
             int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
-            SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
-            seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
+            aSeedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
         }
         if (mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
             RefreshSeedPacketFromCursor(0);
@@ -4304,16 +4298,15 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         }
         return;
     }
-    if (mObjectType == GameObjectType::OBJECT_TYPE_BUTTER) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_BUTTER) {
         gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_PLAYER2; // 玩家2
-        mTouchState = TouchState::TOUCHSTATE_BUTTER_RECT;
-        if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+        gTouchState = TouchState::TOUCHSTATE_BUTTER_RECT;
+        if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
             mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             if (!isTwoSeedBankMode)
                 mGamepadControls[1]->mIsInShopSeedBank = true;
             int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
-            SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
-            seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
+            aSeedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
         }
         if (mCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
             RefreshSeedPacketFromCursor(1);
@@ -4332,14 +4325,13 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         return;
     }
 
-    if (mGameMode == GameMode::GAMEMODE_MP_VS) {
+    if (aGameMode == GameMode::GAMEMODE_MP_VS) {
         if (gTcpClientSocket >= 0) {
             gPlayerIndex = mGamepadControls[0]->mPlayerIndex2 == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
         } else {
             gPlayerIndex = PixelToGridX(x, y) > 5 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER2 : TouchPlayerIndex::TOUCHPLAYER_PLAYER1;
-        };
-
-    } else if (mGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && mGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS) {
+        }
+    } else if (aGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && aGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS) {
         gPlayerIndex = x > 400 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER2 : TouchPlayerIndex::TOUCHPLAYER_PLAYER1;
     } else {
         gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_PLAYER1;
@@ -4347,14 +4339,14 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
 
     if (gPlayerIndexSecond != TouchPlayerIndex::TOUCHPLAYER_NONE && gPlayerIndexSecond == gPlayerIndex) {
         gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_NONE;
-        mTouchState = TouchState::TOUCHSTATE_NONE;
+        gTouchState = TouchState::TOUCHSTATE_NONE;
         return;
     }
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_COIN) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_COIN) {
         Coin *coin = (Coin *)hitResult.mObject;
         if (coin->mType == CoinType::COIN_USABLE_SEED_PACKET) {
-            mTouchState = TouchState::TOUCHSTATE_USEFUL_SEED_PACKET;
+            gTouchState = TouchState::TOUCHSTATE_USEFUL_SEED_PACKET;
             requestDrawShovelInCursor = false;
             if (gTcpClientSocket) {
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
@@ -4364,7 +4356,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             // LOGD("5656565656");
             // GamepadControls_OnKeyDown(gamepadCon
             // trols1, 27, 1096);//放下手上的植物卡片
-            // mSendKeyWhenTouchUp = false;
+            // gSendKeyWhenTouchUp = false;
             // }
             mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             RefreshSeedPacketFromCursor(0);
@@ -4372,16 +4364,16 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         }
     }
 
-    if (mGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
-        if (slotMachineRect.Contains(x, y)) {
+    if (aGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
+        if (gSlotMachineRect.Contains(x, y)) {
             mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_X_BUTTON, 1112);
             return;
         }
     }
 
-    if (mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) { // 移动重型武器
-        mTouchState = TouchState::TOUCHSTATE_HEAVY_WEAPON;
-        mHeavyWeaponX = mChallenge->mHeavyWeaponX;
+    if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) { // 移动重型武器
+        gTouchState = TouchState::TOUCHSTATE_HEAVY_WEAPON;
+        gTouchHeavyWeaponX = mChallenge->mHeavyWeaponX;
         return;
     }
 
@@ -4389,29 +4381,29 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         if (mApp->IsScaryPotterLevel()) {
             requestDrawShovelInCursor = false;
         }
-        if (mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+        if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
             mGamepadControls[0]->mCursorPositionX = x - 40;
             mGamepadControls[0]->mCursorPositionY = y - 40;
         } else {
             mGamepadControls[0]->mCursorPositionX = x;
             mGamepadControls[0]->mCursorPositionY = y;
         }
-        if (!mApp->IsWhackAZombieLevel() || mGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR)
+        if (!mApp->IsWhackAZombieLevel() || aGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR)
             return; // 这一行代码的意义：在锤僵尸关卡，手持植物时，允许拖动种植。
     }
-    if (mObjectType == GameObjectType::OBJECT_TYPE_WATERING_CAN || mObjectType == GameObjectType::OBJECT_TYPE_FERTILIZER || mObjectType == GameObjectType::OBJECT_TYPE_BUG_SPRAY
-        || mObjectType == GameObjectType::OBJECT_TYPE_PHONOGRAPH || mObjectType == GameObjectType::OBJECT_TYPE_CHOCOLATE || mObjectType == GameObjectType::OBJECT_TYPE_GLOVE
-        || mObjectType == GameObjectType::OBJECT_TYPE_MONEY_SIGN || mObjectType == GameObjectType::OBJECT_TYPE_WHEELBARROW || mObjectType == GameObjectType::OBJECT_TYPE_TREE_FOOD) {
-        PickUpTool(mObjectType, 0);
-        ((ZenGardenControls *)mGamepadControls[0])->mObjectType = mObjectType;
-        mTouchState = TouchState::TOUCHSTATE_ZEN_GARDEN_TOOLS;
+    if (aObjectType == GameObjectType::OBJECT_TYPE_WATERING_CAN || aObjectType == GameObjectType::OBJECT_TYPE_FERTILIZER || aObjectType == GameObjectType::OBJECT_TYPE_BUG_SPRAY
+        || aObjectType == GameObjectType::OBJECT_TYPE_PHONOGRAPH || aObjectType == GameObjectType::OBJECT_TYPE_CHOCOLATE || aObjectType == GameObjectType::OBJECT_TYPE_GLOVE
+        || aObjectType == GameObjectType::OBJECT_TYPE_MONEY_SIGN || aObjectType == GameObjectType::OBJECT_TYPE_WHEELBARROW || aObjectType == GameObjectType::OBJECT_TYPE_TREE_FOOD) {
+        PickUpTool(aObjectType, 0);
+        ((ZenGardenControls *)mGamepadControls[0])->mObjectType = aObjectType;
+        gTouchState = TouchState::TOUCHSTATE_ZEN_GARDEN_TOOLS;
         return;
     }
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_ZEN_GARDEN || mObjectType == GameObjectType::OBJECT_TYPE_MUSHROOM_GARDEN || mObjectType == GameObjectType::OBJECT_TYPE_QUARIUM_GARDEN
-        || mObjectType == GameObjectType::OBJECT_TYPE_TREE_OF_WISDOM_GARDEN) {
-        ((ZenGardenControls *)mGamepadControls[0])->mObjectType = mObjectType;
-        MouseDownWithTool(x, y, 0, (CursorType)(mObjectType + 3), 0);
+    if (aObjectType == GameObjectType::OBJECT_TYPE_ZEN_GARDEN || aObjectType == GameObjectType::OBJECT_TYPE_MUSHROOM_GARDEN || aObjectType == GameObjectType::OBJECT_TYPE_QUARIUM_GARDEN
+        || aObjectType == GameObjectType::OBJECT_TYPE_TREE_OF_WISDOM_GARDEN) {
+        ((ZenGardenControls *)mGamepadControls[0])->mObjectType = aObjectType;
+        MouseDownWithTool(x, y, 0, (CursorType)(aObjectType + 3), 0);
         return;
     }
 
@@ -4420,93 +4412,87 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         || mCursorType == CursorType::CURSOR_TYPE_PHONOGRAPH || mCursorType == CursorType::CURSOR_TYPE_CHOCOLATE || mCursorType == CursorType::CURSOR_TYPE_GLOVE
         || mCursorType == CursorType::CURSOR_TYPE_MONEY_SIGN || mCursorType == CursorType::CURSOR_TYPE_WHEEELBARROW || mCursorType == CursorType::CURSOR_TYPE_TREE_FOOD
         || mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE) {
-        mSendKeyWhenTouchUp = true;
+        gSendKeyWhenTouchUp = true;
     }
 
     // *(uint32_t *) (mGamepadControls[0] + 152) = 0;//疑似用于设置该gamepadControls1属于玩家1。可能的取值：-1，0，1
     // 其中，1P恒为0，2P禁用时为-1，2P启用时为1。
 
     if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-        if (mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
-            mGamepadControls[0]->mCursorPositionX = x - 40;
-            mGamepadControls[0]->mCursorPositionY = y - 40;
-        } else if (mCursorType == CursorType::CURSOR_TYPE_WATERING_CAN && mApp->mPlayerInfo->mPurchases[StoreItem::STORE_ITEM_GOLD_WATERINGCAN] != 0) {
+        if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
+            || (mCursorType == CursorType::CURSOR_TYPE_WATERING_CAN && mApp->mPlayerInfo->mPurchases[StoreItem::STORE_ITEM_GOLD_WATERINGCAN] != 0)) {
             mGamepadControls[0]->mCursorPositionX = x - 40;
             mGamepadControls[0]->mCursorPositionY = y - 40;
         } else {
             mGamepadControls[0]->mCursorPositionX = x;
             mGamepadControls[0]->mCursorPositionY = y;
         }
+    } else if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+        mGamepadControls[1]->mCursorPositionX = x - 40;
+        mGamepadControls[1]->mCursorPositionY = y - 40;
     } else {
-        if (mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
-            mGamepadControls[1]->mCursorPositionX = x - 40;
-            mGamepadControls[1]->mCursorPositionY = y - 40;
-        } else {
-            mGamepadControls[1]->mCursorPositionX = x;
-            mGamepadControls[1]->mCursorPositionY = y;
-        }
+        mGamepadControls[1]->mCursorPositionX = x;
+        mGamepadControls[1]->mCursorPositionY = y;
     }
 
     if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-        if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected || requestDrawShovelInCursor
-            || (mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && mTouchState != TouchState::TOUCHSTATE_USEFUL_SEED_PACKET)) {
-            mTouchState = TouchState::TOUCHSTATE_PICKING_SOMETHING;
-            mSendKeyWhenTouchUp = true;
+        if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected || requestDrawShovelInCursor
+            || (mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && gTouchState != TouchState::TOUCHSTATE_USEFUL_SEED_PACKET)) {
+            gTouchState = TouchState::TOUCHSTATE_PICKING_SOMETHING;
+            gSendKeyWhenTouchUp = true;
         }
     } else {
-        if (mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected_2P || requestDrawButterInCursor
-            || (mCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && mTouchState != TouchState::TOUCHSTATE_USEFUL_SEED_PACKET)) {
-            mTouchState = TouchState::TOUCHSTATE_PICKING_SOMETHING;
-            mSendKeyWhenTouchUp = true;
+        if (aGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected_2P || requestDrawButterInCursor
+            || (mCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && gTouchState != TouchState::TOUCHSTATE_USEFUL_SEED_PACKET)) {
+            gTouchState = TouchState::TOUCHSTATE_PICKING_SOMETHING;
+            gSendKeyWhenTouchUp = true;
         }
     }
 
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_PLANT) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_PLANT) {
         if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 && requestDrawShovelInCursor)
             return;
-        Plant *plant = (Plant *)hitResult.mObject;
+        auto *plant = (Plant *)hitResult.mObject;
         bool isValidCobCannon = plant->mSeedType == SeedType::SEED_COBCANNON && plant->mState == PlantState::STATE_COBCANNON_READY;
         if (isValidCobCannon) {
             if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-                if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+                if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                     mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
-                    mSendKeyWhenTouchUp = false;
+                    gSendKeyWhenTouchUp = false;
                     if (!isTwoSeedBankMode)
                         mGamepadControls[0]->mIsInShopSeedBank = true;
                     int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
-                    SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
-                    seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
+                    aSeedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
                 }
                 if (mGamepadControls[1]->mIsCobCannonSelected && mGamepadControls[1]->mCobCannonPlantIndexInList == mPlants.DataArrayGetID(plant)) {
                     // 不能同时选同一个加农炮！
-                    mTouchState = TouchState::TOUCHSTATE_NONE;
+                    gTouchState = TouchState::TOUCHSTATE_NONE;
                     return;
                 }
                 mGamepadControls[0]->pickUpCobCannon(plant);
             } else {
-                if (mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+                if (aGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                     mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
-                    mSendKeyWhenTouchUp = false;
+                    gSendKeyWhenTouchUp = false;
                     if (!isTwoSeedBankMode)
                         mGamepadControls[1]->mIsInShopSeedBank = true;
                     int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
-                    SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
-                    seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
+                    aSeedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
                 }
                 if (mGamepadControls[0]->mIsCobCannonSelected && mGamepadControls[0]->mCobCannonPlantIndexInList == mPlants.DataArrayGetID(plant)) {
                     // 不能同时选同一个加农炮！
-                    mTouchState = TouchState::TOUCHSTATE_NONE;
+                    gTouchState = TouchState::TOUCHSTATE_NONE;
                     return;
                 }
                 mGamepadControls[1]->pickUpCobCannon(plant);
             }
-            mTouchState = TouchState::TOUCHSTATE_VALID_COBCONON;
+            gTouchState = TouchState::TOUCHSTATE_VALID_COBCONON;
             return;
         }
     }
-    if (mTouchState == TouchState::TOUCHSTATE_NONE)
-        mTouchState = TouchState::TOUCHSTATE_BOARD;
+    if (gTouchState == TouchState::TOUCHSTATE_NONE)
+        gTouchState = TouchState::TOUCHSTATE_BOARD;
 }
 
 void Board::MouseDrag(int x, int y) {
@@ -4539,7 +4525,7 @@ void Board::__MouseDrag(int x, int y) {
     // xx = x;
     // yy = y;
     // LOGD("%d %d",x,y);
-    if (mTouchState == TouchState::TOUCHSTATE_NONE)
+    if (gTouchState == TouchState::TOUCHSTATE_NONE)
         return;
 
     bool isCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
@@ -4551,14 +4537,14 @@ void Board::__MouseDrag(int x, int y) {
     bool isTwoSeedBankMode = (mGameMode == GameMode::GAMEMODE_MP_VS || (mGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && mGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS));
     int seedBankHeight = mApp->IsChallengeWithoutSeedBank() ? 87 : seedBank->mY + seedBank->mHeight;
 
-    if (mTouchState == TouchState::TOUCHSTATE_SEED_BANK && mApp->IsVSMode()) {
+    if (gTouchState == TouchState::TOUCHSTATE_SEED_BANK && mApp->IsVSMode()) {
         if (mGamepadControls[0]->mSelectedSeedType == SEED_BEGHOULED_BUTTON_SHUFFLE || mGamepadControls[1]->mSelectedSeedType == SEED_BEGHOULED_BUTTON_SHUFFLE
             || mGamepadControls[0]->mSelectedSeedType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE || mGamepadControls[1]->mSelectedSeedType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE)
             return;
     }
 
-    if (mTouchState == TouchState::TOUCHSTATE_SEED_BANK && mTouchLastY < seedBankHeight && y >= seedBankHeight) {
-        mTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SEED_BANK;
+    if (gTouchState == TouchState::TOUCHSTATE_SEED_BANK && gTouchLastY < seedBankHeight && y >= seedBankHeight) {
+        gTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SEED_BANK;
         if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
             mGamepadControls[0]->mIsInShopSeedBank = false;
@@ -4580,13 +4566,13 @@ void Board::__MouseDrag(int x, int y) {
                 netplay::PutEvent(event);
             }
         }
-        mSendKeyWhenTouchUp = true;
+        gSendKeyWhenTouchUp = true;
     }
 
-    if (mTouchState == TouchState::TOUCHSTATE_SHOVEL_RECT) {
+    if (gTouchState == TouchState::TOUCHSTATE_SHOVEL_RECT) {
         if (mGameMode == GameMode::GAMEMODE_MP_VS) {
-            if (mTouchVSShovelRect.Contains(mTouchLastX, mTouchLastY) && !mTouchVSShovelRect.Contains(x, y)) {
-                mTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SHOVEL_RECT;
+            if (gTouchVSShovelRect.Contains(gTouchLastX, gTouchLastY) && !gTouchVSShovelRect.Contains(x, y)) {
+                gTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SHOVEL_RECT;
                 if (!requestDrawShovelInCursor)
                     mApp->PlayFoley(FoleyType::FOLEY_SHOVEL);
                 requestDrawShovelInCursor = true;
@@ -4595,10 +4581,10 @@ void Board::__MouseDrag(int x, int y) {
                     netplay::PutEvent(event);
                 }
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
-                mSendKeyWhenTouchUp = true;
+                gSendKeyWhenTouchUp = true;
             }
-        } else if (mTouchLastY < mTouchShovelRectWidth && y >= mTouchShovelRectWidth) {
-            mTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SHOVEL_RECT;
+        } else if (gTouchLastY < gTouchShovelRectWidth && y >= gTouchShovelRectWidth) {
+            gTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SHOVEL_RECT;
             if (!requestDrawShovelInCursor)
                 mApp->PlayFoley(FoleyType::FOLEY_SHOVEL);
             requestDrawShovelInCursor = true;
@@ -4607,51 +4593,50 @@ void Board::__MouseDrag(int x, int y) {
                 netplay::PutEvent(event);
             }
             mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
-            mSendKeyWhenTouchUp = true;
+            gSendKeyWhenTouchUp = true;
         }
     }
 
-    if (mTouchState == TouchState::TOUCHSTATE_BUTTER_RECT && mTouchLastY < mTouchButterRectWidth && y >= mTouchButterRectWidth) {
-        mTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_BUTTER_RECT;
+    if (gTouchState == TouchState::TOUCHSTATE_BUTTER_RECT && gTouchLastY < gTouchButterRectWidth && y >= gTouchButterRectWidth) {
+        gTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_BUTTER_RECT;
         if (!requestDrawButterInCursor)
             mApp->PlayFoley(FoleyType::FOLEY_FLOOP);
         requestDrawButterInCursor = true;
         mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
-        mSendKeyWhenTouchUp = true;
+        gSendKeyWhenTouchUp = true;
     }
 
-    if (mTouchState == TouchState::TOUCHSTATE_VALID_COBCONON || mTouchState == TouchState::TOUCHSTATE_USEFUL_SEED_PACKET) {
-        if (!mSendKeyWhenTouchUp && (abs(x - mTouchDownX) > mTouchTrigger || abs(y - mTouchDownY) > mTouchTrigger)) {
-            mSendKeyWhenTouchUp = true;
+    if (gTouchState == TouchState::TOUCHSTATE_VALID_COBCONON || gTouchState == TouchState::TOUCHSTATE_USEFUL_SEED_PACKET) {
+        if (!gSendKeyWhenTouchUp && (abs(x - gTouchDownX) > gTouchTrigger || abs(y - gTouchDownY) > gTouchTrigger)) {
+            gSendKeyWhenTouchUp = true;
         }
     }
 
-    if (mTouchState == TouchState::TOUCHSTATE_ZEN_GARDEN_TOOLS && mTouchLastY < mTouchButterRectWidth && y >= mTouchButterRectWidth) {
-        mTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_ZEN_GARDEN_TOOLS;
-        mSendKeyWhenTouchUp = true;
+    if (gTouchState == TouchState::TOUCHSTATE_ZEN_GARDEN_TOOLS && gTouchLastY < gTouchButterRectWidth && y >= gTouchButterRectWidth) {
+        gTouchState = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_ZEN_GARDEN_TOOLS;
+        gSendKeyWhenTouchUp = true;
     }
 
-    if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 && isCobCannonSelected && mTouchLastY > seedBankHeight && y <= seedBankHeight) {
+    if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 && isCobCannonSelected && gTouchLastY > seedBankHeight && y <= seedBankHeight) {
         mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096); // 退选加农炮
-        mTouchState = TouchState::TOUCHSTATE_NONE;
-        mSendKeyWhenTouchUp = false;
+        gTouchState = TouchState::TOUCHSTATE_NONE;
+        gSendKeyWhenTouchUp = false;
     }
-    if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER2 && isCobCannonSelected_2P && mTouchLastY > seedBankHeight && y <= seedBankHeight) {
+    if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER2 && isCobCannonSelected_2P && gTouchLastY > seedBankHeight && y <= seedBankHeight) {
         mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096); // 退选加农炮
-        mTouchState = TouchState::TOUCHSTATE_NONE;
-        mSendKeyWhenTouchUp = false;
+        gTouchState = TouchState::TOUCHSTATE_NONE;
+        gSendKeyWhenTouchUp = false;
     }
 
     if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-        if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && mTouchLastY > seedBankHeight && y <= seedBankHeight) {
+        if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && gTouchLastY > seedBankHeight && y <= seedBankHeight) {
             mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL; // 退选植物
             if (!isTwoSeedBankMode)
                 mGamepadControls[0]->mIsInShopSeedBank = true;
             int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
-            SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
             seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
-            mTouchState = TouchState::TOUCHSTATE_NONE;
-            mSendKeyWhenTouchUp = false;
+            gTouchState = TouchState::TOUCHSTATE_NONE;
+            gSendKeyWhenTouchUp = false;
 
             if (mGamepadControls[0]->mPlayerIndex2 == 0 && gTcpClientSocket >= 0) {
                 BaseEvent event = {EventType::EVENT_SERVER_BOARD_TOUCH_CLEAR_CURSOR};
@@ -4659,15 +4644,15 @@ void Board::__MouseDrag(int x, int y) {
             }
         }
     } else {
-        if (mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && mTouchLastY > seedBankHeight && y <= seedBankHeight) {
+        if (mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && gTouchLastY > seedBankHeight && y <= seedBankHeight) {
             mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL; // 退选植物
             if (!isTwoSeedBankMode)
                 mGamepadControls[1]->mIsInShopSeedBank = true;
             int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
             SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
             seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
-            mTouchState = TouchState::TOUCHSTATE_NONE;
-            mSendKeyWhenTouchUp = false;
+            gTouchState = TouchState::TOUCHSTATE_NONE;
+            gSendKeyWhenTouchUp = false;
 
             if (mGamepadControls[1]->mPlayerIndex2 == 0 && gTcpClientSocket >= 0) {
                 BaseEvent event = {EventType::EVENT_SERVER_BOARD_TOUCH_CLEAR_CURSOR};
@@ -4677,8 +4662,8 @@ void Board::__MouseDrag(int x, int y) {
     }
 
 
-    if (mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && mTouchState == TouchState::TOUCHSTATE_HEAVY_WEAPON) {
-        mChallenge->mHeavyWeaponX = mHeavyWeaponX + x - mTouchDownX; // 移动重型武器X坐标
+    if (mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gTouchState == TouchState::TOUCHSTATE_HEAVY_WEAPON) {
+        mChallenge->mHeavyWeaponX = gTouchHeavyWeaponX + x - gTouchDownX; // 移动重型武器X坐标
         return;
     }
 
@@ -4686,10 +4671,10 @@ void Board::__MouseDrag(int x, int y) {
         return;
     }
 
-    mTouchLastX = x;
-    mTouchLastY = y;
+    gTouchLastX = x;
+    gTouchLastY = y;
 
-    if (mTouchState != TouchState::TOUCHSTATE_SEED_BANK && mTouchState != TouchState::TOUCHSTATE_ZEN_GARDEN_TOOLS) {
+    if (gTouchState != TouchState::TOUCHSTATE_SEED_BANK && gTouchState != TouchState::TOUCHSTATE_ZEN_GARDEN_TOOLS) {
         if (x > 770)
             x = 770;
         if (x < 40)
@@ -4737,7 +4722,7 @@ void Board::MouseUp(int x, int y, int theClickCount) {
 }
 void Board::__MouseUp(int x, int y, int theClickCount) {
     old_Board_MouseUp(this, x, y, theClickCount);
-    if (mTouchState != TouchState::TOUCHSTATE_NONE && mSendKeyWhenTouchUp) {
+    if (gTouchState != TouchState::TOUCHSTATE_NONE && gSendKeyWhenTouchUp) {
         SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
         int numSeedsInBank = seedBank->GetNumSeedsOnConveyorBelt();
         BaseGamepadControls::MovementState mGameState = mGamepadControls[0]->mGamepadState;
@@ -4748,7 +4733,7 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
         BaseGamepadControls::MovementState mGameState_2P = mGamepadControls[1]->mGamepadState;
         bool isCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
 
-        GameMode mGameMode = mApp->mGameMode;
+        GameMode aGameMode = mApp->mGameMode;
         CursorType mCursorType = mCursorObject[0]->mCursorType;
         CursorType mCursorType_2P = mCursorObject[1]->mCursorType;
         ChallengeState mChallengeState = mChallenge->mChallengeState;
@@ -4757,17 +4742,19 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
             if (requestDrawShovelInCursor) {
                 ShovelDown();
             } else if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected || mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
-                if (mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+                if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
-                } else if ((mGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && mChallenge->mChallengeState == ChallengeState::STATECHALLENGE_NORMAL
+                } else if ((aGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && mChallenge->mChallengeState == ChallengeState::STATECHALLENGE_NORMAL
                             && mApp->mGameScene == GameScenes::SCENE_PLAYING)
-                           || mGameMode == GameMode::GAMEMODE_MP_VS) {
+                           || aGameMode == GameMode::GAMEMODE_MP_VS) {
                     mGamepadControls[0]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[0]->mPlayerIndex1, 0);
                 } else {
-                    mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_SELECT_SEED;
+                    if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) { // 重型武器关卡需要设置为状态6才能种植猫尾草
+                        mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_SELECT_SEED;
+                    }
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                 }
                 BaseGamepadControls::MovementState mGameStateNew = mGamepadControls[0]->mGamepadState;
@@ -4776,8 +4763,7 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
                 mGamepadControls[0]->mIsInShopSeedBank = mGameStateNew != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 if (mGameState != mGameStateNew) {
                     if (!HasConveyorBeltSeedBank(0) || numSeedsInBank == numSeedsInBankNew) { // 修复传送带关卡种植之后SeedBank动画不正常
-                        SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
-                        seedBank->mSeedPackets[seedPacketIndexNew].mLastSelectedTime = 0.0f; // 动画效果专用
+                        seedBank->mSeedPackets[seedPacketIndexNew].mLastSelectedTime = 0.0f;  // 动画效果专用
                     }
                 }
             } else if (mCursorType == CursorType::CURSOR_TYPE_WATERING_CAN || mCursorType == CursorType::CURSOR_TYPE_FERTILIZER || mCursorType == CursorType::CURSOR_TYPE_BUG_SPRAY
@@ -4796,13 +4782,13 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
             if (requestDrawButterInCursor) {
                 requestDrawButterInCursor = false;
             } else if (mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected_2P || mCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
-                if (mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+                if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
-                } else if ((mGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && mChallengeState == ChallengeState::STATECHALLENGE_NORMAL && mApp->mGameScene == GameScenes::SCENE_PLAYING)
-                           || mGameMode == GameMode::GAMEMODE_MP_VS) {
+                } else if ((aGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && mChallengeState == ChallengeState::STATECHALLENGE_NORMAL && mApp->mGameScene == GameScenes::SCENE_PLAYING)
+                           || aGameMode == GameMode::GAMEMODE_MP_VS) {
                     mGamepadControls[1]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[1]->mPlayerIndex1, 0);
                 } else {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
@@ -4816,15 +4802,15 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
                         seedBank_2P->mSeedPackets[seedPacketIndexNew_2P].mLastSelectedTime = 0.0f;  // 动画效果专用
                     }
                 }
-                //                if (mGameMode == GameMode::GAMEMODE_MP_VS) {
+                //                if (aGameMode == GameMode::GAMEMODE_MP_VS) {
                 //                    mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 //                }
             }
         }
     }
     gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_NONE;
-    mSendKeyWhenTouchUp = false;
-    mTouchState = TouchState::TOUCHSTATE_NONE;
+    gSendKeyWhenTouchUp = false;
+    gTouchState = TouchState::TOUCHSTATE_NONE;
 }
 
 
@@ -4843,42 +4829,42 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
     gTouchDownYSecond = y;
     gTouchLastXSecond = x;
     gTouchLastYSecond = y;
-    if (keyboardMode) {
+    if (gKeyboardMode) {
         patchlist::autoPickupSeedPacketDisable.Modify();
     }
-    keyboardMode = false;
+    gKeyboardMode = false;
 
-    SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
+    SeedBank *aSeedBank = mGamepadControls[0]->GetSeedBank();
     int currentSeedBankIndex = mGamepadControls[0]->mSelectedSeedIndex;
-    BaseGamepadControls::MovementState mGameState = mGamepadControls[0]->mGamepadState;
+    BaseGamepadControls::MovementState aGameState = mGamepadControls[0]->mGamepadState;
     bool isCobCannonSelected = mGamepadControls[0]->mIsCobCannonSelected;
 
     SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
     int currentSeedBankIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
-    BaseGamepadControls::MovementState mGameState_2P = mGamepadControls[1]->mGamepadState;
+    BaseGamepadControls::MovementState aGameState_2P = mGamepadControls[1]->mGamepadState;
     bool isCobCannonSelected_2P = mGamepadControls[1]->mIsCobCannonSelected;
     HitResult hitResult;
     MouseHitTest(x, y, &hitResult, false);
-    GameObjectType mObjectType = hitResult.mObjectType;
-    GameMode mGameMode = mApp->mGameMode;
-    bool isTwoSeedBankMode = (mGameMode == GameMode::GAMEMODE_MP_VS || (mGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && mGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS));
-    GameScenes mGameScene = mApp->mGameScene;
+    GameObjectType aObjectType = hitResult.mObjectType;
+    GameMode aGameMode = mApp->mGameMode;
+    bool isTwoSeedBankMode = (aGameMode == GameMode::GAMEMODE_MP_VS || (aGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && aGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS));
+    GameScenes aGameScene = mApp->mGameScene;
 
-    SeedChooserScreen *mSeedChooserScreen = mApp->mSeedChooserScreen;
-    if (mGameScene == GameScenes::SCENE_LEVEL_INTRO && mSeedChooserScreen != nullptr && mSeedChooserScreen->mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN) {
-        mSeedChooserScreen->GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
+    SeedChooserScreen *aSeedChooserScreen = mApp->mSeedChooserScreen;
+    if (aGameScene == GameScenes::SCENE_LEVEL_INTRO && aSeedChooserScreen != nullptr && aSeedChooserScreen->mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN) {
+        aSeedChooserScreen->GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
         return;
     }
-    if (mGameScene == GameScenes::SCENE_LEVEL_INTRO) {
+    if (aGameScene == GameScenes::SCENE_LEVEL_INTRO) {
         mCutScene->MouseDown(x, y);
     }
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_SEEDPACKET) {
-        if (mGameScene == GameScenes::SCENE_LEVEL_INTRO)
+    if (aObjectType == GameObjectType::OBJECT_TYPE_SEEDPACKET) {
+        if (aGameScene == GameScenes::SCENE_LEVEL_INTRO)
             return;
-        SeedPacket *seedPacket = (SeedPacket *)hitResult.mObject;
-        int newSeedPacketIndex = seedPacket->mIndex;
-        gPlayerIndexSecond = (TouchPlayerIndex)seedPacket->GetPlayerIndex(); // 玩家1或玩家2
+        auto *aSeedPacket = (SeedPacket *)hitResult.mObject;
+        int newSeedPacketIndex = aSeedPacket->mIndex;
+        gPlayerIndexSecond = (TouchPlayerIndex)aSeedPacket->GetPlayerIndex(); // 玩家1或玩家2
 
         if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             requestDrawShovelInCursor = false; // 不再绘制铲子
@@ -4889,16 +4875,16 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             if (isCobCannonSelected) { // 如果拿着加农炮，将其放下
                 mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
             }
-            if (mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
-                || mGameMode == GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
-                if (seedPacket->CanPickUp()) {
+            if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
+                || aGameMode == GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
+                if (aSeedPacket->CanPickUp()) {
                     gSendKeyWhenTouchUpSecond = true;
                 } else {
                     mApp->PlaySample(Sexy::SOUND_BUZZER);
                     return;
                 }
             }
-            if (mGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
+            if (aGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
                 mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_X_BUTTON, 1112);
                 return;
             }
@@ -4906,9 +4892,9 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             RefreshSeedPacketFromCursor(0);
 
             mGamepadControls[0]->mSelectedSeedIndex = newSeedPacketIndex;
-            seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
+            aSeedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
 
-            if (currentSeedBankIndex != newSeedPacketIndex || mGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+            if (currentSeedBankIndex != newSeedPacketIndex || aGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[0]->mIsInShopSeedBank = false;
                 bool isClientGamepadControl = mGamepadControls[0]->mPlayerIndex2 == 1;
@@ -4922,37 +4908,36 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                         netplay::PutEvent(event);
                     }
                 }
-            } else if (currentSeedBankIndex == newSeedPacketIndex && mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+            } else if (currentSeedBankIndex == newSeedPacketIndex && aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 if (!isTwoSeedBankMode)
                     mGamepadControls[0]->mIsInShopSeedBank = true;
             }
         } else {
             requestDrawButterInCursor = false; // 不再绘制黄油
-            SeedPacket *seedPacket = (SeedPacket *)hitResult.mObject;
             if (isCobCannonSelected_2P) { // 如果拿着加农炮，将其放下
                 mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
             }
-            if (mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
-                || mGameMode == GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
-                if (seedPacket->CanPickUp()) {
+            if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST
+                || aGameMode == GameMode::GAMEMODE_CHALLENGE_ZOMBIQUARIUM) {
+                if (aSeedPacket->CanPickUp()) {
                     gSendKeyWhenTouchUpSecond = true;
                 } else {
                     mApp->PlaySample(Sexy::SOUND_BUZZER);
                     return;
                 }
             }
-            if (mGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
+            if (aGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
                 mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_X_BUTTON, 1112);
                 return;
             }
             gTouchStateSecond = TouchState::TOUCHSTATE_SEED_BANK; // 记录本次触控的状态
             RefreshSeedPacketFromCursor(1);
-            int newSeedPacketIndex_2P = seedPacket->mIndex;
+            int newSeedPacketIndex_2P = aSeedPacket->mIndex;
             mGamepadControls[1]->mSelectedSeedIndex = newSeedPacketIndex_2P;
             seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
 
-            if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || mGameState_2P != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+            if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || aGameState_2P != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[1]->mIsInShopSeedBank = false;
 
@@ -4967,19 +4952,19 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                         netplay::PutEvent(event);
                     }
                 }
-            } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+            } else if (currentSeedBankIndex_2P == newSeedPacketIndex_2P && aGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 if (!isTwoSeedBankMode)
                     mGamepadControls[1]->mIsInShopSeedBank = true;
             }
         }
 
-        ShuffleButtonDown(seedPacket);
+        ShuffleButtonDown(aSeedPacket);
 
         return;
     }
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_SEED_BANK_BLANK) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_SEED_BANK_BLANK) {
         return;
     }
 
@@ -4994,20 +4979,19 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
     // return;
     // }
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_SHOVEL) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_SHOVEL) {
         if (!useNewShovel) {
             mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_QUICK_DIG, 1112);
             return;
         }
         gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_PLAYER1; // 玩家1
         gTouchStateSecond = TouchState::TOUCHSTATE_SHOVEL_RECT;
-        if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+        if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
             mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             if (!isTwoSeedBankMode)
                 mGamepadControls[0]->mIsInShopSeedBank = true;
             int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
-            SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
-            seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
+            aSeedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
         }
         if (mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
             RefreshSeedPacketFromCursor(0);
@@ -5030,15 +5014,14 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
         return;
     }
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_BUTTER) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_BUTTER) {
         gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_PLAYER2; // 玩家2
         gTouchStateSecond = TouchState::TOUCHSTATE_BUTTER_RECT;
-        if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+        if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
             mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             if (!isTwoSeedBankMode)
                 mGamepadControls[1]->mIsInShopSeedBank = true;
             int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
-            SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
             seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
         }
         if (mCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
@@ -5058,21 +5041,21 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
         return;
     }
 
-    if (mGameMode == GameMode::GAMEMODE_MP_VS) {
+    if (aGameMode == GameMode::GAMEMODE_MP_VS) {
         if (gTcpClientSocket >= 0) {
             gPlayerIndexSecond = mGamepadControls[1]->mPlayerIndex2 == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
         } else {
             gPlayerIndexSecond = PixelToGridX(x, y) > 5 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER2 : TouchPlayerIndex::TOUCHPLAYER_PLAYER1;
         }
-    } else if (mGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && mGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS) {
+    } else if (aGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && aGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS) {
         gPlayerIndexSecond = x > 400 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER2 : TouchPlayerIndex::TOUCHPLAYER_PLAYER1;
     } else {
         gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_PLAYER1;
     }
 
     if (gPlayerIndex != TouchPlayerIndex::TOUCHPLAYER_NONE && gPlayerIndexSecond == gPlayerIndex) {
-        if (mObjectType == GameObjectType::OBJECT_TYPE_PLANT) {
-            Plant *plant = (Plant *)hitResult.mObject;
+        if (aObjectType == GameObjectType::OBJECT_TYPE_PLANT) {
+            auto *plant = (Plant *)hitResult.mObject;
             bool isValidCobCannon = plant->mSeedType == SeedType::SEED_COBCANNON && plant->mState == PlantState::STATE_COBCANNON_READY;
             if (!isValidCobCannon) {
                 gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_NONE;
@@ -5086,7 +5069,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
         }
     }
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_COIN) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_COIN) {
         Coin *coin = (Coin *)hitResult.mObject;
 
         if (coin->mType == CoinType::COIN_USABLE_SEED_PACKET) {
@@ -5100,7 +5083,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             // LOGD("5656565656");
             // GamepadControls_OnKeyDown(gamepadCon
             // trols1, 27, 1096);//放下手上的植物卡片
-            // mSendKeyWhenTouchUp = false;
+            // gSendKeyWhenTouchUp = false;
             // }
             mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
             RefreshSeedPacketFromCursor(0);
@@ -5108,16 +5091,16 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
         }
     }
 
-    if (mGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
-        if (slotMachineRect.Contains(x, y)) {
+    if (aGameMode == GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) { // 拉老虎机用
+        if (gSlotMachineRect.Contains(x, y)) {
             mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_X_BUTTON, 1112);
             return;
         }
     }
 
-    if (mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) { // 移动重型武器
+    if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) { // 移动重型武器
         gTouchStateSecond = TouchState::TOUCHSTATE_HEAVY_WEAPON;
-        mHeavyWeaponX = mChallenge->mHeavyWeaponX;
+        gTouchHeavyWeaponX = mChallenge->mHeavyWeaponX;
         return;
     }
 
@@ -5125,22 +5108,22 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
         if (mApp->IsScaryPotterLevel()) {
             requestDrawShovelInCursor = false;
         }
-        if (mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+        if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
             mGamepadControls[0]->mCursorPositionX = x - 40;
             mGamepadControls[0]->mCursorPositionY = y - 40;
         } else {
             mGamepadControls[0]->mCursorPositionX = x;
             mGamepadControls[0]->mCursorPositionY = y;
         }
-        if (!mApp->IsWhackAZombieLevel() || mGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR)
+        if (!mApp->IsWhackAZombieLevel() || aGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR)
             return; // 这一行代码的意义：在锤僵尸关卡，手持植物时，允许拖动种植。
     }
 
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_WATERING_CAN || mObjectType == GameObjectType::OBJECT_TYPE_FERTILIZER || mObjectType == GameObjectType::OBJECT_TYPE_BUG_SPRAY
-        || mObjectType == GameObjectType::OBJECT_TYPE_PHONOGRAPH || mObjectType == GameObjectType::OBJECT_TYPE_CHOCOLATE || mObjectType == GameObjectType::OBJECT_TYPE_GLOVE
-        || mObjectType == GameObjectType::OBJECT_TYPE_MONEY_SIGN || mObjectType == GameObjectType::OBJECT_TYPE_WHEELBARROW || mObjectType == GameObjectType::OBJECT_TYPE_TREE_FOOD) {
-        PickUpTool(mObjectType, 0);
+    if (aObjectType == GameObjectType::OBJECT_TYPE_WATERING_CAN || aObjectType == GameObjectType::OBJECT_TYPE_FERTILIZER || aObjectType == GameObjectType::OBJECT_TYPE_BUG_SPRAY
+        || aObjectType == GameObjectType::OBJECT_TYPE_PHONOGRAPH || aObjectType == GameObjectType::OBJECT_TYPE_CHOCOLATE || aObjectType == GameObjectType::OBJECT_TYPE_GLOVE
+        || aObjectType == GameObjectType::OBJECT_TYPE_MONEY_SIGN || aObjectType == GameObjectType::OBJECT_TYPE_WHEELBARROW || aObjectType == GameObjectType::OBJECT_TYPE_TREE_FOOD) {
+        PickUpTool(aObjectType, 0);
         return;
     }
 
@@ -5149,7 +5132,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
     tmpY1 = mGamepadControls[0]->mCursorPositionY;
 
     if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-        if (mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+        if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
             mGamepadControls[0]->mCursorPositionX = x - 40;
             mGamepadControls[0]->mCursorPositionY = y - 40;
         } else {
@@ -5157,7 +5140,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             mGamepadControls[0]->mCursorPositionY = y;
         }
     } else {
-        if (mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+        if (aGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
             mGamepadControls[1]->mCursorPositionX = x - 40;
             mGamepadControls[1]->mCursorPositionY = y - 40;
         } else {
@@ -5167,13 +5150,13 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
     }
 
     if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-        if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected || requestDrawShovelInCursor
+        if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected || requestDrawShovelInCursor
             || (mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && gTouchStateSecond != TouchState::TOUCHSTATE_USEFUL_SEED_PACKET)) {
             gTouchStateSecond = TouchState::TOUCHSTATE_PICKING_SOMETHING;
             gSendKeyWhenTouchUpSecond = true;
         }
     } else {
-        if (mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected_2P || requestDrawButterInCursor
+        if (aGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR || isCobCannonSelected_2P || requestDrawButterInCursor
             || (mCursorType_2P == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN && gTouchStateSecond != TouchState::TOUCHSTATE_USEFUL_SEED_PACKET)) {
             gTouchStateSecond = TouchState::TOUCHSTATE_PICKING_SOMETHING;
             gSendKeyWhenTouchUpSecond = true;
@@ -5181,10 +5164,10 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
     }
 
 
-    if (mObjectType == GameObjectType::OBJECT_TYPE_PLANT) {
+    if (aObjectType == GameObjectType::OBJECT_TYPE_PLANT) {
         if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 && requestDrawShovelInCursor)
             return;
-        Plant *plant = (Plant *)hitResult.mObject;
+        auto *plant = (Plant *)hitResult.mObject;
         bool isValidCobCannon = plant->mSeedType == SeedType::SEED_COBCANNON && plant->mState == PlantState::STATE_COBCANNON_READY;
         if (isValidCobCannon) {
             if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 && mGamepadControls[1]->mPlayerIndex2 == -1) {
@@ -5204,24 +5187,22 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                 gTouchStateSecond = TouchState::TOUCHSTATE_VALID_COBCONON_SECOND;
                 return;
             } else if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
-                if (mGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+                if (aGameState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                     mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                     gSendKeyWhenTouchUpSecond = false;
                     if (!isTwoSeedBankMode)
                         mGamepadControls[0]->mIsInShopSeedBank = true;
                     int newSeedPacketIndex = mGamepadControls[0]->mSelectedSeedIndex;
-                    SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
-                    seedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
+                    aSeedBank->mSeedPackets[newSeedPacketIndex].mLastSelectedTime = 0.0f; // 动画效果专用
                 }
                 mGamepadControls[0]->pickUpCobCannon(plant);
             } else {
-                if (mGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+                if (aGameState_2P == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                     mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                     gSendKeyWhenTouchUpSecond = false;
                     if (!isTwoSeedBankMode)
                         mGamepadControls[1]->mIsInShopSeedBank = true;
                     int newSeedPacketIndex_2P = mGamepadControls[1]->mSelectedSeedIndex;
-                    SeedBank *seedBank_2P = mGamepadControls[1]->GetSeedBank();
                     seedBank_2P->mSeedPackets[newSeedPacketIndex_2P].mLastSelectedTime = 0.0f; // 动画效果专用
                 }
                 mGamepadControls[1]->pickUpCobCannon(plant);
@@ -5277,7 +5258,7 @@ void Board::MouseDragSecond(int x, int y) {
 
     if (gTouchStateSecond == TouchState::TOUCHSTATE_SHOVEL_RECT) {
         if (aGameMode == GameMode::GAMEMODE_MP_VS) {
-            if (mTouchVSShovelRect.Contains(gTouchLastXSecond, gTouchLastYSecond) && !mTouchVSShovelRect.Contains(x, y)) {
+            if (gTouchVSShovelRect.Contains(gTouchLastXSecond, gTouchLastYSecond) && !gTouchVSShovelRect.Contains(x, y)) {
                 gTouchStateSecond = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SHOVEL_RECT;
                 if (!requestDrawShovelInCursor)
                     mApp->PlayFoley(FoleyType::FOLEY_SHOVEL);
@@ -5289,7 +5270,7 @@ void Board::MouseDragSecond(int x, int y) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
                 gSendKeyWhenTouchUpSecond = true;
             }
-        } else if (gTouchLastYSecond < mTouchShovelRectWidth && y >= mTouchShovelRectWidth) {
+        } else if (gTouchLastYSecond < gTouchShovelRectWidth && y >= gTouchShovelRectWidth) {
             gTouchStateSecond = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_SHOVEL_RECT;
             if (!requestDrawShovelInCursor)
                 mApp->PlayFoley(FoleyType::FOLEY_SHOVEL);
@@ -5303,7 +5284,7 @@ void Board::MouseDragSecond(int x, int y) {
         }
     }
 
-    if (gTouchStateSecond == TouchState::TOUCHSTATE_BUTTER_RECT && gTouchLastYSecond < mTouchButterRectWidth && y >= mTouchButterRectWidth) {
+    if (gTouchStateSecond == TouchState::TOUCHSTATE_BUTTER_RECT && gTouchLastYSecond < gTouchButterRectWidth && y >= gTouchButterRectWidth) {
         gTouchStateSecond = TouchState::TOUCHSTATE_BOARD_MOVED_FROM_BUTTER_RECT;
         if (!requestDrawButterInCursor)
             mApp->PlayFoley(FoleyType::FOLEY_FLOOP);
@@ -5314,7 +5295,7 @@ void Board::MouseDragSecond(int x, int y) {
 
     if (gTouchStateSecond == TouchState::TOUCHSTATE_VALID_COBCONON || gTouchStateSecond == TouchState::TOUCHSTATE_VALID_COBCONON_SECOND
         || gTouchStateSecond == TouchState::TOUCHSTATE_USEFUL_SEED_PACKET) {
-        if (!gSendKeyWhenTouchUpSecond && (abs(x - gTouchDownXSecond) > mTouchTrigger || abs(y - gTouchDownYSecond) > mTouchTrigger)) {
+        if (!gSendKeyWhenTouchUpSecond && (abs(x - gTouchDownXSecond) > gTouchTrigger || abs(y - gTouchDownYSecond) > gTouchTrigger)) {
             gSendKeyWhenTouchUpSecond = true;
         }
     }
@@ -5372,7 +5353,7 @@ void Board::MouseDragSecond(int x, int y) {
 
 
     if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gTouchStateSecond == TouchState::TOUCHSTATE_HEAVY_WEAPON) {
-        mChallenge->mHeavyWeaponX = mHeavyWeaponX + x - gTouchDownXSecond; // 移动重型武器X坐标
+        mChallenge->mHeavyWeaponX = gTouchHeavyWeaponX + x - gTouchDownXSecond; // 移动重型武器X坐标
         return;
     }
 
@@ -5433,6 +5414,9 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                            || aGameMode == GameMode::GAMEMODE_MP_VS) {
                     mGamepadControls[0]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[0]->mPlayerIndex1, 0);
                 } else {
+                    if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) { // 重型武器关卡需要设置为状态6才能种植猫尾草
+                        mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_SELECT_SEED;
+                    }
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                 }
                 BaseGamepadControls::MovementState mGameStateNew = mGamepadControls[0]->mGamepadState;
@@ -5441,8 +5425,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                 mGamepadControls[0]->mIsInShopSeedBank = mGameStateNew != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 if (aGameState != mGameStateNew) {
                     if (!HasConveyorBeltSeedBank(0) || aNumSeedsOnConveyor == numSeedsInBankNew) { // 修复传送带关卡种植之后SeedBank动画不正常
-                        SeedBank *seedBank = mGamepadControls[0]->GetSeedBank();
-                        seedBank->mSeedPackets[seedPacketIndexNew].mLastSelectedTime = 0.0f; // 动画效果专用
+                        aSeedBank->mSeedPackets[seedPacketIndexNew].mLastSelectedTime = 0.0f;      // 动画效果专用
                     }
                 }
             }
@@ -5499,7 +5482,7 @@ void Board::StartLevel() {
             GridItem *gridItem = nullptr;
             while (IterateGridItems(gridItem)) {
 
-                U16UNI32_Event eventSync;
+                U16UNI32_Event eventSync{};
                 eventSync.type = EventType::EVENT_SERVER_BOARD_SYNC_ID;
                 eventSync.data1 = uint16_t(mGridItems.DataArrayGetID(gridItem));
                 eventSync.data2.u8x4.u8_1 = 1; // 1 --> GridItem
@@ -5516,7 +5499,7 @@ void Board::StartLevel() {
             Plant *plant = nullptr;
             while (IteratePlants(plant)) {
 
-                U16UNI32_Event eventSync;
+                U16UNI32_Event eventSync{};
                 eventSync.type = EventType::EVENT_SERVER_BOARD_SYNC_ID;
                 eventSync.data1 = uint16_t(mPlants.DataArrayGetID(plant));
                 eventSync.data2.u8x4.u8_1 = 0; // 0 --> Plant
@@ -5726,8 +5709,8 @@ void Board::FadeOutLevel() {
 
     if (!mApp->IsSurvivalMode()) {
         int theNumLawnMowers = 0;
-        for (int i = 0; i < 6; ++i) {
-            if (mPlantRow[i] != PlantRowType::PLANTROW_DIRT) {
+        for (auto &i : mPlantRow) {
+            if (i != PlantRowType::PLANTROW_DIRT) {
                 theNumLawnMowers++;
             }
         }
@@ -5992,7 +5975,7 @@ int Board::PixelToGridXKeepOnBoard(int theX, int theY) {
     return std::max(aGridX, 0);
 }
 
-int Board::GridToPixelX(int theGridX, int theGridY) {
+int Board::GridToPixelX(int theGridX, int theGridY) const {
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {
         if (mBackground == BackgroundType::BACKGROUND_GREENHOUSE || mBackground == BackgroundType::BACKGROUND_MUSHROOM_GARDEN || mBackground == BackgroundType::BACKGROUND_ZOMBIQUARIUM) {
             return mApp->mZenGarden->GridToPixelX(theGridX, theGridY);
@@ -6128,6 +6111,8 @@ void Board::FixReanimErrorAfterLoad() {
                         case 2:
                             mBodyReanim->SetImageOverride("anim_screendoor", Sexy::IMAGE_REANIM_ZOMBIE_SCREENDOOR3);
                             break;
+                        default:
+                            break;
                     }
                     break;
                 case ShieldType::SHIELDTYPE_NEWSPAPER:
@@ -6138,6 +6123,8 @@ void Board::FixReanimErrorAfterLoad() {
                         case 2:
                             mBodyReanim->SetImageOverride("Zombie_paper_paper", Sexy::IMAGE_REANIM_ZOMBIE_PAPER_PAPER3);
                             break;
+                        default:
+                            break;
                     }
                     break;
                 case ShieldType::SHIELDTYPE_LADDER:
@@ -6147,6 +6134,8 @@ void Board::FixReanimErrorAfterLoad() {
                             break;
                         case 2:
                             mBodyReanim->SetImageOverride("Zombie_ladder_1", Sexy::IMAGE_REANIM_ZOMBIE_LADDER_1_DAMAGE2);
+                            break;
+                        default:
                             break;
                     }
                     break;
@@ -6160,6 +6149,8 @@ void Board::FixReanimErrorAfterLoad() {
                             break;
                         case 2:
                             mBodyReanim->SetImageOverride("anim_screendoor", Sexy::IMAGE_REANIM_ZOMBIE_TRASHCAN3);
+                            break;
+                        default:
                             break;
                     }
                     break;
@@ -6180,6 +6171,8 @@ void Board::FixReanimErrorAfterLoad() {
                         case 2:
                             mBodyReanim->SetImageOverride("anim_cone", Sexy::IMAGE_REANIM_ZOMBIE_CONE3);
                             break;
+                        default:
+                            break;
                     }
                     break;
                 case HelmType::HELMTYPE_PAIL:
@@ -6189,6 +6182,8 @@ void Board::FixReanimErrorAfterLoad() {
                             break;
                         case 2:
                             mBodyReanim->SetImageOverride("anim_bucket", Sexy::IMAGE_REANIM_ZOMBIE_BUCKET3);
+                            break;
+                        default:
                             break;
                     }
                     break;
@@ -6200,6 +6195,8 @@ void Board::FixReanimErrorAfterLoad() {
                         case 2:
                             mBodyReanim->SetImageOverride("zombie_football_helmet", Sexy::IMAGE_REANIM_ZOMBIE_FOOTBALL_HELMET3);
                             break;
+                        default:
+                            break;
                     }
                     break;
                 case HelmType::HELMTYPE_DIGGER:
@@ -6209,6 +6206,8 @@ void Board::FixReanimErrorAfterLoad() {
                             break;
                         case 2:
                             mBodyReanim->SetImageOverride("Zombie_digger_hardhat", Sexy::IMAGE_REANIM_ZOMBIE_DIGGER_HARDHAT3);
+                            break;
+                        default:
                             break;
                     }
                     break;
@@ -6221,6 +6220,8 @@ void Board::FixReanimErrorAfterLoad() {
                         case 2:
                             mSpecialHeadReanim->SetImageOverride("anim_face", Sexy::IMAGE_REANIM_WALLNUT_CRACKED2);
                             break;
+                        default:
+                            break;
                     }
                 } break;
                 case HelmType::HELMTYPE_TALLNUT: {
@@ -6231,6 +6232,8 @@ void Board::FixReanimErrorAfterLoad() {
                             break;
                         case 2:
                             mSpecialHeadReanim->SetImageOverride("anim_face", Sexy::IMAGE_REANIM_TALLNUT_CRACKED2);
+                            break;
+                        default:
                             break;
                     }
                 } break;
@@ -6259,6 +6262,9 @@ void Board::FixReanimErrorAfterLoad() {
                     mBodyReanim->SetImageOverride("Zombie_gargantuar_outerarm_lower", Sexy::IMAGE_REANIM_ZOMBIE_GARGANTUAR_OUTERARM_LOWER2);
                     mBodyReanim->SetImageOverride("anim_head1",
                                                   zombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR ? Sexy::IMAGE_REANIM_ZOMBIE_GARGANTUAR_HEAD2_REDEYE : Sexy::IMAGE_REANIM_ZOMBIE_GARGANTUAR_HEAD2);
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -6280,6 +6286,8 @@ void Board::FixReanimErrorAfterLoad() {
                     mBodyReanim->SetImageOverride("Boss_outerarm_thumb2", Sexy::IMAGE_REANIM_ZOMBIE_BOSS_OUTERARM_THUMB_DAMAGE2);
                     mBodyReanim->SetImageOverride("Boss_outerleg_foot", Sexy::IMAGE_REANIM_ZOMBIE_BOSS_FOOT_DAMAGE2);
                     break;
+                default:
+                    break;
             }
         }
 
@@ -6295,6 +6303,8 @@ void Board::FixReanimErrorAfterLoad() {
                     mBodyReanim->SetImageOverride("Zombie_zamboni_1", Sexy::IMAGE_REANIM_ZOMBIE_ZAMBONI_1_DAMAGE2);
                     mBodyReanim->SetImageOverride("Zombie_zamboni_2", Sexy::IMAGE_REANIM_ZOMBIE_ZAMBONI_2_DAMAGE2);
                     break;
+                default:
+                    break;
             }
         }
 
@@ -6305,6 +6315,8 @@ void Board::FixReanimErrorAfterLoad() {
                 case 1:
                 case 2:
                     mBodyReanim->SetImageOverride("Zombie_catapult_siding", Sexy::IMAGE_REANIM_ZOMBIE_CATAPULT_SIDING_DAMAGE);
+                    break;
+                default:
                     break;
             }
         }
@@ -6330,8 +6342,8 @@ void Board::FixReanimErrorAfterLoad() {
     }
 }
 
-bool Board::PlantUsesAcceleratedPricing(SeedType theSeedType) {
-    return Plant::IsUpgrade(theSeedType) && mApp->IsSurvivalEndless(mApp->mGameMode);
+bool Board::PlantUsesAcceleratedPricing(SeedType theSeedType) const {
+    return Plant::IsUpgrade(theSeedType) && LawnApp::IsSurvivalEndless(mApp->mGameMode);
 }
 
 bool Board::IsPlantInCursor() {
@@ -6359,7 +6371,7 @@ void Board::RemoveAllGridItems() {
 }
 
 bool Board::IsValidCobCannonSpotHelper(int theGridX, int theGridY) {
-    PlantsOnLawn aPlantOnLawn;
+    PlantsOnLawn aPlantOnLawn{};
     GetPlantsOnLawn(theGridX, theGridY, &aPlantOnLawn);
     if (aPlantOnLawn.mPumpkinPlant)
         return false;
@@ -6383,7 +6395,7 @@ int Board::TotalZombiesHealthInWave(int theWaveIndex) {
     while (IterateZombies(aZombie)) {
         if (aZombie->mFromWave == theWaveIndex && !aZombie->mMindControlled && !aZombie->IsDeadOrDying() && aZombie->mZombieType != ZombieType::ZOMBIE_BUNGEE
             && aZombie->mRelatedZombieID == ZombieID::ZOMBIEID_NULL) {
-            aTotalHealth += aZombie->mBodyHealth + aZombie->mHelmHealth + aZombie->mShieldHealth * 0.2f + aZombie->mFlyingHealth;
+            aTotalHealth += aZombie->mBodyHealth + aZombie->mHelmHealth + aZombie->mShieldHealth / 5 + aZombie->mFlyingHealth;
         }
     }
     return aTotalHealth;
@@ -6727,7 +6739,7 @@ void Board::ShuffleButtonDown(SeedPacket *theSeedPacket) {
         theSeedPacket->WasPlanted(0);
 
         if (gTcpClientSocket >= 0) {
-            U16x6_Event event;
+            U16x6_Event event{};
             event.type = EventType::EVENT_SERVER_BOARD_SHUFFLE_RANDOM_PICK;
             for (int i = 0; i < 5; ++i) {
                 event.data[i] = aPlantSeeds[i];
@@ -6753,7 +6765,7 @@ void Board::ShuffleButtonDown(SeedPacket *theSeedPacket) {
         theSeedPacket->WasPlanted(1);
 
         if (gTcpClientSocket >= 0) {
-            U16x6_Event event;
+            U16x6_Event event{};
             event.type = EventType::EVENT_SERVER_BOARD_SHUFFLE_RANDOM_PICK;
             for (int i = 0; i < 5; ++i) {
                 event.data[i] = aZombieSeeds[i];
@@ -6877,7 +6889,7 @@ void Board::PlantsWon_Origin(GridItem *theGridItem) {
     old_Board_PlantsWon(this, theGridItem);
 }
 
-ZombieType Board::PickGraveRisingZombieTypeMP(int theMoundLevel) {
+ZombieType Board::PickGraveRisingZombieTypeMP(int theMoundLevel) const {
     TodWeightedArray aZombieWeightArray[(int)ZombieType::NUM_ZOMBIE_TYPES];
     int aCount = 0;
     if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS_DEBUG) {
