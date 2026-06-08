@@ -297,6 +297,11 @@ const char *GetServerModeTransportSuffix() {
 
 void Board::ShovelDown() {
     // 用于铲掉光标正下方的植物。
+
+    if (mApp->mGameScene != SCENE_PLAYING) { // 正式开始对局后才能真正铲除植物
+        return;
+    }
+
     requestDrawShovelInCursor = false;
     if (gTcpClientSocket >= 0) {
         U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
