@@ -68,6 +68,9 @@ constexpr int kMode3ServerTargetLineH = 38;
 constexpr int kMode3ServerTargetMaxLen = 22; // "255.255.255.255:65535" + '\0'
 constexpr int kMode3ServerRecentCount = 3;
 constexpr int kMode3StartTimeoutTicks = 1000; // ~10s
+constexpr int kSpectatorsTextX = 140;
+constexpr int kSpectatorsTextWidth = 520;
+constexpr int kSpectatorsTextHeight = 120;
 constexpr const char *kOfficialServer1Addr = "8.163.89.131:26667";
 constexpr const char *kOfficialServer2Addr = "39.107.81.44:26667";
 
@@ -1046,6 +1049,9 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
         } else {
             // hosting/joined 提示
             if (mServerHosting) {
+                const bool showSpectators = mServerHostSpectateAllowed;
+                const int wantStartY = showSpectators ? 300 : 350;
+                const int spectatorsY = showSpectators ? 320 : 370;
 
                 pvzstl::string fmt = TodStringTranslate("[ROOM_CREATED_FMT]");
                 char *roomName = mServerHostedRoomName[0] != '\0' ? mServerHostedRoomName : mApp->mPlayerInfo->mName;
@@ -1060,22 +1066,24 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                     TodDrawString(g, str3, 400, 250, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
                 }
 
-                pvzstl::string p2pReady = TodStringTranslate("[P2P_READY]");
-                pvzstl::string p2pNotReady = TodStringTranslate("[P2P_NOT_READY]");
-                pvzstl::string p2pStateFmt = TodStringTranslate("[ROOM_P2P_STATE]");
-                TodDrawString(g,
-                              StrFormat(p2pStateFmt.c_str(), mServerHostProbeDone ? p2pReady.c_str() : p2pNotReady.c_str(), mServerGuestProbeDone ? p2pReady.c_str() : p2pNotReady.c_str()),
-                              400,
-                              300,
-                              g->GetFont(),
-                              g->GetColor(),
-                              DS_ALIGN_CENTER);
+                if (!showSpectators) {
+                    pvzstl::string p2pReady = TodStringTranslate("[P2P_READY]");
+                    pvzstl::string p2pNotReady = TodStringTranslate("[P2P_NOT_READY]");
+                    pvzstl::string p2pStateFmt = TodStringTranslate("[ROOM_P2P_STATE]");
+                    TodDrawString(g,
+                                  StrFormat(p2pStateFmt.c_str(), mServerHostProbeDone ? p2pReady.c_str() : p2pNotReady.c_str(), mServerGuestProbeDone ? p2pReady.c_str() : p2pNotReady.c_str()),
+                                  400,
+                                  300,
+                                  g->GetFont(),
+                                  g->GetColor(),
+                                  DS_ALIGN_CENTER);
+                }
 
                 //                DrawServerP2PStatus(g, 170, 290);
                 if (mServerClientWantStart) {
-                    TodDrawString(g, "[CLIENT_WANT_START]", 400, 350, g->GetFont(), Sexy::Color(0, 128, 255, 255), DS_ALIGN_CENTER);
+                    TodDrawString(g, "[CLIENT_WANT_START]", 400, wantStartY, g->GetFont(), Sexy::Color(0, 128, 255, 255), DS_ALIGN_CENTER);
                 }
-                if (mServerHostSpectateAllowed) {
+                if (showSpectators) {
                     pvzstl::string spectatorsText = StrFormat(TodStringTranslate("[SPECTATORS_NUM]").c_str(), mServerSpectatorCount);
                     if (mServerSpectatorCount <= 0) {
                         spectatorsText += "-";
@@ -1088,31 +1096,36 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                             spectatorsText += name;
                         }
                     }
-                    TodDrawString(g, spectatorsText, 400, 390, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+                    TodDrawStringWrapped(g, spectatorsText, Rect(kSpectatorsTextX, spectatorsY, kSpectatorsTextWidth, kSpectatorsTextHeight), g->GetFont(), g->GetColor(), DS_ALIGN_CENTER, false);
                 }
             } else if (mServerJoined) {
+                const bool showSpectators = mServerJoinedSpectateAllowed;
+                const int wantStartY = showSpectators ? 300 : 350;
+                const int spectatorsY = showSpectators ? 320 : 370;
                 const char *roomName = mServerJoinedRoomName[0] != '\0' ? mServerJoinedRoomName : "Unknown";
 
                 pvzstl::string fmtJoin = TodStringTranslate("[JOINED_ROOM_FMT]");
                 pvzstl::string str = StrFormat(fmtJoin.c_str(), roomName);
                 TodDrawString(g, str, 400, 200, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
 
-                pvzstl::string p2pReady = TodStringTranslate("[P2P_READY]");
-                pvzstl::string p2pNotReady = TodStringTranslate("[P2P_NOT_READY]");
-                pvzstl::string p2pStateFmt = TodStringTranslate("[ROOM_P2P_STATE]");
-                TodDrawString(g,
-                              StrFormat(p2pStateFmt.c_str(), mServerHostProbeDone ? p2pReady.c_str() : p2pNotReady.c_str(), mServerGuestProbeDone ? p2pReady.c_str() : p2pNotReady.c_str()),
-                              400,
-                              300,
-                              g->GetFont(),
-                              g->GetColor(),
-                              DS_ALIGN_CENTER);
+                if (!showSpectators) {
+                    pvzstl::string p2pReady = TodStringTranslate("[P2P_READY]");
+                    pvzstl::string p2pNotReady = TodStringTranslate("[P2P_NOT_READY]");
+                    pvzstl::string p2pStateFmt = TodStringTranslate("[ROOM_P2P_STATE]");
+                    TodDrawString(g,
+                                  StrFormat(p2pStateFmt.c_str(), mServerHostProbeDone ? p2pReady.c_str() : p2pNotReady.c_str(), mServerGuestProbeDone ? p2pReady.c_str() : p2pNotReady.c_str()),
+                                  400,
+                                  300,
+                                  g->GetFont(),
+                                  g->GetColor(),
+                                  DS_ALIGN_CENTER);
+                }
 
                 //                DrawServerP2PStatus(g, 170, 290);
                 if (mServerAskedWantStart) {
-                    TodDrawString(g, "[ASKED_WANT_START]", 400, 350, g->GetFont(), Sexy::Color(0, 128, 255, 255), DS_ALIGN_CENTER);
+                    TodDrawString(g, "[ASKED_WANT_START]", 400, wantStartY, g->GetFont(), Sexy::Color(0, 128, 255, 255), DS_ALIGN_CENTER);
                 }
-                if (mServerJoinedSpectateAllowed) {
+                if (showSpectators) {
                     pvzstl::string spectatorsText = StrFormat(TodStringTranslate("[SPECTATORS_NUM]").c_str(), mServerSpectatorCount);
                     if (mServerSpectatorCount <= 0) {
                         spectatorsText += "-";
@@ -1125,7 +1138,7 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                             spectatorsText += name;
                         }
                     }
-                    TodDrawString(g, spectatorsText, 400, 390, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+                    TodDrawStringWrapped(g, spectatorsText, Rect(kSpectatorsTextX, spectatorsY, kSpectatorsTextWidth, kSpectatorsTextHeight), g->GetFont(), g->GetColor(), DS_ALIGN_CENTER, false);
                 }
             } else if (mServerSpectating) {
                 const char *hostName = (gServerHostName[0] != '\0') ? gServerHostName : ((mServerJoinedRoomName[0] != '\0') ? mServerJoinedRoomName : "-");
@@ -1147,7 +1160,8 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                         spectatorsText += name;
                     }
                 }
-                TodDrawString(g, spectatorsText, 400, infoStartY + infoLineStep * 2, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+                TodDrawStringWrapped(
+                    g, spectatorsText, Rect(kSpectatorsTextX, infoStartY + infoLineStep * 2 - 20, kSpectatorsTextWidth, kSpectatorsTextHeight), g->GetFont(), g->GetColor(), DS_ALIGN_CENTER, false);
             } else {
                 //                DrawServerP2PStatus(g, 170, 240);
                 DrawServerRoomList(g);
