@@ -20,6 +20,8 @@
 #ifndef HOMURA_MEMBERUTILS_H
 #define HOMURA_MEMBERUTILS_H
 
+#include "Homura/MemberUtils/ExtractMemFuncPtrType.h"
+
 #include <cstdint>
 
 #include <concepts>
@@ -156,20 +158,13 @@ namespace details {
     void CheckVirtualFunc(const CppMemFuncPtr *ptr);
 } // namespace details
 
-template <typename T, typename Ret, typename... Args, typename FuncPtr = Ret (*)(T *, Args...)>
-FuncPtr ExtractMemFuncPtr(Ret (T::*memFuncPtr)(Args...)) {
+template <typename T>
+    requires std::is_member_function_pointer_v<T>
+ExtractMemFuncPtrType<T> ExtractMemFuncPtr(T memFuncPtr) {
 #ifdef PVZ_DEBUG
     details::CheckVirtualFunc(reinterpret_cast<details::CppMemFuncPtr *>(&memFuncPtr));
 #endif
-    return reinterpret_cast<FuncPtr &>(memFuncPtr);
-}
-
-template <typename T, typename Ret, typename... Args, typename FuncPtr = Ret (*)(const T *, Args...)>
-FuncPtr ExtractMemFuncPtr(Ret (T::*memFuncPtr)(Args...) const) {
-#ifdef PVZ_DEBUG
-    details::CheckVirtualFunc(reinterpret_cast<details::CppMemFuncPtr *>(&memFuncPtr));
-#endif
-    return reinterpret_cast<FuncPtr &>(memFuncPtr);
+    return reinterpret_cast<ExtractMemFuncPtrType<T> &>(memFuncPtr);
 }
 
 } // namespace homura
