@@ -39,9 +39,6 @@ namespace details {
 /**
  * @brief 替换全局函数/静态成员函数.
  *
- * @tparam R 目标函数的返回值类型.
- * @tparam Args 目标函数的参数类型.
- *
  * @param [in] symbol 通过 dlsym 函数获取的函数符号地址.
  * @param [in] newFunc 用于替换的新函数.
  * @param [out] oldFuncAddr 一个函数指针的地址, 用于保留旧函数. (可传入 nullptr 字面量, 代表不保留)
@@ -55,10 +52,6 @@ void HookFunc(void *symbol, T *newFunc, std::type_identity_t<T **> oldFuncAddr) 
 /**
  * @brief 替换非静态成员函数.
  *
- * @tparam R 目标函数的返回值类型.
- * @tparam T 目标函数所属类的类型.
- * @tparam Args 目标函数的参数类型.
- *
  * @param [in] symbol 通过 dlsym 函数获取的函数符号地址.
  * @param [in] newFunc 用于替换的新函数.
  * @param [out] oldFuncAddr 一个函数指针的地址, 用于保留旧函数. (可传入 nullptr 字面量, 代表不保留)
@@ -71,10 +64,6 @@ void HookFunc(void *symbol, T newFunc, ExtractMemFuncPtrType<T> *oldFuncAddr) {
 
 /**
  * @brief 替换虚函数.
- *
- *
- * @tparam R 目标函数的返回值类型.
- * @tparam Args 目标函数的参数类型.
  *
  * @param [in] vTableSymbol 通过 dlsym 函数获取的虚函数表符号地址.
  * @param [in] index 目标函数在虚函数表中的索引.
@@ -92,9 +81,6 @@ bool HookVirtualFunc(void *vTableSymbol, std::size_t index, T *newFunc, std::typ
 /**
  * @brief 替换虚函数.
  *
- * @tparam R 目标函数的返回值类型.
- * @tparam Args 目标函数的参数类型.
- *
  * @param [in] vTableSymbol 通过 dlsym 函数获取的虚函数表符号地址.
  * @param [in] index 目标函数在虚函数表中的索引.
  * @param [in] newFunc 用于替换的新函数.
@@ -110,9 +96,6 @@ bool HookVirtualFunc(void *vTableSymbol, std::size_t index, T newFunc, ExtractMe
 
 /**
  * @brief 替换 PLT 段函数.
- *
- * @tparam R 目标函数的返回值类型.
- * @tparam Args 目标函数的参数类型.
  *
  * @param [in] libName 目标函数所属模块的名称.
  * @param [in] offset 目标函数在所属模块中的偏移量.
