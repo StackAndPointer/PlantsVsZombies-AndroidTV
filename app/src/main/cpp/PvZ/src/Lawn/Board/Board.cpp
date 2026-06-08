@@ -3666,13 +3666,32 @@ void Board::MouseMove(int x, int y) {
 }
 
 void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerIndex) {
+
+    if (theClickCount < 0) {
+        RefreshSeedPacketFromCursor(thePlayerIndex);
+        mApp->PlayFoley(FoleyType::FOLEY_DROP);
+        return;
+    }
+
     if (mApp->IsIZombieLevel()) {
         mChallenge->IZombieMouseDownWithZombie(x, y, theClickCount, thePlayerIndex);
         return;
     }
+
     if (mApp->mGameMode == GAMEMODE_CHALLENGE_ZOMBIQUARIUM || mApp->mGameMode == GAMEMODE_CHALLENGE_HEAVY_WEAPON) {
         return;
     }
+
+    SeedType plantingSeedType = GetSeedTypeInCursor(thePlayerIndex);
+    int gridX = PixelToGridX(x, y);
+    int gridY = PixelToGridY(x, y);
+    if (gridX < 0 || gridX >= MAX_GRID_SIZE_X || gridY < 0 || gridY >= MAX_GRID_SIZE_Y) {
+        RefreshSeedPacketFromCursor(thePlayerIndex);
+        mApp->PlayFoley(FoleyType::FOLEY_DROP);
+        return;
+    }
+
+
     CursorObject *cursor = mCursorObject[thePlayerIndex];
     GamepadControls *gamepad;
     SeedBank *seedBank;
@@ -3684,25 +3703,9 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
         seedBank = gamepad->GetSeedBank();
     }
 
-
-    if (theClickCount < 0) {
-        RefreshSeedPacketFromCursor(thePlayerIndex);
-        mApp->PlayFoley(FoleyType::FOLEY_DROP);
-        return;
-    }
-
     if (mApp->IsIZombieLevel() || (mApp->mGameMode == GameMode::GAMEMODE_MULTI_PLAYER && thePlayerIndex > 0)) {
         HitResult hitResult = {};
         mChallenge->MouseDown(x, y, theClickCount, &hitResult, thePlayerIndex);
-        return;
-    }
-
-    SeedType plantingSeedType = GetSeedTypeInCursor(thePlayerIndex);
-    int gridX = PixelToGridX(x, y);
-    int gridY = PixelToGridY(x, y);
-    if (gridX < 0 || gridX >= MAX_GRID_SIZE_X || gridY < 0 || gridY >= MAX_GRID_SIZE_Y) {
-        RefreshSeedPacketFromCursor(thePlayerIndex);
-        mApp->PlayFoley(FoleyType::FOLEY_DROP);
         return;
     }
 
@@ -3782,6 +3785,9 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
         if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE || mApp->IsWhackAZombieLevel()) {
             RefreshSeedPacketFromCursor(thePlayerIndex);
             mApp->PlayFoley(FoleyType::FOLEY_DROP);
+        } else {
+            RefreshSeedPacketFromCursor(thePlayerIndex);
+            mApp->PlaySample(SOUND_BUZZER);
         }
         return;
     }
