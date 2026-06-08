@@ -131,7 +131,7 @@ bool Challenge::IsMPSuddenDeath() const {
     return mSuddenDeathCounter > MP_SUDDEN_DEATH_START_COUNTER;
 }
 
-int Challenge::GetSuddenDeathCount() {
+int Challenge::GetSuddenDeathCount() const {
     if (!IsMPSuddenDeath()) {
         return -1;
     }

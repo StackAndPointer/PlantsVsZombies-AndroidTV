@@ -189,7 +189,7 @@ public:
     void TreeOfWisdomUpdate() {
         reinterpret_cast<void (*)(Challenge *)>(Challenge_TreeOfWisdomUpdateAddr)(this);
     }
-    int GetSuddenDeathCount();
+    int GetSuddenDeathCount() const;
     void IZombieMouseDownWithZombie(int x, int y, int theClickCount, int thePlayerIndex) {
         reinterpret_cast<void (*)(Challenge *, int, int, int, int)>(Challenge_IZombieMouseDownWithZombieAddr)(this, x, y, theClickCount, thePlayerIndex);
     }
