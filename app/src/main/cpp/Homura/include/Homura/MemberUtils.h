@@ -155,14 +155,14 @@ Ret CallVirtualFunc(T *thiz, std::convertible_to<Args> auto &&...args) {
 
 namespace details {
     struct CppMemFuncPtr;
-    void CheckVirtualFunc(const CppMemFuncPtr *ptr);
+    void CheckPmfBeforeExtract(const CppMemFuncPtr *pmfPtr);
 } // namespace details
 
 template <typename T>
     requires std::is_member_function_pointer_v<T>
 ExtractMemFuncPtrType<T> ExtractMemFuncPtr(T memFuncPtr) {
 #ifdef PVZ_DEBUG
-    details::CheckVirtualFunc(reinterpret_cast<details::CppMemFuncPtr *>(&memFuncPtr));
+    details::CheckPmfBeforeExtract(reinterpret_cast<details::CppMemFuncPtr *>(&memFuncPtr));
 #endif
     return reinterpret_cast<ExtractMemFuncPtrType<T> &>(memFuncPtr);
 }

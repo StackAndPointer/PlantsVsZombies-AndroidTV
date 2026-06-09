@@ -27,19 +27,25 @@ struct homura::details::CppMemFuncPtr {
     std::ptrdiff_t adj;
 };
 
-void homura::details::CheckVirtualFunc(const CppMemFuncPtr *ptr) {
+void homura::details::CheckPmfBeforeExtract(const CppMemFuncPtr *pmfPtr) {
 #if defined(__GNUC__) || defined(__clang__)
 
 #if defined(__arm__) || defined(__aarch64__)
     // Arm-Thumb: https://github.com/ARM-software/abi-aa/blob/main/cppabi32/cppabi32.rst#representation-of-pointer-to-member-function
     // AArch64: https://github.com/ARM-software/abi-aa/blob/main/cppabi64/cppabi64.rst#representation-of-pointer-to-member-function
-    const bool isVirtual = ptr->adj & 1;
+    const bool isVirtual = pmfPtr->adj & 0x1;
+    const bool isAdjusted = (pmfPtr->adj >> 1) != 0;
 #else
-    const bool isVirtual = std::uintptr_t(ptr->ptr) & 1;
+    const bool isVirtual = std::uintptr_t(pmfPtr->ptr) & 0x1;
+    const bool isAdjusted = pmfPtr->adj != 0;
 #endif
 
     if (isVirtual) [[unlikely]] {
         throw std::logic_error{"Cannot use a virtual function to hook"};
     }
+    if (isAdjusted) [[unlikely]] {
+        throw std::logic_error{"Cannot use a adjusted PMF to hook"};
+    }
+
 #endif
 }

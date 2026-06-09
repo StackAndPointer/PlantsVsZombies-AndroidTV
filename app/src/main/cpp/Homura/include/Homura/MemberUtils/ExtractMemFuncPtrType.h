@@ -27,9 +27,7 @@ namespace homura {
 namespace details {
     template <typename T>
         requires std::is_member_function_pointer_v<T>
-    struct ExtractMemFuncPtrTypeHelper {
-        static_assert(false, "Pointers to member functions with rvalue ref-qualifier are not supported");
-    };
+    struct ExtractMemFuncPtrTypeHelper;
 
     template <typename T, typename Ret, typename... Args>
     struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...)> {
@@ -100,6 +98,40 @@ namespace details {
     };
 
     template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) &&> {
+        using Type = Ret (*)(T *, Args...);
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) const &&> {
+        using Type = Ret (*)(const T *, Args...);
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) volatile &&> {
+        using Type = Ret (*)(volatile T *, Args...);
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) const volatile &&> {
+        using Type = Ret (*)(const volatile T *, Args...);
+    };
+
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) &&> {
+        using Type = Ret (*)(T *, Args..., ...);
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) const &&> {
+        using Type = Ret (*)(const T *, Args..., ...);
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) volatile &&> {
+        using Type = Ret (*)(volatile T *, Args..., ...);
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) const volatile &&> {
+        using Type = Ret (*)(const volatile T *, Args..., ...);
+    };
+
+    template <typename T, typename Ret, typename... Args>
     struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) noexcept> {
         using Type = Ret (*)(T *, Args...) noexcept;
     };
@@ -164,6 +196,40 @@ namespace details {
     };
     template <typename T, typename Ret, typename... Args>
     struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) const volatile & noexcept> {
+        using Type = Ret (*)(const volatile T *, Args..., ...) noexcept;
+    };
+
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) && noexcept> {
+        using Type = Ret (*)(T *, Args...) noexcept;
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) const && noexcept> {
+        using Type = Ret (*)(const T *, Args...) noexcept;
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) volatile && noexcept> {
+        using Type = Ret (*)(volatile T *, Args...) noexcept;
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args...) const volatile && noexcept> {
+        using Type = Ret (*)(const volatile T *, Args...) noexcept;
+    };
+
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) && noexcept> {
+        using Type = Ret (*)(T *, Args..., ...) noexcept;
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) const && noexcept> {
+        using Type = Ret (*)(const T *, Args..., ...) noexcept;
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) volatile && noexcept> {
+        using Type = Ret (*)(volatile T *, Args..., ...) noexcept;
+    };
+    template <typename T, typename Ret, typename... Args>
+    struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) const volatile && noexcept> {
         using Type = Ret (*)(const volatile T *, Args..., ...) noexcept;
     };
 } // namespace details
