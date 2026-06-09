@@ -327,10 +327,10 @@ inline bool (*old_Reanimation_DrawTrack)(Reanimation *reanim, Sexy::Graphics *g,
 
 inline void (*old_ReanimatorLoadDefinitions)(ReanimationParams *theReanimationParamArray, int theReanimationParamArraySize);
 
-inline void (*old_DefinitionGetCompiledFilePathFromXMLFilePath)(homura::Storage<pvzstl::string> &result, const pvzstl::string &defPathString);
+inline pvzstl::string (*old_DefinitionGetCompiledFilePathFromXMLFilePath)(const pvzstl::string &defPathString);
 
 void ReanimatorLoadDefinitions(ReanimationParams *theReanimationParamArray, int theReanimationParamArraySize);
 
-void DefinitionGetCompiledFilePathFromXMLFilePath(homura::Storage<pvzstl::string> &result, const pvzstl::string &defPathString);
+pvzstl::string DefinitionGetCompiledFilePathFromXMLFilePath(const pvzstl::string &defPathString);
 
 #endif // PVZ_SEXYAPPFRAMEWORK_EFFECT_REANIMATION_H

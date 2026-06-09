@@ -20,9 +20,9 @@
 #ifndef HOMURA_TYPEUTILS_H
 #define HOMURA_TYPEUTILS_H
 
-#include <concepts>
 #include <memory>
 #include <string>
+#include <type_traits>
 
 namespace homura {
 
@@ -90,22 +90,6 @@ public:
 
 protected:
     alignas(T) unsigned char data_[sizeof(T)];
-};
-
-/**
- * @brief 用作未初始化存储的类模板
- *
- * 对象使用 placement new 创建, 但不需要使用显式析构函数调用销毁.
- */
-template <std::destructible T>
-class AutoDestructStorage : public Storage<T> {
-public:
-    constexpr AutoDestructStorage() noexcept
-        : Storage<T>{} {}
-
-    ~AutoDestructStorage() {
-        this->Destruct();
-    }
 };
 
 } // namespace homura

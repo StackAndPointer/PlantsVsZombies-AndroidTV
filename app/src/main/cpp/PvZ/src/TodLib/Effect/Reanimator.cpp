@@ -329,13 +329,12 @@ int Reanimation::GetZombatarEyeWearTrackIndex() const {
     return -1;
 }
 
-void DefinitionGetCompiledFilePathFromXMLFilePath(homura::Storage<pvzstl::string> &result, const pvzstl::string &defPathString) {
+pvzstl::string DefinitionGetCompiledFilePathFromXMLFilePath(const pvzstl::string &defPathString) {
     // 从addonFiles读取新增的reanim文件
     if (defPathString.contains("addonFiles")) {
-        result.Construct(defPathString + ".compiled");
-        return;
+        return defPathString + ".compiled";
     }
-    old_DefinitionGetCompiledFilePathFromXMLFilePath(result, defPathString);
+    return old_DefinitionGetCompiledFilePathFromXMLFilePath(defPathString);
 }
 
 bool Reanimation::ShouldTriggerTimedEvent(float theEventTime) const {

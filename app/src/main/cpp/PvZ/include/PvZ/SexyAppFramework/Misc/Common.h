@@ -57,17 +57,16 @@ inline int GetTickCount() {
     return reinterpret_cast<int (*)()>(Sexy_GetTickCountAddr)();
 }
 
-inline void vformat(homura::Storage<pvzstl::string> &result, const char *fmt, std::va_list vList) {
-    reinterpret_cast<void (*)(homura::Storage<pvzstl::string> &, const char *, std::va_list)>(Sexy_vformatAddr)(result, fmt, vList);
+inline pvzstl::string vformat(const char *fmt, std::va_list vList) {
+    return reinterpret_cast<pvzstl::string (*)(const char *, std::va_list)>(Sexy_vformatAddr)(fmt, vList);
 }
 
 [[gnu::format(printf, 1, 2)]] inline pvzstl::string StrFormat(const char *fmt, ...) {
-    homura::AutoDestructStorage<pvzstl::string> result;
     std::va_list args;
     va_start(args, fmt);
-    vformat(result, fmt, args);
+    pvzstl::string ret = vformat(fmt, args);
     va_end(args);
-    return *std::move(result);
+    return ret;
 }
 
 } // namespace Sexy

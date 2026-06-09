@@ -204,16 +204,11 @@ inline bool TodLoadResources(const pvzstl::string &theGroup) {
 }
 
 inline pvzstl::string TodReplaceString(const pvzstl::string &theText, const char *theStringToFind, const pvzstl::string &theStringToSubstitute) {
-    homura::AutoDestructStorage<pvzstl::string> result;
-    reinterpret_cast<void (*)(homura::Storage<pvzstl::string> &, const pvzstl::string &, const char *, const pvzstl::string &)>(TodReplaceStringAddr)(
-        result, theText, theStringToFind, theStringToSubstitute);
-    return *std::move(result);
+    return reinterpret_cast<pvzstl::string (*)(const pvzstl::string &, const char *, const pvzstl::string &)>(TodReplaceStringAddr)(theText, theStringToFind, theStringToSubstitute);
 }
 
 inline pvzstl::string TodReplaceNumberString(const pvzstl::string &theText, const char *theStringToFind, int theNumber) {
-    homura::AutoDestructStorage<pvzstl::string> result;
-    reinterpret_cast<void (*)(homura::Storage<pvzstl::string> &, const pvzstl::string &, const char *, int)>(TodReplaceNumberStringAddr)(result, theText, theStringToFind, theNumber);
-    return *std::move(result);
+    return reinterpret_cast<pvzstl::string (*)(const pvzstl::string &, const char *, int)>(TodReplaceNumberStringAddr)(theText, theStringToFind, theNumber);
 }
 
 inline TodAllocator *FindGlobalAllocator(int theSize) {

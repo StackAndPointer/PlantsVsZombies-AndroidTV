@@ -51,9 +51,7 @@ inline int TodDrawStringWrappedHelper(
 }
 
 inline pvzstl::string TodStringTranslate(const char *theString) {
-    homura::AutoDestructStorage<pvzstl::string> result;
-    reinterpret_cast<void (*)(homura::Storage<pvzstl::string> &, const char *)>(TodStringTranslateAddr)(result, theString);
-    return *std::move(result);
+    return reinterpret_cast<pvzstl::string (*)(const char *)>(TodStringTranslateAddr)(theString);
 }
 
 inline void TodStringListLoad(const char *theFileName) {
@@ -61,9 +59,7 @@ inline void TodStringListLoad(const char *theFileName) {
 }
 
 inline pvzstl::string TodStringListFind(const pvzstl::string &theName) {
-    homura::AutoDestructStorage<pvzstl::string> result;
-    reinterpret_cast<void (*)(homura::Storage<pvzstl::string> &, const pvzstl::string &)>(TodStringListFindAddr)(result, theName);
-    return *std::move(result);
+    return reinterpret_cast<pvzstl::string (*)(const pvzstl::string &)>(TodStringListFindAddr)(theName);
 }
 
 // inline void TodStringListLoad(const char* theFileName) {
