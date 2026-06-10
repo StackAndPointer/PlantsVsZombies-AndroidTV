@@ -20,7 +20,7 @@
 #ifndef HOMURA_MEMBERUTILS_H
 #define HOMURA_MEMBERUTILS_H
 
-#include "Homura/MemberUtils/ExtractMemFuncPtrType.h"
+#include "Homura/Detail/ExtractMemFuncPtrType.h"
 
 #include <cstdint>
 

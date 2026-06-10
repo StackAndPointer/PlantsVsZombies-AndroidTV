@@ -17,8 +17,8 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HOMURA_MEMBERUTILS_EXTRACTMEMFUNCPTRTYPE_H
-#define HOMURA_MEMBERUTILS_EXTRACTMEMFUNCPTRTYPE_H
+#ifndef HOMURA_DETAIL_EXTRACTMEMFUNCPTRTYPE_H
+#define HOMURA_DETAIL_EXTRACTMEMFUNCPTRTYPE_H
 
 #include <type_traits>
 
@@ -256,4 +256,4 @@ using ExtractMemFuncPtrType = typename details::ExtractMemFuncPtrTypeCvWrapper<T
 
 } // namespace homura
 
-#endif // HOMURA_MEMBERUTILS_EXTRACTMEMFUNCPTRTYPE_H
+#endif // HOMURA_DETAIL_EXTRACTMEMFUNCPTRTYPE_H
