@@ -25,8 +25,7 @@
 namespace homura {
 
 namespace details {
-    template <typename T>
-        requires std::is_member_function_pointer_v<T>
+    template <typename>
     struct ExtractMemFuncPtrTypeHelper;
 
     template <typename T, typename Ret, typename... Args>
@@ -235,7 +234,8 @@ namespace details {
 } // namespace details
 
 template <typename T>
-using ExtractMemFuncPtrType = typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+    requires std::is_member_function_pointer_v<T>
+using ExtractMemFuncPtrType = typename details::ExtractMemFuncPtrTypeHelper<std::remove_cv_t<T>>::Type;
 
 } // namespace homura
 
