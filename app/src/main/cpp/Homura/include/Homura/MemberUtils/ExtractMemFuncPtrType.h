@@ -231,11 +231,28 @@ namespace details {
     struct ExtractMemFuncPtrTypeHelper<Ret (T::*)(Args..., ...) const volatile && noexcept> {
         using Type = Ret (*)(const volatile T *, Args..., ...) noexcept;
     };
+
+    template <typename T>
+    struct ExtractMemFuncPtrTypeCvWrapper {
+        using Type = typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+    };
+    template <typename T>
+    struct ExtractMemFuncPtrTypeCvWrapper<const T> {
+        using Type = const typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+    };
+    template <typename T>
+    struct ExtractMemFuncPtrTypeCvWrapper<volatile T> {
+        using Type = volatile typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+    };
+    template <typename T>
+    struct ExtractMemFuncPtrTypeCvWrapper<const volatile T> {
+        using Type = const volatile typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+    };
 } // namespace details
 
 template <typename T>
     requires std::is_member_function_pointer_v<T>
-using ExtractMemFuncPtrType = typename details::ExtractMemFuncPtrTypeHelper<std::remove_cv_t<T>>::Type;
+using ExtractMemFuncPtrType = typename details::ExtractMemFuncPtrTypeCvWrapper<T>::Type;
 
 } // namespace homura
 
