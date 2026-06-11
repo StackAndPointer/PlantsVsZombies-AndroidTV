@@ -65,8 +65,8 @@ public:
     int mButtonSidePadding;                        // 183
     // 大小184个整数
 
-    int WaitForResult(bool unk) {
-        return reinterpret_cast<int (*)(Dialog *, bool)>(Sexy_Dialog_WaitForResultAddr)(this, unk);
+    int WaitForResult(bool autokill = true) {
+        return reinterpret_cast<int (*)(Dialog *, bool)>(Sexy_Dialog_WaitForResultAddr)(this, autokill);
     }
     void ButtonDepress(int id) {
         return reinterpret_cast<void (*)(Dialog *, int)>(Sexy_Dialog_ButtonDepressAddr)(this, id);

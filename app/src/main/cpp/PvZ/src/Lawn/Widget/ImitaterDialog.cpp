@@ -24,8 +24,8 @@
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 
-void ImitaterDialog_ImitaterDialog(ImitaterDialog *instance, int playerIndex) {
-    old_ImitaterDialog_ImitaterDialog(instance, playerIndex);
+void ImitaterDialog::_constructor(int thePlayerIndex) {
+    old_ImitaterDialog_ImitaterDialog(this, thePlayerIndex);
 }
 
 void ImitaterDialog_ShowToolTip(ImitaterDialog *instance) {

@@ -47,7 +47,9 @@ public:
     Sexy::Font *mTitleFont;       // 13
     Sexy::Color mTitleTextColor;  // 14 ~ 17
 
-    ToolTipWidget() = delete;
+    ToolTipWidget() {
+        _constructor();
+    };
     ~ToolTipWidget() = delete;
 
     void SetWarningText(const pvzstl::string &theWarningText) {
@@ -61,6 +63,12 @@ public:
     }
     void GetLines(std::vector<pvzstl::string> &lines) {
         reinterpret_cast<void (*)(ToolTipWidget *, std::vector<pvzstl::string> &)>(ToolTipWidget_GetLinesAddr)(this, lines);
+    }
+    void Update() {
+        reinterpret_cast<void (*)(ToolTipWidget *)>(ToolTipWidget_UpdateAddr)(this);
+    }
+    void FlashWarning() {
+        reinterpret_cast<void (*)(ToolTipWidget *)>(ToolTipWidget_FlashWarningAddr)(this);
     }
 
     void Draw(Sexy::Graphics *g);

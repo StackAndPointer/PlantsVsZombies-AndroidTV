@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (C) 2023-2026  PvZ TV Touch Team
  *
  * This file is part of PlantsVsZombies-AndroidTV.
@@ -21,12 +21,21 @@
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
+#include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/CutScene.h"
+#include "PvZ/Lawn/Board/Plant.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
+#include "PvZ/Lawn/Board/Zombie.h"
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/System/Music.h"
+#include "PvZ/Lawn/Widget/AlmanacDialog.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
+#include "PvZ/Lawn/Widget/ImitaterDialog.h"
+#include "PvZ/Lawn/Widget/StoreScreen.h"
 #include "PvZ/NetPlay.h"
+#include "PvZ/SexyAppFramework/Graphics/Font.h"
+#include "PvZ/SexyAppFramework/Misc/MTRand.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 #include <unistd.h>
@@ -36,6 +45,7 @@ using namespace Sexy;
 namespace {
 SeedChooserScreen *gSeedChooserTouchOwner = nullptr;
 constexpr uint32_t kSeedChooserDragSyncIntervalMs = 50;
+constexpr uintptr_t kSeedChooserButtonListenerVtableOffset = 0x20C;
 SeedType gLastDragSyncSeedType[2][2] = {{SeedType::SEED_NONE, SeedType::SEED_NONE}, {SeedType::SEED_NONE, SeedType::SEED_NONE}};
 uint32_t gLastDragSyncTickMs[2][2] = {{0, 0}, {0, 0}};
 
@@ -166,39 +176,255 @@ void SeedChooserScreen::ApplyGlobalBpBans() {
 void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     // 修复在没解锁商店图鉴时依然显示相应按钮的问题、对战选种子界面的按钮问题；
     // 还添加了生存模式保留上次选卡，添加坚果艺术关卡默认选择坚果，添加向日葵艺术关卡默认选择坚果、杨桃、萝卜伞
+    int repickPacketCount = 0;
+    std::vector<SeedType> repickSeeds;
+    SeedType repickImitaterType = SeedType::SEED_NONE;
+
+    Sexy::Widget::_constructor();
+    vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForSeedChooserScreenAddr) + 8);
+    mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTable) + kSeedChooserButtonListenerVtableOffset);
+
+    auto &buttonList = mButtons.Construct();
     mApp = reinterpret_cast<LawnApp *>(Sexy::gSexyAppBase);
     mBoard = mApp->mBoard;
-    GameMode mGameMode = mApp->mGameMode;
+
     if (mBoard->mCutScene->IsSurvivalRepick() && !mApp->IsCoopMode()) {
         GamepadControls *gamePad = mBoard->mGamepadControls[0];
-        SeedBank *mSeedBank = gamePad->GetSeedBank();
-        int mNumPackets = mSeedBank->mNumPackets;
-        std::vector<SeedType> aSeedArray(mNumPackets);
-        SeedType aImitaterType = SeedType::SEED_NONE;
-        for (int i = 0; i < mNumPackets; i++) {
-            SeedPacket aSeedPacket = mSeedBank->mSeedPackets[i];
-            aSeedArray[i] = aSeedPacket.mPacketType;
-            if (aSeedPacket.mPacketType == SeedType::SEED_IMITATER && aImitaterType == SeedType::SEED_NONE) {
-                aImitaterType = aSeedPacket.mImitaterType;
+        SeedBank *seedBank = gamePad != nullptr ? gamePad->GetSeedBank() : nullptr;
+        if (seedBank != nullptr) {
+            repickPacketCount = seedBank->mNumPackets;
+            repickSeeds.reserve(repickPacketCount);
+            for (int i = 0; i < repickPacketCount; ++i) {
+                const SeedPacket &seedPacket = seedBank->mSeedPackets[i];
+                repickSeeds.push_back(seedPacket.mPacketType);
+                if (seedPacket.mPacketType == SeedType::SEED_IMITATER && repickImitaterType == SeedType::SEED_NONE) {
+                    repickImitaterType = seedPacket.mImitaterType;
+                }
             }
         }
+    }
 
-        old_SeedChooserScreen_SeedChooserScreen(this, theIsZombieChooser);
+    mClip = false;
+    mShowHelpText = false;
+    mSeedsInFlight = 0;
+    mSeedsInBank = 0;
+    mSeedsIn1PBank = 0;
+    mSeedsIn2PBank = 0;
+    mSeedIndex1 = 0;
+    mSeedIndex2 = 0;
+    mCursorPositionX1 = -1;
+    mCursorPositionX2 = -1;
+    mCursorPositionY1 = -1;
+    mCursorPositionY2 = -1;
+    mChooseState = SeedChooserState::CHOOSE_NORMAL;
+    mViewLawnTime = 0;
+    GetSeedPositionInChooser(0, mCursorPositionX1, mCursorPositionY1);
+    GetSeedPositionInChooser(mSeedIndex2, mCursorPositionX2, mCursorPositionY2);
 
-        // 实现无尽模式保留上次选卡。为什么不直接像WP版那样一一对应地选卡呢？因为玩家有可能通过爆炸坚果修改卡槽选中了多个相同类型的卡片或不在SeedChooser内的卡片，一一对应的话会有BUG
-        int theValidChosenSeedNum = 0;
-        for (int i = 0; i < mNumPackets; i++) {
-            SeedType theSeed = aSeedArray[i];
-            if (theSeed >= SeedType::NUM_SEEDS_IN_CHOOSER)
+    mToolTip1 = new ToolTipWidget();
+    mToolTip2 = new ToolTipWidget();
+
+    mIsZombieChooser = theIsZombieChooser;
+    mToolTipSeed1 = -1;
+    mToolTipSeed2 = -1;
+    mImitaterDialogOpened = 0;
+
+    if (mIsZombieChooser) {
+        TodLoadResources("DelayLoad_Almanac");
+        mSeedBank1 = mBoard->mSeedBank[1];
+        mPlayerIndex = -1;
+    } else {
+        mSeedBank1 = mBoard->mSeedBank[0];
+        mPlayerIndex = mApp->mPlayerInfo->GetId();
+    }
+
+    mSeedBank2 = nullptr;
+    if (mApp->IsCoopMode()) {
+        mSeedBank2 = mBoard->mSeedBank[1];
+    }
+
+    mDimCounter = 0;
+    mImitaterButton = new GameButton(SeedChooserScreen::SeedChooserScreen_Imitater, nullptr);
+    mImitaterButton->mButtonImage = Sexy::IMAGE_IMITATERSEED;
+    mImitaterButton->mOverImage = Sexy::IMAGE_IMITATERSEED;
+    mImitaterButton->mDownImage = Sexy::IMAGE_IMITATERSEED;
+    mImitaterButton->mDisabledImage = Sexy::IMAGE_IMITATERSEEDDISABLED;
+    mImitaterButton->Resize(464, 490, Sexy::IMAGE_IMITATERSEED->mWidth, Sexy::IMAGE_IMITATERSEED->mHeight);
+    mImitaterButton->mParentWidget = this;
+
+    auto addButton = [&](GameButton *button) {
+        button->mParentWidget = this;
+        buttonList.push_back(button);
+    };
+
+    if (mBoard->mCutScene->IsSurvivalRepick() && mChooseState == SeedChooserState::CHOOSE_NORMAL) {
+        mViewLawnButton = MakeButton(SeedChooserScreen::SeedChooserScreen_ViewLawn, this, this, "[VIEW_LAWN]");
+        addButton(mViewLawnButton);
+    } else {
+        mViewLawnButton = nullptr;
+    }
+
+    mStoreButton = MakeButton(SeedChooserScreen::SeedChooserScreen_Store, this, this, "[SHOP_BUTTON]");
+    addButton(mStoreButton);
+    mStartButton = MakeButton(SeedChooserScreen::SeedChooserScreen_Start, this, this, "[LETS_ROCK_BUTTON]");
+    addButton(mStartButton);
+    mAlmanacButton = MakeButton(SeedChooserScreen::SeedChooserScreen_Almanac, this, this, "[ALMANAC_BUTTON]");
+    addButton(mAlmanacButton);
+    mButtonSlotState = 0;
+
+    if (!buttonList.empty()) {
+        std::vector<int> buttonWidths(buttonList.size(), 0);
+        int totalWidth = 0;
+        for (size_t buttonIndex = 0; buttonIndex < buttonList.size(); ++buttonIndex) {
+            GameButton *button = buttonList[buttonIndex];
+            const int labelWidth = Sexy::FONT_DWARVENTODCRAFT18->StringWidth(*button->mLabel);
+            const int leftWidth = Sexy::IMAGE_BUTTON_LEFT->mWidth;
+            const int middleWidth = Sexy::IMAGE_BUTTON_MIDDLE->mWidth;
+            const int rightWidth = Sexy::IMAGE_BUTTON_RIGHT->mWidth;
+            const int stretchWidth = labelWidth - leftWidth - rightWidth;
+            const int minimumMiddleWidth = labelWidth > (3 * leftWidth) / 2;
+            const int contentWidth = minimumMiddleWidth < stretchWidth ? middleWidth + stretchWidth : middleWidth + minimumMiddleWidth;
+            const int buttonWidth = leftWidth + rightWidth + middleWidth * ((contentWidth - 1) / middleWidth);
+            buttonWidths[buttonIndex] = buttonWidth;
+            totalWidth += buttonWidth;
+        }
+
+        const int gap = (Sexy::IMAGE_SEEDCHOOSER_BACKGROUND->mWidth - 23 - totalWidth) / (int(buttonList.size()) + 1);
+        int buttonX = gap + 10;
+        for (size_t buttonIndex = 0; buttonIndex < buttonList.size(); ++buttonIndex) {
+            GameButton *button = buttonList[buttonIndex];
+            button->Resize(buttonX, 548, buttonWidths[buttonIndex] + 1, button->mHeight);
+            buttonX += buttonWidths[buttonIndex] + gap;
+        }
+    }
+
+    EnableStartButton(false);
+    if (mViewLawnButton != nullptr) {
+        if (!mBoard->mCutScene->IsSurvivalRepick() || mChooseState != SeedChooserState::CHOOSE_NORMAL) {
+            mViewLawnButton->SetDisabled(true);
+        } else {
+            mViewLawnButton->SetDisabled(false);
+        }
+    }
+
+    memset(mChosenSeeds, 0, sizeof(mChosenSeeds));
+    for (SeedType aSeedType = SEED_PEASHOOTER; aSeedType < NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
+        ChosenSeed &aChosenSeed = mChosenSeeds[aSeedType];
+        aChosenSeed.mSeedType = mIsZombieChooser ? GetZombieSeedType(aSeedType) : SeedType(aSeedType);
+        GetSeedPositionInChooser(aSeedType, aChosenSeed.mX, aChosenSeed.mY);
+        aChosenSeed.mTimeStartMotion = 0;
+        aChosenSeed.mTimeEndMotion = 0;
+        aChosenSeed.mStartX = aChosenSeed.mX;
+        aChosenSeed.mStartY = aChosenSeed.mY;
+        aChosenSeed.mEndX = aChosenSeed.mX;
+        aChosenSeed.mEndY = aChosenSeed.mY;
+        aChosenSeed.mChosenPlayerIndex = 0;
+        aChosenSeed.mSeedState = ChosenSeedState::SEED_IN_CHOOSER;
+        aChosenSeed.mSeedIndexInBank = -1;
+        aChosenSeed.mRefreshing = false;
+        aChosenSeed.mRefreshCounter = 0;
+        aChosenSeed.mImitaterType = SeedType::SEED_NONE;
+        aChosenSeed.mCrazyDavePicked = false;
+    }
+    mChosenSeeds[SeedType::SEED_IMITATER].mSeedState = ChosenSeedState::SEED_PACKET_HIDDEN;
+
+    if (mBoard->mCutScene->IsSurvivalRepick()) {
+        for (int packetIndex = 0; packetIndex < mSeedBank1->mNumPackets; ++packetIndex) {
+            const SeedPacket &seedPacket = mSeedBank1->mSeedPackets[packetIndex];
+            const int seedIndex = int(seedPacket.mPacketType);
+            if (seedIndex < 0 || seedIndex >= NUM_SEED_TYPES) {
                 continue;
+            }
+            mChosenSeeds[seedIndex].mRefreshing = seedPacket.mRefreshing;
+            mChosenSeeds[seedIndex].mRefreshCounter = seedPacket.mRefreshCounter;
+        }
+        mSeedBank1->mNumPackets = 0;
 
-            ChosenSeed *theChosenSeed = &(mChosenSeeds[theSeed]);
-            if (theChosenSeed->mSeedType == SeedType::SEED_IMITATER) {
-                theChosenSeed->mImitaterType = aImitaterType;
+        if (mApp->IsCoopMode() && mSeedBank2 != nullptr) {
+            for (int packetIndex = 0; packetIndex < mSeedBank2->mNumPackets; ++packetIndex) {
+                const SeedPacket &seedPacket = mSeedBank2->mSeedPackets[packetIndex];
+                const int seedIndex = int(seedPacket.mPacketType);
+                if (seedIndex < 0 || seedIndex >= NUM_SEED_TYPES) {
+                    continue;
+                }
+                mChosenSeeds[seedIndex].mRefreshing = seedPacket.mRefreshing;
+                mChosenSeeds[seedIndex].mRefreshCounter = seedPacket.mRefreshCounter;
+                mChosenSeeds[seedIndex].mChosenPlayerIndex = 1;
+            }
+            mSeedBank2->mNumPackets = 0;
+        }
+    }
+
+    if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_SEEING_STARS) {
+        ChosenSeed &aStarFruit = mChosenSeeds[SEED_STARFRUIT];
+        int aX = mBoard->GetSeedPacketPositionX(0, 0, false);
+        aStarFruit.mX = aX, aStarFruit.mY = 8;
+        aStarFruit.mStartX = aX, aStarFruit.mStartY = 8;
+        aStarFruit.mEndX = aX, aStarFruit.mEndY = 8;
+        aStarFruit.mSeedState = SEED_IN_BANK;
+        aStarFruit.mSeedIndexInBank = 0;
+        ++mSeedsInBank;
+        ++mSeedsIn1PBank;
+    }
+
+    auto pickSeedsFromLevelConfig = [&]() {
+        int *seedConfigBegin = reinterpret_cast<int *>(mApp->unk8[18]);
+        int *seedConfigEnd = reinterpret_cast<int *>(mApp->unk8[19]);
+        for (int bankIndex = 0; seedConfigBegin != seedConfigEnd; ++seedConfigBegin) {
+            if ((mApp->unk8[17] > 0 && mApp->unk8[17] <= bankIndex) || mSeedBank1->mNumPackets <= bankIndex) {
+                continue;
             }
 
-            if (theChosenSeed->mSeedState == ChosenSeedState::SEED_IN_BANK)
+            const int seedIndex = *seedConfigBegin;
+            if (seedIndex < 0 || seedIndex >= NUM_SEED_TYPES) {
                 continue;
+            }
+
+            ChosenSeed &chosenSeed = mChosenSeeds[seedIndex];
+            chosenSeed.mX = mBoard->GetSeedPacketPositionX(bankIndex, 0, false);
+            chosenSeed.mY = 8;
+            chosenSeed.mStartX = chosenSeed.mX;
+            chosenSeed.mStartY = chosenSeed.mY;
+            chosenSeed.mEndX = chosenSeed.mX;
+            chosenSeed.mEndY = chosenSeed.mY;
+            chosenSeed.mSeedState = ChosenSeedState::SEED_IN_BANK;
+            chosenSeed.mSeedIndexInBank = bankIndex;
+            chosenSeed.mCrazyDavePicked = true;
+            ++bankIndex;
+            ++mSeedsInBank;
+        }
+    };
+
+    if (mBoard->IsLevelDataLoaded()) {
+        if (((unsigned int)(mApp->unk8[19] - mApp->unk8[18]) >> 2) != 0) {
+            pickSeedsFromLevelConfig();
+        }
+    } else if (mApp->IsAdventureMode() && !mApp->IsFirstTimeAdventureMode()) {
+        CrazyDavePickSeeds();
+    }
+
+    UpdateImitaterButton();
+    unkF = 0.0f;
+    mDimCounter = 0;
+    unkBool = false;
+    mSeedChooserAge = 0;
+
+    if (!repickSeeds.empty()) {
+        // 实现无尽模式保留上次选卡。为什么不直接像WP版那样一一对应地选卡呢？因为玩家有可能通过爆炸坚果修改卡槽选中了多个相同类型的卡片或不在SeedChooser内的卡片，一一对应的话会有BUG
+        int theValidChosenSeedNum = 0;
+        for (SeedType theSeed : repickSeeds) {
+            if (theSeed < 0 || theSeed >= SeedType::NUM_SEEDS_IN_CHOOSER) {
+                continue;
+            }
+
+            ChosenSeed *theChosenSeed = &mChosenSeeds[theSeed];
+            if (theChosenSeed->mSeedType == SeedType::SEED_IMITATER) {
+                theChosenSeed->mImitaterType = repickImitaterType;
+            }
+
+            if (theChosenSeed->mSeedState == ChosenSeedState::SEED_IN_BANK) {
+                continue;
+            }
 
             GetSeedPositionInBank(theValidChosenSeedNum, theChosenSeed->mX, theChosenSeed->mY, 0);
             theChosenSeed->mEndX = theChosenSeed->mX;
@@ -207,20 +433,17 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
             theChosenSeed->mStartY = theChosenSeed->mY;
             theChosenSeed->mSeedState = ChosenSeedState::SEED_IN_BANK;
             theChosenSeed->mSeedIndexInBank = theValidChosenSeedNum;
-            theValidChosenSeedNum++;
+            ++theValidChosenSeedNum;
         }
 
         mSeedsInBank = theValidChosenSeedNum;
         mSeedsIn1PBank = theValidChosenSeedNum;
-        if (theValidChosenSeedNum == mNumPackets) {
+        if (theValidChosenSeedNum == repickPacketCount) {
             EnableStartButton(true);
         }
-
-    } else {
-        old_SeedChooserScreen_SeedChooserScreen(this, theIsZombieChooser);
     }
 
-    if (mGameMode == GameMode::GAMEMODE_CHALLENGE_ART_CHALLENGE_WALLNUT) {
+    if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ART_CHALLENGE_WALLNUT) {
         ChosenSeed *theChosenSeed = &(mChosenSeeds[SeedType::SEED_WALLNUT]);
         theChosenSeed->mX = mBoard->GetSeedPacketPositionX(0, 0, false);
         theChosenSeed->mY = 8;
@@ -232,7 +455,7 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
         theChosenSeed->mSeedIndexInBank = 0;
         mSeedsInBank += 1;
         mSeedsIn1PBank += 1;
-    } else if (mGameMode == GameMode::GAMEMODE_CHALLENGE_ART_CHALLENGE_SUNFLOWER) {
+    } else if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ART_CHALLENGE_SUNFLOWER) {
         SeedType types[] = {SeedType::SEED_WALLNUT, SeedType::SEED_STARFRUIT, SeedType::SEED_UMBRELLA};
         for (int i = 0; i < std::size(types); ++i) {
             ChosenSeed *theChosenSeed = &(mChosenSeeds[types[i]]);
@@ -267,6 +490,7 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
         mShowExtendedSeeds = mApp->mVSSetupMenu->mAddonWidget->mExtendedSeedsMode;
         mHas7Packets = mApp->mVSSetupMenu->mAddonWidget->mExtraPacketMode;
         if (mIsZombieChooser && mShowExtendedSeeds) {
+            // Todo: 构造函数还原后新增的按钮被点击会闪退，暂时用伪按钮来替代
             mPageButton = MakeNewButton(SeedChooserScreen::SeedChooserScreen_Page, this, this, "", nullptr, Sexy::IMAGE_ZEN_NEXTGARDEN, Sexy::IMAGE_ZEN_NEXTGARDEN, Sexy::IMAGE_ZEN_NEXTGARDEN);
             mPageButton->Resize(225, 525, 60, 60);
         }
@@ -338,6 +562,9 @@ void SeedChooserScreen::RebuildHelpbar() {
 
 
 void SeedChooserScreen::Update() {
+    Sexy::Widget::Update();
+    mSeedChooserAge++;
+
     // 记录当前1P选卡是否选满
     if (mApp->IsCoopMode()) {
         m1PChoosingSeeds = mSeedsIn1PBank < 4;
@@ -348,7 +575,53 @@ void SeedChooserScreen::Update() {
         mGlobalBpBansApplied = true;
     }
 
-    old_SeedChooserScreen_Update(this);
+    mDimCounter = CanPickNow() ? 0 : (mDimCounter + 1);
+    unkF = (unkF + 0.01f <= 6.2832f) ? (unkF + 0.01f) : 0.0f;
+
+    mToolTip1->Update();
+    mToolTip2->Update();
+
+    for (SeedType aSeedType = SEED_PEASHOOTER; aSeedType < NUM_SEEDS_IN_CHOOSER; aSeedType = SeedType(aSeedType + 1)) {
+        if (!HasPacket(aSeedType, mIsZombieChooser)) {
+            continue;
+        }
+
+        ChosenSeed &aChosenSeed = mChosenSeeds[aSeedType];
+        if (aChosenSeed.mSeedState != SEED_FLYING_TO_BANK && aChosenSeed.mSeedState != SEED_FLYING_TO_CHOOSER) {
+            continue;
+        }
+
+        aChosenSeed.mX = TodAnimateCurve(aChosenSeed.mTimeStartMotion, aChosenSeed.mTimeEndMotion, mSeedChooserAge, aChosenSeed.mStartX, aChosenSeed.mEndX, CURVE_EASE_IN_OUT);
+        aChosenSeed.mY = TodAnimateCurve(aChosenSeed.mTimeStartMotion, aChosenSeed.mTimeEndMotion, mSeedChooserAge, aChosenSeed.mStartY, aChosenSeed.mEndY, CURVE_EASE_IN_OUT);
+
+        if (mSeedChooserAge >= aChosenSeed.mTimeEndMotion) {
+            LandFlyingSeed(aChosenSeed);
+        }
+    }
+
+    int aPlayerIndex = mApp->GamepadToPlayerIndex(mPlayerIndex);
+    ShowToolTip(aPlayerIndex);
+    if (mApp->IsCoopMode() || (mApp->IsAdventureMode() && mApp->mSecondPlayerGamepadIndex != -1)) {
+        ShowToolTip(aPlayerIndex == 0);
+    }
+
+    mImitaterButton->Update();
+
+    if (mButtonSlotState) {
+        if (mApp->HasGamepad() || (mApp->mGamePad1IsOn && mApp->mGamePad2IsOn)) {
+            auto *pageButtonWidget = reinterpret_cast<Sexy::Widget *>(mButtonSlotState);
+            pageButtonWidget->mHasFocus = false;
+            pageButtonWidget->mDisabled = false;
+            mButtonSlotState = 0;
+        }
+    }
+
+    for (GameButton *button : *mButtons) {
+        button->Update();
+    }
+
+    UpdateViewLawn();
+    MarkDirty();
 }
 
 
@@ -373,6 +646,213 @@ void SeedChooserScreen::OnStartButton() {
     }
 
     old_SeedChooserScreen_OnStartButton(this);
+}
+
+void SeedChooserScreen::CloseSeedChooser() {
+    auto syncBankPackets = [&](SeedBank *seedBank, int chosenPlayerIndex) {
+        if (seedBank == nullptr) {
+            return;
+        }
+
+        for (int bankIndex = 0; bankIndex < seedBank->mNumPackets; ++bankIndex) {
+            ChosenSeed *matchedSeed = nullptr;
+            for (int seedIndex = 0; seedIndex < NUM_SEED_TYPES; ++seedIndex) {
+                ChosenSeed &chosenSeed = mChosenSeeds[seedIndex];
+                if (chosenSeed.mSeedState != ChosenSeedState::SEED_IN_BANK) {
+                    continue;
+                }
+                if (chosenSeed.mSeedIndexInBank != bankIndex) {
+                    continue;
+                }
+                if (mApp->IsCoopMode() && chosenSeed.mChosenPlayerIndex != chosenPlayerIndex) {
+                    continue;
+                }
+                matchedSeed = &chosenSeed;
+                break;
+            }
+
+            if (matchedSeed == nullptr) {
+                continue;
+            }
+
+            SeedPacket &seedPacket = seedBank->mSeedPackets[bankIndex];
+            seedPacket.SetPacketType(matchedSeed->mSeedType, matchedSeed->mImitaterType);
+            if (!matchedSeed->mRefreshing) {
+                continue;
+            }
+
+            seedPacket.mRefreshCounter = matchedSeed->mRefreshCounter;
+            seedPacket.mRefreshing = true;
+            seedPacket.mRefreshTime = Plant::GetRefreshTime(seedPacket.mPacketType, seedPacket.mImitaterType);
+            seedPacket.mActive = false;
+        }
+    };
+
+    syncBankPackets(mSeedBank1, 0);
+    if (mApp->IsCoopMode()) {
+        syncBankPackets(mSeedBank2, 1);
+    }
+
+    if (!mApp->IsVSMode()) {
+        if (mApp->mBoard != nullptr && mApp->mBoard->mCutScene != nullptr) {
+            mApp->mBoard->mCutScene->mSeedChoosing = false;
+        }
+
+        if (mIsZombieChooser) {
+            mApp->KillZombieChooserScreen();
+        } else {
+            mApp->KillSeedChooserScreen();
+        }
+        return;
+    }
+
+    if (mIsZombieChooser) {
+        mApp->KillZombieChooserScreen();
+        if (mApp->mZombieChooserScreen != nullptr) {
+            return;
+        }
+    } else {
+        mApp->KillSeedChooserScreen();
+        if (mApp->mSeedChooserScreen != nullptr) {
+            return;
+        }
+    }
+
+    if (mApp->mSeedChooserScreen == nullptr && mApp->mZombieChooserScreen == nullptr && mApp->mVSSetupMenu != nullptr) {
+        mApp->mVSSetupMenu->CloseVSSetup(false);
+    }
+}
+
+void SeedChooserScreen::UpdateImitaterButton() {
+    if (mImitaterButton == nullptr) {
+        return;
+    }
+
+    if (mIsZombieChooser || !HasPacket(SeedType::SEED_IMITATER, false) || mApp->IsVSMode()) {
+        mImitaterButton->mBtnNoDraw = true;
+        mImitaterButton->mDisabled = true;
+        return;
+    }
+
+    mImitaterButton->mBtnNoDraw = false;
+    mImitaterButton->SetDisabled(mSeedsInBank != 4);
+}
+
+void SeedChooserScreen::UpdateCursor() {
+    if (mApp->GetDialogCount() != 0) {
+        return;
+    }
+
+    if (mBoard->mCutScene->IsInShovelTutorial()) {
+        return;
+    }
+
+    if (mApp->mGameMode == GameMode::GAMEMODE_UPSELL) {
+        return;
+    }
+
+    SeedType aSeedType = SeedHitTest(mCursorPositionX1, mCursorPositionY1);
+    if (aSeedType != SeedType::SEED_NONE) {
+        ChosenSeed &aChosenSeed = mChosenSeeds[GetSeedPacketIndex(aSeedType)];
+        if (aChosenSeed.mSeedState == ChosenSeedState::SEED_IN_BANK && aChosenSeed.mCrazyDavePicked) {
+            aSeedType = SeedType::SEED_NONE;
+        }
+    }
+
+    if (mMouseVisible && mChooseState != SeedChooserState::CHOOSE_VIEW_LAWN) {
+        if (aSeedType == SeedType::SEED_NONE) {
+            if (mImitaterButton->IsMouseOver()) {
+                mApp->SetCursor(1);
+                return;
+            }
+        } else if (!SeedNotAllowedToPick(aSeedType)) {
+            mApp->SetCursor(1);
+            return;
+        }
+    }
+
+    mApp->SetCursor(0);
+}
+
+void SeedChooserScreen::LandFlyingSeed(ChosenSeed &theChosenSeed) {
+    if (theChosenSeed.mSeedState == SEED_FLYING_TO_BANK) {
+        theChosenSeed.mX = theChosenSeed.mEndX;
+        theChosenSeed.mY = theChosenSeed.mEndY;
+        theChosenSeed.mTimeStartMotion = 0;
+        theChosenSeed.mTimeEndMotion = 0;
+        theChosenSeed.mSeedState = SEED_IN_BANK;
+        mSeedsInFlight--;
+    } else if (theChosenSeed.mSeedState == SEED_FLYING_TO_CHOOSER) {
+        theChosenSeed.mX = theChosenSeed.mEndX;
+        theChosenSeed.mY = theChosenSeed.mEndY;
+        theChosenSeed.mTimeStartMotion = 0;
+        theChosenSeed.mTimeEndMotion = 0;
+        theChosenSeed.mSeedState = SEED_IN_CHOOSER;
+        mSeedsInFlight--;
+        if (theChosenSeed.mSeedType == SEED_IMITATER) {
+            theChosenSeed.mSeedState = SEED_PACKET_HIDDEN;
+            theChosenSeed.mImitaterType = SEED_NONE;
+            UpdateImitaterButton();
+        }
+    }
+}
+
+void SeedChooserScreen::UpdateAfterPurchase() {
+    for (SeedType aSeedType = SEED_PEASHOOTER; aSeedType < NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
+        ChosenSeed &aChosenSeed = mChosenSeeds[aSeedType];
+        if (aChosenSeed.mSeedState == SEED_IN_BANK) {
+            GetSeedPositionInBank(aChosenSeed.mSeedIndexInBank, aChosenSeed.mX, aChosenSeed.mY, aChosenSeed.mChosenPlayerIndex);
+        } else if (aChosenSeed.mSeedState == SEED_IN_CHOOSER) {
+            GetSeedPositionInChooser(aSeedType, aChosenSeed.mX, aChosenSeed.mY);
+        } else {
+            continue;
+        }
+        aChosenSeed.mStartX = aChosenSeed.mX;
+        aChosenSeed.mStartY = aChosenSeed.mY;
+        aChosenSeed.mEndX = aChosenSeed.mX;
+        aChosenSeed.mEndY = aChosenSeed.mY;
+    }
+    const int aNumPackets = mApp->IsCoopMode() ? (mSeedBank1->mNumPackets + mSeedBank2->mNumPackets) : mSeedBank1->mNumPackets;
+    EnableStartButton(mSeedsInBank == aNumPackets);
+    UpdateImitaterButton();
+}
+
+void SeedChooserScreen::PickRandomSeeds() {
+    for (int anIndex = mSeedsInBank; anIndex < mSeedBank1->mNumPackets; ++anIndex) {
+        const int seedsAvailable = mApp->GetSeedsAvailable(mIsZombieChooser);
+        if (seedsAvailable <= 0) {
+            break;
+        }
+
+        const auto aSeedType = SeedType(Sexy::Rand(seedsAvailable));
+        if (!HasPacket(aSeedType, mIsZombieChooser)) {
+            continue;
+        }
+        if (aSeedType == SeedType::SEED_IMITATER) {
+            continue;
+        }
+
+        ChosenSeed &aChosenSeed = mChosenSeeds[aSeedType];
+        if (aChosenSeed.mSeedState != ChosenSeedState::SEED_IN_CHOOSER) {
+            continue;
+        }
+
+        aChosenSeed.mTimeStartMotion = mSeedChooserAge;
+        aChosenSeed.mTimeEndMotion = mSeedChooserAge + 25;
+        aChosenSeed.mStartX = aChosenSeed.mX;
+        aChosenSeed.mStartY = aChosenSeed.mY;
+        GetSeedPositionInBank(mSeedsInBank, aChosenSeed.mEndX, aChosenSeed.mEndY, 0);
+        aChosenSeed.mSeedIndexInBank = mSeedsInBank;
+        aChosenSeed.mSeedState = ChosenSeedState::SEED_FLYING_TO_BANK;
+        ++mSeedsInFlight;
+        ++mSeedsInBank;
+        ++mSeedsIn1PBank;
+    }
+
+    for (SeedType aSeedFlying = SEED_PEASHOOTER; aSeedFlying < NUM_SEEDS_IN_CHOOSER; aSeedFlying = (SeedType)(aSeedFlying + 1)) {
+        LandFlyingSeed(mChosenSeeds[aSeedFlying]);
+    }
+    CloseSeedChooser();
 }
 
 bool SeedChooserScreen::SeedNotAllowedToPick(SeedType theSeedType) {
@@ -438,14 +918,14 @@ void SeedChooserScreen::OnPlayerPickedSeed(int thePlayerIndex) {
 
 SeedType SeedChooserScreen::FindSeedInBank(int theIndexInBank, int thePlayerIndex) {
     for (SeedType aSeedType = SEED_PEASHOOTER; aSeedType < NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
-        SeedType aZombieSeedType;
+        ChosenSeed &aChosenSeed = mChosenSeeds[aSeedType];
+        SeedType aPacketSeedType = aSeedType;
         if (mIsZombieChooser) {
-            aZombieSeedType = GetZombieSeedType(aSeedType);
-            aSeedType = aZombieSeedType;
+            aPacketSeedType = GetZombieSeedType(aSeedType);
         }
-        if (HasPacket(aSeedType, mIsZombieChooser) && mChosenSeeds->mSeedState == SEED_IN_BANK && mChosenSeeds->mSeedIndexInBank == theIndexInBank
-            && mChosenSeeds->mChosenPlayerIndex == thePlayerIndex) {
-            return mChosenSeeds->mSeedType;
+        if (HasPacket(aPacketSeedType, mIsZombieChooser) && aChosenSeed.mSeedState == SEED_IN_BANK && aChosenSeed.mSeedIndexInBank == theIndexInBank
+            && aChosenSeed.mChosenPlayerIndex == thePlayerIndex) {
+            return aChosenSeed.mSeedType;
         }
     }
     return SEED_NONE;
@@ -683,16 +1163,118 @@ void SeedChooserScreen::CrazyDavePickSeeds() {
         return;
     }
 
-    old_SeedChooserScreen_CrazyDavePickSeeds(this);
-}
-
-void SeedChooserScreen::ClickedSeedInBank(ChosenSeed *theChosenSeed, unsigned int thePlayerIndex) {
-    // 解决结盟1P选够4个种子之后，无法点击种子栏内的已选种子来退选的问题
-    if (mApp->IsCoopMode()) {
-        thePlayerIndex = theChosenSeed->mChosenPlayerIndex;
+    TodWeightedArray aSeedArray[NUM_SEED_TYPES];
+    for (SeedType aSeedType = SEED_PEASHOOTER; aSeedType < NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
+        aSeedArray[aSeedType].mItem = aSeedType;
+        aSeedArray[aSeedType].mWeight = 0;
+        if (!HasPacket(aSeedType, mIsZombieChooser) || SeedNotRecommendedToPick(aSeedType) != 0 || SeedNotAllowedToPick(aSeedType) || Plant::IsUpgrade(aSeedType) || aSeedType == SEED_IMITATER
+            || aSeedType == SEED_UMBRELLA || aSeedType == SEED_BLOVER) {
+            continue;
+        }
+        aSeedArray[aSeedType].mWeight = 1;
     }
 
-    old_SeedChooserScreen_ClickedSeedInBank(this, theChosenSeed, thePlayerIndex);
+    if (mBoard->mZombieAllowed[ZOMBIE_BUNGEE] || mBoard->mZombieAllowed[ZOMBIE_CATAPULT]) {
+        aSeedArray[SEED_UMBRELLA].mWeight = 1;
+    }
+
+    if (mBoard->mZombieAllowed[ZOMBIE_BALLOON] || mBoard->StageHasFog()) {
+        aSeedArray[SEED_BLOVER].mWeight = 1;
+    }
+
+    if (mBoard->StageHasRoof()) {
+        aSeedArray[SEED_TORCHWOOD].mWeight = 0;
+    }
+
+    auto aLevelRNG = MTRand(mBoard->GetLevelRandSeed());
+
+    for (int i = 0; i < 3; ++i) {
+        auto aPickedSeed = SeedType(PickFromWeightedArrayUsingSpecialRandSeed(aSeedArray, NUM_SEEDS_IN_CHOOSER, aLevelRNG));
+        aSeedArray[aPickedSeed].mWeight = 0;
+        ChosenSeed &aChosenSeed = mChosenSeeds[aPickedSeed];
+
+        int aPosX = 0;
+        int aPosY = 0;
+        GetSeedPositionInBank(i, aPosX, aPosY, 0);
+        aChosenSeed.mX = aPosX;
+        aChosenSeed.mY = aPosY;
+        aChosenSeed.mStartX = aPosX;
+        aChosenSeed.mStartY = aPosY;
+        aChosenSeed.mEndX = aPosX;
+        aChosenSeed.mEndY = aPosY;
+        aChosenSeed.mSeedState = SEED_IN_BANK;
+        aChosenSeed.mSeedIndexInBank = i;
+        aChosenSeed.mChosenPlayerIndex = 0;
+        aChosenSeed.mCrazyDavePicked = true;
+        ++mSeedsInBank;
+        ++mSeedsIn1PBank;
+    }
+}
+
+void SeedChooserScreen::ClickedSeedInBank(ChosenSeed &theChosenSeed, unsigned int thePlayerIndex) {
+    // 解决结盟1P选够4个种子之后，无法点击种子栏内的已选种子来退选的问题
+    if (mApp->IsCoopMode()) {
+        thePlayerIndex = theChosenSeed.mChosenPlayerIndex;
+    }
+
+    int chosenPlayerIndex = 0;
+    GamepadControls *controls = mBoard->mGamepadControls[thePlayerIndex];
+    if (controls != nullptr) {
+        chosenPlayerIndex = controls->mPlayerIndex1;
+    }
+
+
+    if (mApp->IsCoopMode() && chosenPlayerIndex != theChosenSeed.mChosenPlayerIndex) {
+        return;
+    }
+
+    int seedSlotsInBank = mSeedBank1->mNumPackets;
+    if (mApp->IsCoopMode()) {
+        seedSlotsInBank = 4;
+    }
+
+    for (int bankIndex = theChosenSeed.mSeedIndexInBank + 1; bankIndex < seedSlotsInBank; ++bankIndex) {
+        int bankOwner = chosenPlayerIndex;
+        if (!mApp->IsCoopMode() && !mApp->IsVSMode()) {
+            bankOwner = 0;
+        }
+
+        int newBankIndex = bankIndex - 1;
+        SeedType seedInBank = FindSeedInBank(bankIndex, bankOwner);
+        if (seedInBank == SeedType::SEED_NONE) {
+            continue;
+        }
+
+        ChosenSeed &bankSeed = mChosenSeeds[GetSeedPacketIndex(seedInBank)];
+        bankSeed.mStartX = bankSeed.mX;
+        bankSeed.mStartY = bankSeed.mY;
+        bankSeed.mTimeStartMotion = mSeedChooserAge;
+        bankSeed.mTimeEndMotion = mSeedChooserAge + 15;
+        GetSeedPositionInBank(newBankIndex, bankSeed.mEndX, bankSeed.mEndY, bankSeed.mChosenPlayerIndex);
+        bankSeed.mSeedState = ChosenSeedState::SEED_FLYING_TO_BANK;
+        bankSeed.mSeedIndexInBank = newBankIndex;
+        ++mSeedsInFlight;
+    }
+
+    theChosenSeed.mTimeStartMotion = mSeedChooserAge;
+    theChosenSeed.mStartX = theChosenSeed.mX;
+    theChosenSeed.mStartY = theChosenSeed.mY;
+    theChosenSeed.mTimeEndMotion = mSeedChooserAge + 25;
+    GetSeedPositionInChooser(GetSeedPacketIndex(theChosenSeed.mSeedType), theChosenSeed.mEndX, theChosenSeed.mEndY);
+    theChosenSeed.mSeedState = ChosenSeedState::SEED_FLYING_TO_CHOOSER;
+    theChosenSeed.mSeedIndexInBank = 0;
+    ++mSeedsInFlight;
+    --mSeedsInBank;
+
+    if (chosenPlayerIndex == 1 && mApp->IsCoopMode()) {
+        --mSeedsIn2PBank;
+    } else {
+        --mSeedsIn1PBank;
+    }
+
+    RemoveToolTip(chosenPlayerIndex);
+    EnableStartButton(false);
+    mApp->PlaySample(Sexy::SOUND_TAP);
 }
 
 void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
@@ -706,120 +1288,66 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
     if (gIsServerModeSpectator || gIsReplayMode) {
         return;
     }
-    // 修复结盟2P无法选择模仿者
-    if (mApp->IsCoopMode() && theButton == GamepadButton::GAMEPAD_BUTTON_A) {
-        if (mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN) {
-            old_SeedChooserScreen_GameButtonDown(this, theButton, thePlayerIndex, theModifierFlag);
-            return;
+
+    struct SeedsInBankRestoreGuard {
+        SeedChooserScreen *screen;
+        bool active = false;
+        int value = 0;
+
+        ~SeedsInBankRestoreGuard() {
+            if (active) {
+                screen->mSeedsInBank = value;
+            }
         }
+    } seedsInBankRestore{this};
 
-        if (mApp->mSecondPlayerGamepadIndex == -1 && mPlayerIndex != thePlayerIndex)
-            return;
+    unsigned int gamepadIndex = static_cast<unsigned int>(thePlayerIndex);
+    if (mPlayerIndex == 0) {
+        if (gamepadIndex != 0) {
+            bool singlePad = false;
+            int runtimePtr = mApp->unkMem6[135];
+            if (runtimePtr != 0) {
+                singlePad = (*reinterpret_cast<int *>(runtimePtr + 412) <= 1);
+            } else {
+                singlePad = int(mApp->mGamePad1IsOn) + int(mApp->mGamePad2IsOn) <= 1;
+            }
 
-        int aSeedIndex = thePlayerIndex ? mSeedIndex2 : mSeedIndex1;
-        int aSeedsInBank = mSeedsInBank;
-        // 此处将判定条件改为选满8个种子时无法选取模仿者。原版游戏中此处是选满4个则无法选取，导致模仿者选取出现问题。
-        if (aSeedIndex == SEED_IMITATER && aSeedsInBank < 8) {
-            if (mChosenSeeds[SEED_IMITATER].mSeedState != ChosenSeedState::SEED_IN_BANK) {
-                // 先将已选种子数改为0，然后执行旧函数，这样模仿者选取界面就被打开了。
-                mSeedsInBank = 0;
-                old_SeedChooserScreen_GameButtonDown(this, theButton, thePlayerIndex, theModifierFlag);
-                // 然后再恢复已选种子数即可。
-                mSeedsInBank = aSeedsInBank;
+            if (singlePad) {
+                mApp->SwapGamepadId(0, thePlayerIndex);
+                gamepadIndex = 0;
+            }
+        }
+    }
+
+    if (gamepadIndex != static_cast<unsigned int>(mPlayerIndex)) {
+        int secondPlayerGamepadIndex = mApp->mSecondPlayerGamepadIndex;
+        if (secondPlayerGamepadIndex == -1) {
+            if (theButton != GamepadButton::GAMEPAD_BUTTON_START) {
                 return;
             }
-        }
-    }
 
-    if (mPageButton) {
-        if (theButton == GamepadButton::GAMEPAD_BUTTON_TR) {
-            ButtonDepress(SeedChooserScreen::SeedChooserScreen_Page);
-            return;
-        }
-    }
-
-    // VS 模式回退到原始逻辑，避免破坏“选满自动开局”等原行为。
-    if (mApp->IsVSMode()) {
-        if (theButton == GamepadButton::GAMEPAD_BUTTON_A && IsLocalChooserInputAllowed(this)) {
-            int playerIndex = mApp->GamepadToPlayerIndex(thePlayerIndex);
-            if (playerIndex < 0 || playerIndex > 1) {
-                playerIndex = mPlayerIndex;
-            }
-
-            int cursorX = (playerIndex == 0) ? mCursorPositionX1 : mCursorPositionX2;
-            int cursorY = (playerIndex == 0) ? mCursorPositionY1 : mCursorPositionY2;
-            SeedType aSeedType = SeedHitTest(cursorX, cursorY);
-            if (aSeedType != SeedType::SEED_NONE) {
-                if (gTcpConnected) {
-                    U8x3_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), 1}};
-                    netplay::PutEvent(event);
-                } else if (gTcpClientSocket >= 0) {
-                    U8x3_Event event = {{EventType::EVENT_SERVER_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), 1}};
-                    netplay::PutEvent(event);
-                }
-            }
-        }
-        old_SeedChooserScreen_GameButtonDown(this, theButton, thePlayerIndex, theModifierFlag);
-        return;
-    }
-
-    unsigned int gamepadIndex = thePlayerIndex;
-    int chooserPlayerIndex = mPlayerIndex;
-
-    auto passSecondPlayerGate = [&]() -> bool {
-        int secondPlayerState = mApp->mSecondPlayerGamepadIndex;
-        if (secondPlayerState != -1 || theButton != GamepadButton::GAMEPAD_BUTTON_START) {
-            return secondPlayerState == static_cast<int>(gamepadIndex);
-        }
-
-        if (!mApp->IsAdventureMode()) {
-            return mApp->mSecondPlayerGamepadIndex == static_cast<int>(gamepadIndex);
-        }
-
-        mApp->SetSecondPlayer(static_cast<int>(gamepadIndex));
-        return true;
-    };
-
-    if (chooserPlayerIndex != 0) {
-        if (gamepadIndex != static_cast<unsigned int>(chooserPlayerIndex) && !passSecondPlayerGate()) {
-            return;
-        }
-    } else if (gamepadIndex != 0) {
-        // IDA uses *(int *)(mApp->unkMem?[slot] + 412) <= 1.
-        // Guard against invalid runtime pointer here.
-        bool singlePad = false;
-        int runtimePtr = mApp->unkMem6[104];
-        if (runtimePtr != 0) {
-            singlePad = (*reinterpret_cast<int *>(runtimePtr + 412) <= 1);
-        } else {
-            singlePad = (int(mApp->mGamePad1IsOn) + int(mApp->mGamePad2IsOn) <= 1);
-        }
-
-        if (singlePad) {
-            gamepadIndex = 0;
-            mApp->SwapGamepadId(0, thePlayerIndex);
-            chooserPlayerIndex = mPlayerIndex;
-            if (gamepadIndex != static_cast<unsigned int>(chooserPlayerIndex) && !passSecondPlayerGate()) {
+            if (!mApp->IsAdventureMode()) {
                 return;
             }
-        } else if (!passSecondPlayerGate()) {
+
+            mApp->SetSecondPlayer(static_cast<int>(gamepadIndex));
+            secondPlayerGamepadIndex = mApp->mSecondPlayerGamepadIndex;
+        }
+
+        if (secondPlayerGamepadIndex != static_cast<int>(gamepadIndex)) {
             return;
         }
     }
 
     int playerIndex = mApp->GamepadToPlayerIndex(gamepadIndex);
-    if (playerIndex < 0 || playerIndex > 1) {
-        return;
-    }
 
     if (mSeedsInFlight > 0) {
-        for (auto &chosenSeed : mChosenSeeds) {
-            LandFlyingSeed(chosenSeed);
+        for (int i = 0; i < NUM_SEEDS_IN_CHOOSER; i++) {
+            LandFlyingSeed(mChosenSeeds[i]);
         }
     }
 
-    GamepadControls *controls = playerIndex == 0 ? mBoard->mGamepadControls[0] : mBoard->mGamepadControls[1];
-    if (controls == nullptr || controls->mPlayerIndex1 == -1) {
+    if (mBoard->mGamepadControls[playerIndex]->mPlayerIndex2 == -1) {
         return;
     }
 
@@ -830,15 +1358,13 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
         return;
     }
 
-    int &cursorX = (playerIndex == 0) ? mCursorPositionX1 : mCursorPositionX2;
-    int &cursorY = (playerIndex == 0) ? mCursorPositionY1 : mCursorPositionY2;
-    int &cursorSeed = (playerIndex == 0) ? mSeedIndex1 : mSeedIndex2;
+    int &cursorX = playerIndex == 0 ? mCursorPositionX1 : mCursorPositionX2;
+    int &cursorY = playerIndex == 0 ? mCursorPositionY1 : mCursorPositionY2;
+    int &cursorSeed = playerIndex == 0 ? mSeedIndex1 : mSeedIndex2;
 
     auto moveCursor = [&](SeedDir dir) {
-        int fromSeed = cursorSeed == SeedType::SEED_NONE ? 0 : static_cast<int>(cursorSeed);
-        int nextSeed = GetNextSeedInDir(fromSeed, dir);
-        cursorSeed = nextSeed;
-        GetSeedPositionInChooser(nextSeed, cursorX, cursorY);
+        cursorSeed = GetNextSeedInDir(cursorSeed, dir);
+        GetSeedPositionInChooser(cursorSeed, cursorX, cursorY);
     };
 
     switch (theButton) {
@@ -858,16 +1384,15 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
             return;
 
         case GamepadButton::GAMEPAD_BUTTON_RIGHT:
-        case GamepadButton::GAMEPAD_BUTTON_DPAD_RIGHT: {
-            int currentSeed = (cursorSeed == SEED_NONE) ? 0 : cursorSeed;
-            if (!mIsZombieChooser && currentSeed % 8 == 7 && HasPacket(SeedType::SEED_IMITATER, false) && mApp->mGameMode != GameMode::GAMEMODE_MP_VS) {
-                cursorSeed = SEED_IMITATER;
-                GetSeedPositionInChooser(SEED_IMITATER, cursorX, cursorY);
+        case GamepadButton::GAMEPAD_BUTTON_DPAD_RIGHT:
+            if (cursorSeed % 8 == 7 && HasPacket(SeedType::SEED_IMITATER, false) && mApp->mGameMode != GameMode::GAMEMODE_MP_VS) {
+                cursorSeed = SeedType::SEED_IMITATER;
+                GetSeedPositionInChooser(cursorSeed, cursorX, cursorY);
                 return;
             }
+
             moveCursor(SeedDir::SEED_DIR_RIGHT);
             return;
-        }
 
         case GamepadButton::GAMEPAD_BUTTON_SELECT:
         case GamepadButton::GAMEPAD_BUTTON_THUMBL:
@@ -877,66 +1402,97 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
             return;
 
         case GamepadButton::GAMEPAD_BUTTON_START:
-            if (mStartButton != nullptr && !mStartButton->mDisabled && mApp->mGameMode != GameMode::GAMEMODE_MP_VS) {
+            if (mShowHelpText && mApp->mGameMode != GameMode::GAMEMODE_MP_VS) {
                 ButtonDepress(SeedChooserScreen::SeedChooserScreen_Start);
             }
             return;
 
         case GamepadButton::GAMEPAD_BUTTON_A: {
+            int cursorX = (playerIndex == 0) ? mCursorPositionX1 : mCursorPositionX2;
+            int cursorY = (playerIndex == 0) ? mCursorPositionY1 : mCursorPositionY2;
+            int cursorSeed = (playerIndex == 0) ? mSeedIndex1 : mSeedIndex2;
+
             if (mApp->mSecondPlayerGamepadIndex == -1 && mPlayerIndex != static_cast<int>(gamepadIndex)) {
                 return;
             }
 
-            if (cursorSeed == SEED_IMITATER && mSeedsInBank < mSeedBank1->mNumPackets) {
-                if (mChosenSeeds[SEED_IMITATER].mSeedState != ChosenSeedState::SEED_IN_BANK) {
-                    int savedSeedsInBank = mSeedsInBank;
+            // 修复结盟 2P 无法选择模仿者。原版这里用的是单人 4 卡判断，结盟扩展到 8 卡后会错误拦截。
+            if (mApp->IsCoopMode() && cursorSeed == SeedType::SEED_IMITATER && mSeedsInBank < 8) {
+                if (mChosenSeeds[SeedType::SEED_IMITATER].mSeedState != ChosenSeedState::SEED_IN_BANK) {
+                    seedsInBankRestore.value = mSeedsInBank;
                     mSeedsInBank = 0;
-                    old_SeedChooserScreen_GameButtonDown(this, theButton, thePlayerIndex, theModifierFlag);
-                    mSeedsInBank = savedSeedsInBank;
+                    seedsInBankRestore.active = true;
+                }
+            }
+
+            if (cursorSeed == SeedType::SEED_IMITATER && mSeedsInBank < mSeedBank1->mNumPackets) {
+                if (mChosenSeeds[SeedType::SEED_IMITATER].mSeedState != ChosenSeedState::SEED_IN_BANK) {
+                    auto *imitaterDialog = new ImitaterDialog(static_cast<int>(gamepadIndex));
+                    AddWidget(imitaterDialog);
+                    imitaterDialog->LawnDialog::Resize((BOARD_WIDTH - imitaterDialog->mWidth) / 2, (BOARD_HEIGHT - imitaterDialog->mHeight) / 2, imitaterDialog->mWidth, imitaterDialog->mHeight);
+                    mApp->mWidgetManager->SetFocus(imitaterDialog);
                     return;
                 }
 
-                ClickedSeedInBank(&mChosenSeeds[SEED_IMITATER], playerIndex);
+                ClickedSeedInBank(mChosenSeeds[SeedType::SEED_IMITATER], playerIndex);
             }
 
-            SeedType aSeedType = SeedHitTest(cursorX, cursorY);
-            if (aSeedType == SeedType::SEED_NONE) {
+            SeedType seedType = SeedHitTest(cursorX, cursorY);
+            if (seedType == SeedType::SEED_NONE) {
                 return;
             }
 
-            if (SeedNotAllowedToPick(aSeedType)) {
+            if (SeedNotAllowedToPick(seedType)) {
                 mApp->PlaySample(Sexy::SOUND_BUZZER);
                 return;
             }
 
-            if (SeedNotAllowedDuringTrial(aSeedType)) {
+            if (SeedNotAllowedDuringTrial(seedType)) {
                 mApp->PlaySample(Sexy::SOUND_TAP);
-                if (mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[GET_FULL_VERSION_TITLE]", "[GET_FULL_VERSION_BODY]", "[GET_FULL_VERSION_YES_BUTTON]", "[GET_FULL_VERSION_NO_BUTTON]", 1) == 1000) {
-                    mApp->DoBackToMain();
+                if (mApp->LawnMessageBox(Dialogs::DIALOG_MESSAGE, "[GET_FULL_VERSION_TITLE]", "[GET_FULL_VERSION_BODY]", "[GET_FULL_VERSION_YES_BUTTON]", "[GET_FULL_VERSION_NO_BUTTON]", 1) != 1000) {
+                    return;
+                }
+
+                mApp->BuyFullVersion();
+                mApp->DoBackToMain();
+                return;
+            }
+
+            ChosenSeed &chosenSeed = mChosenSeeds[GetSeedPacketIndex(seedType)];
+            if (chosenSeed.mSeedState != ChosenSeedState::SEED_IN_BANK) {
+                if (chosenSeed.mSeedState == ChosenSeedState::SEED_IN_CHOOSER) {
+                    ClickedSeedInChooser(chosenSeed, playerIndex);
                 }
                 return;
             }
 
-            ChosenSeed &aChosenSeed = mChosenSeeds[GetSeedPacketIndex(aSeedType)];
-            if (aChosenSeed.mSeedState == ChosenSeedState::SEED_IN_CHOOSER) {
-                ClickedSeedInChooser(aChosenSeed, playerIndex);
-                return;
-            }
-
-            if (aChosenSeed.mSeedState != ChosenSeedState::SEED_IN_BANK) {
-                return;
-            }
-
-            if (aChosenSeed.mCrazyDavePicked) {
+            if (chosenSeed.mCrazyDavePicked) {
                 mApp->PlaySample(Sexy::SOUND_BUZZER);
+                ToolTipWidget *toolTip = playerIndex == 0 ? mToolTip1 : mToolTip2;
+                toolTip->FlashWarning();
                 return;
             }
 
-            if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+            if (mApp->IsVSMode()) {
+                if (IsLocalChooserInputAllowed(this)) {
+                    int aPlayerIndex = mApp->GamepadToPlayerIndex(thePlayerIndex);
+                    int x = (aPlayerIndex == 0) ? mCursorPositionX1 : mCursorPositionX2;
+                    int y = (aPlayerIndex == 0) ? mCursorPositionY1 : mCursorPositionY2;
+                    SeedType aSeedType = SeedHitTest(x, y);
+                    if (aSeedType != SeedType::SEED_NONE) {
+                        if (gTcpConnected) {
+                            U8x3_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), 1}};
+                            netplay::PutEvent(event);
+                        } else if (gTcpClientSocket >= 0) {
+                            U8x3_Event event = {{EventType::EVENT_SERVER_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), 1}};
+                            netplay::PutEvent(event);
+                        }
+                    }
+                }
                 return;
             }
 
-            ClickedSeedInBank(&aChosenSeed, playerIndex);
+            ClickedSeedInBank(chosenSeed, playerIndex);
             return;
         }
 
@@ -946,35 +1502,56 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
             }
 
             if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-                mApp->DoConfirmBackToMain(false);
+                Sexy::Dialog *confirmQuitDialog = mApp->ConfirmQuit();
+                unkBool = true;
+                int result = confirmQuitDialog->WaitForResult(true);
+                unkBool = false;
+                if (result == 1000) {
+                    mApp->PostLeaveLevel();
+                    mApp->SetBoardResult(BOARDRESULT_QUIT);
+                    mApp->DoBackToMain();
+                }
                 return;
             }
 
-            int pickedCount = 0;
-            for (const auto &seed : mChosenSeeds) {
-                if (seed.mSeedState != ChosenSeedState::SEED_IN_BANK || seed.mCrazyDavePicked) {
-                    continue;
-                }
-                if (!mApp->IsCoopMode() || seed.mChosenPlayerIndex == playerIndex) {
-                    ++pickedCount;
+            bool hasSelectableBankSeed = false;
+            for (int i = 0; i < NUM_SEEDS_IN_CHOOSER; i++) {
+                if (!mChosenSeeds[i].mCrazyDavePicked && mChosenSeeds[i].mSeedState == ChosenSeedState::SEED_IN_BANK) {
+                    hasSelectableBankSeed = true;
+                    break;
                 }
             }
 
-            if (pickedCount <= 0) {
-                mApp->DoConfirmBackToMain(false);
+            if (!hasSelectableBankSeed || mSeedsInBank == 0) {
+                Sexy::Dialog *confirmQuitDialog = mApp->ConfirmQuit();
+                unkBool = true;
+                int result = confirmQuitDialog->WaitForResult(true);
+                unkBool = false;
+                if (result == 1000) {
+                    mApp->PostLeaveLevel();
+                    mApp->SetBoardResult(BOARDRESULT_QUIT);
+                    mApp->DoBackToMain();
+                }
                 return;
             }
 
-            int removeBankIndex = pickedCount - 1;
-            for (auto &seed : mChosenSeeds) {
-                if (seed.mSeedState != ChosenSeedState::SEED_IN_BANK || seed.mCrazyDavePicked) {
-                    continue;
+            int selectedCount = 0;
+            if (mApp->IsCoopMode()) {
+                for (int i = 0; i < NUM_SEEDS_IN_CHOOSER; i++) {
+                    if (mChosenSeeds[i].mChosenPlayerIndex == playerIndex && mChosenSeeds[i].mSeedState == ChosenSeedState::SEED_IN_BANK) {
+                        ++selectedCount;
+                    }
                 }
-                if (mApp->IsCoopMode() && seed.mChosenPlayerIndex != playerIndex) {
-                    continue;
-                }
-                if (seed.mSeedIndexInBank == removeBankIndex) {
-                    ClickedSeedInBank(&seed, playerIndex);
+            } else {
+                selectedCount = mSeedsInBank;
+            }
+
+            int removeBankIndex = selectedCount - 1;
+            int chosenPlayerIndex = mApp->IsCoopMode() ? playerIndex : 0;
+            for (int i = 0; i < NUM_SEEDS_IN_CHOOSER; i++) {
+                if (mChosenSeeds[i].mSeedState == ChosenSeedState::SEED_IN_BANK && mChosenSeeds[i].mSeedIndexInBank == removeBankIndex && !mChosenSeeds[i].mCrazyDavePicked
+                    && mChosenSeeds[i].mChosenPlayerIndex == chosenPlayerIndex) {
+                    ClickedSeedInBank(mChosenSeeds[i], playerIndex);
                     return;
                 }
             }
@@ -990,6 +1567,12 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
         case GamepadButton::GAMEPAD_BUTTON_Y:
             if (mApp->CanShowAlmanac() && mApp->mGameMode != GameMode::GAMEMODE_MP_VS) {
                 ButtonDepress(SeedChooserScreen::SeedChooserScreen_Almanac);
+            }
+            return;
+
+        case GamepadButton::GAMEPAD_BUTTON_TR:
+            if (mPageButton) {
+                ButtonDepress(SeedChooserScreen::SeedChooserScreen_Page);
             }
             return;
 
@@ -1077,23 +1660,59 @@ void SeedChooserScreen::ButtonDepress_Origin(int theId) {
         return;
     }
 
-    old_SeedChooserScreen_ButtonDepress(this, theId);
+    if (theId == SeedChooserScreen_ViewLawn) {
+        mChooseState = SeedChooserState::CHOOSE_VIEW_LAWN;
+        mViewLawnTime = 0;
+        gLawnApp->HideHelpBarWidget();
+        mApp->GetSeedsAvailable(mIsZombieChooser);
+    } else if (theId == SeedChooserScreen_Almanac) {
+        AlmanacDialog *almanacDialog = mApp->DoAlmanacDialog();
+        almanacDialog->WaitForResult();
+        mApp->mMusic->MakeSureMusicIsPlaying(MusicTune::MUSIC_TUNE_CHOOSE_YOUR_SEEDS);
+        mApp->GetSeedsAvailable(mIsZombieChooser);
+    } else if (theId == SeedChooserScreen_Store) {
+        StoreScreen *storeScreen = mApp->ShowStoreScreen();
+        storeScreen->WaitForResult(true);
+        if (storeScreen->mGoToTreeNow) {
+            mApp->KillBoard();
+            mApp->PreNewGame(GameMode::GAMEMODE_TREE_OF_WISDOM, false);
+            return;
+        }
+        mWidgetManager->SetFocus(this);
+        mApp->mMusic->MakeSureMusicIsPlaying(MusicTune::MUSIC_TUNE_CHOOSE_YOUR_SEEDS);
+        mApp->GetSeedsAvailable(mIsZombieChooser);
+    } else if (mApp->GetSeedsAvailable(mIsZombieChooser) >= mSeedBank1->mNumPackets) {
+        if (theId == SeedChooserScreen_Start) {
+            OnStartButton();
+        } else if (theId == SeedChooserScreen_Random) {
+            PickRandomSeeds();
+        }
+    }
 }
 
 void SeedChooserScreen::GetSeedPositionInBank(int theIndex, int &x, int &y, int thePlayerIndex) {
-    // 修复对战选卡时的错位
-    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-        if (!mIsZombieChooser) {
-            x = mBoard->mSeedBank[0]->mX - mX + mBoard->GetSeedPacketPositionX(theIndex, 0, mIsZombieChooser);
-            y = mBoard->mSeedBank[0]->mY - mY + 8;
-        } else {
-            x = mBoard->mSeedBank[1]->mX - mX + mBoard->GetSeedPacketPositionX(theIndex, 0, mIsZombieChooser);
-            y = mBoard->mSeedBank[1]->mY - mY + 8;
-        }
-        return;
+    SeedBank *seedBank = mSeedBank1;
+    int seedBankIndex = 1;
+    if (mApp->IsCoopMode() && thePlayerIndex) {
+        seedBank = mSeedBank2;
+    } else if (mApp->IsCoopMode()) {
+        seedBankIndex = thePlayerIndex ? 1 : 0;
+    } else {
+        seedBankIndex = 0;
     }
 
-    old_SeedChooserScreen_GetSeedPositionInBank(this, theIndex, x, y, thePlayerIndex);
+    int boardPlayerIndex = 1;
+    if (!mIsZombieChooser) {
+        if (mApp->mSeedChooserScreen != nullptr) {
+            boardPlayerIndex = this != mApp->mSeedChooserScreen;
+        } else {
+            boardPlayerIndex = 0;
+        }
+    }
+
+    int seedPacketPositionX = mBoard->GetSeedPacketPositionX(theIndex, seedBankIndex, boardPlayerIndex != 0);
+    x = seedBank->mX + seedPacketPositionX - mX;
+    y = seedBank->mY + 8 - mY;
 }
 
 void SeedChooserScreen::GetSeedPositionInChooser(int theIndex, int &x, int &y) {
@@ -1125,10 +1744,103 @@ int SeedChooserScreen::NumColumns() const {
 
 
 void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
-    old_SeedChooserScreen_ShowToolTip(this, thePlayerIndex);
-
     ToolTipWidget *aToolTip = (thePlayerIndex == 1) ? mToolTip2 : mToolTip1;
-    int aToolTipSeed = (thePlayerIndex == 1) ? mToolTipSeed2 : mToolTipSeed1;
+    int &aToolTipSeed = (thePlayerIndex == 1) ? mToolTipSeed2 : mToolTipSeed1;
+
+    if (thePlayerIndex > 1) {
+        return;
+    }
+    if (mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN) {
+        RemoveToolTip(thePlayerIndex);
+        return;
+    }
+    if (mSeedsInFlight > 0) {
+        return;
+    }
+
+    const SeedType cursorSeed = (thePlayerIndex == 1) ? SeedType(mSeedIndex2) : SeedType(mSeedIndex1);
+    const int cursorX = (thePlayerIndex == 1) ? mCursorPositionX2 : mCursorPositionX1;
+    const int cursorY = (thePlayerIndex == 1) ? mCursorPositionY2 : mCursorPositionY1;
+
+    if (!mIsZombieChooser && cursorSeed == SeedType::SEED_IMITATER && mMouseVisible) {
+        aToolTip->SetLabel(Plant::GetToolTip(SeedType::SEED_IMITATER));
+        aToolTip->SetTitle(Plant::GetNameString(SeedType::SEED_IMITATER, SeedType::SEED_NONE));
+        aToolTip->SetWarningText("");
+        aToolTip->mVisible = true;
+        aToolTip->mX = mImitaterButton->mX + 63;
+        aToolTip->mY = mImitaterButton->mY;
+        aToolTipSeed = SeedType::SEED_IMITATER;
+    } else {
+        const SeedType aSeedType = SeedHitTest(cursorX, cursorY);
+        if (aSeedType == SEED_NONE) {
+            RemoveToolTip(thePlayerIndex);
+            return;
+        }
+        if (aSeedType != aToolTipSeed) {
+            RemoveToolTip(thePlayerIndex);
+
+            const int seedPacketIndex = GetSeedPacketIndex(aSeedType);
+            const unsigned int recommendedFlags = SeedNotRecommendedToPick(aSeedType);
+            if (SeedNotAllowedToPick(aSeedType)) {
+                aToolTip->SetWarningText("[NOT_ALLOWED_ON_THIS_LEVEL]");
+            } else if (SeedNotAllowedDuringTrial(aSeedType)) {
+                aToolTip->SetWarningText("[FULL_VERSION_ONLY]");
+            } else if (mChosenSeeds[seedPacketIndex].mSeedState == SEED_IN_BANK && mChosenSeeds[seedPacketIndex].mCrazyDavePicked) {
+                aToolTip->SetWarningText("[CRAZY_DAVE_WANTS]");
+            } else if ((recommendedFlags & 1U) != 0) {
+                aToolTip->SetWarningText("[NOCTURNAL_WARNING]");
+            } else if (recommendedFlags != 0) {
+                aToolTip->SetWarningText("[NOT_RECOMMENDED_FOR_LEVEL]");
+            } else {
+                aToolTip->SetWarningText("");
+            }
+
+            if (aSeedType == SEED_IMITATER) {
+                aToolTip->SetTitle(Plant::GetNameString(SeedType::SEED_IMITATER, mChosenSeeds[seedPacketIndex].mImitaterType));
+                aToolTip->SetLabel(Plant::GetToolTip(mChosenSeeds[seedPacketIndex].mImitaterType));
+            } else if (!mIsZombieChooser) {
+                aToolTip->SetTitle(Plant::GetNameString(aSeedType, SeedType::SEED_NONE));
+                aToolTip->SetLabel(Plant::GetToolTip(aSeedType));
+            } else if (aSeedType == SEED_ZOMBIE_GRAVESTONE) {
+                aToolTip->SetTitle(TodStringTranslate("[ZOMBIE_GRAVESTONE]"));
+                aToolTip->SetLabel(TodStringTranslate("[ZOMBIE_GRAVESTONE_DESCRIPTION]"));
+            } else {
+                ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(aSeedType);
+                if (aZombieType == ZombieType(-1)) {
+                    return;
+                }
+                ZombieDefinition &aZombieDefinition = GetZombieDefinition(aZombieType);
+                aToolTip->SetTitle(TodStringTranslate(StrFormat("[%s]", aZombieDefinition.mZombieName).c_str()));
+                aToolTip->SetLabel(TodStringTranslate(StrFormat("[%s_DESCRIPTION_HEADER]", aZombieDefinition.mZombieName).c_str()));
+            }
+
+            int aSeedX = 0;
+            int aSeedY = 0;
+            GetSeedPositionInChooser(seedPacketIndex, aSeedX, aSeedY);
+
+            int toolTipX = mX + 14;
+            const int centeredX = mX + aSeedX + (SEED_PACKET_WIDTH - aToolTip->mWidth) / 2;
+            if (centeredX > mX + 14) {
+                toolTipX = mX + mWidth - aToolTip->mWidth - 14;
+                if (toolTipX >= centeredX) {
+                    toolTipX = centeredX;
+                }
+            }
+
+            int toolTipY = aSeedY;
+            if (seedPacketIndex > 39) {
+                toolTipX = aSeedX + 53;
+            } else {
+                toolTipY += 70;
+            }
+
+            aToolTip->mX = toolTipX;
+            aToolTip->mY = toolTipY;
+            aToolTip->mMaxBottom = (toolTipY <= 529) ? 600 : 529;
+            aToolTip->mVisible = true;
+            aToolTipSeed = aSeedType;
+        }
+    }
 
     if (mApp->IsVSMode()) {
         int aGamepadIndex = mApp->PlayerToGamepadIndex(thePlayerIndex);
@@ -1804,7 +2516,7 @@ void SeedChooserScreen::Draw(Graphics *g) {
     // Draw cursor selectors for two players
     for (int aPlayerIndex = 0; aPlayerIndex < 2; aPlayerIndex++) {
         int aPlayerState = (aPlayerIndex ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0])->mPlayerIndex2;
-        if (aPlayerState != -1 && !unkMems3[3]) {
+        if (aPlayerState != -1 && !mButtonSlotState) {
             if (aPlayerState == mPlayerIndex || !mApp->IsVSMode()) {
                 int aCursorX = aPlayerIndex ? mCursorPositionX2 : mCursorPositionX1;
                 int aCursorY = aPlayerIndex ? mCursorPositionY2 : mCursorPositionY1;
@@ -2026,6 +2738,47 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
         }
     }
 }
+
+// SeedType SeedChooserScreen::SeedHitTest(int x, int y) {
+//     if (!mMouseVisible) {
+//         return SEED_NONE;
+//     }
+//
+//     SeedType aTargetSeedType = SEED_NONE;
+//     for (SeedType aSeedType = SEED_PEASHOOTER; aSeedType < NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
+//         SeedType packetSeedType = aSeedType;
+//         if (mIsZombieChooser) {
+//             packetSeedType = GetZombieSeedType(aSeedType);
+//         }
+//
+//         ChosenSeed &aChosenSeed = mChosenSeeds[aSeedType];
+//         if (!HasPacket(packetSeedType, mIsZombieChooser) || aChosenSeed.mSeedState == ChosenSeedState::SEED_PACKET_HIDDEN) {
+//             continue;
+//         }
+//
+//         int aX = 0;
+//         int aY = 0;
+//         GetSeedPositionInChooser(aSeedType, aX, aY);
+//
+//         if (aChosenSeed.mX <= x && aChosenSeed.mY <= y && x <= aChosenSeed.mX + 49 && y <= aChosenSeed.mY + 69) {
+//             aTargetSeedType = packetSeedType;
+//             break;
+//         }
+//
+//         if (x >= aX && y >= aY && x <= aX + 49 && y <= aY + 69) {
+//             aTargetSeedType = packetSeedType;
+//             break;
+//         }
+//
+//         if (mIsZombieChooser && mPageIndex == 1) {
+//             if (aSeedType == SeedType::SEED_NONE) {
+//                 return SEED_NONE;
+//             }
+//             aTargetSeedType = SeedType(aSeedType + 25);
+//         }
+//     }
+//     return aTargetSeedType;
+// }
 
 SeedType SeedChooserScreen::SeedHitTest(int x, int y) {
     SeedType aSeedType = SeedHitTest_Origin(x, y);

@@ -25,11 +25,20 @@
 
 class ImitaterDialog : public LawnDialog {
 public:
+    ImitaterDialog(int thePlayerIndex) {
+        _constructor(thePlayerIndex);
+    }
+
     SeedType SeedHitTest(int x, int y) {
         return reinterpret_cast<SeedType (*)(ImitaterDialog *, int, int)>(ImitaterDialog_SeedHitTestAddr)(this, x, y);
     }
 
     void MouseDown(int x, int y, int theCount);
+
+protected:
+    friend void InitHookFunction();
+
+    void _constructor(int thePlayerIndex);
 };
 
 
@@ -41,8 +50,6 @@ inline bool (*old_ImitaterDialog_KeyDown)(ImitaterDialog *a, int a2);
 
 inline void (*old_ImitaterDialog_MouseDown)(ImitaterDialog *a, int x, int y, int theCount);
 
-
-void ImitaterDialog_ImitaterDialog(ImitaterDialog *instance, int playerIndex);
 
 void ImitaterDialog_ShowToolTip(ImitaterDialog *instance);
 

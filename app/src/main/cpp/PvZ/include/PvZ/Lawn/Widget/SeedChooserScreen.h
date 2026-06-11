@@ -33,6 +33,10 @@ class Board;
 class LawnApp;
 class SeedBank;
 class GameButton;
+struct TodWeightedArray;
+namespace Sexy {
+class MTRand;
+}
 
 enum SeedChooserTouchState {
     ViewLawnButton,
@@ -70,6 +74,8 @@ public:
     SeedType mSeedType = SEED_NONE;
     BannedSeedState mSeedState = SEED_NOT_BANNED;
 };
+
+using ButtonVector = std::vector<GameButton *>;
 
 class SeedChooserScreen : public Sexy::Widget, public Sexy::ButtonListener {
 private:
@@ -126,8 +132,8 @@ public:
     GameButton *mStoreButton;                // 959
     GameButton *mStartButton;                // 960
     GameButton *mAlmanacButton;              // 961
-    int unkMems3[4];                         // 962 ~ 965
-    // 大小966个整数
+    homura::Storage<ButtonVector> mButtons;  // 962 ~ 964
+    int mButtonSlotState;                    // 965
     NewLawnButton *mPageButton = nullptr;
     int mPageIndex = 0;
     int mNumBanPackets = 2;
@@ -137,6 +143,7 @@ public:
     bool mShowExtendedSeeds = false;
     bool mHas7Packets = false;
     bool mGlobalBpBansApplied = false;
+    ChosenSeed mChosenSeedsExtended[NUM_SEED_TYPES_EXTENDED]{};
 
     SeedChooserScreen(bool theIsZombieChooser) {
         _constructor(theIsZombieChooser);
@@ -144,9 +151,6 @@ public:
 
     ~SeedChooserScreen() = delete;
 
-    void CloseSeedChooser() {
-        reinterpret_cast<void (*)(SeedChooserScreen *)>(SeedChooserScreen_CloseSeedChooserAddr)(this);
-    }
     bool HasPacket(SeedType theSeedType, bool theIsZombieChooser) {
         return reinterpret_cast<bool (*)(SeedChooserScreen *, SeedType, bool)>(SeedChooserScreen_HasPacketAddr)(this, theSeedType, theIsZombieChooser);
     }
@@ -155,12 +159,6 @@ public:
     }
     bool CancelLawnView() {
         return reinterpret_cast<bool (*)(SeedChooserScreen *)>(SeedChooserScreen_CancelLawnViewAddr)(this);
-    }
-    void UpdateImitaterButton() {
-        reinterpret_cast<void (*)(SeedChooserScreen *)>(SeedChooserScreen_UpdateImitaterButtonAddr)(this);
-    }
-    void LandFlyingSeed(ChosenSeed &theChosenSeed) {
-        reinterpret_cast<void (*)(SeedChooserScreen *, ChosenSeed &)>(SeedChooserScreen_LandFlyingSeedAddr)(this, theChosenSeed);
     }
     bool SeedNotRecommendedToPick(SeedType theSeedType) {
         return reinterpret_cast<bool (*)(SeedChooserScreen *, SeedType)>(SeedChooserScreen_SeedNotRecommendedToPickAddr)(this, theSeedType);
@@ -177,6 +175,10 @@ public:
     bool ShouldDisplayCursor(int thePlayerIndex) {
         return reinterpret_cast<bool (*)(SeedChooserScreen *, int)>(SeedChooserScreen_ShouldDisplayCursorAddr)(this, thePlayerIndex);
     }
+    int PickFromWeightedArrayUsingSpecialRandSeed(TodWeightedArray *theArray, int theCount, Sexy::MTRand &theLevelRNG) {
+        return reinterpret_cast<int (*)(SeedChooserScreen *, TodWeightedArray *, int, Sexy::MTRand &)>(SeedChooserScreen_PickFromWeightedArrayUsingSpecialRandSeedAddr)(
+            this, theArray, theCount, theLevelRNG);
+    }
 
     void AddedToManager(Sexy::WidgetManager *theWidgetManager);
     void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
@@ -190,11 +192,20 @@ public:
     void CrazyDavePickSeeds();
     void OnStartButton();
     void Update();
+    void UpdateViewLawn() {
+        reinterpret_cast<void (*)(SeedChooserScreen *)>(SeedChooserScreen_UpdateViewLawnAddr)(this);
+    }
+    void UpdateImitaterButton();
+    void UpdateCursor();
+    void UpdateAfterPurchase();
+    void PickRandomSeeds();
+    void CloseSeedChooser();
+    void LandFlyingSeed(ChosenSeed &theChosenSeed);
     bool SeedNotAllowedToPick(SeedType theSeedType);
     SeedType FindSeedInBank(int theIndexInBank, int thePlayerIndex);
-    void ClickedSeedInBank(ChosenSeed *theChosenSeed, unsigned int thePlayerIndex);
+    void ClickedSeedInBank(ChosenSeed &theChosenSeed, unsigned int thePlayerIndex);
     void OnKeyDown(Sexy::KeyCode theKey, unsigned int thePlayerIndex);
-    void GameButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theModifierFlag);
+    /*virtual*/ void GameButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theModifierFlag);
     void
     DrawPacket(Sexy::Graphics *g, int x, int y, SeedType theSeedType, SeedType theImitaterType, float thePercentDark, int theGrayness, Sexy::Color *theColor, bool theDrawCost, bool theUseCurrentCost);
     void GetSeedPositionInBank(int theIndex, int &x, int &y, int thePlayerIndex);
@@ -245,31 +256,15 @@ inline bool (*old_SeedChooserScreen_KeyUp)(SeedChooserScreen *seedChooserScreen,
 
 inline void (*old_SeedChooserScreen_RebuildHelpbar)(SeedChooserScreen *seedChooserScreen);
 
-inline void (*old_SeedChooserScreen_SeedChooserScreen)(SeedChooserScreen *seedChooserScreen, bool isZombieChooser);
-
 inline void (*old_SeedChooserScreen__destructor)(SeedChooserScreen *);
 
-inline void (*old_SeedChooserScreen_Update)(SeedChooserScreen *a);
-
 inline void (*old_SeedChooserScreen_EnableStartButton)(SeedChooserScreen *seedChooserScreen, int isEnabled);
+
+inline SeedType (*old_SeedChooserScreen_SeedHitTest)(SeedChooserScreen *seedChooserScreen, int x, int y);
 
 inline void (*old_SeedChooserScreen_OnStartButton)(SeedChooserScreen *seedChooserScreen);
 
 inline bool (*old_SeedChooserScreen_SeedNotAllowedToPick)(SeedChooserScreen *seedChooserScreen, SeedType theSeedType);
-
-inline void (*old_SeedChooserScreen_ClickedSeedInChooser)(SeedChooserScreen *a1, ChosenSeed &a2, int a3);
-
-inline void (*old_SeedChooserScreen_CrazyDavePickSeeds)(SeedChooserScreen *a);
-
-inline void (*old_SeedChooserScreen_ClickedSeedInBank)(SeedChooserScreen *seedChooserScreen, ChosenSeed *theChosenSeed, unsigned int playerIndex);
-
-inline void (*old_SeedChooserScreen_GameButtonDown)(SeedChooserScreen *thiz, Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theModifierFlag);
-
-inline void (*old_SeedChooserScreen_ButtonDepress)(SeedChooserScreen *seedChooserScreen, int id);
-
-inline void (*old_SeedChooserScreen_GetSeedPositionInBank)(SeedChooserScreen *seedChooserScreen, int theIndex, int &x, int &y, int playerIndex);
-
-inline void (*old_SeedChooserScreen_ShowToolTip)(SeedChooserScreen *seedChooserScreen, unsigned int playerIndex);
 
 inline void (*old_SeedChooserScreen_MouseMove)(SeedChooserScreen *seedChooserScreen, int x, int y);
 
@@ -280,8 +275,6 @@ inline void (*old_SeedChooserScreen_MouseDrag)(SeedChooserScreen *seedChooserScr
 inline void (*old_SeedChooserScreen_MouseUp)(SeedChooserScreen *seedChooserScreen, int x, int y);
 
 inline void (*old_SeedChooserScreen_Draw)(SeedChooserScreen *, Sexy::Graphics *);
-
-inline SeedType (*old_SeedChooserScreen_SeedHitTest)(SeedChooserScreen *, int x, int y);
 
 inline void (*old_SeedChooserScreen_OnKeyDown)(SeedChooserScreen *, Sexy::KeyCode theKey, unsigned int thePlayerIndex);
 

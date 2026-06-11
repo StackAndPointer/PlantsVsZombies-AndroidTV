@@ -252,6 +252,12 @@ public:
     MagnetItem *GetFreeMagnetItem() {
         return reinterpret_cast<MagnetItem *(*)(Plant *)>(Plant_GetFreeMagnetItemAddr)(this);
     }
+    static pvzstl::string GetNameString(SeedType theSeedType, SeedType theImitaterType) {
+        return reinterpret_cast<pvzstl::string (*)(SeedType, SeedType)>(Plant_GetNameStringAddr)(theSeedType, theImitaterType);
+    }
+    static pvzstl::string GetToolTip(SeedType theSeedType) {
+        return reinterpret_cast<pvzstl::string (*)(SeedType)>(Plant_GetToolTipAddr)(theSeedType);
+    }
 
     void PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, SeedType theImitaterType, int a6);
     void Update();

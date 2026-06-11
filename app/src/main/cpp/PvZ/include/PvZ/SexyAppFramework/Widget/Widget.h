@@ -73,6 +73,9 @@ public:
     void SetColor(int index, const Color theColor) {
         reinterpret_cast<void (*)(Widget *, int, const Color)>(Sexy_Widget_SetColorAddr)(this, index, theColor);
     }
+    void Update() {
+        reinterpret_cast<void (*)(Widget *)>(Sexy_Widget_UpdateAddr)(this);
+    }
 
     void MarkDirty();
     void AddWidget(Widget *theWidget);

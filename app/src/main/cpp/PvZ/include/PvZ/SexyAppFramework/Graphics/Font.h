@@ -24,6 +24,7 @@
 #include "../Misc/Rect.h"
 
 #include "Color.h"
+#include "Homura/MemberUtils.h"
 
 namespace Sexy {
 
@@ -43,8 +44,10 @@ public:
     }
     // virtual void DrawString(Graphics* g, int theX, int theY, const pvzstl::string& theString, const Color& theColor, const Rect& theClipRect);
 
-    inline int StringWidth(const pvzstl::string &text) { // 此函数固定返回0，游戏内会用虚函数vTable[8]调用
-        return reinterpret_cast<int (*)(Font *, const pvzstl::string &)>(Sexy_Font_StringWidthAddr)(this, text);
+    inline int StringWidth(const pvzstl::string &text) {
+        // 函数符号固定返回0，虚函数vTable[8]调用才能生效
+        //        return reinterpret_cast<int (*)(Font *, const pvzstl::string &)>(Sexy_Font_StringWidthAddr)(this, text);
+        return homura::CallVirtualFunc<Sexy::Font, 8, int, const pvzstl::string &>(this, text);
     }
 
     int GetHeight() {

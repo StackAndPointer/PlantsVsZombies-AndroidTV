@@ -60,6 +60,9 @@ public:
     bool IsSurvivalRepick() {
         return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsSurvivalRepickAddr)(this);
     }
+    bool IsInShovelTutorial() {
+        return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsInShovelTutorialAddr)(this);
+    }
     void OnKeyDown(Sexy::KeyCode theKey, unsigned int a3) {
         reinterpret_cast<bool (*)(CutScene *, Sexy::KeyCode, unsigned int)>(CutScene_OnKeyDownAddr)(this, theKey, a3);
     }

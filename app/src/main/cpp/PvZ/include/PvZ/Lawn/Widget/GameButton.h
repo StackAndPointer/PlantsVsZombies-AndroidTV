@@ -26,7 +26,8 @@
 
 class GameButton : public Sexy::DialogButton {
 public:
-    int unkMems4[2];                // 210  ~ 211
+    Widget *mParentWidget;          // 210
+    int unkMems4;                   // 211
     bool unkBool5;                  // 848
     int unkMems5[2];                // 213 ~ 214
     Sexy::Image *mOverOverlayImage; // 215

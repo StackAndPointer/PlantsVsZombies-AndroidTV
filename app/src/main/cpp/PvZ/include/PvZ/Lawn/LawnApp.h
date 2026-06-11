@@ -40,12 +40,14 @@ class MainMenu;
 class SeedChooserScreen;
 class CreditScreen;
 class ChallengeScreen;
+class AlmanacDialog;
 class PoolEffect;
 class ReanimatorCache;
 class Music2;
 class TodFoley;
 class DefaultPlayerInfo;
 class PottedPlant;
+class StoreScreen;
 class VSSetupMenu;
 class VSResultsMenu;
 class HelpBarWidget;
@@ -175,6 +177,12 @@ public:
     void DoCheatDialog() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_DoCheatDialogAddr)(this);
     }
+    StoreScreen *ShowStoreScreen() {
+        return reinterpret_cast<StoreScreen *(*)(LawnApp *)>(LawnApp_ShowStoreScreenAddr)(this);
+    }
+    AlmanacDialog *DoAlmanacDialog(SeedType theSeedType = SeedType::SEED_NONE, ZombieType theZombieType = ZombieType::ZOMBIE_INVALID) {
+        return reinterpret_cast<AlmanacDialog *(*)(LawnApp *, SeedType, ZombieType)>(LawnApp_DoAlmanacDialogAddr)(this, theSeedType, theZombieType);
+    }
     void DoCheatCodeDialog() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_DoCheatCodeDialogAddr)(this);
     }
@@ -191,7 +199,7 @@ public:
         return reinterpret_cast<bool (*)(LawnApp *)>(LawnApp_IsFirstTimeAdventureModeAddr)(this);
     }
     // 阻塞式函数，能创建并立即展示一个带按钮的对话框。按钮个数由最后一个参数决定。其返回值就是用户按下的按钮ID，一般情况下只可能为1000/1001
-    int LawnMessageBox(Dialogs theDialogId, // 用于标识本对话框的ID，以便于用KillDialog(theDialogId)关闭此对话框。一般用不到，所以随便填个数字就可以�?
+    int LawnMessageBox(Dialogs theDialogId, // 用于标识本对话框的ID，以便于用KillDialog(theDialogId)关闭此对话框。一般用不到，所以随便填个数字就可以
                        const char *theHeaderName,
                        const char *theLinesName,
                        const char *theButton1Name,
@@ -304,11 +312,20 @@ public:
     }
     void HardwareInit();
     void DoBackToMain();
+    Sexy::Dialog *ConfirmQuit() {
+        return reinterpret_cast<Sexy::Dialog *(*)(LawnApp *)>(LawnApp_ConfirmQuitAddr)(this);
+    }
+    void PostLeaveLevel() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_PostLeaveLevelAddr)(this);
+    }
     void DoSettingsDialog(bool theIsModal);
     bool CanShopLevel();
     void DoNewOptions(bool theFromGameSelector, unsigned int a3);
     int GetNumPreloadingTasks();
     void DoConfirmBackToMain(bool theIsSave);
+    void BuyFullVersion() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_BuyFullVersionAddr)(this);
+    }
     int TrophiesNeedForGoldSunflower();
     int GamepadToPlayerIndex(unsigned int thePlayerIndex) const;
     void ShowCreditScreen(bool theIsFromMainMenu);

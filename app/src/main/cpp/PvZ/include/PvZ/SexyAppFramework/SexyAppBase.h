@@ -88,11 +88,17 @@ public:
     void AddDialog(Dialog *theDialog) {
         reinterpret_cast<void (*)(SexyAppBase *, Dialog *)>(Sexy_SexyAppBase_AddDialogAddr)(this, theDialog);
     }
+    int GetDialogCount() {
+        return reinterpret_cast<int (*)(SexyAppBase *)>(Sexy_SexyAppBase_GetDialogCountAddr)(this);
+    }
     void DoParseCmdLine() { // vTable + 4 * 62
         reinterpret_cast<void (*)(SexyAppBase *)>(Sexy_SexyAppBase_DoParseCmdLineAddr)(this);
     }
     int GetInteger(const pvzstl::string &theName, int defValue) {
         return reinterpret_cast<bool (*)(SexyAppBase *, const pvzstl::string &, int)>(Sexy_SexyAppBase_GetIntegerAddr)(this, theName, defValue);
+    }
+    int SetCursor(int theCursorNum) {
+        return reinterpret_cast<int (*)(SexyAppBase *, int)>(Sexy_SexyAppBase_SetCursorAddr)(this, theCursorNum);
     }
     void LoadResourceManifest() {
         reinterpret_cast<void (*)(SexyAppBase *)>(Sexy_SexyAppBase_LoadResourceManifestAddr)(this);

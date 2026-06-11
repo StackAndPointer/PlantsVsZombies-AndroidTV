@@ -46,6 +46,8 @@ bool LoadGameMain() {
     Board_MouseHitTestPlantAddr = libGameMain.GetSymbol("_ZN5Board17MouseHitTestPlantEiiP9HitResult");
     Board_CanUseGameObjectAddr = libGameMain.GetSymbol("_ZN5Board16CanUseGameObjectE14GameObjectType");
     Board_DrawAddr = libGameMain.GetSymbol("_ZN5Board4DrawEPN4Sexy8GraphicsE");
+    Board_GetLevelRandSeedAddr = libGameMain.GetSymbol("_ZN5Board16GetLevelRandSeedEv");
+    Board_StageHasFogAddr = libGameMain.GetSymbol("_ZN5Board11StageHasFogEv");
     Board_DrawZenButtonsAddr = libGameMain.GetSymbol("_ZN5Board14DrawZenButtonsEPN4Sexy8GraphicsE");
     Board_DrawShovelAddr = libGameMain.GetSymbol("_ZN5Board10DrawShovelEPN4Sexy8GraphicsE");
     Board_DrawGameObjectsAddr = libGameMain.GetSymbol("_ZN5Board15DrawGameObjectsEPN4Sexy8GraphicsE");
@@ -224,6 +226,7 @@ bool LoadGameMain() {
     CutScene_IsSurvivalRepickAddr = libGameMain.GetSymbol("_ZN8CutScene16IsSurvivalRepickEv");
     CutScene_ShouldRunUpsellBoardAddr = libGameMain.GetSymbol("_ZN8CutScene20ShouldRunUpsellBoardEv");
     CutScene_OnKeyDownAddr = libGameMain.GetSymbol("_ZN8CutScene9OnKeyDownEN4Sexy7KeyCodeEj");
+    CutScene_IsInShovelTutorialAddr = libGameMain.GetSymbol("_ZN8CutScene18IsInShovelTutorialEv");
     CutScene_IsNonScrollingCutsceneAddr = libGameMain.GetSymbol("_ZN8CutScene22IsNonScrollingCutsceneEv");
     CutScene_MouseDownAddr = libGameMain.GetSymbol("_ZN8CutScene9MouseDownEii");
     CutScene_IsBeforePreloadingAddr = libGameMain.GetSymbol("_ZN8CutScene18IsBeforePreloadingEv");
@@ -272,6 +275,8 @@ bool LoadGameMain() {
     LawnApp_CanShowAlmanacAddr = libGameMain.GetSymbol("_ZN7LawnApp14CanShowAlmanacEv");
     LawnApp_IsTwoPlayerGameAddr = libGameMain.GetSymbol("_ZN7LawnApp15IsTwoPlayerGameEv");
     LawnApp_DoBackToMainAddr = libGameMain.GetSymbol("_ZN7LawnApp12DoBackToMainEv");
+    LawnApp_ConfirmQuitAddr = libGameMain.GetSymbol("_ZN7LawnApp11ConfirmQuitEv");
+    LawnApp_PostLeaveLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp14PostLeaveLevelEv");
     LawnApp_DoSettingsDialogAddr = libGameMain.GetSymbol("_ZN7LawnApp16DoSettingsDialogEb");
     LawnApp_IsScaryPotterLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp18IsScaryPotterLevelEv");
     LawnApp_IsWhackAZombieLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp19IsWhackAZombieLevelEv");
@@ -280,7 +285,10 @@ bool LoadGameMain() {
     LawnApp_DoConfirmRestartDialogAddr = libGameMain.GetSymbol("_ZN7LawnApp22DoConfirmRestartDialogEv");
     LawnApp_GamepadToPlayerIndexAddr = libGameMain.GetSymbol("_ZN7LawnApp20GamepadToPlayerIndexEj");
     LawnApp_DoNewOptionsAddr = libGameMain.GetSymbol("_ZN7LawnApp12DoNewOptionsEbj");
+    LawnApp_ShowStoreScreenAddr = libGameMain.GetSymbol("_ZN7LawnApp15ShowStoreScreenEv");
+    LawnApp_DoAlmanacDialogAddr = libGameMain.GetSymbol("_ZN7LawnApp15DoAlmanacDialogE8SeedType10ZombieType");
     LawnApp_DoConfirmBackToMainAddr = libGameMain.GetSymbol("_ZN7LawnApp19DoConfirmBackToMainEb");
+    LawnApp_BuyFullVersionAddr = libGameMain.GetSymbol("_ZN7LawnApp14BuyFullVersionEv");
     LawnApp_TrophiesNeedForGoldSunflowerAddr = libGameMain.GetSymbol("_ZN7LawnApp28TrophiesNeedForGoldSunflowerEv");
     LawnApp_CanShopLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp12CanShopLevelEv");
     LawnApp_KillChallengeScreenAddr = libGameMain.GetSymbol("_ZN7LawnApp19KillChallengeScreenEv");
@@ -533,12 +541,15 @@ bool LoadGameMain() {
 
 
     SeedChooserScreen_UpdateAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen6UpdateEv");
+    SeedChooserScreen_UpdateViewLawnAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen14UpdateViewLawnEv");
+    SeedChooserScreen_UpdateCursorAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen12UpdateCursorEv");
     SeedChooserScreen_GameButtonDownAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen14GameButtonDownEN4Sexy13GamepadButtonEij");
     SeedChooserScreen_OnStartButtonAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen13OnStartButtonEv");
     SeedChooserScreen_OnKeyDownAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen9OnKeyDownEN4Sexy7KeyCodeEj");
     SeedChooserScreen_DrawPacketAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen10DrawPacketEPN4Sexy8GraphicsEiiiifiRNS0_5ColorEbb");
     SeedChooserScreen_CloseSeedChooserAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen16CloseSeedChooserEv");
     SeedChooserScreen_ClickedSeedInBankAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen17ClickedSeedInBankER10ChosenSeedi");
+    SeedChooserScreen_PickFromWeightedArrayUsingSpecialRandSeedAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen41PickFromWeightedArrayUsingSpecialRandSeedEPK16TodWeightedArrayiRN4Sexy6MTRandE");
     SeedChooserScreen_SeedChooserScreenAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreenC2Eb");
     SeedChooserScreen__destructorAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreenD2Ev");
     SeedChooserScreen_HasPacketAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen9HasPacketEib");
@@ -556,6 +567,8 @@ bool LoadGameMain() {
     SeedChooserScreen_SeedHitTestAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen11SeedHitTestEii");
     SeedChooserScreen_ButtonDepressAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen13ButtonDepressEi");
     SeedChooserScreen_LandFlyingSeedAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen14LandFlyingSeedER10ChosenSeed");
+    SeedChooserScreen_UpdateAfterPurchaseAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen19UpdateAfterPurchaseEv");
+    SeedChooserScreen_PickRandomSeedsAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen15PickRandomSeedsEv");
     SeedChooserScreen_RemoveToolTipAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen13RemoveToolTipEi");
     SeedChooserScreen_ClickedSeedInChooserAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen20ClickedSeedInChooserER10ChosenSeedi");
     SeedChooserScreen_CrazyDavePickSeedsAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen18CrazyDavePickSeedsEv");
@@ -708,6 +721,8 @@ bool LoadGameMain() {
     Plant_IsFlyingAddr = libGameMain.GetSymbol("_ZN5Plant8IsFlyingE8SeedType");
     Plant_IsNocturnalAddr = libGameMain.GetSymbol("_ZN5Plant11IsNocturnalE8SeedType");
     Plant_IsAquaticAddr = libGameMain.GetSymbol("_ZN5Plant9IsAquaticE8SeedType");
+    Plant_GetNameStringAddr = libGameMain.GetSymbol("_ZN5Plant13GetNameStringE8SeedTypeS0_");
+    Plant_GetToolTipAddr = libGameMain.GetSymbol("_ZN5Plant10GetToolTipE8SeedType");
     Plant_DrawShadowAddr = libGameMain.GetSymbol("_ZN5Plant10DrawShadowEPN4Sexy8GraphicsEff");
     Plant_IsPartOfUpgradableToAddr = libGameMain.GetSymbol("_ZN5Plant20IsPartOfUpgradableToE8SeedType");
     Plant_GetDamageRangeFlagsAddr = libGameMain.GetSymbol("_ZN5Plant19GetDamageRangeFlagsE11PlantWeapon");
@@ -1080,6 +1095,7 @@ bool LoadGameMain() {
     MessageWidget_ClearLabelAddr = libGameMain.GetSymbol("_ZN13MessageWidget10ClearLabelEv");
     MessageWidget_SetLabelAddr = libGameMain.GetSymbol("_ZN13MessageWidget8SetLabelERKSs12MessageStyle");
     MessageWidget_UpdateAddr = libGameMain.GetSymbol("_ZN13MessageWidget6UpdateEv");
+    Sexy_Widget_UpdateAddr = libGameMain.GetSymbol("_ZN4Sexy6Widget6UpdateEv");
     CenterDialogAddr = libGameMain.GetSymbol("_Z12CenterDialogPN4Sexy6DialogEii");
     SettingsDialog_SettingsDialogAddr = libGameMain.GetSymbol("_ZN14SettingsDialogC2EP7LawnApp");
     SettingsDialog_AddedToManagerAddr = libGameMain.GetSymbol("_ZN14SettingsDialog14AddedToManagerEPN4Sexy13WidgetManagerE");
@@ -1098,9 +1114,13 @@ bool LoadGameMain() {
     Sexy_SexyAppBase_EraseFileAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase9EraseFileERKSs");
     Sexy_SexyAppBase_AddDialog2Addr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase9AddDialogEiPNS_6DialogE");
     Sexy_SexyAppBase_AddDialogAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase9AddDialogEPNS_6DialogE");
+    Sexy_SexyAppBase_GetDialogCountAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase14GetDialogCountEv");
     Sexy_SexyAppBase_DoParseCmdLineAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase14DoParseCmdLineEv");
     Sexy_SexyAppBase_LoadResourceManifestAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase20LoadResourceManifestEv");
     Sexy_SexyAppBase_GetIntegerAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase10GetIntegerERKSsi");
+    Sexy_SexyAppBase_SetCursorAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase9SetCursorEi");
+    Sexy_MTRand_MTRandUlongAddr = libGameMain.GetSymbol("_ZN4Sexy6MTRandC2Em");
+    Sexy_MTRand_NextUlongAddr = libGameMain.GetSymbol("_ZN4Sexy6MTRand4NextEm");
     Sexy_Ratio_SetAddr = libGameMain.GetSymbol("_ZN4Sexy5Ratio3SetEii");
     Sexy_MemoryImage_MemoryImageAddr = libGameMain.GetSymbol("_ZN4Sexy11MemoryImageC2Ev");
     Sexy_MemoryImage_ClearRectAddr = libGameMain.GetSymbol("_ZN4Sexy11MemoryImage9ClearRectERKNS_5TRectIiEE");
@@ -1219,6 +1239,8 @@ bool LoadGameMain() {
     ToolTipWidget_SetTitleAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget8SetTitleERKSs");
     ToolTipWidget_SetLabelAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget8SetLabelERKSs");
     ToolTipWidget_GetLinesAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget8GetLinesERSt6vectorISsSaISsEE");
+    ToolTipWidget_UpdateAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget6UpdateEv");
+    ToolTipWidget_FlashWarningAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget12FlashWarningEv");
     ToolTipWidget_DrawAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget4DrawEPN4Sexy8GraphicsE");
     ToolTipWidget_CalculateSizeAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget13CalculateSizeEv");
 

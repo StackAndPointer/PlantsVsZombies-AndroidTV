@@ -486,6 +486,12 @@ public:
     bool MouseHitTestPlant(int x, int y, HitResult *theHitResult) {
         return reinterpret_cast<bool (*)(Board *, int, int, HitResult *)>(Board_MouseHitTestPlantAddr)(this, x, y, theHitResult);
     }
+    int GetLevelRandSeed() {
+        return reinterpret_cast<int (*)(Board *)>(Board_GetLevelRandSeedAddr)((this));
+    }
+    bool StageHasFog() {
+        return reinterpret_cast<bool (*)(Board *)>(Board_StageHasFogAddr)((this));
+    }
 
     Board(LawnApp *theApp) = delete;
     ~Board() = delete;
