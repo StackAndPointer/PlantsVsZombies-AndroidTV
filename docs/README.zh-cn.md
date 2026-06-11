@@ -31,7 +31,7 @@
     * Android Studio: 点击构建按钮.
     * 命令行: 运行以下命令:
         ```sh
-        cd PlantsVsZombies-AndroidTV
+        ./gradlew assembleDebugV115
         ```
 
 - 如果要发布, 先在位于项目根目录的 `keystore.properties` 文件 (需要自行创建) 中配置签名. 文件内容样式如下:

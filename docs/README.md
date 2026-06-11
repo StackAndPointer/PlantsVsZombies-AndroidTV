@@ -31,7 +31,7 @@ A mod of _Plants vs. Zombies_ Android TV version.
     * Android Studio: Click on the build button.
     * Command line: Run the following command:
         ```sh
-        ./gradlew assembleDebug
+        ./gradlew assembleDebugV115
         ```
 
 - If release, configure signing using the file `keystore.properties` located in the project root directory (you must
