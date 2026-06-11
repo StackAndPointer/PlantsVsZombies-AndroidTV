@@ -309,7 +309,7 @@ void InitHookFunction() {
     homura::HookFunc(SeedChooserScreen_ShowToolTipAddr, &SeedChooserScreen::ShowToolTip, nullptr);
     homura::HookFunc(SeedChooserScreen_GetNextSeedInDirAddr, &SeedChooserScreen::GetNextSeedInDir, nullptr);
     homura::HookFunc(SeedChooserScreen_DrawAddr, &SeedChooserScreen::Draw, &old_SeedChooserScreen_Draw);
-    homura::HookFunc(SeedChooserScreen_SeedHitTestAddr, &SeedChooserScreen::SeedHitTest, &old_SeedChooserScreen_SeedHitTest);
+    homura::HookFunc(SeedChooserScreen_SeedHitTestAddr, &SeedChooserScreen::SeedHitTest, nullptr);
     homura::HookFunc(SeedChooserScreen_OnKeyDownAddr, &SeedChooserScreen::OnKeyDown, &old_SeedChooserScreen_OnKeyDown);
     homura::HookFunc(SeedChooserScreen_VSAutoPickResourceGenAddr, &SeedChooserScreen::VSAutoPickResourceGen, nullptr);
     homura::HookFunc(SeedChooserScreen_KeyDownAddr, &SeedChooserScreen::KeyDown, &old_SeedChooserScreen_KeyDown);

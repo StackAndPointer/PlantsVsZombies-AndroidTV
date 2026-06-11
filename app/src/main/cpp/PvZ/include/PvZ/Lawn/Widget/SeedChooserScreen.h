@@ -260,8 +260,6 @@ inline void (*old_SeedChooserScreen__destructor)(SeedChooserScreen *);
 
 inline void (*old_SeedChooserScreen_EnableStartButton)(SeedChooserScreen *seedChooserScreen, int isEnabled);
 
-inline SeedType (*old_SeedChooserScreen_SeedHitTest)(SeedChooserScreen *seedChooserScreen, int x, int y);
-
 inline void (*old_SeedChooserScreen_OnStartButton)(SeedChooserScreen *seedChooserScreen);
 
 inline bool (*old_SeedChooserScreen_SeedNotAllowedToPick)(SeedChooserScreen *seedChooserScreen, SeedType theSeedType);

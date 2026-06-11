@@ -2781,18 +2781,37 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
 // }
 
 SeedType SeedChooserScreen::SeedHitTest(int x, int y) {
-    SeedType aSeedType = SeedHitTest_Origin(x, y);
-    if (mIsZombieChooser && mPageIndex == 1) {
-        if (aSeedType == SeedType::SEED_NONE) {
-            return SEED_NONE;
-        }
-        aSeedType = SeedType(aSeedType + 25);
+    if (!mMouseVisible) {
+        return SEED_NONE;
     }
-    return aSeedType;
-}
 
-SeedType SeedChooserScreen::SeedHitTest_Origin(int x, int y) {
-    return old_SeedChooserScreen_SeedHitTest(this, x, y);
+    for (SeedType aSeedType = SEED_PEASHOOTER; aSeedType < NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
+        SeedType packetSeedType = aSeedType;
+        if (mIsZombieChooser) {
+            packetSeedType = GetZombieSeedType(aSeedType);
+            if (mPageIndex == 1) {
+                packetSeedType = SeedType(packetSeedType + 25);
+            }
+        }
+
+        ChosenSeed &aChosenSeed = mChosenSeeds[aSeedType];
+        if (!HasPacket(packetSeedType, mIsZombieChooser) || aChosenSeed.mSeedState == SEED_PACKET_HIDDEN) {
+            continue;
+        }
+
+        int chooserX = 0;
+        int chooserY = 0;
+        GetSeedPositionInChooser(aSeedType, chooserX, chooserY);
+
+        if (Rect(aChosenSeed.mX, aChosenSeed.mY, SEED_PACKET_WIDTH, SEED_PACKET_HEIGHT).Contains(x, y)) {
+            return packetSeedType;
+        }
+
+        if (Rect(chooserX, chooserY, SEED_PACKET_WIDTH, SEED_PACKET_HEIGHT).Contains(x, y)) {
+            return packetSeedType;
+        }
+    }
+    return SEED_NONE;
 }
 
 void SeedChooserScreen::VSAutoPickResourceGen() {
