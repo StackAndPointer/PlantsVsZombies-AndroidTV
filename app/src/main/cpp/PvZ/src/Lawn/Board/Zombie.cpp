@@ -2220,8 +2220,9 @@ void Zombie::BurnRow(int theRow) {
 }
 
 void Zombie::UpdateZombieJalapenoHead() {
-    if (!mHasHead)
+    if (!mHasHead) {
         return;
+    }
 
     if (mApp->IsVSMode()) { // 修复对战辣椒瞬爆
         if (mZombiePhase == ZombiePhase::PHASE_ZOMBIE_NORMAL) {
@@ -2232,10 +2233,11 @@ void Zombie::UpdateZombieJalapenoHead() {
         }
     }
 
-    if (mPhaseCounter == 0) {
-        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
+    // 对战改为啃咬时爆炸
+    if (mApp->IsVSMode() ? mIsEating : mPhaseCounter == 0) {
+        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
             return;
-
+        }
         DoSpecial();
     }
 }
