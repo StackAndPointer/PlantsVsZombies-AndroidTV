@@ -45,7 +45,7 @@ static int GetPrioritySidePickSlot(const VSSetupMenu *menu) {
     if (VSSetupAddonWidget::msGlobalBpWins[0] == 0 && VSSetupAddonWidget::msGlobalBpWins[1] == 0) {
         return 0;
     }
-    if (VSSetupMenu::msNextSidePickPlayerIndex < 0 || VSSetupAddonWidget::msNextSidePickPlayerIndex > 1) {
+    if (VSSetupMenu::msNextSidePickPlayerIndex < 0 || VSSetupMenu::msNextSidePickPlayerIndex > 1) {
         return -1;
     }
     // 败方选边
