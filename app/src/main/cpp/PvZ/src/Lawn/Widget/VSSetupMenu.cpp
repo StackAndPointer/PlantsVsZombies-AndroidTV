@@ -903,6 +903,7 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             }
         } break;
         case EVENT_SERVER_VSSETUP_ADDON_BUTTON_INIT: {
+            LOG_DEBUG("AKJSDHKJSDH");
             auto *eventButtonInit = static_cast<const B1x8_Event *>(event);
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_ExtraPacket, eventButtonInit->data1, false);
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_ExtendedSeeds, eventButtonInit->data2, false);
@@ -975,14 +976,17 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
     }
     if (theState == VSSetupState::VS_SETUP_STATE_CONTROLLERS) {
 
+        // 此事件仅针对中途加入的观战者，告知观战者本局对战的模式。Guest无需处理此事件。
+        if (gTcpClientSocket >= 0) {
+            U8U8_Event event = {{EventType::EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE}, uint8_t(Challenge::msVSShuffleMode), uint8_t(mApp->mBoard->mBackground)};
+            netplay::PutEvent(event);
+        }
+
         // 跳过 VSSetupState 的 WaitForSecondPlayerDialog
         mApp->SetSecondPlayer(1);
         SetSecondPlayerIndex(mApp->mSecondPlayerGamepadIndex);
         GoToState(VSSetupState::VS_SETUP_STATE_SIDES);
 
-        // 此事件仅针对中途加入的观战者，告知观战者本局对战的模式。Guest无需处理此事件。
-        U8U8_Event event = {{EventType::EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE}, uint8_t(Challenge::msVSShuffleMode), uint8_t(mApp->mBoard->mBackground)};
-        netplay::PutEvent(event);
 
         return;
 

@@ -470,7 +470,6 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
         BaseEvent *event = netplay::GetEvent(alignedBuf, serverRecvPtr);
         replay::RecordPacket(ReplayPacketDir::InboundServer, serverRecvPtr, event->size, static_cast<std::uint32_t>(mAppCounter));
         LOG_DEBUG("event.type = {}", int(event->type));
-        if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {}
 
         if (event->type == EVENT_CLIENT_PING) {
             auto *eventPing = static_cast<const U16_Event *>(event);
@@ -522,7 +521,6 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
         } else if (waitDialog != nullptr && event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE && gIsServerModeSpectator) {
             waitDialog->processServerEvent(event);
         } else if (event->type >= EVENT_SERVER_VSSETUPMENU_BUTTON_DEPRESS && event->type < NUM_EVENT_VSSETUPMENU) {
-            if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {}
             if (mVSSetupMenu != nullptr) {
                 const bool spectatorClientVsSetupEvent = (gIsServerModeSpectator || gIsReplayMode)
                     && (event->type == EVENT_CLIENT_VSSETUPMENU_MOVE_CONTROLLER || event->type == EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED || event->type == EVENT_CLIENT_SEEDCHOOSER_BAN_SEED
@@ -533,10 +531,8 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
                 } else {
                     mVSSetupMenu->processServerEvent(event);
                 }
-            } else if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {
             }
         } else if (event->type >= EVENT_SERVER_WAITFORSECONDPALYER_VERSION_CHECK && event->type < NUM_EVENT_WAITFORSECONDPALYER) {
-            if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {}
             if (waitDialog != nullptr) {
                 waitDialog->processServerEvent(event);
             }
@@ -545,7 +541,6 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
                 mVSResultsMenu->processServerEvent(event);
             }
         } else {
-            if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {}
             assert(false && "Unknown-type event");
             std::unreachable();
         }

@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
+#include "Homura/Logger.h"
 #include "Homura/MemberUtils.h"
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
@@ -224,6 +225,7 @@ bool VSSetupAddonWidget::GetAddonMode(int theId) const {
 }
 
 void VSSetupAddonWidget::SetAddonMode(int theId, bool checked, bool saveDetails) {
+    LOG_DEBUG("{} {}", theId, checked);
     switch (theId) {
         case VSSetupAddonWidget_ExtraPacket:
             mExtraPacketMode = checked;
