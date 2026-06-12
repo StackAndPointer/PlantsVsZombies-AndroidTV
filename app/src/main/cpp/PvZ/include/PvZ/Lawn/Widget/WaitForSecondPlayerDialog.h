@@ -117,10 +117,10 @@ public:
     bool mServerJoinedRoomGaming;
     bool mServerSpectateReservationActive;
     bool mServerSpectateStreamAligned;
-    int mServerHostedRoomId;     // created room id
-    int mServerJoinedRoomId;     // joined room id (optional)
-    int mServerLastQueryTick;    // frame tick for auto query
-    int mServerLastRecvTick;     // for debug/timeout if needed
+    int mServerHostedRoomId;  // created room id
+    int mServerJoinedRoomId;  // joined room id (optional)
+    int mServerLastQueryTick; // frame tick for auto query
+    int mServerLastRecvTick;  // for debug/timeout if needed
     int mServerSpectateAlignHitCount;
     int mServerSpectateReserveTick;
     int mServerSpectateReserveWarnTick;
