@@ -128,6 +128,19 @@ VSSetupAddonWidget::~VSSetupAddonWidget() {
     gLawnApp->SafeDeleteWidget(mGlobalBpButton);
 }
 
+void VSSetupAddonWidget::ResetGlobalBpState() {
+    VSSetupMenu::msNextSidePickPlayerIndex = 0;
+    msGlobalBpMode = GLOBALBP_CLOSED;
+    msGlobalBpWins[0] = 0;
+    msGlobalBpWins[1] = 0;
+    for (auto &row : msGlobalBpSeeds) {
+        for (SeedType &seedType : row) {
+            seedType = SEED_NONE;
+        }
+    }
+    msGlobalBpSeedsInitialized = true;
+}
+
 void VSSetupAddonWidget::SetDisable(Sexy::Widget *theWidget) {
     theWidget->mDisabled = true;
     theWidget->SetVisible(false);

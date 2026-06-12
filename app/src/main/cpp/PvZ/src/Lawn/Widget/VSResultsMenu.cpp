@@ -162,15 +162,7 @@ void VSResultsMenu::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
 void VSResultsMenu::ClearPlayerRecords() {
     old_VSResultsMenu_ClearPlayerRecords(this);
 
-    VSSetupMenu::msNextSidePickPlayerIndex = 0;
-    VSSetupAddonWidget::msGlobalBpMode = VSSetupAddonWidget::GLOBALBP_CLOSED;
-    VSSetupAddonWidget::msGlobalBpWins[0] = 0;
-    VSSetupAddonWidget::msGlobalBpWins[1] = 0;
-    for (auto &row : VSSetupAddonWidget::msGlobalBpSeeds) {
-        for (SeedType &seedType : row) {
-            seedType = SeedType::SEED_NONE;
-        }
-    }
+    VSSetupAddonWidget::ResetGlobalBpState();
 }
 
 void VSResultsMenu::processClientEvent(const BaseEvent *event) {

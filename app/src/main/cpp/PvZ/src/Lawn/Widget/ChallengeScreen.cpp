@@ -497,6 +497,7 @@ void ChallengeScreen::Update() {
         if (mConnectDialog == nullptr && mApp->mHelpTextScreen == nullptr && !gTcpConnected && gTcpClientSocket < 0) {
             mConnectDialog = new WaitForSecondPlayerDialog(mApp);
             mApp->AddDialog(mConnectDialog);
+            VSSetupAddonWidget::ResetGlobalBpState();
 
             int aButtonId = mConnectDialog->WaitForResult(true);
             if (aButtonId == WaitForSecondPlayerDialog::WaitForSecondPlayerDialog_Back) {

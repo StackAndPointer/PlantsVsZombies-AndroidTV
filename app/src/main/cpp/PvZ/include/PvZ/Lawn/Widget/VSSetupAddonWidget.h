@@ -78,6 +78,7 @@ public:
 
     VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu);
     ~VSSetupAddonWidget();
+    static void ResetGlobalBpState();
     void SetDisable(Sexy::Widget *theWidget);
     void ButtonDepress(this VSSetupAddonWidget &self, int theId);
     void CheckboxChecked(int theId, bool checked) override;
