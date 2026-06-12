@@ -84,10 +84,9 @@ public:
     void Draw(Sexy::Graphics *g) const;
     bool GetAddonMode(int theId) const;
     void SetAddonMode(int theId, bool checked, bool saveDetails);
-
-private:
     void UpdateGlobalBpButtonState() const;
 
+private:
     static inline const Sexy::ButtonListener::VTable sButtonListenerVtable{
         .ButtonDepress = (void *)&VSSetupAddonWidget::ButtonDepress,
     };

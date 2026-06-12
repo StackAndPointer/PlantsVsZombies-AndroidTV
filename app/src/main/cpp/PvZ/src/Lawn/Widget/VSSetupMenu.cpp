@@ -903,7 +903,6 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             }
         } break;
         case EVENT_SERVER_VSSETUP_ADDON_BUTTON_INIT: {
-            LOG_DEBUG("AKJSDHKJSDH");
             auto *eventButtonInit = static_cast<const B1x8_Event *>(event);
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_ExtraPacket, eventButtonInit->data1, false);
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_ExtendedSeeds, eventButtonInit->data2, false);
@@ -911,6 +910,21 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_BalancePatch, eventButtonInit->data4, false);
             U8_Event eventState = {{EventType::EVENT_CLIENT_VSSETUP_SEND_NAME_STATE}, mApp->mPlayerInfo->mVSResultsSendPlayerName};
             netplay::PutEvent(eventState);
+        } break;
+        case EVENT_SERVER_VSSETUP_GLOBALBP_SYNC: {
+            auto *eventGlobalBp = static_cast<const VSSetupGlobalBpSyncEvent *>(event);
+            VSSetupAddonWidget::msGlobalBpMode = eventGlobalBp->mode;
+            for (int playerIndex = 0; playerIndex < 2; ++playerIndex) {
+                for (int seedIndex = 0; seedIndex < NUM_ZOMBIE_SEEDS_IN_CHOOSER; ++seedIndex) {
+                    VSSetupAddonWidget::msGlobalBpSeeds[playerIndex][seedIndex] = SEED_NONE;
+                }
+                const int rawCount = int(eventGlobalBp->count[playerIndex]);
+                const int count = rawCount > VSSetupGlobalBpSyncEvent::kMaxSeedsPerPlayer ? VSSetupGlobalBpSyncEvent::kMaxSeedsPerPlayer : rawCount;
+                for (int seedIndex = 0; seedIndex < count; ++seedIndex) {
+                    VSSetupAddonWidget::msGlobalBpSeeds[playerIndex][seedIndex] = SeedType(eventGlobalBp->seeds[playerIndex][seedIndex]);
+                }
+            }
+            mAddonWidget->UpdateGlobalBpButtonState();
         } break;
         case EVENT_SERVER_VSSETUP_ADDON_CHECKBOX_CHECKED: {
             auto *eventCheckbox = static_cast<const U8U8_Event *>(event);
@@ -972,6 +986,23 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
                 mAddonWidget->mBalancePatchMode,
             };
             netplay::PutEvent(event);
+
+            VSSetupGlobalBpSyncEvent globalBpEvent = {{EventType::EVENT_SERVER_VSSETUP_GLOBALBP_SYNC}, int8_t(VSSetupAddonWidget::msGlobalBpMode)};
+            for (int playerIndex = 0; playerIndex < 2; ++playerIndex) {
+                int syncedSeedCount = 0;
+                for (int seedIndex = 0; seedIndex < NUM_ZOMBIE_SEEDS_IN_CHOOSER; ++seedIndex) {
+                    const SeedType seedType = VSSetupAddonWidget::msGlobalBpSeeds[playerIndex][seedIndex];
+                    if (seedType == SEED_NONE) {
+                        continue;
+                    }
+                    if (syncedSeedCount >= VSSetupGlobalBpSyncEvent::kMaxSeedsPerPlayer) {
+                        break;
+                    }
+                    globalBpEvent.seeds[playerIndex][syncedSeedCount++] = int8_t(seedType);
+                }
+                globalBpEvent.count[playerIndex] = uint8_t(syncedSeedCount);
+            }
+            netplay::PutEvent(globalBpEvent);
         }
     }
     if (theState == VSSetupState::VS_SETUP_STATE_CONTROLLERS) {

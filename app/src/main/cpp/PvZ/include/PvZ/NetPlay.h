@@ -63,6 +63,7 @@ enum EventType : uint8_t {
     EVENT_CLIENT_VSSETUPMENU_REQUEST_SIDE,
     EVENT_SERVER_VSSETUPMENU_SET_SIDE,
     EVENT_SERVER_VSSETUP_ADDON_BUTTON_INIT,
+    EVENT_SERVER_VSSETUP_GLOBALBP_SYNC,
     EVENT_SERVER_VSSETUP_ADDON_CHECKBOX_CHECKED,
     EVENT_CLIENT_VSSETUP_ADDON_CHECKBOX_CHECKED,
     EVENT_CLIENT_VSSETUP_SEND_NAME_STATE,
@@ -286,6 +287,13 @@ struct B1x8_Event : BaseEvent {
     uint8_t data6 : 1;
     uint8_t data7 : 1;
     uint8_t data8 : 1;
+};
+
+struct VSSetupGlobalBpSyncEvent : BaseEvent {
+    static constexpr int kMaxSeedsPerPlayer = 30; // 额外卡槽模式每局消耗6张卡，BO5最多消耗30张
+    int8_t mode;
+    uint8_t count[2];
+    int8_t seeds[2][kMaxSeedsPerPlayer];
 };
 
 struct U16UNI32_Event : BaseEvent {
