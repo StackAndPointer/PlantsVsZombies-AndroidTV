@@ -914,6 +914,12 @@ void VSSetupMenu::KeyDown(Sexy::KeyCode theKey) {
 }
 
 void VSSetupMenu::OnStateEnter(VSSetupState theState) {
+
+    if (gTcpClientSocket >= 0) {
+        U8_Event event = {{EventType::EVENT_VSSETUPMENU_ENTER_STATE}, uint8_t(theState)};
+        netplay::PutEvent(event);
+    }
+
     if (theState == VSSetupState::VS_SETUP_STATE_SIDES) {
         drawTipArrowAlphaCounter = 0;
 
@@ -934,6 +940,11 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
         mApp->SetSecondPlayer(1);
         SetSecondPlayerIndex(mApp->mSecondPlayerGamepadIndex);
         GoToState(VSSetupState::VS_SETUP_STATE_SIDES);
+
+        // 此事件仅针对中途加入的观战者，告知观战者本局对战的模式。Guest无需处理此事件。
+        U8U8_Event event = {{EventType::EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE}, uint8_t(Challenge::msVSShuffleMode), uint8_t(mApp->mBoard->mBackground)};
+        netplay::PutEvent(event);
+
         return;
 
         //        mControllerIndex[1] = -1;
@@ -965,9 +976,6 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
             }
             ButtonDepress(VSSetupMenu_Random_Battle);
         }
-    } else if (gTcpClientSocket >= 0) {
-        U8_Event event = {{EventType::EVENT_VSSETUPMENU_ENTER_STATE}, uint8_t(theState)};
-        netplay::PutEvent(event);
     }
 
     old_VSSetupMenu_OnStateEnter(this, theState);

@@ -412,6 +412,11 @@ inline int gNetPingSendCounter = 0;
 inline uint32_t gNetPingNowTick = 0;
 inline uint16_t gNetPingLatestSentTick = 0;
 inline uint16_t gNetPingLastPongTick = 0;
+inline bool gHostPeerPingBaseValid = false;
+inline int32_t gHostPeerPingBaseOffset = 0;
+inline bool gSpectatePeerPingValid = false;
+inline uint16_t gSpectatePeerPingToken = 0;
+inline uint32_t gSpectatePeerPingRecvTick = 0;
 
 inline std::vector<std::byte> clientRecvBuffer;
 inline std::vector<std::byte> serverRecvBuffer;

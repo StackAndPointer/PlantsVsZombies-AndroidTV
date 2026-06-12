@@ -62,6 +62,11 @@ void ResetNetDelayState() {
     gNetPingNowTick = 0;
     gNetPingLatestSentTick = 0;
     gNetPingLastPongTick = 0;
+    gHostPeerPingBaseValid = false;
+    gHostPeerPingBaseOffset = 0;
+    gSpectatePeerPingValid = false;
+    gSpectatePeerPingToken = 0;
+    gSpectatePeerPingRecvTick = 0;
 }
 
 void TickNetDelayAwaitingPong() {
@@ -85,6 +90,9 @@ void TickNetDelayAwaitingPong() {
 }
 
 void SendPeriodicNetPing() {
+    if (gTcpClientSocket >= 0 && !gTcpConnected) {
+        return;
+    }
     ++gNetPingSendCounter;
     if (gNetPingSendCounter < kNetPingIntervalTicks) {
         return;
@@ -384,6 +392,19 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
 
         if (event->type == EVENT_CLIENT_PING) {
             auto *eventPing = static_cast<const U16_Event *>(event);
+            const int32_t rawOffset = static_cast<int32_t>(gNetPingNowTick) - static_cast<int32_t>(eventPing->data);
+            if (!gHostPeerPingBaseValid) {
+                gHostPeerPingBaseValid = true;
+                gHostPeerPingBaseOffset = rawOffset;
+            } else if (rawOffset < gHostPeerPingBaseOffset) {
+                gHostPeerPingBaseOffset = rawOffset;
+            }
+            const int32_t jitterTicks = rawOffset - gHostPeerPingBaseOffset;
+            if (jitterTicks >= 0 && jitterTicks <= kNetPingTimeoutTicks) {
+                gNetDelayNow = std::max<int32_t>(1, jitterTicks);
+                gNetPingHasValidDelay = true;
+                gNetPingLastPongTick = gNetPingNowTick;
+            }
             U16_Event eventPong = {{EVENT_SERVER_PONG}, eventPing->data};
             netplay::PutEvent(eventPong);
         } else if (event->type == EVENT_SERVER_PONG) {
@@ -430,6 +451,12 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
 
 void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
     serverRecvBuffer.append_range(std::views::counted(buf, bufSize));
+    auto *waitDialog = WaitForSecondPlayerDialog::GetInstance();
+    if (waitDialog != nullptr && waitDialog->ServerNeedsSpectateStreamAlignment()) {
+        if (!waitDialog->ServerTryAlignSpectateStream(serverRecvBuffer)) {
+            return;
+        }
+    }
     size_t offset = 0;
 
     while (serverRecvBuffer.size() >= offset + sizeof(BaseEvent)) {
@@ -443,13 +470,31 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
         BaseEvent *event = netplay::GetEvent(alignedBuf, serverRecvPtr);
         replay::RecordPacket(ReplayPacketDir::InboundServer, serverRecvPtr, event->size, static_cast<std::uint32_t>(mAppCounter));
         LOG_DEBUG("event.type = {}", int(event->type));
+        if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {}
 
         if (event->type == EVENT_CLIENT_PING) {
-            U16_Event eventPong = {{EVENT_SERVER_PONG}, static_cast<const U16_Event *>(event)->data};
-            netplay::PutEvent(eventPong);
+            auto *eventPing = static_cast<const U16_Event *>(event);
+            if (gIsServerModeSpectator) {
+                gSpectatePeerPingValid = true;
+                gSpectatePeerPingToken = eventPing->data;
+                gSpectatePeerPingRecvTick = gNetPingNowTick;
+            } else {
+                U16_Event eventPong = {{EVENT_SERVER_PONG}, eventPing->data};
+                netplay::PutEvent(eventPong);
+            }
         } else if (event->type == EVENT_SERVER_PONG) {
             auto *eventPong = static_cast<const U16_Event *>(event);
-            if (gNetPingAwaitingPong && eventPong->data == gNetPingLatestSentTick) {
+            if (gIsServerModeSpectator) {
+                if (gSpectatePeerPingValid && eventPong->data == gSpectatePeerPingToken) {
+                    const auto rttTicks = static_cast<uint16_t>(gNetPingNowTick - gSpectatePeerPingRecvTick);
+                    if (rttTicks <= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
+                        gNetDelayNow = std::max<int>(1, static_cast<int>(rttTicks));
+                        gNetPingHasValidDelay = true;
+                        gNetPingLastPongTick = gNetPingNowTick;
+                    }
+                    gSpectatePeerPingValid = false;
+                }
+            } else if (gNetPingAwaitingPong && eventPong->data == gNetPingLatestSentTick) {
                 const auto rttTicks = static_cast<uint16_t>(gNetPingNowTick - eventPong->data);
                 if (rttTicks <= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
                     gNetDelayNow = static_cast<int>(rttTicks);
@@ -474,7 +519,10 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
                     mBoard->processServerEvent(event);
                 }
             }
+        } else if (waitDialog != nullptr && event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE && gIsServerModeSpectator) {
+            waitDialog->processServerEvent(event);
         } else if (event->type >= EVENT_SERVER_VSSETUPMENU_BUTTON_DEPRESS && event->type < NUM_EVENT_VSSETUPMENU) {
+            if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {}
             if (mVSSetupMenu != nullptr) {
                 const bool spectatorClientVsSetupEvent = (gIsServerModeSpectator || gIsReplayMode)
                     && (event->type == EVENT_CLIENT_VSSETUPMENU_MOVE_CONTROLLER || event->type == EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED || event->type == EVENT_CLIENT_SEEDCHOOSER_BAN_SEED
@@ -485,16 +533,19 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
                 } else {
                     mVSSetupMenu->processServerEvent(event);
                 }
+            } else if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {
             }
         } else if (event->type >= EVENT_SERVER_WAITFORSECONDPALYER_VERSION_CHECK && event->type < NUM_EVENT_WAITFORSECONDPALYER) {
-            if (auto *dialog = GetDialog(DIALOG_WAIT_FOR_SECOND_PLAYER)) {
-                static_cast<WaitForSecondPlayerDialog *>(dialog)->processServerEvent(event);
+            if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {}
+            if (waitDialog != nullptr) {
+                waitDialog->processServerEvent(event);
             }
         } else if (event->type >= EVENT_CLIENT_VSRESULT_BUTTON_DEPRESS && event->type < NUM_EVENT_VSRESULT) {
             if (mVSResultsMenu != nullptr) {
                 mVSResultsMenu->processServerEvent(event);
             }
         } else {
+            if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {}
             assert(false && "Unknown-type event");
             std::unreachable();
         }
@@ -510,9 +561,20 @@ void LawnApp::UpdateFrames() {
     const bool replayPaused = replay::IsPlaybackActive() && gReplayPauseByMenu && mBoard != nullptr && mBoard->mPaused;
     if ((gTcpClientSocket >= 0 || gTcpConnected || replay::IsPlaybackActive()) && !replayPaused) {
         ++gNetPingNowTick;
-        TickNetDelayAwaitingPong();
+        if (!gIsServerModeSpectator) {
+            TickNetDelayAwaitingPong();
+        } else if (gNetPingHasValidDelay) {
+            const auto elapsedTicks = static_cast<uint16_t>(gNetPingNowTick - gNetPingLastPongTick);
+            if (elapsedTicks >= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
+                gNetPingHasValidDelay = false;
+                gNetDelayNow = 0;
+                gSpectatePeerPingValid = false;
+            }
+        }
         if (!replay::IsPlaybackActive()) {
-            SendPeriodicNetPing();
+            if (!gIsServerModeSpectator) {
+                SendPeriodicNetPing();
+            }
         } else {
             replay::AdvancePlaybackTick();
         }
@@ -578,7 +640,11 @@ void LawnApp::UpdateFrames() {
     }
 
     if (gTcpConnected) {
-        netplay::FlushSendBuffer(gTcpServerSocket);
+        if (gIsServerModeSpectator) {
+            netplay::ClearSendBuffer();
+        } else {
+            netplay::FlushSendBuffer(gTcpServerSocket);
+        }
 
         while (true) {
             ssize_t n = recv(gTcpServerSocket, buf, std::size(buf), MSG_DONTWAIT);

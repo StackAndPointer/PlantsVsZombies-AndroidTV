@@ -57,6 +57,8 @@ struct ServerRoomItem {
 
 class WaitForSecondPlayerDialog : public LawnDialog {
 public:
+    static WaitForSecondPlayerDialog *GetInstance();
+
     enum {
         WaitForSecondPlayerDialog_Enter = 1000,
         WaitForSecondPlayerDialog_Back = 1001,
@@ -112,10 +114,16 @@ public:
     bool mServerHostForceRelay;
     bool mServerClientWantStart; // host side: guest asked to start
     bool mServerAskedWantStart;  // guest side: ask-start sent
+    bool mServerJoinedRoomGaming;
+    bool mServerSpectateReservationActive;
+    bool mServerSpectateStreamAligned;
     int mServerHostedRoomId;     // created room id
     int mServerJoinedRoomId;     // joined room id (optional)
     int mServerLastQueryTick;    // frame tick for auto query
     int mServerLastRecvTick;     // for debug/timeout if needed
+    int mServerSpectateAlignHitCount;
+    int mServerSpectateReserveTick;
+    int mServerSpectateReserveWarnTick;
     char mServerHostedRoomName[128];
     char mServerJoinedRoomName[128];
     char mServerSpectatorNames[6][32];
@@ -177,6 +185,7 @@ public:
     void ServerSendSetSpectate(bool allow);
     void ServerSendSwitchRole(bool toSpectator);
     void ServerSendRejoinRole(bool toSpectator);
+    void ServerSendReserveSpectate(bool reserve);
     bool ServerSendNatPort();
     bool ServerSendP2PProbe();
     bool ServerOpenP2PListener();
@@ -188,6 +197,9 @@ public:
 
     bool ServerTryReadOneFrame(uint8_t &outType, uint8_t *outPayload, uint16_t &outLen);
     bool ServerHostRoomLocked() const;
+    bool ServerNeedsSpectateStreamAlignment() const;
+    bool ServerTryAlignSpectateStream(std::vector<std::byte> &recvBuffer);
+    void ServerOnBorrowedSocketClosed(const char *why);
 
     // MODE3 drawing + selection
     void DrawServerRoomList(Sexy::Graphics *g);
@@ -235,6 +247,8 @@ public:
 
 protected:
     friend void InitHookFunction();
+
+    static WaitForSecondPlayerDialog *gWaitForSecondPlayerDialogInstance;
 
     void _constructor(LawnApp *theApp);
     void _destructor();

@@ -396,7 +396,7 @@ void ChallengeScreen::Draw(Sexy::Graphics *g) {
                 TodDrawString(g, GetServerModeTransportSuffix() + std::move(status), 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
             } else {
                 pvzstl::string fmt = TodStringTranslate("[VS_STATUS_IN_ROOM_MS_FMT]");
-                pvzstl::string delayText = gIsServerModeSpectator ? StrFormat("[%s] %dms", TodStringTranslate("[SPECTATE]").c_str(), gNetDelayNow * 10) : StrFormat(fmt.c_str(), gNetDelayNow * 10);
+                pvzstl::string delayText = gIsServerModeSpectator ? StrFormat("%s %dms", TodStringTranslate("[SPECTATE]").c_str(), gNetDelayNow * 10) : StrFormat(fmt.c_str(), gNetDelayNow * 10);
                 TodDrawString(g, GetServerModeTransportSuffix() + std::move(delayText), 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
             }
         } else if (gTcpConnected) {

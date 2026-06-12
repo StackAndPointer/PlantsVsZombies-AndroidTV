@@ -25,6 +25,7 @@
 #include "PvZ/Android/Native/NativeApp.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
+#include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
@@ -41,6 +42,8 @@
 #include <vector>
 
 using namespace Sexy;
+
+WaitForSecondPlayerDialog *WaitForSecondPlayerDialog::gWaitForSecondPlayerDialogInstance = nullptr;
 
 namespace {
 struct BroadcastTarget {
@@ -68,6 +71,7 @@ constexpr int kMode3ServerTargetLineH = 38;
 constexpr int kMode3ServerTargetMaxLen = 22; // "255.255.255.255:65535" + '\0'
 constexpr int kMode3ServerRecentCount = 3;
 constexpr int kMode3StartTimeoutTicks = 1000; // ~10s
+constexpr int kMode3SpectateReserveWarnTicks = 300; // ~3s
 constexpr int kSpectatorsTextX = 140;
 constexpr int kSpectatorsTextWidth = 520;
 constexpr int kSpectatorsTextHeight = 120;
@@ -364,7 +368,6 @@ static bool Mode3ConnectToTarget(WaitForSecondPlayerDialog *dialog, std::string_
 
     int ret = connect(dialog->mServerSock, (sockaddr *)&sa, sizeof(sa));
     int err = errno;
-    LOG_DEBUG("[MODE3] connect ret={} errno={}", ret, err);
     if (ret == 0) {
         gIsConnectedToServer = true;
         dialog->mServerConnecting = false;
@@ -461,12 +464,64 @@ static bool Mode3CanSwitchSpectatorToGuest(const WaitForSecondPlayerDialog *dial
     if (!dialog || !dialog->mServerSpectating || dialog->mServerGameStarting || !dialog->mServerConnected || dialog->mServerConnecting) {
         return false;
     }
+    if (dialog->mServerJoinedRoomGaming) {
+        return false;
+    }
     return gSecondPlayerName[0] == '\0';
 }
 } // namespace
 
 bool WaitForSecondPlayerDialog::ServerHostRoomLocked() const {
     return mUIMode == UIMode::MODE3_SERVER && mServerConnected && mServerHosting && (mServerHostHasGuest || mServerSpectating);
+}
+
+bool WaitForSecondPlayerDialog::ServerNeedsSpectateStreamAlignment() const {
+    return mServerSpectating && mServerJoinedRoomGaming && mServerSpectateReservationActive && !mServerSpectateStreamAligned;
+}
+
+bool WaitForSecondPlayerDialog::ServerTryAlignSpectateStream(std::vector<std::byte> &recvBuffer) {
+    if (!ServerNeedsSpectateStreamAlignment()) {
+        return true;
+    }
+
+    constexpr std::size_t kPingEventSize = sizeof(U16_Event);
+    constexpr int kNeededHits = 5;
+    const auto isPingPongAt = [&recvBuffer](std::size_t pos) {
+        if (pos + kPingEventSize > recvBuffer.size()) {
+            return false;
+        }
+        const auto type = std::to_integer<uint8_t>(recvBuffer[pos]);
+        const auto size = std::to_integer<uint8_t>(recvBuffer[pos + offsetof(BaseEvent, size)]);
+        return size == kPingEventSize && (type == EVENT_CLIENT_PING || type == EVENT_SERVER_PONG);
+    };
+
+    for (std::size_t start = 0; start + kPingEventSize * kNeededHits <= recvBuffer.size(); ++start) {
+        bool ok = true;
+        for (int i = 0; i < kNeededHits; ++i) {
+            if (!isPingPongAt(start + kPingEventSize * i)) {
+                ok = false;
+                break;
+            }
+        }
+        if (!ok) {
+            continue;
+        }
+
+        if (start > 0) {
+            recvBuffer.erase(recvBuffer.begin(), recvBuffer.begin() + static_cast<std::ptrdiff_t>(start));
+        }
+        mServerSpectateAlignHitCount = kNeededHits;
+        mServerSpectateStreamAligned = true;
+        mServerStatusText = TodStringTranslate("[SPECTATE_ALIGN_READY]");
+        return true;
+    }
+
+    const std::size_t keepBytes = kPingEventSize * (kNeededHits + 2);
+    const std::size_t oldSize = recvBuffer.size();
+    if (recvBuffer.size() > keepBytes) {
+        recvBuffer.erase(recvBuffer.begin(), recvBuffer.end() - static_cast<std::ptrdiff_t>(keepBytes));
+    }
+    return false;
 }
 
 void WaitForSecondPlayerDialog::SetMode(UIMode mode) {
@@ -612,8 +667,13 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
                 mLawnYesButton->SetLabel("[START_GAME]");
                 mLawnYesButton->mDisabled = (!mServerConnected || mServerConnecting || !mServerHostHasGuest || startBusy);
             } else if (mServerSpectating) {
-                mLawnYesButton->SetLabel("[START_GAME]");
-                mLawnYesButton->mDisabled = true;
+                if (mServerJoinedRoomGaming) {
+                    mLawnYesButton->SetLabel(TodStringTranslate("[RESERVE_SPECTATE]"));
+                    mLawnYesButton->mDisabled = mServerSpectateReservationActive || ((!mServerConnected && gTcpServerSocket < 0) || startBusy);
+                } else {
+                    mLawnYesButton->SetLabel("[START_GAME]");
+                    mLawnYesButton->mDisabled = true;
+                }
             } else if (mServerJoined) {
                 mLawnYesButton->SetLabel("[START_GAME]");
                 mLawnYesButton->mDisabled = true; // ✅ guest 永远禁用
@@ -655,7 +715,11 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
                 mLeftButton->mDisabled = (!mServerConnected || mServerConnecting || startBusy);
             }
             if (mServerSpectating) {
-                mLeftButton->mDisabled = (!mServerConnected || mServerConnecting || startBusy);
+                if (mServerJoinedRoomGaming && !mServerSpectateReservationActive) {
+                    mLeftButton->mDisabled = false;
+                } else {
+                    mLeftButton->mDisabled = mServerSpectateReservationActive || (((!mServerConnected || mServerConnecting) && gTcpServerSocket < 0) || startBusy);
+                }
             }
 
             // 创建按钮：空闲态可创建；hosting 时可退出
@@ -663,7 +727,7 @@ void WaitForSecondPlayerDialog::RefreshButtons() {
             if (mServerJoined) {
                 mRightButton->mDisabled = !Mode3CanSwitchGuestToSpectator(this);
             } else if (mServerSpectating) {
-                mRightButton->mDisabled = !Mode3CanSwitchSpectatorToGuest(this);
+                mRightButton->mDisabled = mServerJoinedRoomGaming || mServerSpectateReservationActive || !Mode3CanSwitchSpectatorToGuest(this);
             } else if (inServerListMode) {
                 mRightButton->mDisabled = false;
             } else {
@@ -731,8 +795,13 @@ void WaitForSecondPlayerDialog::CloseReplayManageWidget() {
     mReplayManageWidget = nullptr;
 }
 
+WaitForSecondPlayerDialog *WaitForSecondPlayerDialog::GetInstance() {
+    return gWaitForSecondPlayerDialogInstance;
+}
+
 void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     old_WaitForSecondPlayerDialog_WaitForSecondPlayerDialog(this, theApp);
+    gWaitForSecondPlayerDialogInstance = this;
 
 
     // 解决此Dialog显示时背景僵尸全部聚集、且草丛大块空缺的问题
@@ -804,10 +873,18 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     mServerHostForceRelay = false;
     mServerClientWantStart = false;
     mServerAskedWantStart = false;
+    mServerJoinedRoomGaming = false;
+    mServerSpectateReservationActive = false;
+    mServerSpectateStreamAligned = false;
+    mServerSpectateReserveTick = 0;
+    mServerSpectateReserveWarnTick = 0;
     mServerHostedRoomId = 0;
     mServerJoinedRoomId = 0;
     mServerLastQueryTick = 0;
     mServerLastRecvTick = 0;
+    mServerSpectateAlignHitCount = 0;
+    mServerSpectateReserveTick = 0;
+    mServerSpectateReserveWarnTick = 0;
     mServerHostedRoomName[0] = '\0';
     mServerJoinedRoomName[0] = '\0';
     mServerSpectatorCount = 0;
@@ -859,12 +936,18 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
 }
 
 WaitForSecondPlayerDialog::~WaitForSecondPlayerDialog() {
+    if (gWaitForSecondPlayerDialogInstance == this) {
+        gWaitForSecondPlayerDialogInstance = nullptr;
+    }
     CloseReplayManageWidget();
     ServerDisconnect("dialog destroy");
     old_WaitForSecondPlayerDialog__destructorAddr(this);
 }
 
 void WaitForSecondPlayerDialog::_destructor() {
+    if (gWaitForSecondPlayerDialogInstance == this) {
+        gWaitForSecondPlayerDialogInstance = nullptr;
+    }
     CloseReplayManageWidget();
     ServerDisconnect("dialog destroy");
     mServerP2PStatusText.~basic_string();
@@ -1328,6 +1411,19 @@ void WaitForSecondPlayerDialog::Update() {
     // 3) MODE3：服务器联机 IO（connect 完成检测 + 收包） + 自动 query
     // =========================================================
     if (mUIMode == UIMode::MODE3_SERVER) {
+        if (mServerSpectating && mServerJoinedRoomGaming && mServerSock < 0 && gTcpServerSocket < 0) {
+            ServerOnBorrowedSocketClosed("borrowed socket missing in update");
+        }
+        if (mServerSpectating && mServerJoinedRoomGaming && mServerSpectateReservationActive && mServerSock >= 0 && gTcpServerSocket < 0 && mServerRelayEpoch == 0) {
+            ++mServerSpectateReserveTick;
+            ++mServerSpectateReserveWarnTick;
+            if (mServerSpectateReserveWarnTick >= kMode3SpectateReserveWarnTicks) {
+                mServerSpectateReserveWarnTick = 0;
+            }
+        } else {
+            mServerSpectateReserveTick = 0;
+            mServerSpectateReserveWarnTick = 0;
+        }
         // 网络 IO（你实现：包含 connect 完成检测、收包解析等）
         ServerUpdateIO();
         ServerUpdateP2P();
@@ -1364,6 +1460,12 @@ void WaitForSecondPlayerDialog::Update() {
                 mServerHostForceRelay = false;
                 mServerClientWantStart = false;
                 mServerAskedWantStart = false;
+                mServerJoinedRoomGaming = false;
+                mServerSpectateReservationActive = false;
+                mServerSpectateStreamAligned = false;
+                mServerSpectateAlignHitCount = 0;
+                mServerSpectateReserveTick = 0;
+                mServerSpectateReserveWarnTick = 0;
                 mServerHostedRoomId = 0;
                 mServerJoinedRoomId = 0;
                 mServerHostedRoomName[0] = '\0';
@@ -1454,6 +1556,23 @@ void WaitForSecondPlayerDialog::processServerEvent(const BaseEvent *event) {
             //            GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
             LawnDialog::ButtonDepress(WaitForSecondPlayerDialog_Enter); // 直接关闭自身
             break;
+        case EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE: {
+            if (mServerSpectating && mServerJoinedRoomGaming && mServerSpectateReservationActive) {
+                auto *syncEvent = static_cast<const U8U8_Event *>(event);
+                Challenge::msVSShuffleMode = (syncEvent->data1 != 0);
+                gVSBackground = BackgroundType(syncEvent->data2);
+                mServerJoinedRoomGaming = false;
+                mServerSpectateReservationActive = false;
+                mServerSpectateStreamAligned = false;
+                mServerSpectateAlignHitCount = 0;
+                mServerSpectateReserveTick = 0;
+                mServerSpectateReserveWarnTick = 0;
+                LawnDialog::ButtonDepress(WaitForSecondPlayerDialog_Enter);
+                mApp->KillChallengeScreen();
+                mApp->PreNewGame(GAMEMODE_MP_VS, false);
+            } else {
+            }
+        } break;
         default:
             break;
     }
@@ -2076,6 +2195,21 @@ void WaitForSecondPlayerDialog::ButtonDepress_Thunk(this ButtonListener &self, i
                         aDialog->ServerSendStart();
                         return;
                     }
+                    if (aDialog->mServerSpectating && aDialog->mServerJoinedRoomGaming) {
+                        if (aDialog->mServerSpectateReservationActive) {
+                            aDialog->RefreshButtons();
+                            return;
+                        }
+                        aDialog->ServerSendReserveSpectate(true);
+                        aDialog->mServerSpectateReservationActive = true;
+                        aDialog->mServerSpectateStreamAligned = false;
+                        aDialog->mServerSpectateAlignHitCount = 0;
+                        aDialog->mServerSpectateReserveTick = 0;
+                        aDialog->mServerSpectateReserveWarnTick = 0;
+                        aDialog->mServerStatusText = TodStringTranslate("[RESERVING_SPECTATE_NEXT_GAME]");
+                        aDialog->RefreshButtons();
+                        return;
+                    }
                     if (aDialog->mServerJoined) {
                         aDialog->ServerSendAskStart();
                         return;
@@ -2109,6 +2243,9 @@ void WaitForSecondPlayerDialog::ButtonDepress_Thunk(this ButtonListener &self, i
                     aDialog->ServerSendSetSpectate(!aDialog->mServerHostSpectateAllowed);
                     aDialog->RefreshButtons();
                     return;
+                }
+                if (aUIMode == UIMode::MODE3_SERVER && gTcpConnected && gIsServerModeSpectator) {
+                    aDialog->mApp->ClearSecondPlayer();
                 }
                 if (aDialog->ServerHostRoomLocked()) {
                     aDialog->RefreshButtons();
@@ -2241,8 +2378,22 @@ bool WaitForSecondPlayerDialog::ServerTryReadOneFrame(uint8_t &outType, uint8_t 
 
     uint8_t type = mSrvRecvBuf[0];
     uint16_t len = (uint16_t(mSrvRecvBuf[1]) << 8) | uint16_t(mSrvRecvBuf[2]);
-    if (mSrvRecvLen < 3 + (int)len)
+    const bool knownType = (type == 0x81 || type == 0x82 || type == 0x83 || type == 0x84 || type == 0x85 || type == 0x86 || type == 0x87 || type == 0x88 || type == 0x89 || type == 0x8A || type == 0x8B
+                            || type == 0x8C || type == 0x8D || type == 0x8E || type == 0x8F || type == 0x90 || type == 0xFF);
+    if (!knownType) {
+        std::memmove(mSrvRecvBuf, mSrvRecvBuf + 1, mSrvRecvLen - 1);
+        --mSrvRecvLen;
         return false;
+    }
+    if (len > sizeof(mSrvRecvBuf) - 3) {
+        std::memmove(mSrvRecvBuf, mSrvRecvBuf + 1, mSrvRecvLen - 1);
+        --mSrvRecvLen;
+        return false;
+    }
+    if (mSrvRecvLen < 3 + (int)len) {
+        if (mSrvRecvLen >= 32) {}
+        return false;
+    }
 
     outType = type;
     outLen = len;
@@ -2447,6 +2598,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 int hostNameLen = (len >= 10) ? (payload[9] & 0xFF) : 0;
                 const bool hostNameValid = (len >= 10 && 10 + hostNameLen <= len);
                 int joinRole = (len >= 11 + hostNameLen) ? (payload[10 + hostNameLen] & 0xFF) : 0;
+                int roomFlags = (len >= 12 + hostNameLen) ? (payload[11 + hostNameLen] & 0xFF) : 0;
                 if (roomVersion != 0 && roomVersion != NETPLAY_VERSION) {
                     ok = false;
                 }
@@ -2469,6 +2621,12 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                     mServerHostForceRelay = false;
                     mServerClientWantStart = false;
                     mServerAskedWantStart = false;
+                    mServerJoinedRoomGaming = (roomFlags & 1) != 0;
+                    mServerSpectateReservationActive = false;
+                    mServerSpectateStreamAligned = false;
+                    mServerSpectateAlignHitCount = 0;
+                    mServerSpectateReserveTick = 0;
+                    mServerSpectateReserveWarnTick = 0;
                     mServerHostedRoomName[0] = '\0';
                     if (hostNameValid) {
                         int copyLen = hostNameLen;
@@ -2490,7 +2648,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                         std::strncpy(gServerHostName, mServerJoinedRoomName, sizeof(gServerHostName) - 1);
                         gServerHostName[sizeof(gServerHostName) - 1] = '\0';
                         gSecondPlayerName[0] = '\0';
-                        mServerStatusText = TodStringTranslate("[JOINED_AS_SPECTATOR]");
+                        mServerStatusText = mServerJoinedRoomGaming ? TodStringTranslate("[SPECTATE_ROOM_GAMING_CAN_RESERVE]") : TodStringTranslate("[JOINED_AS_SPECTATOR]");
                     }
                     mServerSpectatorCount = 0;
                     std::memset(mServerSpectatorNames, 0, sizeof(mServerSpectatorNames));
@@ -2615,6 +2773,23 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 }
                 break;
             }
+            case 0x90: { // RESERVE_SPECTATE_ACK
+                if (len >= 11) {
+                    int rid = homura::ReadBEI32(payload);
+                    bool reserve = payload[4] != 0;
+                    bool relayMode = payload[5] != 0;
+                    bool relayOpen = payload[6] != 0;
+                    std::uint32_t relayEpoch = (std::uint32_t)homura::ReadBEI32(payload + 7);
+                    if (mServerSpectating && rid == mServerJoinedRoomId) {
+                        mServerSpectateReservationActive = reserve;
+                        mServerRelayEpoch = relayEpoch;
+                        mServerSpectateReserveTick = 0;
+                        mServerSpectateReserveWarnTick = 0;
+                        mServerStatusText = relayOpen ? TodStringTranslate("[SPECTATE_RESERVE_STREAM_OPEN]") : TodStringTranslate("[SPECTATE_RESERVE_WAIT_STREAM]");
+                    }
+                }
+                break;
+            }
             case 0x89: { // P2P_READY
                 if (len >= 2) {
                     mServerP2PLocalPort = homura::ReadBEU16(payload);
@@ -2687,6 +2862,12 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 mServerHostForceRelay = false;
                 mServerClientWantStart = false;
                 mServerAskedWantStart = false;
+                mServerJoinedRoomGaming = false;
+                mServerSpectateReservationActive = false;
+                mServerSpectateStreamAligned = false;
+                mServerSpectateAlignHitCount = 0;
+                mServerSpectateReserveTick = 0;
+                mServerSpectateReserveWarnTick = 0;
                 mServerGameStartingTick = 0;
                 mServerHostedRoomId = 0;
                 mServerJoinedRoomId = 0;
@@ -2715,11 +2896,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 CloseSocketFd(mServerP2PConnectingSock);
                 CloseSocketFd(mServerP2PPendingSock);
                 CloseSocketFd(mServerP2PListenSock, false);
-                LOG_DEBUG("[MODE3] RELAY_BEGIN");
-
-                // ✅ 如果已经交接过，就忽略（理论上不会进来，因为 mServerSock 会被置 -1）
                 if (mServerSock < 0) {
-                    LOG_DEBUG("[MODE3] RELAY_BEGIN ignored (already handed off)");
                     break;
                 }
 
@@ -2744,38 +2921,12 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 }
                 mServerStatusText = TodStringTranslate("[STATUS_RELAY_WAIT_START]");
                 mServerP2PStatusText = "P2P: relay fallback active, waiting relay go";
-                LOG_DEBUG("[MODE3] RELAY_BEGIN epoch={}, waiting RELAY_GO", mServerRelayEpoch);
                 break;
-
-                if (mServerHosting) {
-                    // 我是房主：后续走 gTcpClientSocket（你的 MODE2 host 收包逻辑就是读 gTcpClientSocket）
-                    gTcpClientSocket = mServerSock;
-                    // 保持非阻塞没问题：你 UpdateFrames 用 MSG_DONTWAIT，本来就非阻塞友好
-                    mServerSock = -1; // ✅ 交接完成：让 WaitDialog 不再管理该 socket
-                } else if (mServerJoined) {
-                    // 我是房客：后续走 gTcpServerSocket + gTcpConnected=true
-                    gTcpServerSocket = mServerSock;
-                    gTcpConnected = true;
-                    gTcpConnecting = false;
-                    mServerSock = -1; // ✅ 交接完成
-                } else {
-                    // 理论不该发生
-                    LOG_DEBUG("[MODE3] RELAY_BEGIN but role unknown, disconnect");
-                    ServerDisconnect("relay role unknown");
-                    break;
-                }
-
-                gIsServerModeNetplay = true;
-                gServerModeTransport = ServerModeTransport::RELAY;
-                // 进入对战：按两下A
-                LawnDialog::ButtonDepress(WaitForSecondPlayerDialog_Enter);
-                return;
             }
 
             case 0x8B: { // RELAY_GO
                 const std::uint32_t relayGoEpoch = (len >= 4) ? (std::uint32_t)homura::ReadBEI32(payload) : 0;
                 if (mServerRelayEpoch != 0 && relayGoEpoch != 0 && relayGoEpoch != mServerRelayEpoch) {
-                    LOG_WARN("[MODE3] RELAY_GO epoch mismatch recv={} expect={}", relayGoEpoch, mServerRelayEpoch);
                     break;
                 }
 
@@ -2783,7 +2934,6 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 mServerP2PStatusText = "P2P: relay active";
 
                 if (mServerSock < 0) {
-                    LOG_DEBUG("[MODE3] RELAY_GO ignored (already handed off)");
                     break;
                 }
 
@@ -2812,8 +2962,14 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                     gTcpConnected = true;
                     gTcpConnecting = false;
                     mServerSock = -1;
+                    if (mServerJoinedRoomGaming && mServerSpectateReservationActive) {
+                        gIsServerModeNetplay = true;
+                        gServerModeTransport = ServerModeTransport::RELAY;
+                        gIsServerModeSpectator = true;
+                        mServerStatusText = TodStringTranslate("[SPECTATE_RESERVE_WAIT_NEXT_GAME]");
+                        break;
+                    }
                 } else {
-                    LOG_DEBUG("[MODE3] RELAY_GO but role unknown, disconnect");
                     ServerDisconnect("relay role unknown");
                     break;
                 }
@@ -2998,7 +3154,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
         setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 
         if (!BindSocketToAnyPort(sock, mServerP2PLocalPort)) {
-            LOG_ERROR("[P2P_PROBE] bind failed port={} attempt={} errno={}", targetPort, attempt, errno);
             CloseSocketFd(sock, false);
             allOk = false;
             break;
@@ -3015,7 +3170,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
 
         int ret = connect(sock, (sockaddr *)&probeSa, sizeof(probeSa));
         if (ret != 0 && errno != EINPROGRESS) {
-            LOG_ERROR("[P2P_PROBE] connect fail attempt={} errno={}", attempt, errno);
             CloseSocketFd(sock, false);
             continue;
         }
@@ -3027,7 +3181,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
 
         int sel = select(sock + 1, nullptr, &wfds, nullptr, &tv);
         if (sel <= 0 || !FD_ISSET(sock, &wfds)) {
-            LOG_ERROR("[P2P_PROBE] timeout attempt={} sel={}", attempt, sel);
             CloseSocketFd(sock, false);
             continue;
         }
@@ -3036,7 +3189,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
         socklen_t elen = sizeof(err);
         getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &elen);
         if (err != 0) {
-            LOG_ERROR("[P2P_PROBE] complete-with-error attempt={} err={}", attempt, err);
             CloseSocketFd(sock, false);
             continue;
         }
@@ -3044,7 +3196,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
         uint8_t tokenBuf[4];
         homura::WriteBEI32(tokenBuf, (int32_t)mServerP2PProbeToken);
         if (!SendAll(sock, tokenBuf, sizeof(tokenBuf))) {
-            LOG_ERROR("[P2P_PROBE] token send fail attempt={} errno={}", attempt, errno);
             CloseSocketFd(sock, false);
             continue;
         }
@@ -3068,7 +3219,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
         setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
 
         if (!BindSocketToAnyPort(sock, mServerP2PLocalPort)) {
-            LOG_ERROR("[P2P_PROBE] bind failed port={} attempt={} errno={}", targetPort, attempt, errno);
             CloseSocketFd(sock, false);
             return false;
         }
@@ -3084,7 +3234,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
 
         int ret = connect(sock, (sockaddr *)&probeSa, sizeof(probeSa));
         if (ret != 0 && errno != EINPROGRESS) {
-            LOG_ERROR("[P2P_PROBE] connect fail port={} attempt={} errno={}", targetPort, attempt, errno);
             CloseSocketFd(sock, false);
             return false;
         }
@@ -3096,7 +3245,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
 
         int sel = select(sock + 1, nullptr, &wfds, nullptr, &tv);
         if (sel <= 0 || !FD_ISSET(sock, &wfds)) {
-            LOG_ERROR("[P2P_PROBE] timeout port={} attempt={} sel={}", targetPort, attempt, sel);
             CloseSocketFd(sock, false);
             return false;
         }
@@ -3105,7 +3253,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
         socklen_t elen = sizeof(err);
         getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &elen);
         if (err != 0) {
-            LOG_ERROR("[P2P_PROBE] complete-with-error port={} attempt={} err={}", targetPort, attempt, err);
             CloseSocketFd(sock, false);
             return false;
         }
@@ -3113,7 +3260,6 @@ bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
         uint8_t tokenBuf[4];
         homura::WriteBEI32(tokenBuf, (int32_t)mServerP2PProbeToken);
         if (!SendAll(sock, tokenBuf, sizeof(tokenBuf))) {
-            LOG_ERROR("[P2P_PROBE] token send fail port={} attempt={} errno={}", targetPort, attempt, errno);
             CloseSocketFd(sock, false);
             return false;
         }
@@ -3510,8 +3656,11 @@ void WaitForSecondPlayerDialog::DrawServerRoomList(Sexy::Graphics *g) {
         pvzstl::string probeTag = TodStringTranslate(r.hostProbeDone ? "[P2P_READY]" : "[P2P_NOT_READY]");
         tag = tag.empty() ? probeTag : tag + ' ' + probeTag;
 
-        if (!r.gaming && r.spectateAllowed && r.full) {
+        if (r.spectateAllowed && r.full) {
             tag = TodStringTranslate("[SPECTATE]");
+        }
+        if (r.gaming) {
+            tag = tag.empty() ? TodStringTranslate("[ROOM_STARTED]") : tag + ' ' + TodStringTranslate("[ROOM_STARTED]");
         }
 
         if (versionLower) {
@@ -3641,7 +3790,7 @@ void WaitForSecondPlayerDialog::ServerSendJoinSelected() {
         std::memcpy(buf + 10, playerName, nameLen);
     }
 
-    const bool wantSpectate = (room.full && room.spectateAllowed && !room.gaming);
+    const bool wantSpectate = (room.full && room.spectateAllowed);
     buf[0] = wantSpectate ? 0x0F : 0x03; // JOIN_SPECTATE / JOIN
     if (!SendAll(mServerSock, buf, size_t(10 + nameLen))) {
         mServerStatusText = TodStringTranslate("[STATUS_SEND_JOIN_FAIL]");
@@ -3683,6 +3832,25 @@ void WaitForSecondPlayerDialog::ServerSendSwitchRole(bool toSpectator) {
         mServerStatusText = "switch role failed";
         ServerDisconnect("switch role send fail");
     }
+}
+
+void WaitForSecondPlayerDialog::ServerSendReserveSpectate(bool reserve) {
+    int sock = mServerSock;
+    if (sock < 0 && mServerSpectating && gTcpServerSocket >= 0) {
+        sock = gTcpServerSocket;
+    }
+    if (sock < 0 || !mServerSpectating) {
+        return;
+    }
+    uint8_t buf[2];
+    buf[0] = 0x11; // RESERVE_SPECTATE
+    buf[1] = reserve ? 1 : 0;
+    if (!SendAll(sock, buf, sizeof(buf))) {
+        mServerStatusText = TodStringTranslate("[SPECTATE_RESERVE_FAILED]");
+        return;
+    }
+    mServerSpectateReserveTick = 0;
+    mServerSpectateReserveWarnTick = 0;
 }
 
 void WaitForSecondPlayerDialog::ServerSendRejoinRole(bool toSpectator) {
@@ -3737,11 +3905,25 @@ void WaitForSecondPlayerDialog::ServerSendExitRoom() {
 }
 
 void WaitForSecondPlayerDialog::ServerSendLeaveRoom() {
+    if (mServerSpectating && gTcpServerSocket >= 0) {
+        shutdown(gTcpServerSocket, SHUT_RDWR);
+        close(gTcpServerSocket);
+        gTcpServerSocket = -1;
+        gTcpConnected = false;
+        ServerOnBorrowedSocketClosed("spectator leave local close");
+        return;
+    }
     // LEAVE_ROOM = 0x07
     if (!ServerSendU8(0x07)) {
         mServerStatusText = TodStringTranslate("[STATUS_SEND_LEAVE_FAIL]");
         ServerDisconnect("leave send fail");
     }
+}
+
+void WaitForSecondPlayerDialog::ServerOnBorrowedSocketClosed(const char *why) {
+    ServerDisconnect(why);
+    mServerStatusText = TodStringTranslate("[SPECTATE_ROOM_CONNECTION_CLOSED]");
+    RefreshButtons();
 }
 
 void WaitForSecondPlayerDialog::ServerSendKickGuest() {
@@ -3830,6 +4012,9 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
     mServerHostForceRelay = false;
     mServerClientWantStart = false;
     mServerAskedWantStart = false;
+    mServerJoinedRoomGaming = false;
+    mServerSpectateReservationActive = false;
+    mServerSpectateStreamAligned = false;
     mServerHostedRoomId = 0;
     mServerJoinedRoomId = 0;
     netplay::MetricsResetSettlementEvents();
@@ -3844,6 +4029,9 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
     mSrvRecvLen = 0;
     mServerP2PTick = 0;
     mServerGameStartingTick = 0;
+    mServerSpectateAlignHitCount = 0;
+    mServerSpectateReserveTick = 0;
+    mServerSpectateReserveWarnTick = 0;
 
     if (!hasActiveVsSocket) {
         gSecondPlayerName[0] = '\0';
