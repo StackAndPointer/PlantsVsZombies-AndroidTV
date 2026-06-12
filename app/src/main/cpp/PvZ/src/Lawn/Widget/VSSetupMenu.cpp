@@ -205,6 +205,25 @@ void VSSetupMenu::DrawOverlay(Graphics *g) {
                     TodDrawString(g, StrFormat(fmt.c_str(), opt.c_str()), 140, 620, Sexy::FONT_HOUSEOFTERROR28, Color(255, 255, 153), DrawStringJustification::DS_ALIGN_LEFT);
                     break;
                 }
+                case VSSetupAddonWidget::VSSetupAddonWidget_GlobalBP: {
+                    pvzstl::string fmt = TodStringTranslate("[VS_TIP_REMIND_HOST_FMT]");
+                    const char *label = "";
+                    switch (VSSetupAddonWidget::msGlobalBpMode) {
+                        case VSSetupAddonWidget::GLOBALBP_CLOSED:
+                            label = "[VS_OPT_ENABLE_GLOBAL_BP_BO3]";
+                            break;
+                        case VSSetupAddonWidget::GLOBALBP_BO3:
+                            label = "[VS_OPT_ENABLE_GLOBAL_BP_BO5]";
+                            break;
+                        case VSSetupAddonWidget::GLOBALBP_BO5:
+                        default:
+                            label = "[VS_OPT_DISABLE_GLOBAL_BP]";
+                            break;
+                    }
+                    pvzstl::string opt = TodStringTranslate(label);
+                    TodDrawString(g, StrFormat(fmt.c_str(), opt.c_str()), 140, 620, Sexy::FONT_HOUSEOFTERROR28, Color(255, 255, 153), DrawStringJustification::DS_ALIGN_LEFT);
+                    break;
+                }
                 default:
                     break;
             }
@@ -261,6 +280,25 @@ void VSSetupMenu::DrawOverlay(Graphics *g) {
                 case VSSetupAddonWidget::VSSetupAddonWidget_Back: {
                     pvzstl::string fmt = TodStringTranslate("[VS_TIP_OPPONENT_WANTS_GET_FMT]");
                     pvzstl::string opt = TodStringTranslate("[BACK_TO_MODE_SELECT]");
+                    TodDrawString(g, StrFormat(fmt.c_str(), opt.c_str()), 140, 620, Sexy::FONT_HOUSEOFTERROR28, Color(255, 255, 153), DrawStringJustification::DS_ALIGN_LEFT);
+                    break;
+                }
+                case VSSetupAddonWidget::VSSetupAddonWidget_GlobalBP: {
+                    pvzstl::string fmt = TodStringTranslate("[VS_TIP_OPPONENT_WANTS_GET_FMT]");
+                    const char *label = "";
+                    switch (VSSetupAddonWidget::msGlobalBpMode) {
+                        case VSSetupAddonWidget::GLOBALBP_CLOSED:
+                            label = "[VS_OPT_ENABLE_GLOBAL_BP_BO3]";
+                            break;
+                        case VSSetupAddonWidget::GLOBALBP_BO3:
+                            label = "[VS_OPT_ENABLE_GLOBAL_BP_BO5]";
+                            break;
+                        case VSSetupAddonWidget::GLOBALBP_BO5:
+                        default:
+                            label = "[VS_OPT_DISABLE_GLOBAL_BP]";
+                            break;
+                    }
+                    pvzstl::string opt = TodStringTranslate(label);
                     TodDrawString(g, StrFormat(fmt.c_str(), opt.c_str()), 140, 620, Sexy::FONT_HOUSEOFTERROR28, Color(255, 255, 153), DrawStringJustification::DS_ALIGN_LEFT);
                     break;
                 }
@@ -785,6 +823,9 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             auto *eventBtnDepress = static_cast<const U8_Event *>(event);
             int theId = eventBtnDepress->data;
             LOG_DEBUG("theId={}", theId);
+            if (gVSSetupRequestState == theId) {
+                gVSSetupRequestState = 0;
+            }
             if (theId == VSSetupMenu_Random_Battle && mState == VS_SETUP_STATE_SELECT_BATTLE) { // 随机战场
                 break;
             }
