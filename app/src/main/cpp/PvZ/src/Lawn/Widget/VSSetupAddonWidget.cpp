@@ -171,10 +171,9 @@ void VSSetupAddonWidget::ButtonDepress(this VSSetupAddonWidget &self, int theId)
                 msGlobalBpMode = GLOBALBP_BO3;
                 break;
             case GLOBALBP_BO3:
-                // 当前卡池太浅，暂不支持BO5玩法
-                //                msGlobalBpMode = GLOBALBP_BO5;
-                //                break;
-                //            case GLOBALBP_BO5:
+                msGlobalBpMode = GLOBALBP_BO5;
+                break;
+            case GLOBALBP_BO5:
             default:
                 msGlobalBpMode = GLOBALBP_CLOSED;
                 break;

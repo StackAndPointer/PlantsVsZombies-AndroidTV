@@ -36,6 +36,42 @@
 
 using namespace Sexy;
 
+namespace {
+static int GetPrioritySidePickSlot(const VSSetupMenu *menu) {
+    if (menu == nullptr || VSSetupAddonWidget::msGlobalBpMode == VSSetupAddonWidget::GLOBALBP_CLOSED) {
+        return -1;
+    }
+    // 第一轮 P1 优先选边
+    if (VSSetupAddonWidget::msGlobalBpWins[0] == 0 && VSSetupAddonWidget::msGlobalBpWins[1] == 0) {
+        return 0;
+    }
+    if (VSSetupMenu::msNextSidePickPlayerIndex < 0 || VSSetupAddonWidget::msNextSidePickPlayerIndex > 1) {
+        return -1;
+    }
+    // 败方选边
+    return VSSetupMenu::msNextSidePickPlayerIndex;
+}
+
+static bool HasPrioritySidePickPending(const VSSetupMenu *menu) {
+    const int prioritySlot = GetPrioritySidePickSlot(menu);
+    if (prioritySlot < 0) {
+        return false;
+    }
+    return menu->mState == VSSetupMenu::VS_SETUP_STATE_SIDES && menu->mSides[prioritySlot] == VS_SIDE_NONE;
+}
+
+static bool CanControlSideSlot(const VSSetupMenu *menu, int slot) {
+    if (menu == nullptr || slot < 0 || slot > 1) {
+        return false;
+    }
+    const int prioritySlot = GetPrioritySidePickSlot(menu);
+    if (prioritySlot < 0 || !HasPrioritySidePickPending(menu)) {
+        return true;
+    }
+    return slot == prioritySlot;
+}
+} // namespace
+
 void VSSetupMenu::_constructor() {
     old_VSSetupMenu_Constructor(this);
     msNextFirstPick = VSSide::VS_SIDE_ZOMBIE;
@@ -97,14 +133,14 @@ void VSSetupMenu::DrawOverlay(Graphics *g) {
         g->SetColorizeImages(true);
         g->SetColor(Color(255, 255, 255, aAlpha));
 
-        if (!gTcpConnected && mSides[0] == VSSide::VS_SIDE_NONE) {
+        if (!gTcpConnected && mSides[0] == VSSide::VS_SIDE_NONE && CanControlSideSlot(this, 0)) {
             Sexy::Widget *theController1Widget = FindWidget(7);
             g->DrawImage(Sexy::IMAGE_ZEN_NEXTGARDEN, theController1Widget->mX + 160, theController1Widget->mY + 40);
             g->DrawImageMirror(Sexy::IMAGE_ZEN_NEXTGARDEN, theController1Widget->mX - 50, theController1Widget->mY + 40, true);
         }
 
 
-        if (gTcpClientSocket < 0 && mSides[1] == VSSide::VS_SIDE_NONE) {
+        if (gTcpClientSocket < 0 && mSides[1] == VSSide::VS_SIDE_NONE && CanControlSideSlot(this, 1)) {
             Sexy::Widget *theController2Widget = FindWidget(8);
             g->DrawImage(Sexy::IMAGE_ZEN_NEXTGARDEN, theController2Widget->mX + 160, theController2Widget->mY + 40);
             g->DrawImageMirror(Sexy::IMAGE_ZEN_NEXTGARDEN, theController2Widget->mX - 50, theController2Widget->mY + 40, true);
@@ -251,7 +287,7 @@ void VSSetupMenu::GameButtonDown(Sexy::GamepadButton theButton, int thePlayerInd
                 }
 
                 bool side = mControllerIndex[0] != thePlayerIndex;
-                if (mControllerIndex[side] != thePlayerIndex || mSideLocked[side]) {
+                if (mControllerIndex[side] != thePlayerIndex || mSideLocked[side] || !CanControlSideSlot(this, int(side))) {
                     return;
                 }
 
@@ -270,7 +306,7 @@ void VSSetupMenu::GameButtonDown(Sexy::GamepadButton theButton, int thePlayerInd
                 }
 
                 bool side = mControllerIndex[0] != thePlayerIndex;
-                if (mControllerIndex[side] != thePlayerIndex || mSideLocked[side]) {
+                if (mControllerIndex[side] != thePlayerIndex || mSideLocked[side] || !CanControlSideSlot(this, int(side))) {
                     return;
                 }
 
@@ -288,7 +324,7 @@ void VSSetupMenu::GameButtonDown(Sexy::GamepadButton theButton, int thePlayerInd
                 }
 
                 bool side = mControllerIndex[0] != thePlayerIndex;
-                if (mControllerIndex[side] != thePlayerIndex) {
+                if (mControllerIndex[side] != thePlayerIndex || !CanControlSideSlot(this, int(side))) {
                     return;
                 }
 
@@ -387,14 +423,14 @@ void VSSetupMenu::MouseDown(int x, int y, int theCount) {
         Sexy::Widget *theController1Widget = FindWidget(7);
         Sexy::Widget *theController2Widget = FindWidget(8);
         if (x > theController1Widget->mX && x < theController1Widget->mX + 170 && y > theController1Widget->mY && y < theController1Widget->mY + 122) {
-            if (gTcpConnected) {
+            if (gTcpConnected || !CanControlSideSlot(this, 0)) {
                 return;
             }
             is1PControllerMoving = true;
             drawTipArrowAlphaCounter = 0;
             touchingOnWhichController = 1;
         } else if (x > theController2Widget->mX && x < theController2Widget->mX + 170 && y > theController2Widget->mY && y < theController2Widget->mY + 122) {
-            if (gTcpClientSocket >= 0) {
+            if (gTcpClientSocket >= 0 || !CanControlSideSlot(this, 1)) {
                 return;
             }
             is2PControllerMoving = true;
@@ -706,6 +742,9 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 break;
             }
             if (mState != VS_SETUP_STATE_SIDES) {
+                break;
+            }
+            if (!CanControlSideSlot(this, 1)) {
                 break;
             }
 

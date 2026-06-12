@@ -99,6 +99,7 @@ public:
         {SEED_ZOMBONI, SEED_ZOMBIE_CATAPULT, SEED_ZOMBIE_GARGANTUAR, SEED_ZOMBIE_FLAG, SEED_ZOMBIE_JACK_IN_THE_BOX, SEED_ZOMBIE_POGO, SEED_ZOMBIE_JACKSON, SEED_NONE},
     };
     static inline VSSide msNextFirstPick;
+    static inline int msNextSidePickPlayerIndex = 0;
 
     int mInt70;                   // 70
     int mInt71;                   // 71

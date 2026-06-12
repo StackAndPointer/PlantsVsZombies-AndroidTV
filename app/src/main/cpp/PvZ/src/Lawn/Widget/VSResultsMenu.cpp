@@ -24,6 +24,7 @@
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
+#include "PvZ/Lawn/Widget/VSSetupMenu.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/ReplaySystem.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
@@ -161,6 +162,7 @@ void VSResultsMenu::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
 void VSResultsMenu::ClearPlayerRecords() {
     old_VSResultsMenu_ClearPlayerRecords(this);
 
+    VSSetupMenu::msNextSidePickPlayerIndex = 0;
     VSSetupAddonWidget::msGlobalBpMode = VSSetupAddonWidget::GLOBALBP_CLOSED;
     VSSetupAddonWidget::msGlobalBpWins[0] = 0;
     VSSetupAddonWidget::msGlobalBpWins[1] = 0;
@@ -218,6 +220,21 @@ void VSResultsMenu::InitFromBoard(Board *theBoard) {
     mSides[0] = WinSide(controls0->mIsZombie);
     mSides[1] = WinSide(controls1->mIsZombie);
 
+    const bool globalBpActive = VSSetupAddonWidget::msGlobalBpMode != VSSetupAddonWidget::GLOBALBP_CLOSED;
+    int losingPlayerIndex = -1;
+    if (globalBpActive && (aBoardResult == BoardResult::BOARDRESULT_VS_PLANT_WON || aBoardResult == BoardResult::BOARDRESULT_VS_ZOMBIE_WON)) {
+        const WinSide winningCamp = (aBoardResult == BoardResult::BOARDRESULT_VS_PLANT_WON) ? WinSide::WIN_SIDE_PLANT : WinSide::WIN_SIDE_ZOMBIE;
+        for (int slot = 0; slot < 2; ++slot) {
+            if (mSides[slot] != winningCamp && mPlayerIndices[slot] >= 0 && mPlayerIndices[slot] <= 1) {
+                losingPlayerIndex = mPlayerIndices[slot];
+                break;
+            }
+        }
+    }
+    if (globalBpActive && losingPlayerIndex != -1) {
+        VSSetupMenu::msNextSidePickPlayerIndex = losingPlayerIndex;
+    }
+
     for (int slot = 0; slot < 2; ++slot) {
         int *playerRecord = GetPlayerRecord(mPlayerIndices[slot]);
         if (playerRecord == nullptr) {
@@ -269,6 +286,7 @@ void VSResultsMenu::InitFromBoard(Board *theBoard) {
             }
             VSSetupAddonWidget::msGlobalBpWins[0] = 0;
             VSSetupAddonWidget::msGlobalBpWins[1] = 0;
+            VSSetupMenu::msNextSidePickPlayerIndex = 0;
         }
     }
 
