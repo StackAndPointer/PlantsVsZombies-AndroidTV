@@ -68,6 +68,9 @@ public:
     void OnKeyDown(Sexy::KeyCode theKey, unsigned int a3) {
         reinterpret_cast<void (*)(GamepadControls *, int, unsigned int)>(GamepadControls_OnKeyDownAddr)(this, theKey, a3);
     }
+    void UpdateSeedSelect(float dt) {
+        reinterpret_cast<void *(*)(GamepadControls *, float dt)>(GamepadControls_UpdateSeedSelectAddr)(this, dt);
+    }
     // 确定 13 1096
     // 返回 27 1096
     // 左 37 1096
@@ -81,9 +84,7 @@ public:
     void InvalidatePreviewReanim();
     void Draw(Sexy::Graphics *g);
     void Update(float a2);
-    void UpdateStates(float dt) {
-        reinterpret_cast<void (*)(GamepadControls *, float)>(GamepadControls_UpdateStatesAddr)(this, dt);
-    }
+    void UpdateStates(float dt);
     void DrawPreview(Sexy::Graphics *g);
     void UpdatePreviewReanim();
     void OnButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int unk);

@@ -968,6 +968,34 @@ void GamepadControls::UpdatePreviewReanim() {
     mPreviewReanim4->DrawRenderGroup(&newGraphics, 3);
 }
 
+void GamepadControls::UpdateStates(float dt) {
+    BaseGamepadControls::UpdateStates(dt);
+    mGamepadState = mGamepadState;
+    //    if ( mGamepadState == 6 || mGamepadState == 8 )
+
+    // 在状态为MOVEMENT_STATE_PLANT_CURSOR下也要执行UpdateSeedSelect，此函数会更新CursorObject的mType为GetSeedBank->mSeedPackets[mSelectedSeedIndex].mPacketType，或许可以修复偶现的种下种子与SeedBank选中种子不一致的BUG
+    if (mGamepadState == MOVEMENT_STATE_SELECT_SEED || mGamepadState == MOVEMENT_STATE_PLANT_CURSOR || mGamepadState == MOVEMENT_STATE_DIG_HOLD) {
+        UpdateSeedSelect(dt);
+        float v5 = mGridCenterPositionX - mCursorPositionX;
+        float v6 = mGridCenterPositionY - mCursorPositionY;
+        float v7 = (v5 * v5) + (v6 * v6);
+        if (v7 < 3.0f * 3.0f) {
+            mGamepadVelocityLeftX = 0.0f;
+            mGamepadVelocityLeftY = 0.0f;
+            mGridCenterPositionY = mGridCenterPositionY;
+            mCursorPositionX = mGridCenterPositionX;
+            mCursorPositionY = mGridCenterPositionY;
+        } else {
+            if (v7 != 0.0f) {
+                v6 = v6 / v7;
+                v5 = v5 / v7;
+            }
+            mGamepadVelocityLeftX = v5 * 250.0f;
+            mGamepadVelocityLeftY = v6 * 250.0f;
+        }
+    }
+}
+
 void GamepadControls::DrawPreview(Sexy::Graphics *g) {
     // 修复排山倒海、砸罐子无尽、锤僵尸、种子雨不显示植物预览的问题。
     LawnApp *anApp = mGameObject->mApp;

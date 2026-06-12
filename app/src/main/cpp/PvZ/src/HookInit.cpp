@@ -252,6 +252,7 @@ void InitHookFunction() {
     homura::HookFunc(GamepadControls_DrawPreviewAddr, &GamepadControls::DrawPreview, &old_GamepadControls_DrawPreview);
     homura::HookFunc(GamepadControls_UpdatePreviewReanimAddr, &GamepadControls::UpdatePreviewReanim, &old_GamepadControls_UpdatePreviewReanim);
     homura::HookFunc(GamepadControls_OnButtonDownAddr, &GamepadControls::OnButtonDown, &old_GamepadControls_OnButtonDown);
+    homura::HookFunc(GamepadControls_UpdateStatesAddr, &GamepadControls::UpdateStates, nullptr);
 
 
     homura::HookFunc(GridItem__constructorAddr, &GridItem::_constructor, &old_GridItem_GridItem);

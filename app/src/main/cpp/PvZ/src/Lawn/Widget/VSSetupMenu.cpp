@@ -913,7 +913,7 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
         } break;
         case EVENT_SERVER_VSSETUP_GLOBALBP_SYNC: {
             auto *eventGlobalBp = static_cast<const VSSetupGlobalBpSyncEvent *>(event);
-            VSSetupAddonWidget::msGlobalBpMode = eventGlobalBp->mode;
+            VSSetupAddonWidget::msGlobalBpMode = VSSetupAddonWidget::GlobalBpMode(eventGlobalBp->mode);
             for (int playerIndex = 0; playerIndex < 2; ++playerIndex) {
                 for (int seedIndex = 0; seedIndex < NUM_ZOMBIE_SEEDS_IN_CHOOSER; ++seedIndex) {
                     VSSetupAddonWidget::msGlobalBpSeeds[playerIndex][seedIndex] = SEED_NONE;

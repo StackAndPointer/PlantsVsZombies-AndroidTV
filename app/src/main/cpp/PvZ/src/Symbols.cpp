@@ -384,6 +384,7 @@ bool LoadGameMain() {
 
 
     GamepadControls_ButtonDownFireCobcannonTestAddr = libGameMain.GetSymbol("_ZN15GamepadControls27ButtonDownFireCobcannonTestEv");
+    GamepadControls_UpdateSeedSelectAddr = libGameMain.GetSymbol("_ZN15GamepadControls16UpdateSeedSelectEf");
     GamepadControls_OnKeyDownAddr = libGameMain.GetSymbol("_ZN15GamepadControls9OnKeyDownEN4Sexy7KeyCodeEj");
     GamepadControls_GetSeedBankAddr = libGameMain.GetSymbol("_ZN15GamepadControls11GetSeedBankEv");
     GamepadControls_DrawAddr = libGameMain.GetSymbol("_ZN15GamepadControls4DrawEPN4Sexy8GraphicsE");

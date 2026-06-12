@@ -86,6 +86,9 @@ public:
     void GotoState(int state) {
         reinterpret_cast<void (*)(BaseGamepadControls *, int)>(BaseGamepadControls_GotoStateAddr)(this, state);
     }
+    void UpdateStates(float dt) {
+        reinterpret_cast<void (*)(BaseGamepadControls *, float)>(BaseGamepadControls_UpdateStatesAddr)(this, dt);
+    }
     void GetGamepadVelocity(float *horizontal, float *vertical);
 
 protected:

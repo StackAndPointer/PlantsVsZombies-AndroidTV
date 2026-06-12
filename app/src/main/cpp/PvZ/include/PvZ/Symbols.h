@@ -389,6 +389,7 @@ inline void *GamepadControls_ButtonDownFireCobcannonTestAddr;
 inline void *GamepadControls_OnButtonDownAddr;
 inline void *GamepadControls_OnButtonUpAddr;
 inline void *GamepadControls_OnKeyDownAddr;
+inline void *GamepadControls_UpdateSeedSelectAddr;
 inline void *GamepadControls_GetSeedBankAddr;
 inline void *GamepadControls_DrawAddr;
 inline void *GamepadControls_GamepadControlsAddr;
