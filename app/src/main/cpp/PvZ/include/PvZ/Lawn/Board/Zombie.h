@@ -211,9 +211,6 @@ public:
     TodParticleSystem *AddAttachedParticle(int thePosX, int thePosY, ParticleEffect theEffect) {
         return reinterpret_cast<TodParticleSystem *(*)(Zombie *, int, int, ParticleEffect)>(Zombie_AddAttachedParticleAddr)(this, thePosX, thePosY, theEffect);
     }
-    void StartEating() {
-        reinterpret_cast<void (*)(Zombie *)>(Zombie_StartEatingAddr)(this);
-    }
     static void SetupReanimLayers(Reanimation *aReanim, ZombieType theZombieType) {
         reinterpret_cast<void (*)(Reanimation *, ZombieType)>(Zombie_SetupReanimLayersAddr)(aReanim, theZombieType);
     }
@@ -456,6 +453,8 @@ public:
     bool IsWalkingBackwards() const;
     static void SetupDoorArms(Reanimation *aReanim, bool theShow);
     void ShowDoorArms(bool theShow);
+    void StartEating();
+    void StartEating_Origin();
     void StopEating();
     Sexy::Rect GetZombieRect();
     void GetDrawPos(ZombieDrawPosition &theDrawPos);

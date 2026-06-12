@@ -2289,6 +2289,16 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aZombie->DetachShield();
             }
         } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_START_EATING: {
+            auto *event1 = static_cast<const U16UNI32_Event *>(event);
+            uint16_t serverZombieID = event1->data1;
+            uint16_t clientZombieID = 0;
+            if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                aZombie->mPosX = event1->data2.f32;
+                aZombie->StartEating_Origin();
+            }
+        } break;
         case EVENT_SERVER_BOARD_ZOMBIE_HUGE_WAVE: {
             mApp->PlaySample(Sexy::SOUND_HUGE_WAVE);
             DisplayAdviceAgain("[ADVICE_HUGE_WAVE]", MESSAGE_STYLE_HUGE_WAVE, ADVICE_HUGE_WAVE);

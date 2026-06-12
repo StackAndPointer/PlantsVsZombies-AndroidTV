@@ -3053,6 +3053,47 @@ void Zombie::ShowDoorArms(bool theShow) {
     }
 }
 
+void Zombie::StartEating() {
+    if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
+            return;
+
+        if (gTcpClientSocket >= 0) {
+            U16UNI32_Event event{};
+            event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_START_EATING;
+            event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+            event.data2.f32 = mPosX;
+            netplay::PutEvent(event);
+        }
+    }
+
+    StartEating_Origin();
+}
+
+void Zombie::StartEating_Origin() {
+    if (mIsEating)
+        return;
+
+    mIsEating = true;
+
+    if (mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING)
+        return;
+
+    if (mZombiePhase == ZombiePhase::PHASE_LADDER_CARRYING) {
+        PlayZombieReanim("anim_laddereat", ReanimLoopType::REANIM_LOOP, 20, 0.0f);
+    } else if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
+        PlayZombieReanim("anim_eat_nopaper", ReanimLoopType::REANIM_LOOP, 20, 0.0f);
+    } else {
+        if (mZombieType != ZombieType::ZOMBIE_SNORKEL) {
+            PlayZombieReanim("anim_eat", ReanimLoopType::REANIM_LOOP, 20, 0.0f);
+        }
+
+        if (mShieldType == ShieldType::SHIELDTYPE_DOOR || mShieldType == ShieldType::SHIELDTYPE_TRASHCAN) {
+            ShowDoorArms(false);
+        }
+    }
+}
+
 void Zombie::StopEating() {
     if (!mIsEating)
         return;
