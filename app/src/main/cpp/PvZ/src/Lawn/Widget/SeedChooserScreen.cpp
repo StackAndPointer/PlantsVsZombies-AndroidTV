@@ -1111,6 +1111,9 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
                 break;
             }
             if (globalBpSeeds[i] == SeedType::SEED_NONE) {
+                if (theChosenSeed.mSeedType == SeedType::SEED_INSTANT_COFFEE) {
+                    break; // 咖啡豆不参与全局禁用
+                }
                 globalBpSeeds[i] = theChosenSeed.mSeedType;
                 break;
             }
@@ -2738,47 +2741,6 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
         }
     }
 }
-
-// SeedType SeedChooserScreen::SeedHitTest(int x, int y) {
-//     if (!mMouseVisible) {
-//         return SEED_NONE;
-//     }
-//
-//     SeedType aTargetSeedType = SEED_NONE;
-//     for (SeedType aSeedType = SEED_PEASHOOTER; aSeedType < NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
-//         SeedType packetSeedType = aSeedType;
-//         if (mIsZombieChooser) {
-//             packetSeedType = GetZombieSeedType(aSeedType);
-//         }
-//
-//         ChosenSeed &aChosenSeed = mChosenSeeds[aSeedType];
-//         if (!HasPacket(packetSeedType, mIsZombieChooser) || aChosenSeed.mSeedState == ChosenSeedState::SEED_PACKET_HIDDEN) {
-//             continue;
-//         }
-//
-//         int aX = 0;
-//         int aY = 0;
-//         GetSeedPositionInChooser(aSeedType, aX, aY);
-//
-//         if (aChosenSeed.mX <= x && aChosenSeed.mY <= y && x <= aChosenSeed.mX + 49 && y <= aChosenSeed.mY + 69) {
-//             aTargetSeedType = packetSeedType;
-//             break;
-//         }
-//
-//         if (x >= aX && y >= aY && x <= aX + 49 && y <= aY + 69) {
-//             aTargetSeedType = packetSeedType;
-//             break;
-//         }
-//
-//         if (mIsZombieChooser && mPageIndex == 1) {
-//             if (aSeedType == SeedType::SEED_NONE) {
-//                 return SEED_NONE;
-//             }
-//             aTargetSeedType = SeedType(aSeedType + 25);
-//         }
-//     }
-//     return aTargetSeedType;
-// }
 
 SeedType SeedChooserScreen::SeedHitTest(int x, int y) {
     if (!mMouseVisible) {
