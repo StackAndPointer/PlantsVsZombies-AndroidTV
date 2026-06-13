@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/Lawn/LawnApp.h"
+#include "Homura/Assert.h"
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
@@ -439,7 +440,7 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
                 static_cast<WaitForSecondPlayerDialog *>(dialog)->processClientEvent(event);
             }
         } else {
-            assert(false && "Unknown-type event");
+            HOMURA_ASSERT(false, "Unknown-type event (type = {}, size = {})", int(event->type), event->size);
             std::unreachable();
         }
         offset += event->size;
@@ -541,7 +542,7 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
                 mVSResultsMenu->processServerEvent(event);
             }
         } else {
-            assert(false && "Unknown-type event");
+            HOMURA_ASSERT(false, "Unknown-type event (type = {}, size = {})", int(event->type), event->size);
             std::unreachable();
         }
         offset += event->size;
