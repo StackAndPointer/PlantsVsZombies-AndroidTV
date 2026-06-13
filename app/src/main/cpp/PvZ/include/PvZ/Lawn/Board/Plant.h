@@ -303,7 +303,7 @@ public:
     void Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlantWeapon, GridItem *theTargetGridItem);
     void PlayIdleAnim(float theRate);
     void IceZombies();
-    bool IsDisposable(SeedType theSeedType);
+    static bool IsDisposable(SeedType theSeedType);
     bool FindTargetAndFire(int theRow, PlantWeapon thePlantWeapon);
     ReanimationID GetPlantReanimationIDByIndex(int index) const;
     void SyncAnimationToClient();

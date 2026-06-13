@@ -84,7 +84,7 @@ int GetAddonDimensionOffsetByIndex(int index, const AddonImageMember (&table)[N]
 ZombatarWidget::ZombatarWidget(LawnApp *theApp) {
     new (this) TestMenuWidget{};
     theApp->LoadZombatarResources();
-    theApp->Load("DelayLoad_Almanac");
+    LawnApp::Load("DelayLoad_Almanac");
     mApp = theApp;
     mBackButton = MakeButton(ZombatarWidget::ZombatarWidget_Back, mButtonListener, this, "[CLOSE]");
     mBackButton->Resize(471, 628, addonZombatarImages.zombatar_mainmenuback_highlight->mWidth, addonZombatarImages.zombatar_mainmenuback_highlight->mHeight);
@@ -278,13 +278,13 @@ void ZombatarWidget::DrawHair(Sexy::Graphics *g) const {
         TodDrawStringWrapped(g, "[ZOMBATAR_COLOR_ITEM_NOT_CHOSEN]", rect, font, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
     } else if (ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedHair)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
             Color color = gZombatarAccessoryColor[i];
             if (mSelectedHairColor != i) {
                 color.mAlpha = 64;
             }
-            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, theX, theY);
+            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, aX, aY);
         }
     } else {
         Sexy::Rect rect = {160 + 288, 445, 250, 100};
@@ -434,13 +434,13 @@ void ZombatarWidget::DrawTidBit(Sexy::Graphics *g) const {
         TodDrawStringWrapped(g, "[ZOMBATAR_COLOR_ITEM_NOT_CHOSEN]", rect, font, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
     } else if (ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedTidBit)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
             Color color = gZombatarAccessoryColor2[i];
             if (mSelectedTidBitColor != i) {
                 color.mAlpha = 64;
             }
-            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, theX, theY);
+            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, aX, aY);
         }
     } else {
         Sexy::Rect rect = {160 + 288, 445, 250, 100};
@@ -488,13 +488,13 @@ void ZombatarWidget::DrawEyeWear(Sexy::Graphics *g) const {
         TodDrawStringWrapped(g, "[ZOMBATAR_COLOR_ITEM_NOT_CHOSEN]", rect, font, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
     } else if (ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedEyeWear)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
             Color color = gZombatarAccessoryColor2[i];
             if (mSelectedEyeWearColor != i) {
                 color.mAlpha = 64;
             }
-            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, theX, theY);
+            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, aX, aY);
         }
     } else {
         Sexy::Rect rect = {160 + 288, 445, 250, 100};
@@ -507,31 +507,31 @@ void ZombatarWidget::DrawCloth(Sexy::Graphics *g) const {
     Color theAlphaColor = {255, 255, 255, 64};
     Color theAlphaColor2 = {255, 255, 255, 128};
     for (int i = 0; i < 12; ++i) {
-        int theX = 160 + 198 + (i % 6) * 73;
-        int theY = 162 + i / 6 * 79;
+        int aX = 160 + 198 + (i % 6) * 73;
+        int aY = 162 + i / 6 * 79;
         Sexy::Image *image = addonZombatarImages.zombatar_zombie_blank_part;
         Sexy::Image *image1 = ZombatarWidget::GetClothImageByIndex(i);
         int mWidth = image->mWidth;
         int mHeight = image->mHeight;
-        float ratio = 58.0 / float(std::max(mWidth, mHeight));
-        if (ratio > 1.3)
-            ratio = 1.3;
+        float ratio = 58.0f / float(std::max(mWidth, mHeight));
+        if (ratio > 1.3f)
+            ratio = 1.3f;
         float widthOffset = (58 - ratio * mWidth) / 2;
         float heightOffset = (58 - ratio * mHeight) / 2;
         int offsetX = addonZombatarImages.zombatar_zombie_blank_part->mWidth + ZombatarWidget::GetClothImageOffsetXByIndex(i);
         int offsetY = addonZombatarImages.zombatar_zombie_blank_part->mHeight + ZombatarWidget::GetClothImageOffsetYByIndex(i);
         if (mSelectedCloth == i) {
-            g->DrawImage(addonZombatarImages.zombatar_accessory_bg_highlight, theX, theY);
+            g->DrawImage(addonZombatarImages.zombatar_accessory_bg_highlight, aX, aY);
             Sexy_Graphics_DrawImageColorizedScaled(
-                g, addonZombatarImages.zombatar_zombie_blank_skin_part, &gZombatarSkinColor[mSelectedSkinColor], theX + 12 + widthOffset, theY + 12 + heightOffset, ratio, ratio);
-            TodDrawImageScaledF(g, image, theX + 12 + widthOffset, theY + 12 + heightOffset, ratio, ratio);
-            TodDrawImageScaledF(g, image1, theX + 12 + ratio * offsetX, theY + 12 + ratio * offsetY, ratio, ratio);
+                g, addonZombatarImages.zombatar_zombie_blank_skin_part, &gZombatarSkinColor[mSelectedSkinColor], aX + 12 + widthOffset, aY + 12 + heightOffset, ratio, ratio);
+            TodDrawImageScaledF(g, image, aX + 12 + widthOffset, aY + 12 + heightOffset, ratio, ratio);
+            TodDrawImageScaledF(g, image1, aX + 12 + ratio * offsetX, aY + 12 + ratio * offsetY, ratio, ratio);
         } else {
-            Sexy_Graphics_DrawImageColorized(g, addonZombatarImages.zombatar_accessory_bg, &theAlphaColor, theX, theY);
+            Sexy_Graphics_DrawImageColorized(g, addonZombatarImages.zombatar_accessory_bg, &theAlphaColor, aX, aY);
             Sexy_Graphics_DrawImageColorizedScaled(
-                g, addonZombatarImages.zombatar_zombie_blank_skin_part, &gZombatarSkinColor[mSelectedSkinColor], theX + 12 + widthOffset, theY + 12 + heightOffset, ratio, ratio);
-            TodDrawImageScaledF(g, image, theX + 12 + widthOffset, theY + 12 + heightOffset, ratio, ratio);
-            Sexy_Graphics_DrawImageColorizedScaled(g, image1, &theAlphaColor2, theX + 12 + ratio * offsetX, theY + 12 + ratio * offsetY, ratio, ratio);
+                g, addonZombatarImages.zombatar_zombie_blank_skin_part, &gZombatarSkinColor[mSelectedSkinColor], aX + 12 + widthOffset, aY + 12 + heightOffset, ratio, ratio);
+            TodDrawImageScaledF(g, image, aX + 12 + widthOffset, aY + 12 + heightOffset, ratio, ratio);
+            Sexy_Graphics_DrawImageColorizedScaled(g, image1, &theAlphaColor2, aX + 12 + ratio * offsetX, aY + 12 + ratio * offsetY, ratio, ratio);
         }
     }
     int theX = 160 + 198 + (12 % 6) * 73;
@@ -581,13 +581,13 @@ void ZombatarWidget::DrawAccessory(Sexy::Graphics *g) const {
         TodDrawStringWrapped(g, "[ZOMBATAR_COLOR_ITEM_NOT_CHOSEN]", rect, font, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
     } else if (ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedAccessory)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
             Color color = gZombatarAccessoryColor2[i];
             if (mSelectedAccessoryColor != i) {
                 color.mAlpha = 64;
             }
-            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, theX, theY);
+            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, aX, aY);
         }
     } else {
         Sexy::Rect rect = {160 + 288, 445, 250, 100};
@@ -637,13 +637,13 @@ void ZombatarWidget::DrawHat(Sexy::Graphics *g) const {
         TodDrawStringWrapped(g, "[ZOMBATAR_COLOR_ITEM_NOT_CHOSEN]", rect, font, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
     } else if (ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedHat)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
             Color color = gZombatarAccessoryColor2[i];
             if (mSelectedHatColor != i) {
                 color.mAlpha = 64;
             }
-            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, theX, theY);
+            Sexy_Graphics_DrawImageColorized(g, i == 17 ? addonZombatarImages.zombatar_colorpicker_none : addonZombatarImages.zombatar_colorpicker, &color, aX, aY);
         }
     } else {
         Sexy::Rect rect = {160 + 288, 445, 250, 100};
@@ -745,14 +745,14 @@ void ZombatarWidget::DrawPortrait(Sexy::Graphics *g, int x, int y) const {
         }
     }
     if (mSelectedTidBit == 0) {
-        Sexy::Image *tidBitImage = ZombatarWidget::GetTidBitImageByIndex(2);
-        if (tidBitImage != nullptr) {
+        Sexy::Image *aTidBitImage = ZombatarWidget::GetTidBitImageByIndex(2);
+        if (aTidBitImage != nullptr) {
             int offsetX = ZombatarWidget::GetTidBitImageOffsetXByIndex(2);
             int offsetY = ZombatarWidget::GetTidBitImageOffsetYByIndex(2);
             if (mSelectedTidBitColor != 255 && ZombatarWidget::AccessoryIsColorized(ZombatarWidget::TIDBIT, 2)) {
-                Sexy_Graphics_DrawImageColorized(g, tidBitImage, &gZombatarAccessoryColor2[mSelectedTidBitColor], x + offsetX, y + offsetY);
+                Sexy_Graphics_DrawImageColorized(g, aTidBitImage, &gZombatarAccessoryColor2[mSelectedTidBitColor], x + offsetX, y + offsetY);
             } else {
-                g->DrawImage(tidBitImage, x + offsetX, y + offsetY);
+                g->DrawImage(aTidBitImage, x + offsetX, y + offsetY);
             }
         }
     }
@@ -948,7 +948,7 @@ void ZombatarWidget::ButtonDepress(this ZombatarWidget &self, int theId) {
             static_cast<MemoryImage *>(addonImages.zombatar_portrait)->~MemoryImage();
         }
 
-        MemoryImage *aImage = new MemoryImage();
+        auto *aImage = new MemoryImage();
         aImage->Create(addonZombatarImages.zombatar_background_blank->mWidth, addonZombatarImages.zombatar_background_blank->mHeight);
         aImage->SetImageMode(true, true);
         aImage->mIsVolatile = true;
@@ -1585,10 +1585,10 @@ void ZombatarWidget::MouseDownHair(int x, int y) {
     }
     if (mSelectedHair != 255 && ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedHair)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
-            Sexy::Rect rect = {theX, theY, 30, 30};
-            if (rect.Contains(x, y)) {
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
+            Sexy::Rect aRect = {aX, aY, 30, 30};
+            if (aRect.Contains(x, y)) {
                 mSelectedHairColor = i;
                 mZombatarReanim->SetZombatarHair(mSelectedHair, mSelectedHairColor);
                 return;
@@ -1684,10 +1684,10 @@ void ZombatarWidget::MouseDownTidBit(int x, int y) {
 
     if (mSelectedTidBit != 255 && ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedTidBit)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
-            Sexy::Rect rect = {theX, theY, 30, 30};
-            if (rect.Contains(x, y)) {
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
+            Sexy::Rect aRect = {aX, aY, 30, 30};
+            if (aRect.Contains(x, y)) {
                 mSelectedTidBitColor = i;
                 mZombatarReanim->SetZombatarTidBits(mSelectedTidBit, mSelectedTidBitColor);
                 return;
@@ -1719,10 +1719,10 @@ void ZombatarWidget::MouseDownEyeWear(int x, int y) {
 
     if (mSelectedEyeWear != 255 && ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedEyeWear)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
-            Sexy::Rect rect = {theX, theY, 30, 30};
-            if (rect.Contains(x, y)) {
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
+            Sexy::Rect aRect = {aX, aY, 30, 30};
+            if (aRect.Contains(x, y)) {
                 mSelectedEyeWearColor = i;
                 mZombatarReanim->SetZombatarEyeWear(mSelectedEyeWear, mSelectedEyeWearColor);
                 return;
@@ -1772,10 +1772,10 @@ void ZombatarWidget::MouseDownAccessory(int x, int y) {
 
     if (mSelectedAccessory != 255 && ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedAccessory)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
-            Sexy::Rect rect = {theX, theY, 30, 30};
-            if (rect.Contains(x, y)) {
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
+            Sexy::Rect aRect = {aX, aY, 30, 30};
+            if (aRect.Contains(x, y)) {
                 mSelectedAccessoryColor = i;
                 mZombatarReanim->SetZombatarAccessories(mSelectedAccessory, mSelectedAccessoryColor);
                 return;
@@ -1806,10 +1806,10 @@ void ZombatarWidget::MouseDownHat(int x, int y) {
 
     if (mSelectedHat != 255 && ZombatarWidget::AccessoryIsColorized(mSelectedTab, mSelectedHat)) {
         for (int i = 0; i < 18; ++i) {
-            int theX = 160 + 285 + (i % 9) * 30;
-            int theY = 432 + i / 9 * 30;
-            Sexy::Rect rect = {theX, theY, 30, 30};
-            if (rect.Contains(x, y)) {
+            int aX = 160 + 285 + (i % 9) * 30;
+            int aY = 432 + i / 9 * 30;
+            Sexy::Rect aRect = {aX, aY, 30, 30};
+            if (aRect.Contains(x, y)) {
                 mSelectedHatColor = i;
                 mZombatarReanim->SetZombatarHats(mSelectedHat, mSelectedHatColor);
                 return;

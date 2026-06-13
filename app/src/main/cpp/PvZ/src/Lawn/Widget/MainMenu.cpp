@@ -95,11 +95,11 @@ void MainMenu::Update() {
 
     // 白噪音播放和淡入淡出
     if (mIsFading) {
-        float num = mFadeCounterFloat + 0.005;
+        float num = mFadeCounterFloat + 0.005f;
         mFadeCounterFloat = fmin(num, 1.0f);
     } else {
 
-        float theSoundVolume = mApp->mPlayerInfo == nullptr ? 1.0 : mApp->mPlayerInfo->mSoundVolume;
+        float theSoundVolume = mApp->mPlayerInfo == nullptr ? 1.0f : mApp->mPlayerInfo->mSoundVolume;
 
         if (InTransition()) {
             gFoleyVolumeCounter++;
@@ -246,7 +246,7 @@ void MainMenu::ButtonDepress(MainMenuButtonId theSelectedButton) {
     }
 
     // 为1.1.1添加触控或确认进入对战结盟模式，并检测是否解锁对战结盟
-    LawnPlayerInfo *aPlayerInfo = reinterpret_cast<LawnPlayerInfo *>(mApp->mPlayerInfo);
+    LawnPlayerInfo *aPlayerInfo = mApp->mPlayerInfo;
     switch (theSelectedButton) {
         case ADVENTURE_BUTTON:
         case START_ADVENTURE_BUTTON:
@@ -338,8 +338,8 @@ void MainMenu::KeyDown(Sexy::KeyCode theKeyCode) {
         return;
     }
 
-    MainMenuButtonId mSelectedButton = (MainMenuButtonId)mFocusedChildWidget->mWidgetId;
-    if ((mSelectedButton == ADVENTURE_BUTTON || mSelectedButton == MORE_WAYS_BUTTON || mSelectedButton == START_ADVENTURE_BUTTON) && theKeyCode == Sexy::KEYCODE_LEFT) {
+    auto mSelectedButtonId = MainMenuButtonId(mFocusedChildWidget->mWidgetId);
+    if ((mSelectedButtonId == ADVENTURE_BUTTON || mSelectedButtonId == MORE_WAYS_BUTTON || mSelectedButtonId == START_ADVENTURE_BUTTON) && theKeyCode == Sexy::KEYCODE_LEFT) {
         // 如果当前选中的按钮为"冒险模式"或者为"更多游戏方式"，同时玩家又按下了左方向键
         SetScene(MENUSCENE_MORE_WAYS);
         return;
@@ -407,8 +407,8 @@ void MainMenu::EnableButtons() {
 
     int index[3] = {mainMenuReanim->FindTrackIndex("unlock"), mainMenuReanim->FindTrackIndex("unlock pressed"), mainMenuReanim->FindTrackIndex("unlock selected")};
 
-    for (int i = 0; i < 3; ++i) {
-        ReanimatorTrack *reanimatorTrack = mainMenuReanim->mDefinition->mTracks + index[i];
+    for (int i : index) {
+        ReanimatorTrack *reanimatorTrack = mainMenuReanim->mDefinition->mTracks + i;
         int mTransformCount = reanimatorTrack->mTransformCount;
         for (int j = 0; j < mTransformCount; ++j) {
             reanimatorTrack->mTransforms[j].mTransX = mZombatarButtonX;
@@ -614,9 +614,8 @@ void MainMenu::Draw(Sexy::Graphics *g) {
     ReanimatorTransform v43;
     int mailAlertTrackIndex = mainMenuReanim->FindTrackIndex("mail alert");
     if (mailAlertTrackIndex > 0 && mApp->mMailBox->GetNumUnseenMessages() > 0) {
-        DefaultPlayerInfo *mPlayerInfo = mApp->mPlayerInfo;
-        LawnPlayerInfo *aPlayerInfo = reinterpret_cast<LawnPlayerInfo *>(mPlayerInfo);
-        if (mPlayerInfo->mLevel > 0 || aPlayerInfo->GetFlag(1)) {
+        LawnPlayerInfo *aPlayerInfo = mApp->mPlayerInfo;
+        if (aPlayerInfo->mLevel > 0 || aPlayerInfo->GetFlag(1)) {
             v43 = ReanimatorTransform();
             mainMenuReanim->GetCurrentTransform(mailAlertTrackIndex, &v43);
             Sexy::Image *mailAlertImage = v43.mImage;

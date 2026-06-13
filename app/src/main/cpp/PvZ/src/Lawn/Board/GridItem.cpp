@@ -194,7 +194,7 @@ void GridItem::DrawScaryPot(Sexy::Graphics *g) {
 
     int aXPos = mBoard->GridToPixelX(mGridX, mGridY) - 5;
     int aYPos = mBoard->GridToPixelY(mGridX, mGridY) - 15;
-    TodDrawImageCelCenterScaledF(g, Sexy::IMAGE_PLANTSHADOW2, aXPos - 5.0, aYPos + 72.0, 0, 1.3, 1.3);
+    TodDrawImageCelCenterScaledF(g, Sexy::IMAGE_PLANTSHADOW2, aXPos - 5.0f, aYPos + 72.0f, 0, 1.3, 1.3);
 
     if (mTransparentCounter > 0) { // 如果罐子要被照透(透明度不为0)
         g->DrawImageCel(Sexy::IMAGE_SCARY_POT, aXPos, aYPos, aImageCol, 0);

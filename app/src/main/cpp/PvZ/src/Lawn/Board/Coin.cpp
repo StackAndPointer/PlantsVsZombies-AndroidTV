@@ -123,19 +123,19 @@ void Coin::UpdateFallForAward() {
             Collect(0);
         }
     } else if (mCoinMotion == CoinMotion::COIN_MOTION_FROM_FROM_VS_WON) {
-        float v30 = mVelY + 0.2;
+        float v30 = mVelY + 0.2f;
         float v34 = v30 + mPosY;
         mPosY = v34;
-        mVelY = v30 * 0.95;
+        mVelY = v30 * 0.95f;
         mVelX *= 0.95f;
         mPosX += mVelX;
         if (v34 >= mGroundY) {
-            if (sqrtf(mVelY * mVelY + mVelX * mVelX) > 0.5) {
+            if (mVelY * mVelY + mVelX * mVelX > 0.5f * 0.5f) {
                 mApp->PlayFoley(FoleyType::FOLEY_GRASSSTEP);
                 mVelY *= -1;
             } else {
                 mPosY = mGroundY;
-                mVelY = 0.0;
+                mVelY = 0.0f;
             }
         }
         if (mCoinAge > 199) {
@@ -155,19 +155,19 @@ void Coin::UpdateFallForAward() {
                 Collect(mPlayerIndex);
                 return;
             }
-            float v43 = v41 * 400.0;
-            float v44 = v42 * 400.0;
+            float v43 = v41 * 400.0f;
+            float v44 = v42 * 400.0f;
             float v45 = sqrtf(v43 * v43 + v44 * v44);
-            float v46 = unk2 + ((6.4 / (v45 / 100.0)) * (v45 / 100.0));
-            if (v46 > 600.0)
-                v46 = 600.0;
+            float v46 = unk2 + ((6.4f / (v45 / 100.0f)) * (v45 / 100.0f));
+            if (v46 > 600.0f)
+                v46 = 600.0f;
             unk2 = v46;
-            if (v45 != 0.0) {
+            if (v45 != 0.0f) {
                 v43 = v43 / v45;
                 v44 = v44 / v45;
             }
-            mPosX += (unk2 * v44) * 0.016;
-            mPosY += (unk2 * v43) * 0.016;
+            mPosX += (unk2 * v44) * 0.016f;
+            mPosY += (unk2 * v43) * 0.016f;
         }
     } else if (mPosY + mVelY < mGroundY) {
         mPosY += mVelY;
@@ -187,8 +187,8 @@ void Coin::UpdateFallForAward() {
         }
     } else {
         if (mNeedsBouncyArrow && !mHasBouncyArrow) {
-            float aParticleOffsetX = mWidth / 2;
-            float aParticleOffsetY = mHeight / 2 - 60;
+            float aParticleOffsetX = mWidth / 2.0f;
+            float aParticleOffsetY = mHeight / 2.0f - 60.0f;
             if (mType == CoinType::COIN_TROPHY) {
                 aParticleOffsetX += 2.0;
             } else if (mType == CoinType::COIN_VS_PLANT_TROPHY || mType == CoinType::COIN_VS_ZOMBIE_TROPHY) {
@@ -281,13 +281,13 @@ void Coin::Draw(Graphics *g) {
 
 Color Coin::GetColor() {
     if ((IsSun() || IsMoney()) && mIsBeingCollected) {
-        float aAlpha = ClampFloat(mCollectionDistance * 0.035f, 0.35f, 1.0f) * 255.0f;
-        return Color(255, 255, 255, aAlpha);
+        int aAlpha = ClampFloat(mCollectionDistance * 0.035f, 0.35f, 1.0f) * 255.0f;
+        return {255, 255, 255, aAlpha};
     }
 
     if (mFadeCount > 0) {
         int aAlpha = TodAnimateCurve(15, 0, mFadeCount, 255, 0, TodCurves::CURVE_LINEAR);
-        return Color(255, 255, 255, aAlpha);
+        return {255, 255, 255, aAlpha};
     }
 
     return Color::White;

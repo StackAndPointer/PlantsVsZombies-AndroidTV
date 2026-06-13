@@ -554,16 +554,16 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
     float v24 = NAN, v25 = NAN;
     if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BIG_TIME
         && (theSeedType2 == SeedType::SEED_SUNFLOWER || theSeedType2 == SeedType::SEED_WALLNUT || theSeedType2 == SeedType::SEED_MARIGOLD)) {
-        v24 = -40.0;
-        v25 = -20.0;
-        g->mScaleX = g->mScaleX * 1.5;
-        g->mScaleY = g->mScaleY * 1.5;
+        v24 = -40.0f;
+        v25 = -20.0f;
+        g->mScaleX = g->mScaleX * 1.5f;
+        g->mScaleY = g->mScaleY * 1.5f;
     } else {
-        v24 = 0.0;
-        v25 = 0.0;
+        v24 = 0.0f;
+        v25 = 0.0f;
     }
     if (theSeedType2 == SeedType::SEED_LEFTPEATER) {
-        v25 = v25 + g->mScaleX * 80.0;
+        v25 = v25 + g->mScaleX * 80.0f;
         g->mScaleX = -g->mScaleX;
     }
     if (Challenge::IsZombieSeedType(theSeedType2)) {
@@ -579,9 +579,9 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
     } else {
         PlantDefinition aPlantDef = GetPlantDefinition(theSeedType2);
         if (theSeedType2 == SeedType::SEED_GIANT_WALLNUT) {
-            g->mScaleX = g->mScaleX * 1.4;
-            g->mScaleY = g->mScaleY * 1.4;
-            TodDrawImageScaledF(g, Sexy::IMAGE_REANIM_WALLNUT_BODY, thePosX - 53.0, thePosY - 56.0, g->mScaleX, g->mScaleY);
+            g->mScaleX = g->mScaleX * 1.4f;
+            g->mScaleY = g->mScaleY * 1.4f;
+            TodDrawImageScaledF(g, Sexy::IMAGE_REANIM_WALLNUT_BODY, thePosX - 53.0f, thePosY - 56.0f, g->mScaleX, g->mScaleY);
         } else if (aPlantDef.mReanimationType == -1) {
             int v29 = 0;
             if (theSeedType2 == SeedType::SEED_KERNELPULT)
@@ -768,7 +768,7 @@ void Plant::Fire(Zombie *theTargetZombie, int theRow, PlantWeapon thePlantWeapon
             return;
 
         if (gTcpClientSocket >= 0) {
-            U16U16U16UNI32UNI32_Event event;
+            U16U16U16UNI32UNI32_Event event{};
 
             event.type = EventType::EVENT_SERVER_BOARD_PLANT_FIRE;
             event.data1 = uint16_t(mBoard->mPlants.DataArrayGetID(this));
@@ -1040,9 +1040,9 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
             aRangeX = mBoard->GridToPixelX(theTargetGridItem->mGridX, theTargetGridItem->mGridY) - aOriginX;
             // 为靶子僵尸添加半格距离，以匹配靶子僵尸的碰撞箱
             if (theTargetGridItem->mGridItemType == GRIDITEM_MP_TARGET_ZOMBIE) {
-                aRangeX += mBoard->GridCellWidth(theTargetGridItem->mGridX, theTargetGridItem->mGridY) / 2;
+                aRangeX += mBoard->GridCellWidth(theTargetGridItem->mGridX, theTargetGridItem->mGridY) / 2.0f;
             }
-            aRangeY = (mBoard->GridToPixelY(theTargetGridItem->mGridX, theTargetGridItem->mGridY) - aOriginY) * 0.0083333 - 7.0;
+            aRangeY = float(mBoard->GridToPixelY(theTargetGridItem->mGridX, theTargetGridItem->mGridY) - aOriginY) * 0.0083333f - 7.0f;
         } else {
             aRangeX = 700.0f - aOriginX;
             aRangeY = 0.0f;
@@ -1183,7 +1183,7 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
 
             int aWeight = -aZombieRect.mX;
             if (mSeedType == SeedType::SEED_CATTAIL) {
-                aWeight = -Distance2D(mX + 40.0f, mY + 40.0f, aZombieRect.mX + aZombieRect.mWidth / 2, aZombieRect.mY + aZombieRect.mHeight / 2);
+                aWeight = -Distance2D(mX + 40.0f, mY + 40.0f, aZombieRect.mX + aZombieRect.mWidth / 2.0f, aZombieRect.mY + aZombieRect.mHeight / 2.0f);
                 if (aZombie->IsFlying()) {
                     aWeight += 10000; // 优先攻击飞行单位
                 }
@@ -1786,8 +1786,8 @@ void Plant::SetImitaterFilterEffect() {
 
 bool Plant::DrawMagnetItemsOnTop() {
     if (mSeedType == SeedType::SEED_GOLD_MAGNET) {
-        for (int i = 0; i < MAX_MAGNET_ITEMS; i++) {
-            if (mMagnetItems[i].mItemType != MagnetItemType::MAGNET_ITEM_NONE) {
+        for (auto &mMagnetItem : mMagnetItems) {
+            if (mMagnetItem.mItemType != MagnetItemType::MAGNET_ITEM_NONE) {
                 return true;
             }
         }
@@ -1796,8 +1796,8 @@ bool Plant::DrawMagnetItemsOnTop() {
     }
 
     if (mSeedType == SeedType::SEED_MAGNETSHROOM) {
-        for (int i = 0; i < MAX_MAGNET_ITEMS; i++) {
-            MagnetItem *aMagnetItem = &mMagnetItems[i];
+        for (auto &mMagnetItem : mMagnetItems) {
+            MagnetItem *aMagnetItem = &mMagnetItem;
             if (aMagnetItem->mItemType != MagnetItemType::MAGNET_ITEM_NONE) {
                 SexyVector2 aVectorToPlant(mX + aMagnetItem->mDestOffsetX - aMagnetItem->mPosX, mY + aMagnetItem->mDestOffsetY - aMagnetItem->mPosY);
                 if (aVectorToPlant.Magnitude() > 20.0f) {
@@ -2179,8 +2179,7 @@ void Plant::IceZombies() {
 }
 
 bool Plant::IsDisposable(SeedType theSeedType) {
-    return theSeedType == SeedType::SEED_CHERRYBOMB || theSeedType == SeedType::SEED_JALAPENO || theSeedType == SeedType::SEED_HYPNOSHROOM || theSeedType == SeedType::SEED_ICESHROOM
-        || theSeedType == SeedType::SEED_ICESHROOM || theSeedType == SeedType::SEED_ICESHROOM;
+    return theSeedType == SeedType::SEED_CHERRYBOMB || theSeedType == SeedType::SEED_JALAPENO || theSeedType == SeedType::SEED_HYPNOSHROOM || theSeedType == SeedType::SEED_ICESHROOM;
 }
 
 
@@ -2209,7 +2208,7 @@ ReanimationID Plant::GetPlantReanimationIDByIndex(int index) const {
 void Plant::SyncPingPongAnimationToClient() {
     uint16_t id = mBoard->mPlants.DataArrayGetID(this);
 
-    U16U16U16UNI32UNI32_Event event;
+    U16U16U16UNI32UNI32_Event event{};
     event.type = EventType::EVENT_SERVER_BOARD_PLANT_PINGPONG_ANIMATION;
     event.data1 = id;
     event.data2 = mFrameLength;
@@ -2231,7 +2230,7 @@ void Plant::SyncAnimationToClient() {
             continue;
         }
 
-        U16U16U16UNI32UNI32_Event event2;
+        U16U16U16UNI32UNI32_Event event2{};
         event2.type = EventType::EVENT_SERVER_BOARD_PLANT_OTHER_ANIMATION;
         event2.data1 = id;
         event2.data2 = i;
@@ -2370,8 +2369,8 @@ void Plant::UpdateChomper() {
 }
 
 void Plant::UpdateMagnetShroom() {
-    for (int i = 0; i < MAX_MAGNET_ITEMS; i++) {
-        MagnetItem *aMagnetItem = &mMagnetItems[i];
+    for (auto &mMagnetItem : mMagnetItems) {
+        MagnetItem *aMagnetItem = &mMagnetItem;
         if (aMagnetItem->mItemType != MagnetItemType::MAGNET_ITEM_NONE) {
             SexyVector2 aVectorToPlant(mX + aMagnetItem->mDestOffsetX - aMagnetItem->mPosX, mY + aMagnetItem->mDestOffsetY - aMagnetItem->mPosY);
             if (aVectorToPlant.Magnitude() > 20.0f) {

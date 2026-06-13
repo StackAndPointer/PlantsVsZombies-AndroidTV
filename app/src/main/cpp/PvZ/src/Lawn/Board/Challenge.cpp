@@ -476,8 +476,8 @@ void Challenge::IZombieDrawPlant(Sexy::Graphics *g, Plant *thePlant) const {
         Color theColor;
         g->SetColorizeImages(true);
 
-        g->mTransX = aOffsetX + 4.0;
-        g->mTransY = aOffsetY + 4.0;
+        g->mTransX = aOffsetX + 4.0f;
+        g->mTransY = aOffsetY + 4.0f;
         theColor.mRed = 122;
         theColor.mGreen = 86;
         theColor.mBlue = 58;
@@ -485,8 +485,8 @@ void Challenge::IZombieDrawPlant(Sexy::Graphics *g, Plant *thePlant) const {
         g->SetColor(theColor);
         mBodyReanim->DrawRenderGroup(g, 0);
 
-        g->mTransX = aOffsetX + 2.0;
-        g->mTransY = aOffsetY + 2.0;
+        g->mTransX = aOffsetX + 2.0f;
+        g->mTransY = aOffsetY + 2.0f;
         theColor.mRed = 171;
         theColor.mGreen = 135;
         theColor.mBlue = 107;
@@ -494,8 +494,8 @@ void Challenge::IZombieDrawPlant(Sexy::Graphics *g, Plant *thePlant) const {
         g->SetColor(theColor);
         mBodyReanim->DrawRenderGroup(g, 0);
 
-        g->mTransX = aOffsetX - 2.0;
-        g->mTransY = aOffsetY - 2.0;
+        g->mTransX = aOffsetX - 2.0f;
+        g->mTransY = aOffsetY - 2.0f;
         theColor.mRed = 171;
         theColor.mGreen = 135;
         theColor.mBlue = 107;
@@ -859,7 +859,7 @@ void Challenge::IZombiePlaceZombie(ZombieType theZombieType, int theGridX, int t
         }
 
         if (gTcpClientSocket >= 0) {
-            U16UNI32UNI32_Event event;
+            U16UNI32UNI32_Event event{};
             event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_ADD_BY_CHEAT;
             event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(aZombie));
             event.data2.u8x4.u8_1 = uint8_t(theGridX);

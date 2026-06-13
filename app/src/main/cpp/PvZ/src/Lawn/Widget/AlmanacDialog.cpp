@@ -181,7 +181,7 @@ void AlmanacDialog::DrawPlants_Unmodified(Sexy::Graphics *g) {
     g->DrawImage(Sexy::IMAGE_ALMANAC_PLANTBACK, -240, -60);
     Color aHeaderColor = {213, 159, 43, 255};
     TodDrawString(g, "[SUBURBAN_ALMANAC_PLANTS]", 400, 50, Sexy::FONT_HOUSEOFTERROR20, aHeaderColor, DrawStringJustification::DS_ALIGN_CENTER);
-    int theAlpha = std::sin((mUpdateCnt % 100) * 0.01 * std::numbers::pi) * 255.0;
+    int theAlpha = std::sin((mUpdateCnt % 100) * 0.01f * std::numbers::pi) * 255.0f;
     int x = 0, y = 0;
     for (SeedType aSeedType = SeedType::SEED_PEASHOOTER; aSeedType < SeedType::NUM_SEEDS_IN_CHOOSER; aSeedType = (SeedType)(aSeedType + 1)) {
         GetSeedPosition(aSeedType, x, y);
@@ -247,7 +247,6 @@ void AlmanacDialog::DrawPlants_Unmodified(Sexy::Graphics *g) {
 
     if (mPlant != nullptr) {
         g->PushState();
-        ;
         g->mTransX = g->mTransX + mPlant->mX;
         g->mTransY = g->mTransY + mPlant->mY;
         mPlant->Draw(g);
@@ -265,10 +264,9 @@ void AlmanacDialog::DrawPlants_Unmodified(Sexy::Graphics *g) {
     }
 
     g->PushState();
-    ;
     g->ClipRect(mDescriptionRect.mX, mDescriptionRect.mY - 14, mDescriptionRect.mWidth, mDescriptionRect.mHeight + 8);
-    float v22 = mScrollTextView->mValue * 0.01 * mDescriptionRect.mY;
-    float v23 = g->mTransY + 2.0 - v22;
+    float v22 = mScrollTextView->mValue * 0.01f * mDescriptionRect.mY;
+    float v23 = g->mTransY + 2.0f - v22;
     *(float *)unk2 = -v22;
     g->mTransY = v23;
     Color v39 = {143, 67, 27, 255};
@@ -361,8 +359,8 @@ void AlmanacDialog::DrawPlants(Sexy::Graphics *g) {
 
     g->PushState();
     g->ClipRect(mDescriptionRect.mX, mDescriptionRect.mY - 14, mDescriptionRect.mWidth, mDescriptionRect.mHeight + 8);
-    float v22 = mScrollTextView->mValue * 0.01 * mDescriptionRect.mY;
-    float v23 = g->mTransY + 2.0 - v22;
+    float v22 = mScrollTextView->mValue * 0.01f * mDescriptionRect.mY;
+    float v23 = g->mTransY + 2.0f - v22;
     *(float *)unk2 = -v22;
     g->mTransY = v23;
     TodDrawStringWrappedHelper(g, mDescriptionString, mDescriptionRect, Sexy::FONT_BRIANNETOD16, Color(143, 67, 27, 255), DrawStringJustification::DS_ALIGN_LEFT, true, true);
@@ -632,7 +630,7 @@ void AlmanacDialog::SetupLayoutPlants(Sexy::Graphics *g) {
 
     if (unk2[1] > 398) {
         // 文字过长
-        unk2[1] *= 1.15;
+        unk2[1] *= 1.15f;
         mScrollTextView->SetMaxValue(115);
     } else {
         mScrollTextView->SetMaxValue(100);

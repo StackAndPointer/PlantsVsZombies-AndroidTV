@@ -112,7 +112,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     mIsDeadFollowers = false;
 
     if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineServerModeActive() && !gIsReplayMode) {
-        mScaleZombie = 0.2 * zombieSetScale;
+        mScaleZombie = 0.2f * zombieSetScale;
         UpdateAnimSpeed();
         float theRatio = mScaleZombie * mScaleZombie;
         mBodyHealth *= theRatio;
@@ -699,14 +699,14 @@ void Zombie::UpdateSuperFanImp() {
                 if (aKickingDistance < 20.0f) {
                     aKickingDistance = 20.0f;
                 }
-                int aFlightFrames = int(aKickingDistance / (0.55f / mScaleZombie) + 0.5f);
+                int aFlightFrames = std::lround(aKickingDistance * mScaleZombie / 0.55f);
                 if (aFlightFrames < 48) {
                     aFlightFrames = 48;
                 } else if (aFlightFrames > 192) {
                     aFlightFrames = 192;
                 }
                 mVelX = aKickingDistance / float(aFlightFrames);
-                float aFlightFramesF = float(aFlightFrames);
+                auto aFlightFramesF = float(aFlightFrames);
                 float aStartAltitude = mAltitude;
                 mVelZ = (-aStartAltitude + KICKED_ZOMBIE_GRAVITY * aFlightFramesF * (aFlightFramesF + 1.0f) * 0.5f) / aFlightFramesF;
                 PlayZombieReanim("anim_thrown", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 18.0f);
@@ -1983,7 +1983,7 @@ void Zombie::UpdateZombieGargantuar() {
 
     if (mHasObject && mBodyHealth < mBodyMaxHealth / 2 && aThrowingDistance > 40.0f) {
         if (gTcpClientSocket >= 0) {
-            U16UNI32_Event event;
+            U16UNI32_Event event{};
             event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_GARGANTUAR_START_THROW;
             event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
             event.data2.f32 = mPosX;
@@ -2072,14 +2072,14 @@ void Zombie::ZombieImpKicked(float theKickingDistance) {
     if (aKickingDistance < 20.0f) {
         aKickingDistance = 20.0f;
     }
-    int aFlightFrames = int(aKickingDistance / (0.55f / mScaleZombie) + 0.5f);
+    int aFlightFrames = std::lround(aKickingDistance * mScaleZombie / 0.55f);
     if (aFlightFrames < 48) {
         aFlightFrames = 48;
     } else if (aFlightFrames > 192) {
         aFlightFrames = 192;
     }
     mVelX = aKickingDistance / float(aFlightFrames);
-    float aFlightFramesF = float(aFlightFrames);
+    auto aFlightFramesF = float(aFlightFrames);
     float aStartAltitude = mAltitude;
     mVelZ = (-aStartAltitude + KICKED_ZOMBIE_GRAVITY * aFlightFramesF * (aFlightFramesF + 1.0f) * 0.5f) / aFlightFramesF;
     PlayZombieReanim("anim_thrown", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 18.0f);
@@ -2168,7 +2168,7 @@ void Zombie::BossDestroyIceballInRow(int theRow) {
 
     Reanimation *aFireBallReanim = mApp->ReanimationTryToGet(mBossFireBallReanimID);
     if (aFireBallReanim && !mIsFireBall) {
-        mApp->AddTodParticle(mPosX + 80.0, mAnimCounter + 80.0, 400000, ParticleEffect::PARTICLE_ICEBALL_DEATH);
+        mApp->AddTodParticle(mPosX + 80.0f, mAnimCounter + 80.0f, 400000, ParticleEffect::PARTICLE_ICEBALL_DEATH);
 
         aFireBallReanim->ReanimationDie();
         mBossFireBallReanimID = ReanimationID::REANIMATIONID_NULL;
@@ -2890,7 +2890,7 @@ Rect Zombie::GetZombieRect() {
         aZombieRect.mX = mWidth - aZombieRect.mX - aZombieRect.mWidth;
     }
 
-    ZombieDrawPosition aDrawPos;
+    ZombieDrawPosition aDrawPos{};
     GetDrawPos(aDrawPos);
     aZombieRect.Offset(mX, mY + aDrawPos.mBodyY);
     if (aDrawPos.mClipHeight > CLIP_HEIGHT_LIMIT) {
@@ -4358,18 +4358,18 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
         Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mBossFireBallReanimID);
         if (aHeadReanim != nullptr) {
             int index[2] = {aHeadReanim->GetZombatarHatTrackIndex(), aHeadReanim->GetZombatarEyeWearTrackIndex()};
-            for (int i = 0; i < 2; ++i) {
-                if (index[i] == -1)
+            for (int i : index) {
+                if (i == -1)
                     continue;
-                ReanimatorTrackInstance *aTrackInstance = aHeadReanim->mTrackInstances + index[i];
-                ReanimatorTrack *aTrack = aHeadReanim->mDefinition->mTracks + index[i];
+                ReanimatorTrackInstance *aTrackInstance = aHeadReanim->mTrackInstances + i;
+                ReanimatorTrack *aTrack = aHeadReanim->mDefinition->mTracks + i;
                 SexyTransform2D aTransform2D;
-                aHeadReanim->GetTrackMatrix(index[i], aTransform2D);
-                float aPosX = mPosX + aTransform2D.m[0][2];
-                float aPosY = mPosY + aTransform2D.m[1][2];
-                TodParticleSystem *aParticle = mApp->AddTodParticle(aPosX, aPosY, mRenderOrder + 1, ParticleEffect::PARTICLE_ZOMBIE_HEAD);
-                aParticle->OverrideColor(nullptr, aTrackInstance->mTrackColor);
-                aParticle->OverrideImage(nullptr, aTrack->mTransforms[0].mImage);
+                aHeadReanim->GetTrackMatrix(i, aTransform2D);
+                float aParticleX = mPosX + aTransform2D.m[0][2];
+                float aParticleY = mPosY + aTransform2D.m[1][2];
+                TodParticleSystem *aHeadParticle = mApp->AddTodParticle(aParticleX, aParticleY, mRenderOrder + 1, ParticleEffect::PARTICLE_ZOMBIE_HEAD);
+                aHeadParticle->OverrideColor(nullptr, aTrackInstance->mTrackColor);
+                aHeadParticle->OverrideImage(nullptr, aTrack->mTransforms[0].mImage);
             }
             mApp->RemoveReanimation(mBossFireBallReanimID);
             mBossFireBallReanimID = ReanimationID::REANIMATIONID_NULL;
@@ -5173,7 +5173,7 @@ void Zombie::BungeeDropZombie(Zombie *theDroppedZombie, int theGridX, int theGri
     BungeeDropZombie_Origin(theDroppedZombie, theGridX, theGridY);
 
     if (gTcpClientSocket >= 0) {
-        U16UNI32UNI32_Event event;
+        U16UNI32UNI32_Event event{};
         event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_DROP_ZOMBIE;
         event.data2.u16x2.u16_1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
         event.data2.u16x2.u16_2 = uint16_t(mBoard->mZombies.DataArrayGetID(theDroppedZombie));
@@ -5245,7 +5245,7 @@ void Zombie::PickRandomSpeed() {
     UpdateAnimSpeed();
 
     if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
-        U16U16U16UNI32UNI32_Event event;
+        U16U16U16UNI32UNI32_Event event{};
         event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PICK_SPEED;
         event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
         event.data2 = uint16_t(mAnimTicksPerFrame);
@@ -5275,7 +5275,7 @@ float Zombie::ZombieTargetLeadX(float theTime) {
     }
 
     Rect aZombieRect = GetZombieRect();
-    float aCurrentPosX = aZombieRect.mX + aZombieRect.mWidth / 2;
+    float aCurrentPosX = aZombieRect.mX + aZombieRect.mWidth / 2.0f;
     float aDisplacementX = aSpeed * theTime;
     return aCurrentPosX - aDisplacementX;
 }
@@ -5507,8 +5507,8 @@ bool Zombie::ZombieNotWalking() {
                 return true;
             }
 
-            for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
-                Zombie *aDancer = mBoard->ZombieTryToGet(aLeader->mFollowerZombieID[i]);
+            for (auto &i : aLeader->mFollowerZombieID) {
+                Zombie *aDancer = mBoard->ZombieTryToGet(i);
                 if (aDancer && (aDancer->IsImmobilizied() || aDancer->mIsEating)) {
                     return true;
                 }
@@ -5529,8 +5529,8 @@ bool Zombie::ZombieNotWalking() {
                 return true;
             }
 
-            for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
-                Zombie *aDancer = mBoard->ZombieTryToGet(aLeader->mFollowerZombieID[i]);
+            for (auto &i : aLeader->mFollowerZombieID) {
+                Zombie *aDancer = mBoard->ZombieTryToGet(i);
                 if (aDancer && (aDancer->IsImmobilizied() || aDancer->mIsEating)) {
                     return true;
                 }
@@ -5558,8 +5558,8 @@ bool Zombie::IsMovingAtChilledSpeed() {
                 return true;
             }
 
-            for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
-                Zombie *aDancer = mBoard->ZombieTryToGet(aLeader->mFollowerZombieID[i]);
+            for (auto &i : aLeader->mFollowerZombieID) {
+                Zombie *aDancer = mBoard->ZombieTryToGet(i);
                 if (aDancer && !aDancer->IsDeadOrDying() && (aDancer->mChilledCounter > 0 || aDancer->mIceTrapCounter > 0)) {
                     return true;
                 }
@@ -5580,8 +5580,8 @@ bool Zombie::IsMovingAtChilledSpeed() {
                 return true;
             }
 
-            for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
-                Zombie *aDancer = mBoard->ZombieTryToGet(aLeader->mFollowerZombieID[i]);
+            for (auto &i : aLeader->mFollowerZombieID) {
+                Zombie *aDancer = mBoard->ZombieTryToGet(i);
                 if (aDancer && !aDancer->IsDeadOrDying() && (aDancer->mChilledCounter > 0 || aDancer->mIceTrapCounter > 0)) {
                     return true;
                 }
@@ -5681,8 +5681,8 @@ void Zombie::UpdateZombieWalking() {
                     aSpeed = 0;
                 }
 
-                for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
-                    Zombie *aDancer = mBoard->ZombieTryToGet(aLeader->mFollowerZombieID[i]);
+                for (auto &i : aLeader->mFollowerZombieID) {
+                    Zombie *aDancer = mBoard->ZombieTryToGet(i);
                     if (aDancer && aDancer != this && !aDancer->IsDeadOrDying()) {
                         if (aDancer->ZombieNotWalking())
                             aSpeed = 0;
@@ -5944,7 +5944,7 @@ void Zombie::UpdateYuckyFace() {
                     SetRow(mRow + 1);
                 } else {
                     SetRow(mRow - 1);
-                };
+                }
             }
 
             if (gTcpClientSocket >= 0) {

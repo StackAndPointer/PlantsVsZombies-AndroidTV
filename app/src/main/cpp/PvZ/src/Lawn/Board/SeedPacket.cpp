@@ -76,8 +76,8 @@ void SeedPacket::Update() {
 
     if (mSlotMachineCountDown > 0) {
         mSlotMachineCountDown--;
-        float aFlipsPerSecont = TodAnimateCurveFloat(SLOT_MACHINE_TIME, 0, mSlotMachineCountDown, 6.0f, 2.0f, TodCurves::CURVE_LINEAR);
-        mSlotMachiningPosition += aFlipsPerSecont * 0.01f;
+        float aFlipsPerSecond = TodAnimateCurveFloat(SLOT_MACHINE_TIME, 0, mSlotMachineCountDown, 6.0f, 2.0f, TodCurves::CURVE_LINEAR);
+        mSlotMachiningPosition += aFlipsPerSecond * 0.01f;
 
         if (mSlotMachiningPosition >= 1.0f) {
             mPacketType = mSlotMachiningNextSeed;
@@ -253,7 +253,7 @@ void SeedPacket::SetNextRandomSeed() {
     SetPacketType(seedType, SeedType::SEED_NONE);
 
     if (gTcpClientSocket >= 0) {
-        U8U8U16U16_Event event;
+        U8U8U16U16_Event event{};
         event.type = EventType::EVENT_SERVER_BOARD_SHUFFLE_RANDOM_PICK_NEXT;
         event.data1 = mSeedBank->mIsZombie;
         event.data3 = seedType;
@@ -367,97 +367,97 @@ void DrawSeedPacket(Sexy::Graphics *g,
     float offsetY = NAN, offsetX = NAN, theDrawScale = NAN;
     switch (realSeedType) {
         case SeedType::SEED_TALLNUT:
-            offsetY = 22.0;
-            offsetX = 12.0;
-            theDrawScale = 0.3;
+            offsetY = 22.0f;
+            offsetX = 12.0f;
+            theDrawScale = 0.3f;
             break;
         case SeedType::SEED_INSTANT_COFFEE:
-            offsetY = 9.0;
-            offsetX = 0.0;
-            theDrawScale = 0.55;
+            offsetY = 9.0f;
+            offsetX = 0.0f;
+            theDrawScale = 0.55f;
             break;
         case SeedType::SEED_COBCANNON:
-            offsetY = 22.0;
-            offsetX = 6.0;
-            theDrawScale = 0.26;
+            offsetY = 22.0f;
+            offsetX = 6.0f;
+            theDrawScale = 0.26f;
             break;
         case SeedType::SEED_CACTUS:
-            offsetY = 13.0;
-            offsetX = 9.0;
-            theDrawScale = 0.5;
+            offsetY = 13.0f;
+            offsetX = 9.0f;
+            theDrawScale = 0.5f;
             break;
         case SeedType::SEED_MAGNETSHROOM:
-            offsetY = 12.0;
-            offsetX = 5.0;
-            theDrawScale = 0.5;
+            offsetY = 12.0f;
+            offsetX = 5.0f;
+            theDrawScale = 0.5f;
             break;
         case SeedType::SEED_TWINSUNFLOWER:
         case SeedType::SEED_GLOOMSHROOM:
-            offsetY = 14.0;
-            offsetX = 7.0;
-            theDrawScale = 0.45;
+            offsetY = 14.0f;
+            offsetX = 7.0f;
+            theDrawScale = 0.45f;
             break;
         case SeedType::SEED_CATTAIL:
-            offsetY = 13.0;
-            offsetX = 8.0;
-            theDrawScale = 0.45;
+            offsetY = 13.0f;
+            offsetX = 8.0f;
+            theDrawScale = 0.45f;
             break;
         case SeedType::SEED_UMBRELLA:
-            offsetY = 10.0;
-            offsetX = 5.0;
-            theDrawScale = 0.5;
+            offsetY = 10.0f;
+            offsetX = 5.0f;
+            theDrawScale = 0.5f;
             break;
         case SeedType::SEED_KERNELPULT:
-            offsetY = 14.0;
-            offsetX = 13.0;
-            theDrawScale = 0.4;
+            offsetY = 14.0f;
+            offsetX = 13.0f;
+            theDrawScale = 0.4f;
             break;
         case SeedType::SEED_CABBAGEPULT:
-            offsetY = 14.0;
-            offsetX = 15.0;
-            theDrawScale = 0.4;
+            offsetY = 14.0f;
+            offsetX = 15.0f;
+            theDrawScale = 0.4f;
             break;
         case SeedType::SEED_GRAVEBUSTER:
-            offsetY = 15.0;
-            offsetX = 10.0;
-            theDrawScale = 0.4;
+            offsetY = 15.0f;
+            offsetX = 10.0f;
+            theDrawScale = 0.4f;
             break;
         case SeedType::SEED_SPLITPEA:
-            offsetY = 12.0;
-            offsetX = 12.0;
-            theDrawScale = 0.45;
+            offsetY = 12.0f;
+            offsetX = 12.0f;
+            theDrawScale = 0.45f;
             break;
         case SeedType::SEED_BLOVER:
-            offsetY = 17.0;
-            offsetX = 8.0;
-            theDrawScale = 0.4;
+            offsetY = 17.0f;
+            offsetX = 8.0f;
+            theDrawScale = 0.4f;
             break;
         case SeedType::SEED_STARFRUIT:
-            offsetY = 8.0;
-            offsetX = 6.0;
-            theDrawScale = 0.5;
+            offsetY = 8.0f;
+            offsetX = 6.0f;
+            theDrawScale = 0.5f;
             break;
         case SeedType::SEED_THREEPEATER:
-            offsetY = 10.0;
-            offsetX = 5.0;
-            theDrawScale = 0.5;
+            offsetY = 10.0f;
+            offsetX = 5.0f;
+            theDrawScale = 0.5f;
             break;
         case SeedType::SEED_GATLINGPEA:
-            offsetY = 8.0;
-            offsetX = 2.0;
-            theDrawScale = 0.5;
+            offsetY = 8.0f;
+            offsetX = 2.0f;
+            theDrawScale = 0.5f;
             break;
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
         case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
-            offsetY = -12.0;
-            offsetX = -8.0;
-            theDrawScale = 0.35;
+            offsetY = -12.0f;
+            offsetX = -8.0f;
+            theDrawScale = 0.35f;
             break;
         case SeedType::SEED_MELONPULT:
         case SeedType::SEED_WINTERMELON:
-            offsetY = 19.0;
-            offsetX = 18.0;
-            theDrawScale = 0.35;
+            offsetY = 19.0f;
+            offsetX = 18.0f;
+            theDrawScale = 0.35f;
             break;
         case SeedType::SEED_POTATOMINE:
         case SeedType::SEED_FUMESHROOM:
@@ -471,9 +471,9 @@ void DrawSeedPacket(Sexy::Graphics *g,
         case SeedType::SEED_SPIKEROCK:
         case SeedType::SEED_PLANTERN:
         case SeedType::SEED_TORCHWOOD:
-            offsetY = 12.0;
-            offsetX = 8.0;
-            theDrawScale = 0.4;
+            offsetY = 12.0f;
+            offsetX = 8.0f;
+            theDrawScale = 0.4f;
             break;
         case SeedType::SEED_ZOMBIE_NORMAL:
         case SeedType::SEED_ZOMBIE_NEWSPAPER:
@@ -482,9 +482,9 @@ void DrawSeedPacket(Sexy::Graphics *g,
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_DANCER:
         case SeedType::SEED_ZOMBIE_JACKSON:
-            offsetY = -7.0;
-            offsetX = -3.0;
-            theDrawScale = 0.35;
+            offsetY = -7.0f;
+            offsetX = -3.0f;
+            theDrawScale = 0.35f;
             break;
         case SeedType::SEED_ZOMBIE_LADDER:
         case SeedType::SEED_ZOMBIE_DIGGER:
@@ -492,67 +492,67 @@ void DrawSeedPacket(Sexy::Graphics *g,
         case SeedType::SEED_ZOMBIE_TRASHCAN:
         case SeedType::SEED_ZOMBIE_POGO:
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX:
-            offsetY = -10.0;
-            offsetX = -3.0;
-            theDrawScale = 0.35;
+            offsetY = -10.0f;
+            offsetX = -3.0f;
+            theDrawScale = 0.35f;
             break;
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
-            offsetY = -12.0;
-            offsetX = -3.0;
-            theDrawScale = 0.35;
+            offsetY = -12.0f;
+            offsetX = -3.0f;
+            theDrawScale = 0.35f;
             break;
         case SeedType::SEED_ZOMBIE_SNORKEL:
-            offsetY = -8.0;
-            offsetX = -3.0;
-            theDrawScale = 0.32;
+            offsetY = -8.0f;
+            offsetX = -3.0f;
+            theDrawScale = 0.32f;
             break;
         case SeedType::SEED_ZOMBIE_BUNGEE:
-            offsetY = -1.0;
-            offsetX = 1.0;
-            theDrawScale = 0.3;
+            offsetY = -1.0f;
+            offsetX = 1.0f;
+            theDrawScale = 0.3f;
             break;
         case SeedType::SEED_ZOMBIE_FOOTBALL:
         case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
-            offsetY = -9.0;
-            offsetX = -7.0;
-            theDrawScale = 0.33;
+            offsetY = -9.0f;
+            offsetX = -7.0f;
+            theDrawScale = 0.33f;
             break;
         case SeedType::SEED_ZOMBIE_BALLOON:
-            offsetY = -5.0;
-            offsetX = -3.0;
-            theDrawScale = 0.35;
+            offsetY = -5.0f;
+            offsetX = -3.0f;
+            theDrawScale = 0.35f;
             break;
         case SeedType::SEED_ZOMBIE_IMP:
         case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
-            offsetY = -17.0;
-            offsetX = -12.0;
-            theDrawScale = 0.4;
+            offsetY = -17.0f;
+            offsetX = -12.0f;
+            theDrawScale = 0.4f;
             break;
         case SeedType::SEED_ZOMBONI:
-            offsetY = 3.0;
-            offsetX = -5.0;
-            theDrawScale = 0.23;
+            offsetY = 3.0f;
+            offsetX = -5.0f;
+            theDrawScale = 0.23f;
             break;
         case SeedType::SEED_ZOMBIE_CATAPULT:
-            offsetY = 3.0;
-            offsetX = 1.0;
-            theDrawScale = 0.23;
+            offsetY = 3.0f;
+            offsetX = 1.0f;
+            theDrawScale = 0.23f;
             break;
         case SeedType::SEED_ZOMBIE_GARGANTUAR:
         case SeedType::SEED_ZOMBIE_REDEYE_GARGANTUAR:
-            offsetY = 3.0;
-            offsetX = 4.0;
-            theDrawScale = 0.23;
+            offsetY = 3.0f;
+            offsetX = 4.0f;
+            theDrawScale = 0.23f;
             break;
         case SeedType::SEED_ZOMBIE_YETI:
-            offsetY = -7.0;
-            offsetX = 1.0;
-            theDrawScale = 0.32;
+            offsetY = -7.0f;
+            offsetX = 1.0f;
+            theDrawScale = 0.32f;
             break;
         case SeedType::SEED_ZOMBIE_BOSS:
-            offsetY = 5.0;
-            offsetX = 1.0;
-            theDrawScale = 0.18;
+            offsetY = 5.0f;
+            offsetX = 1.0f;
+            theDrawScale = 0.18f;
             break;
         case SeedType::SEED_ZOMBIE_PEA_HEAD:
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
@@ -560,42 +560,42 @@ void DrawSeedPacket(Sexy::Graphics *g,
         case SeedType::SEED_ZOMBIE_GATLINGPEA_HEAD:
         case SeedType::SEED_ZOMBIE_SQUASH_HEAD:
         case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
-            offsetY = -7.0;
-            offsetX = -3.0;
-            theDrawScale = 0.35;
+            offsetY = -7.0f;
+            offsetX = -3.0f;
+            theDrawScale = 0.35f;
             break;
         case SeedType::SEED_ZOMBIE_BOBSLED:
-            offsetY = -10.0;
-            offsetX = -3.0;
-            theDrawScale = 0.35;
+            offsetY = -10.0f;
+            offsetX = -3.0f;
+            theDrawScale = 0.35f;
             break;
         default:
-            offsetY = 8.0;
-            offsetX = 5.0;
-            theDrawScale = 0.5;
+            offsetY = 8.0f;
+            offsetX = 5.0f;
+            theDrawScale = 0.5f;
             break;
     }
     LawnApp *lawnApp = gLawnApp;
     float v28 = NAN, v29 = NAN;
     if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BIG_TIME) {
         if (realSeedType == SeedType::SEED_SUNFLOWER || realSeedType == SeedType::SEED_WALLNUT || realSeedType == SeedType::SEED_MARIGOLD) {
-            offsetY = 34.0;
-            offsetX = 16.0;
+            offsetY = 34.0f;
+            offsetX = 16.0f;
         }
     }
     v28 = offsetX * g->mScaleX;
     v29 = (offsetY + 1.0f) * g->mScaleY;
     if (realSeedType == SeedType::SEED_GIANT_WALLNUT) {
-        v29 = 59.0;
-        theDrawScale = theDrawScale * 0.75;
-        v28 = 52.0;
+        v29 = 59.0f;
+        theDrawScale = theDrawScale * 0.75f;
+        v28 = 52.0f;
     }
 
     if (isPlant && theIsPacketSelected)
         DrawSeedType(g, x, y, realSeedType, theImitaterType, v28, v29, theDrawScale);
 
-    if (thePercentDark > 0.0) {
-        float coolDownHeight = thePercentDark * 68.0 + 2.5;
+    if (thePercentDark > 0.0f) {
+        float coolDownHeight = thePercentDark * 68.0f + 2.5f;
         Graphics aPlantG(*g);
         Color theColor = {64, 64, 64, 255};
         aPlantG.SetColor(theColor);
@@ -634,12 +634,12 @@ void DrawSeedPacket(Sexy::Graphics *g,
         int height = 48 + (*((int (**)(Sexy::Font *))font->vTable + 2))(font);                                  // 50 -> 48, 微调一下文字位置，上移2个像素点
         Color theColor = {0, 0, 0, 255};
         g->PushState();
-        if (g->mScaleX == 1.0 && g->mScaleY == 1.0) {
+        if (g->mScaleX == 1.0f && g->mScaleY == 1.0f) {
             TodDrawString(g, aCostStr, width + x, height + y, font, theColor, DrawStringJustification::DS_ALIGN_LEFT);
         } else {
-            SexyMatrix3 aMatrix;
-            TodScaleTransformMatrix(aMatrix, x + g->mTransX + width * g->mScaleX, y + g->mTransY + height * g->mScaleY - 1.0, g->mScaleX, g->mScaleY);
-            if (g->mScaleX > 1.8) {
+            SexyMatrix3 aMatrix{};
+            TodScaleTransformMatrix(aMatrix, x + g->mTransX + width * g->mScaleX, y + g->mTransY + height * g->mScaleY - 1.0f, g->mScaleX, g->mScaleY);
+            if (g->mScaleX > 1.8f) {
                 g->SetLinearBlend(false);
             }
             TodDrawStringMatrix(g, font, aMatrix, aCostStr, theColor);
