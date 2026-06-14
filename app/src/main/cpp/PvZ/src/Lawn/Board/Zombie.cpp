@@ -3068,8 +3068,13 @@ void Zombie::ShowDoorArms(bool theShow) {
 
 void Zombie::StartEating() {
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
             return;
+        }
+
+        if (mIsEating) {
+            return;
+        }
 
         if (gTcpClientSocket >= 0) {
             U16UNI32_Event event{};
