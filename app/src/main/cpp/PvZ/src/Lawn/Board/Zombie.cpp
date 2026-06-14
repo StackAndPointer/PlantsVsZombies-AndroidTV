@@ -2277,13 +2277,17 @@ void Zombie::UpdateZombieSquashHead() {
             }
         }
 
-        if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+        if (mApp->IsVSMode()) {
             if (mSquashHeadCol == -1) { // 空压修复
-                Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
-                if (aPlant) {
-                    mSquashHeadCol = aPlant->mPlantCol;
+                if (Zombie *aZombie = FindZombieTarget()) {
+                    aDestX = aZombie->ZombieTargetLeadX(0.0f) - mWidth / 2;
+                } else {
+                    Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
+                    if (aPlant) {
+                        mSquashHeadCol = aPlant->mPlantCol;
+                    }
+                    aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
                 }
-                aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
             } else {
                 aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
             }
@@ -2316,8 +2320,10 @@ void Zombie::UpdateZombieSquashHead() {
             }
         }
 
-        if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-            if (mSquashHeadCol != -1) {
+        if (mApp->IsVSMode()) {
+            if (Zombie *aZombie = FindZombieTarget()) {
+                aDestX = aZombie->ZombieTargetLeadX(0.0f) - mWidth / 2;
+            } else if (mSquashHeadCol != -1) {
                 aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
             }
         }
@@ -2326,7 +2332,7 @@ void Zombie::UpdateZombieSquashHead() {
         aHeadReanim->SetPosition(mPosX + 6.0f + aDestX - mPosX, mPosY - 21.0f + aPosY);
 
         float aSquashX = mX;
-        if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+        if (mApp->IsVSMode()) {
             aSquashX = mPosX + 6.0f + aDestX - mPosX;
         }
 
@@ -2344,8 +2350,15 @@ void Zombie::UpdateZombieSquashHead() {
                         }
                     }
                 }
-            } else if (!isRemoteClient) {
-                SquishAllInSquare(mBoard->PixelToGridXKeepOnBoard(aSquashX, mY), mRow, ZombieAttackType::ATTACKTYPE_CHEW);
+            } else {
+                if (mApp->IsVSMode()) {
+                    if (Zombie *aZombie = FindZombieTarget()) {
+                        aZombie->TakeDamage(1800, 18U);
+                    }
+                }
+                if (!isRemoteClient) {
+                    SquishAllInSquare(mBoard->PixelToGridXKeepOnBoard(aSquashX, mY), mRow, ZombieAttackType::ATTACKTYPE_CHEW);
+                }
             }
         }
 
