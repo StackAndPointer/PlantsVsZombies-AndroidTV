@@ -20,7 +20,8 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_TODLIB_COMMON_DATA_ARRAY_H
 #define PVZ_SEXYAPPFRAMEWORK_TODLIB_COMMON_DATA_ARRAY_H
 
-#include <cassert>
+#include "Homura/Assert.h"
+
 #include <cstdint>
 #include <cstring>
 
@@ -55,7 +56,7 @@ public:
     }
 
     void DataArrayInitialize(uint32_t theMaxSize, const char *theName) {
-        assert(mBlock == nullptr);
+        HOMURA_ASSERT(mBlock == nullptr);
         mBlock = reinterpret_cast<DataArrayItem *>(::operator new(sizeof(DataArrayItem) * theMaxSize));
         mMaxSize = theMaxSize;
         mNextKey = 1001u;
@@ -77,7 +78,7 @@ public:
 
     void DataArrayFree(T *theItem) noexcept {
         auto *aItem = reinterpret_cast<DataArrayItem *>(theItem);
-        assert(DataArrayGet(aItem->mID) == theItem);
+        HOMURA_ASSERT(DataArrayGet(aItem->mID) == theItem, "Failed: DataArrayFree({}) in {}", (void *)theItem, mName);
         theItem->~T();
         uint32_t anId = aItem->mID & DATA_ARRAY_INDEX_MASK;
         aItem->mID = mFreeListHead;
@@ -93,9 +94,9 @@ public:
         mMaxUsedCount = 0u;
     }
 
-    uint32_t DataArrayGetID(const T *theItem) /* const */ noexcept {
+    uint32_t DataArrayGetID(const T *theItem) const noexcept {
         auto *aItem = reinterpret_cast<const DataArrayItem *>(theItem);
-        assert(DataArrayGet(aItem->mID) == theItem);
+        HOMURA_ASSERT(const_cast<DataArray *>(this)->DataArrayGet(aItem->mID) == theItem, "Failed: DataArrayGetID({}) for {}", (void *)theItem, mName);
         return aItem->mID;
     }
 
@@ -117,8 +118,8 @@ public:
     }
 
     T *DataArrayAlloc() {
-        assert(mSize < mMaxSize);
-        assert(mFreeListHead <= mMaxUsedCount);
+        HOMURA_ASSERT(mSize < mMaxSize, "Data array full: {}", mName);
+        HOMURA_ASSERT(mFreeListHead <= mMaxUsedCount, "DataArrayAlloc error in {}", mName);
         uint32_t aNext = mMaxUsedCount;
         if (mFreeListHead == mMaxUsedCount) {
             mFreeListHead = ++mMaxUsedCount;
@@ -147,7 +148,9 @@ public:
     }
 
     T *DataArrayGet(uint32_t theId) noexcept {
-        // assert(DataArrayTryToGet(theId) != nullptr); // useless in net play
+        /* useless in net play */
+        // HOMURA_ASSERT(DataArrayTryToGet(theId) != nullptr, "Failed: DataArrayGet(0x{:x}) for {}", theId, mName);
+
         return &mBlock[uint16_t(theId)].mItem;
     }
 };
