@@ -1235,9 +1235,9 @@ GridItem *Plant::FindTargetGridItem(int theRow, PlantWeapon thePlantWeapon) {
                     continue;
                 }
                 if (mSeedType == SeedType::SEED_PUFFSHROOM || mSeedType == SeedType::SEED_SEASHROOM) {
-                    //                    if (VSSetupAddonWidget::msBalancePatchMode && aGridX - mPlantCol > 2) {
-                    //                        continue;
-                    //                    }
+                    if (VSSetupAddonWidget::msBalancePatchMode && aGridX - mPlantCol > 2) {
+                        continue;
+                    }
                     // 如果是小喷菇或水兵菇，则索敌三格以内的墓碑
                     if (aGridX - mPlantCol > 3) {
                         continue;
@@ -1339,13 +1339,13 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_GARLIC:
         case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
         case SeedType::SEED_ZOMBIE_BOBSLED:
+        case SeedType::SEED_ZOMBIE_BALLOON:
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX:
-        case SeedType::SEED_ZOMBIE_BALLOON:
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
             return 100;
         case SeedType::SEED_TORCHWOOD:
