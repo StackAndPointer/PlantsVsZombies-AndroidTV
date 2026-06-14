@@ -90,19 +90,25 @@ public:
     void StartFade() {
         reinterpret_cast<void (*)(Coin *)>(Coin_StartFadeAddr)(this);
     }
-    float GetSunScale() {
-        return reinterpret_cast<float (*)(Coin *)>(Coin_GetSunScaleAddr)(this);
+    static int GetCoinValue(CoinType coinType) {
+        return reinterpret_cast<int (*)(CoinType)>(Coin_GetCoinValueAddr)(coinType);
     }
 
     void CoinInitialize(int theX, int theY, CoinType theCoinType, CoinMotion theCoinMotion);
     void GamepadCursorOver(int thePlayerIndex);
     void Update();
+    void PlayCollectSound();
+    void ScoreCoin();
+    void UpdateCollected();
     void UpdateFallForAward();
     void UpdateFall();
     bool MouseHitTest(int theX, int theY, int **theHitResult, int thePlayerIndex);
     bool IsSun() const;
+    bool IsDeath() const;
     void Draw(Sexy::Graphics *g);
     Sexy::Color GetColor();
+    int GetSunValue();
+    float GetSunScale();
 };
 
 /***************************************************************************************************************/

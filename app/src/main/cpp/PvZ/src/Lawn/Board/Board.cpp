@@ -6735,6 +6735,17 @@ bool Board::TakeDeathMoney(int theAmount) {
     return result;
 }
 
+int Board::CountDeathBeingCollected() {
+    int aCount = 0;
+    Coin *aCoin = nullptr;
+    while (IterateCoins(aCoin)) {
+        if (aCoin->mIsBeingCollected && aCoin->IsDeath()) {
+            aCount += aCoin->GetSunValue();
+        }
+    }
+    return aCount;
+}
+
 void Board::ShuffleButtonDown(SeedPacket *theSeedPacket) {
     if (!Challenge::msVSShuffleMode)
         return;

@@ -471,9 +471,7 @@ public:
     bool IsValidCobCannonSpot(int theGridX, int theGridY) {
         return reinterpret_cast<bool (*)(Board *, int, int)>(Board_IsValidCobCannonSpotAddr)(this, theGridX, theGridY);
     }
-    int CountDeathBeingCollected() {
-        return reinterpret_cast<int (*)(Board *)>(Board_CountDeathBeingCollectedAddr)(this);
-    }
+    int CountDeathBeingCollected();
     int GetMPTargetCount() {
         return reinterpret_cast<int (*)(Board *)>(Board_GetMPTargetCountAddr)(this);
     }

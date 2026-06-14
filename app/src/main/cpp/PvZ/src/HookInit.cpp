@@ -242,7 +242,13 @@ void InitHookFunction() {
     homura::HookFunc(Coin_MouseHitTestAddr, &Coin::MouseHitTest, &old_Coin_MouseHitTest);
     homura::HookFunc(Coin_UpdateFallAddr, &Coin::UpdateFall, &old_Coin_UpdateFall);
     homura::HookFunc(Coin_DrawAddr, &Coin::Draw, &old_Coin_Draw);
+    homura::HookFunc(Coin_PlayCollectSoundAddr, &Coin::PlayCollectSound, nullptr);
+    homura::HookFunc(Coin_ScoreCoinAddr, &Coin::ScoreCoin, nullptr);
+    homura::HookFunc(Coin_UpdateCollectedAddr, &Coin::UpdateCollected, nullptr);
+    homura::HookFunc(Coin_GetSunValueAddr, &Coin::GetSunValue, nullptr);
+    homura::HookFunc(Coin_GetSunScaleAddr, &Coin::GetSunScale, nullptr);
     homura::HookFunc(Coin_GetColorAddr, &Coin::GetColor, nullptr);
+    homura::HookFunc(Board_CountDeathBeingCollectedAddr, &Board::CountDeathBeingCollected, nullptr);
 
 
     homura::HookFunc(GamepadControls_ButtonDownFireCobcannonTestAddr, &GamepadControls::ButtonDownFireCobcannonTest, &old_GamepadControls_ButtonDownFireCobcannonTest);

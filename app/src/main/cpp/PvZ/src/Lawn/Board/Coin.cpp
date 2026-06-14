@@ -21,11 +21,13 @@
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
+#include "PvZ/Lawn/Board/MessageWidget.h"
 #include "PvZ/Lawn/Common/GameConstants.h"
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 #include "PvZ/TodLib/Effect/Attachment.h"
+#include "PvZ/TodLib/Effect/Reanimator.h"
 
 #include <cmath>
 
@@ -33,6 +35,16 @@ using namespace Sexy;
 
 void Coin::CoinInitialize(int theX, int theY, CoinType theCoinType, CoinMotion theCoinMotion) {
     old_Coin_CoinInitialize(this, theX, theY, theCoinType, theCoinMotion);
+
+    if (mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN) {
+        mScale = 0.5f;
+
+        Reanimation *aReanim = mApp->AddReanimation(0.0f, 0.0f, 0, ReanimationType::REANIM_VS_ZOMBIE_BRAIN);
+        aReanim->SetPosition(mPosX + mWidth * 0.5f, mPosY + mHeight * 0.5f);
+        aReanim->mLoopType = ReanimLoopType::REANIM_LOOP;
+        aReanim->SetAnimRate(6.0f);
+        AttachReanim(mAttachmentID[0], aReanim, mWidth * 0.5f, mHeight * 0.5f);
+    }
 }
 
 void Coin::GamepadCursorOver(int thePlayerIndex) {
@@ -67,7 +79,7 @@ void Coin::GamepadCursorOver(int thePlayerIndex) {
 }
 
 void Coin::Update() {
-    if (BanDropCoin && !IsOnlineServerModeActive() && !gIsReplayMode && (mType <= CoinType::COIN_LARGESUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || mType == CoinType::COIN_VS_ZOMBIE_BRAIN)) {
+    if (BanDropCoin && !IsOnlineServerModeActive() && !gIsReplayMode && (mType <= CoinType::COIN_LARGESUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || IsDeath())) {
         // 开启了"禁止掉落阳光金币"时
         Die();
         return;
@@ -89,7 +101,7 @@ void Coin::Update() {
             && mApp->mGameScene == GameScenes::SCENE_PLAYING && mBoard->mBoardFadeOutCounter <= 0) {
             mCoinAge = 0;
         }
-    } else if (mType == CoinType::COIN_VS_ZOMBIE_BRAIN) {
+    } else if (IsDeath()) {
         // 如果没有关闭自动拾取，则为对战模式的僵尸方阳光也加入自动拾取。
         if (mCoinAge > 79 && !mIsBeingCollected) {
             Collect(0);
@@ -106,6 +118,199 @@ void Coin::Update() {
     }
 
     old_Coin_Update(this);
+}
+
+void Coin::PlayCollectSound() {
+    if (mType == CoinType::COIN_USABLE_SEED_PACKET) {
+        mApp->PlaySample(SOUND_SEEDLIFT);
+        return;
+    }
+
+    if (mType == CoinType::COIN_SILVER || mType == CoinType::COIN_GOLD) {
+        mApp->PlayFoley(FoleyType::FOLEY_COIN);
+        return;
+    }
+
+    if (mType == CoinType::COIN_DIAMOND) {
+        mApp->PlaySample(SOUND_DIAMOND);
+        return;
+    }
+
+    if (mType == CoinType::COIN_CHOCOLATE || mType == CoinType::COIN_PRESENT_PLANT || IsPresentWithAdvice() || mType == CoinType::COIN_AWARD_PRESENT || mType == CoinType::COIN_AWARD_CHOCOLATE) {
+        mApp->PlayFoley(FoleyType::FOLEY_PRIZE);
+        return;
+    }
+
+    if (IsSun() || mType == CoinType::COIN_COOP_DOUBLE_SUN) {
+        mApp->PlayFoley(FoleyType::FOLEY_SUN);
+        return;
+    }
+
+    if (IsDeath()) {
+        mApp->PlayFoley(FoleyType::FOLEY_SLURP);
+    }
+}
+
+void Coin::ScoreCoin() {
+    Die();
+
+    if (IsSun()) {
+        mBoard->AddSunMoney(GetSunValue(), mCollectedByPlayerIndex);
+    }
+
+    if (mType == CoinType::COIN_COOP_DOUBLE_SUN) {
+        int aSunValue = GetSunValue();
+        mBoard->AddSunMoney(aSunValue, 0);
+        mBoard->AddSunMoney(aSunValue, 1);
+    }
+
+    if (IsDeath()) {
+        mBoard->AddDeathMoney(GetSunValue());
+    } else if (IsMoney()) {
+        int aCoinValue = Coin::GetCoinValue(mType);
+        if (mApp->mPlayerInfo) {
+            mApp->mPlayerInfo->AddCoins(aCoinValue);
+        }
+        if (mBoard) {
+            mBoard->mCoinsCollected += aCoinValue;
+        }
+    }
+
+    if (mType == CoinType::COIN_DIAMOND && mBoard) {
+        ++mBoard->mDiamondsCollected;
+    }
+}
+
+void Coin::UpdateCollected() {
+    int aDoubleSunDestX = *reinterpret_cast<bool *>(mApp->unkMem2[19] + 96) ? 600 : 480;
+    int aDestX = 15;
+    int aDestY = 0;
+
+    if (IsSun()) {
+        if (mCollectedByPlayerIndex == 1) {
+            aDestX = aDoubleSunDestX;
+            aDoubleSunDestX = 0;
+        } else {
+            aDoubleSunDestX = 0;
+        }
+    } else if (mType == CoinType::COIN_COOP_DOUBLE_SUN) {
+        aDestX = 15;
+        aDestY = 0;
+    } else if (IsDeath()) {
+        aDestX = 760;
+        aDestY = 0;
+        aDoubleSunDestX = 0;
+    } else if (IsMoney()) {
+        aDestX = 39;
+        aDestY = 558;
+        aDoubleSunDestX = 0;
+
+        if (mApp->HasFinishedAdventure()) {
+            aDestX = 662;
+            aDestY = 546;
+        } else if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {
+            aDestX = 442;
+        } else if (mApp->mCrazyDaveState != CrazyDaveState::CRAZY_DAVE_OFF) {
+            aDestX = 442;
+        }
+    } else if (IsPresentWithAdvice()) {
+        aDestX = 35;
+        aDestY = 487;
+        aDoubleSunDestX = 0;
+    } else if (mType == CoinType::COIN_AWARD_PRESENT || mType == CoinType::COIN_PRESENT_PLANT) {
+        ++mDisappearCounter;
+        if (mDisappearCounter >= 199) {
+            StartFade();
+        }
+        return;
+    } else if (!IsLevelAward()) {
+        if (mType == CoinType::COIN_USABLE_SEED_PACKET) {
+            ++mDisappearCounter;
+        }
+        return;
+    } else {
+        aDestX = 400 - mWidth / 2;
+        aDestY = 200 - mHeight / 2;
+        ++mDisappearCounter;
+    }
+
+    if (IsLevelAward()) {
+        mScale = TodAnimateCurveFloat(0, 400, mDisappearCounter, 1.01f, 2.0f, TodCurves::CURVE_BOUNCE);
+        mPosX = TodAnimateCurveFloat(0, 350, mDisappearCounter, mCollectX, aDestX, TodCurves::CURVE_EASE_IN_OUT);
+        mPosY = TodAnimateCurveFloat(0, 350, mDisappearCounter, mCollectY, aDestY, TodCurves::CURVE_EASE_IN_OUT);
+        return;
+    }
+
+    float aDeltaX = fabsf(mPosX - aDestX);
+    float aDeltaY = fabsf(mPosY - aDestY);
+    if (mPosX > aDestX) {
+        mPosX -= aDeltaX * 0.047619f;
+    } else if (mPosX < aDestX) {
+        mPosX += aDeltaX * 0.047619f;
+    }
+    if (mPosY > aDestY) {
+        mPosY -= aDeltaY * 0.047619f;
+    } else if (mPosY < aDestY) {
+        mPosY += aDeltaY * 0.047619f;
+    }
+
+    if (mType == CoinType::COIN_COOP_DOUBLE_SUN) {
+        float aDoubleSunDeltaX = fabsf(mPrevPosX - aDoubleSunDestX);
+        float aDoubleSunDeltaY = fabsf(mPrevPosY);
+        if (mPrevPosX > aDoubleSunDestX) {
+            mPrevPosX -= aDoubleSunDeltaX * 0.047619f;
+        } else if (mPrevPosX < aDoubleSunDestX) {
+            mPrevPosX += aDoubleSunDeltaX * 0.047619f;
+        }
+        if (mPrevPosY > 0.0f) {
+            mPrevPosY -= aDoubleSunDeltaY * 0.047619f;
+        } else if (mPrevPosY < 0.0f) {
+            mPrevPosY += aDoubleSunDeltaY * 0.047619f;
+        }
+    }
+
+    mCollectionDistance = sqrtf(aDeltaX * aDeltaX + aDeltaY * aDeltaY);
+    if (IsPresentWithAdvice()) {
+        if (mCollectionDistance >= 15.0f) {
+            return;
+        }
+
+        if (mBoard->mHelpDisplayed[66]) {
+            if (mBoard->mHelpIndex != AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED || mBoard->mAdvice == nullptr || mBoard->mAdvice->mDuration <= 0) {
+                Die();
+            }
+            return;
+        }
+
+        switch (mType) {
+            case CoinType::COIN_PRESENT_MINIGAMES:
+                mBoard->DisplayAdvice("[UNLOCKED_MINIGAMES]", MessageStyle::MESSAGE_STYLE_HINT_TALL_UNLOCKMESSAGE, AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED);
+                break;
+            case CoinType::COIN_PRESENT_PUZZLE_MODE:
+            case CoinType::Present32:
+                mBoard->DisplayAdvice("[UNLOCKED_PUZZLE_MODE]", MessageStyle::MESSAGE_STYLE_HINT_TALL_UNLOCKMESSAGE, AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED);
+                break;
+            case CoinType::Present1024:
+                mBoard->DisplayAdvice("[UNLOCKED_SURVIVAL_MODE]", MessageStyle::MESSAGE_STYLE_HINT_TALL_UNLOCKMESSAGE, AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED);
+                break;
+            default:
+                mBoard->DisplayAdvice("[UNLOCKED_COOP_CHALLENGES]", MessageStyle::MESSAGE_STYLE_HINT_TALL_UNLOCKMESSAGE, AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED);
+                break;
+        }
+        return;
+    }
+
+    float aScoringDistance = 8.0f;
+    if (IsMoney()) {
+        aScoringDistance = 12.0f;
+    }
+
+    if (mCollectionDistance < aScoringDistance) {
+        ScoreCoin();
+    }
+
+    mScale = ClampFloat(mCollectionDistance * 0.05f, 0.5f, 1.0f);
+    mScale *= GetSunScale();
 }
 
 void Coin::UpdateFallForAward() {
@@ -264,7 +469,7 @@ void Coin::UpdateFall() {
 
 bool Coin::MouseHitTest(int theX, int theY, int **theHitResult, int thePlayerIndex) {
     // 去除在玩家按A键时的阳光金币检测，以防止玩家种植、铲除、发射加农炮时的操作被阳光金币遮挡。
-    if (mType <= CoinType::COIN_LARGESUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || mType == CoinType::COIN_VS_ZOMBIE_BRAIN) {
+    if (mType <= CoinType::COIN_LARGESUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || IsDeath()) {
         return false;
     }
 
@@ -275,12 +480,67 @@ bool Coin::IsSun() const {
     return mType == CoinType::COIN_SUN || mType == CoinType::COIN_SMALLSUN || mType == CoinType::COIN_LARGESUN;
 }
 
+bool Coin::IsDeath() const {
+    return mType == CoinType::COIN_VS_ZOMBIE_BRAIN || mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN;
+}
+
+int Coin::GetSunValue() {
+    if (mCustomSunValue != 0) {
+        return mCustomSunValue;
+    }
+
+    switch (mType) {
+        case CoinType::COIN_SMALLSUN:
+        case CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN:
+            return 15;
+        case CoinType::COIN_SUN:
+        case CoinType::COIN_COOP_DOUBLE_SUN:
+        case CoinType::COIN_VS_ZOMBIE_BRAIN:
+            return 25;
+        case CoinType::COIN_LARGESUN:
+            return 50;
+        default:
+            return mCustomSunValue;
+    }
+}
+
+float Coin::GetSunScale() {
+    switch (mType) {
+        case CoinType::COIN_SMALLSUN:
+        case CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN:
+            return 0.5f;
+        case CoinType::COIN_LARGESUN:
+            return 2.0f;
+        default:
+            return 1.0f;
+    }
+}
+
 void Coin::Draw(Graphics *g) {
+    if (mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN) {
+        Color aColor = GetColor();
+        g->SetColor(aColor);
+
+        if (mAttachmentID[0]) {
+            g->PushState();
+            AttachmentDraw(mAttachmentID[0], g, 0);
+            g->PopState();
+        }
+
+        if (mAttachmentID[1]) {
+            g->PushState();
+            AttachmentDraw(mAttachmentID[1], g, 0);
+            g->PopState();
+        }
+
+        return;
+    }
+
     old_Coin_Draw(this, g);
 }
 
 Color Coin::GetColor() {
-    if ((IsSun() || IsMoney()) && mIsBeingCollected) {
+    if ((IsSun() || IsDeath() || IsMoney()) && mIsBeingCollected) {
         int aAlpha = ClampFloat(mCollectionDistance * 0.035f, 0.35f, 1.0f) * 255.0f;
         return {255, 255, 255, aAlpha};
     }

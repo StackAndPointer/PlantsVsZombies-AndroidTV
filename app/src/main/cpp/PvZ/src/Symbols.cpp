@@ -589,11 +589,16 @@ bool LoadGameMain() {
     Coin_IsLevelAwardAddr = libGameMain.GetSymbol("_ZN4Coin12IsLevelAwardEv");
     Coin_IsPresentWithAdviceAddr = libGameMain.GetSymbol("_ZN4Coin19IsPresentWithAdviceEv");
     Coin_IsMoneyAddr = libGameMain.GetSymbol("_ZN4Coin7IsMoneyEv");
+    Coin_PlayCollectSoundAddr = libGameMain.GetSymbol("_ZN4Coin16PlayCollectSoundEv");
+    Coin_ScoreCoinAddr = libGameMain.GetSymbol("_ZN4Coin9ScoreCoinEv");
     Coin_CollectAddr = libGameMain.GetSymbol("_ZN4Coin7CollectEi");
+    Coin_GetSunValueAddr = libGameMain.GetSymbol("_ZN4Coin11GetSunValueEv");
     Coin_GetSunScaleAddr = libGameMain.GetSymbol("_ZN4Coin11GetSunScaleEv");
+    Coin_GetCoinValueAddr = libGameMain.GetSymbol("_ZN4Coin12GetCoinValueE8CoinType");
     Coin_PlayGroundSoundAddr = libGameMain.GetSymbol("_ZN4Coin15PlayGroundSoundEv");
     Coin_GetDisappearTimeAddr = libGameMain.GetSymbol("_ZN4Coin16GetDisappearTimeEv");
     Coin_StartFadeAddr = libGameMain.GetSymbol("_ZN4Coin9StartFadeEv");
+    Coin_UpdateCollectedAddr = libGameMain.GetSymbol("_ZN4Coin15UpdateCollectedEv");
     Coin_UpdateFallAddr = libGameMain.GetSymbol("_ZN4Coin10UpdateFallEv");
     Coin_GamepadCursorOverAddr = libGameMain.GetSymbol("_ZN4Coin17GamepadCursorOverEi");
     Coin_MouseHitTestAddr = libGameMain.GetSymbol("_ZN4Coin12MouseHitTestEiiP9HitResulti");

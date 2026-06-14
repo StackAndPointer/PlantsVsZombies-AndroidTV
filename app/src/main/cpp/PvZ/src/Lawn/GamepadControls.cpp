@@ -171,7 +171,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
             GameMode gameMode = gamepadControls->mGameObject->mApp->mGameMode;
             if (gameMode == GameMode::GAMEMODE_MP_VS_DEBUG || gameMode == GameMode::GAMEMODE_MP_VS) {
                 if (gamepadControls->mIsZombie) {
-                    if (coin->mType == CoinType::COIN_VS_ZOMBIE_BRAIN || coin->mType == CoinType::COIN_VS_ZOMBIE_TROPHY) {
+                    if (coin->IsDeath() || coin->mType == CoinType::COIN_VS_ZOMBIE_TROPHY) {
                         coin->MouseDown(gamepadControls->mCursorPositionX, gamepadControls->mCursorPositionY, 1);
                     }
                 } else if (coin->IsSun() || coin->mType == CoinType::COIN_VS_PLANT_TROPHY) {
@@ -237,7 +237,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         while (gamepadControls->mBoard->IterateCoins(coin)) {
             if (gamepadControls->mGameObject->mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
                 if (gamepadControls->mIsZombie) {
-                    if (coin->mType != CoinType::COIN_VS_ZOMBIE_BRAIN && coin->mType != CoinType::COIN_VS_ZOMBIE_TROPHY) {
+                    if (!coin->IsDeath() && coin->mType != CoinType::COIN_VS_ZOMBIE_TROPHY) {
                         continue;
                     }
                 } else if (!coin->IsSun() && coin->mType != CoinType::COIN_VS_PLANT_TROPHY) {

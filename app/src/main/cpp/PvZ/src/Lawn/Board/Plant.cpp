@@ -1333,13 +1333,13 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_YETI:
         case SeedType::SEED_ZOMBIE_PEA_HEAD:
         case SeedType::SEED_ZOMBIE_SQUASH_HEAD:
-        case SeedType::SEED_ZOMBIE_MOUND:
             return 50;
         case SeedType::SEED_SQUASH:
         case SeedType::SEED_GARLIC:
         case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
         case SeedType::SEED_ZOMBIE_BOBSLED:
         case SeedType::SEED_ZOMBIE_BALLOON:
+        case SeedType::SEED_ZOMBIE_MOUND:
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
