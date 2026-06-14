@@ -2944,7 +2944,7 @@ void Board::Update() {
     }
 
     if (passNowLevel) {
-        if (!IsOnlineServerModeActive() && !gIsReplayMode) {
+        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineServerModeActive() && !gIsReplayMode) {
             mLevelComplete = true;
             mApp->mBoardResult = mApp->mGameMode == GameMode::GAMEMODE_MP_VS ? BoardResult::BOARDRESULT_VS_PLANT_WON : BoardResult::BOARDRESULT_WON;
         }
