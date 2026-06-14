@@ -17,8 +17,8 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef HOMURA_ASSERTUTILS_H
-#define HOMURA_ASSERTUTILS_H
+#ifndef HOMURA_ASSERT_H
+#define HOMURA_ASSERT_H
 
 #include <format>
 #include <source_location>
@@ -26,16 +26,16 @@
 namespace homura {
 
 namespace details {
-    void AssertionFailedImpl(std::source_location location, const char *expression);
-    void AssertionFailedImpl(std::source_location location, const char *expression, const char *message);
+    [[noreturn]] void AssertionFailedImpl(std::source_location location, const char *expression);
+    [[noreturn]] void AssertionFailedImpl(std::source_location location, const char *expression, const char *message);
 } // namespace details
 
-inline void AssertionFailed(std::source_location location, const char *expression) {
+[[noreturn]] inline void AssertionFailed(std::source_location location, const char *expression) {
     details::AssertionFailedImpl(location, expression);
 }
 
 template <typename... Args>
-void AssertionFailed(std::source_location location, const char *expression, std::format_string<Args...> format, Args &&...args) {
+[[noreturn]] void AssertionFailed(std::source_location location, const char *expression, std::format_string<Args...> format, Args &&...args) {
     details::AssertionFailedImpl(location, expression, std::vformat(format.get(), std::make_format_args(args...)).c_str());
 }
 
@@ -44,7 +44,7 @@ void AssertionFailed(std::source_location location, const char *expression, std:
 #ifndef NDEBUG
 #define HOMURA_ASSERT(expr, ...) (bool(expr) ? static_cast<void>(0) : homura::AssertionFailed(std::source_location::current(), "" #expr __VA_OPT__(, ) __VA_ARGS__))
 #else
-#define HOMURA_ASSERT(expr, ...) static_cast<void>(0)
+#define HOMURA_ASSERT(expr, ...) (static_cast<void>(0))
 #endif
 
-#endif // HOMURA_ASSERTUTILS_H
+#endif // HOMURA_ASSERT_H

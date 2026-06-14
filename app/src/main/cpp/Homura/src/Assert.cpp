@@ -23,6 +23,7 @@
 #include <android/log.h>
 
 #include <cinttypes>
+#include <cstdlib>
 
 void homura::details::AssertionFailedImpl(std::source_location location, const char *expression) {
     __android_log_print(ANDROID_LOG_FATAL,
