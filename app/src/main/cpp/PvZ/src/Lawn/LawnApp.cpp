@@ -440,8 +440,7 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
                 static_cast<WaitForSecondPlayerDialog *>(dialog)->processClientEvent(event);
             }
         } else {
-            HOMURA_ASSERT(false, "Unknown-type event (type = {}, size = {})", int(event->type), event->size);
-            std::unreachable();
+            throw std::runtime_error{std::format("Unknown-type event (type = {}, size = {})", int(event->type), event->size)};
         }
         offset += event->size;
     }
@@ -542,8 +541,7 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
                 mVSResultsMenu->processServerEvent(event);
             }
         } else {
-            HOMURA_ASSERT(false, "Unknown-type event (type = {}, size = {})", int(event->type), event->size);
-            std::unreachable();
+            throw std::runtime_error{std::format("Unknown-type event (type = {}, size = {})", int(event->type), event->size)};
         }
         offset += event->size;
     }
