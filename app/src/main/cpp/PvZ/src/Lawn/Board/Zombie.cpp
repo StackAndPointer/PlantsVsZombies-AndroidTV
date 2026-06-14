@@ -4084,8 +4084,8 @@ void Zombie::DrawReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos, int t
         } else {
             if (mShieldJustGotShotCounter > 0) {
                 int aGrayness = mShieldJustGotShotCounter * 10;
-                aBodyReanim->mColorOverride = Color(aGrayness, aGrayness, aGrayness, aFadeAlpha);
-                aBodyReanim->mExtraAdditiveColor = Color::White;
+                aBodyReanim->mColorOverride = Color(255, 255, 255, aFadeAlpha);
+                aBodyReanim->mExtraAdditiveColor = Color(aGrayness, aGrayness, aGrayness, 255);
                 aBodyReanim->mEnableExtraAdditiveDraw = true;
                 aColorChanged = true;
             } else {
