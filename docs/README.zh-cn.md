@@ -4,8 +4,8 @@
 
 **[English](./README.md)** | **简体中文**
 
-[![license](https://img.shields.io/github/license/Dicot0721/PlantsVsZombies-AndroidTV)][GPL-3.0]
-[![Android CI](https://github.com/Dicot0721/PlantsVsZombies-AndroidTV/actions/workflows/android.yml/badge.svg)](https://github.com/Dicot0721/PlantsVsZombies-AndroidTV/actions/workflows/android.yml "Android CI")
+[![license](https://img.shields.io/github/license/ZombieYetis/PlantsVsZombies-AndroidTV)][GPL-3.0]
+[![Android CI](https://github.com/ZombieYetis/PlantsVsZombies-AndroidTV/actions/workflows/android.yml/badge.svg)](https://github.com/ZombieYetis/PlantsVsZombies-AndroidTV/actions/workflows/android.yml "Android CI")
 
 一个基于植物大战僵尸 TV 版的改版.
 
@@ -20,7 +20,7 @@
 
 - 克隆仓库.
     ```sh
-    git clone https://github.com/Dicot0721/PlantsVsZombies-AndroidTV.git
+    git clone https://github.com/ZombieYetis/PlantsVsZombies-AndroidTV.git
     cd PlantsVsZombies-AndroidTV
     ```
 
