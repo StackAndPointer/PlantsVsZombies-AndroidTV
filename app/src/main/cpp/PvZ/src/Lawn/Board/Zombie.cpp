@@ -2202,26 +2202,33 @@ void Zombie::BossDestroyFireball() {
 }
 
 void Zombie::BurnRow(int theRow) {
-    // 辣椒僵尸被魅惑后的爆炸函数
-
+    // 辣椒僵尸爆炸函数
     Zombie *aZombie = nullptr;
     while (mBoard->IterateZombies(aZombie)) {
-        if ((aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || aZombie->mRow == theRow) && aZombie->EffectedByDamage(127)) {
-            aZombie->RemoveColdEffects();
-            aZombie->ApplyBurn();
+        if (aZombie->mMindControlled != mMindControlled && (aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || aZombie->mRow == theRow)) {
+            if (aZombie->mMindControlled) {
+                aZombie->TakeDamage(1800, 18U);
+            } else {
+                if (aZombie->EffectedByDamage(127)) {
+                    aZombie->RemoveColdEffects();
+                    aZombie->ApplyBurn();
+                }
+            }
         }
     }
 
-    GridItem *aGridItem = nullptr;
-    while (mBoard->IterateGridItems(aGridItem)) {
-        if (aGridItem->mGridY == theRow && aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER) {
-            aGridItem->GridItemDie();
+    if (mMindControlled) {
+        GridItem *aGridItem = nullptr;
+        while (mBoard->IterateGridItems(aGridItem)) {
+            if (aGridItem->mGridY == theRow && aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER) {
+                aGridItem->GridItemDie();
+            }
         }
-    }
 
-    Zombie *aBossZombie = mBoard->GetBossZombie();
-    if (aBossZombie && aBossZombie->mFireballRow == theRow) {
-        aBossZombie->BossDestroyIceballInRow(theRow);
+        Zombie *aBossZombie = mBoard->GetBossZombie();
+        if (aBossZombie && aBossZombie->mFireballRow == theRow) {
+            aBossZombie->BossDestroyIceballInRow(theRow);
+        }
     }
 }
 
@@ -2230,21 +2237,50 @@ void Zombie::UpdateZombieJalapenoHead() {
         return;
     }
 
-    if (mApp->IsVSMode()) { // 修复对战辣椒瞬爆
+    if (mApp->IsVSMode()) {
+        // 对战改为碰到目标时爆炸
         if (mZombiePhase == ZombiePhase::PHASE_ZOMBIE_NORMAL) {
-            int aDistance = 275 + Rand(175);
-            mPhaseCounter = int(aDistance / mVelX) * ZOMBIE_LIMP_SPEED_FACTOR;
-            mZombiePhase = PHASE_JALAPENO_PRE_BURN;
-            return;
-        }
-    }
+            bool doBurn = false;
+            if (mMindControlled) {
+                if (FindZombieTarget()) {
+                    doBurn = true;
+                }
+            } else {
+                if (FindZombieTarget()) {
+                    doBurn = true;
+                } else if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
+                    if (aPlant->mSeedType == SeedType::SEED_JALAPENO || aPlant->mSeedType == SeedType::SEED_CHERRYBOMB || aPlant->mSeedType == SeedType::SEED_DOOMSHROOM
+                        || aPlant->mSeedType == SeedType::SEED_ICESHROOM || aPlant->mSeedType == SeedType::SEED_HYPNOSHROOM || aPlant->mSeedType == SeedType::SEED_SQUASH
+                        || aPlant->mSeedType == SeedType::SEED_GARLIC) {
+                        if (!aPlant->mIsAsleep) {
+                            return;
+                        }
+                    }
+                    doBurn = true;
+                }
+            }
+            if (doBurn) {
+                mPhaseCounter = 100;
+                mZombiePhase = ZombiePhase::PHASE_JALAPENO_PRE_BURN;
 
-    // 对战改为啃咬时爆炸
-    if (mApp->IsVSMode() ? mIsEating : mPhaseCounter == 0) {
-        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
-            return;
+                Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+                aHeadReanim->SetFramesForLayer("anim_explode");
+                aHeadReanim->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD;
+
+                mApp->PlayFoley(FoleyType::FOLEY_REVERSE_EXPLOSION);
+            }
+        } else if (mZombiePhase == ZombiePhase::PHASE_JALAPENO_PRE_BURN) {
+            if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
+                return;
+            }
+            if (mPhaseCounter == 0) {
+                DoSpecial();
+            }
         }
-        DoSpecial();
+    } else {
+        if (mPhaseCounter == 0) {
+            DoSpecial();
+        }
     }
 }
 
@@ -6060,11 +6096,14 @@ void Zombie::DoSpecial() {
             } else {
                 Plant *aPlant = nullptr;
                 while (mBoard->IteratePlants(aPlant)) {
-                    // Rect aPlantRect = aPlant->GetPlantRect(); // 原版代码遗留，但该变量并未被使用，故注释
                     if (aPlant->mRow == mRow && !aPlant->NotOnGround()) {
                         mBoard->mPlantsEaten++;
                         aPlant->Die();
                     }
+                }
+
+                if (mApp->IsVSMode()) {
+                    BurnRow(mRow);
                 }
             }
 
