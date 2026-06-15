@@ -1208,12 +1208,18 @@ void Zombie::UpdateZombieJackInTheBox() {
             if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
                 if (mApp->IsVSMode()) {
                     if (VSSetupAddonWidget::msBalancePatchMode) {
-                        int aPosX = mX + mWidth / 2;
-                        int aPosY = mY + mHeight / 2;
-                        Plant *aPlant = nullptr;
-                        while (mBoard->IteratePlants(aPlant)) {
-                            if (mPhaseCounter <= 0 && GetCircleRectOverlap(aPosX, aPosY, JackInTheBoxPlantRadius, aPlant->GetPlantRect())) {
+                        if (mPhaseCounter <= 0) {
+                            if (mMindControlled) {
                                 doPop = true;
+                            } else {
+                                int aPosX = mX + mWidth / 2;
+                                int aPosY = mY + mHeight / 2;
+                                Plant *aPlant = nullptr;
+                                while (mBoard->IteratePlants(aPlant)) {
+                                    if (GetCircleRectOverlap(aPosX, aPosY, JackInTheBoxPlantRadius, aPlant->GetPlantRect())) {
+                                        doPop = true;
+                                    }
+                                }
                             }
                         }
                     } else {
