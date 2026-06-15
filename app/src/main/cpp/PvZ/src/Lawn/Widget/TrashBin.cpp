@@ -20,6 +20,7 @@
 #include "PvZ/Lawn/Widget/TrashBin.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/TodLib/Common/TodCommon.h"
 
 void TrashBin::_constructor(TrashPileType theTrashPileType, float theHeight) {
     old_TrashBin_TrashBin(this, theTrashPileType, theHeight);

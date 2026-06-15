@@ -20,13 +20,16 @@
 #ifndef PVZ_GLOBAL_VARIABLE_H
 #define PVZ_GLOBAL_VARIABLE_H
 
-#include "Lawn/Widget/LeaderboardsWidget.h"
-#include "Lawn/Widget/ZombatarWidget.h"
-#include "PvZ/Lawn/Board/Board.h"
-#include "PvZ/Lawn/Common/ConstEnums.h"
-#include "PvZ/TodLib/Common/TodFoley.h"
+#include "PvZ/SexyAppFramework/Misc/GamepadButtons.h"
 
 #include <atomic>
+#include <string>
+
+class GameButton;
+
+namespace Sexy {
+class Image;
+}
 
 inline uintptr_t gLibGameMainBaseAddr;
 
@@ -36,7 +39,7 @@ inline bool requestPause;
 inline bool isKeyboardTwoPlayerMode;
 inline bool doKeyboardTwoPlayerDialog;
 inline bool requestDrawShovelInCursor;
-inline ShovelRedirectWidget *gShovelWidget;
+inline class ShovelRedirectWidget *gShovelWidget;
 inline GameButton *gBoardMenuButton;
 inline GameButton *gBoardStoreButton;
 inline bool requestDrawButterInCursor; // 2P黄油绘制
@@ -91,13 +94,14 @@ enum TouchPlayerIndex {
     TOUCHPLAYER_PLAYER1 = 0,
     TOUCHPLAYER_PLAYER2 = 1,
 };
+
 inline TouchPlayerIndex gPlayerIndex = TouchPlayerIndex::TOUCHPLAYER_NONE;
 inline TouchPlayerIndex gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_NONE;
 
 inline bool gKeyboardMode;
 
-inline LeaderboardsWidget *gMainMenuLeaderboardsWidget;
-inline ZombatarWidget *gMainMenuZombatarWidget;
+inline class LeaderboardsWidget *gMainMenuLeaderboardsWidget;
+inline class ZombatarWidget *gMainMenuZombatarWidget;
 
 inline int xx, yy, xw, yh;
 inline int xx1, yy1, xw1, yh1;

@@ -23,6 +23,7 @@
 #include "PvZ/Android/Native/BridgeApp.h"
 #include "PvZ/Android/Native/NativeApp.h"
 #include "PvZ/GlobalVariable.h"
+#include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/SeedPacket.h"
 #include "PvZ/Lawn/LawnApp.h"

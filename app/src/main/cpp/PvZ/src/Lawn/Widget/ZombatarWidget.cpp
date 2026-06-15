@@ -27,6 +27,7 @@
 #include "PvZ/SexyAppFramework/Graphics/MemoryImage.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 #include "PvZ/Symbols.h"
+#include "PvZ/TodLib/Common/TodCommon.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 #include "PvZ/TodLib/Effect/Attachment.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"

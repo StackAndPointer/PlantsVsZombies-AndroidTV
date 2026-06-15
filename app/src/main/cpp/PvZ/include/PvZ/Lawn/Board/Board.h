@@ -20,7 +20,6 @@
 #ifndef PVZ_LAWN_BOARD_BOARD_H
 #define PVZ_LAWN_BOARD_BOARD_H
 
-#include "PvZ/Lawn/Board/ShovelRedirectWidget.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/System/SaveGame.h"
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"

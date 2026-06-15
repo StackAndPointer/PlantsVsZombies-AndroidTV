@@ -40,4 +40,4 @@ public:
     void MouseDrag(int x, int y);
 };
 
-#endif
+#endif // PVZ_LAWN_BOARD_SHOVEL_REDIRECT_WIDGET_H

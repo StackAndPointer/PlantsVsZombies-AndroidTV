@@ -21,6 +21,7 @@
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/NetPlay.h"
 
 void LawnMower::Update() {
     if (!requestPause || IsOnlineServerModeActive()) {

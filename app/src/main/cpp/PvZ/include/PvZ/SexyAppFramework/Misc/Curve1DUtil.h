@@ -17,8 +17,8 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PLANTSVSZOMBIES_ANDROIDTV_CURVE1DUTIL_H
-#define PLANTSVSZOMBIES_ANDROIDTV_CURVE1DUTIL_H
+#ifndef PVZ_SEXYAPPFRAMEWORK_MISC_CURVE1DUTIL_H
+#define PVZ_SEXYAPPFRAMEWORK_MISC_CURVE1DUTIL_H
 
 namespace Sexy {
 
@@ -32,4 +32,4 @@ public:
 
 } // namespace Sexy
 
-#endif // PLANTSVSZOMBIES_ANDROIDTV_CURVE1DUTIL_H
+#endif // PVZ_SEXYAPPFRAMEWORK_MISC_CURVE1DUTIL_H

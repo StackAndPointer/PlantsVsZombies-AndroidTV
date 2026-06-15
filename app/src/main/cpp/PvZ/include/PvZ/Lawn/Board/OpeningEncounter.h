@@ -16,8 +16,9 @@
  * You should have received a copy of the GNU General Public License along with
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
-#ifndef PLANTSVSZOMBIES_ANDROIDTV_OPENINGENCOUNTER_H
-#define PLANTSVSZOMBIES_ANDROIDTV_OPENINGENCOUNTER_H
+
+#ifndef PVZ_LAWN_BOARD_OPENINGENCOUNTER_H
+#define PVZ_LAWN_BOARD_OPENINGENCOUNTER_H
 
 enum EncounterType {
     ENCOUNTER_NONE = -1,
@@ -42,4 +43,4 @@ public:
 
 inline OpeningEncounter *gOpeningEncounter;
 
-#endif // PLANTSVSZOMBIES_ANDROIDTV_OPENINGENCOUNTER_H
+#endif // PVZ_LAWN_BOARD_OPENINGENCOUNTER_H

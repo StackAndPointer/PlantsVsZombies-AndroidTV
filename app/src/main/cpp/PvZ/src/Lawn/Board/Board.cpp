@@ -35,6 +35,7 @@
 #include "PvZ/Lawn/Board/Projectile.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
 #include "PvZ/Lawn/Board/SeedPacket.h"
+#include "PvZ/Lawn/Board/ShovelRedirectWidget.h"
 #include "PvZ/Lawn/Board/ZenGarden.h"
 #include "PvZ/Lawn/Board/Zombie.h"
 #include "PvZ/Lawn/Common/LawnCommon.h"
@@ -59,7 +60,7 @@
 
 #include <cmath>
 #include <cstring>
-#include <mutex>
+
 #include <unistd.h>
 
 #include <numbers>

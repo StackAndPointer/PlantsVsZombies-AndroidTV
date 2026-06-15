@@ -24,6 +24,7 @@
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/SexyAppFramework/Graphics/MemoryImage.h"
+#include "PvZ/TodLib/Common/TodCommon.h"
 #include "PvZ/TodLib/Effect/Attachment.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
 
