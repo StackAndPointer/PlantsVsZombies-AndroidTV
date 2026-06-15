@@ -693,7 +693,7 @@ inline int choiceSeedPacketIndex;
 inline SeedType choiceSeedType = SeedType::SEED_NONE;
 inline bool isImitaterSeed;
 inline bool setSeedPacket;
-inline Sexy::Rect gTouchVSShovelRect = {-50, 90, 70, 72};
+inline Sexy::Rect gTouchVSShovelRect = {-70, 170, 70, 72};
 
 inline bool hideCoverLayer;
 inline bool infiniteSun; // 无限阳光
