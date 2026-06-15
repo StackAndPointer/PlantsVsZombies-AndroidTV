@@ -21,7 +21,6 @@
 #define PVZ_LAWN_BOARD_BOARD_H
 
 #include "PvZ/Lawn/Common/ConstEnums.h"
-#include "PvZ/Lawn/System/SaveGame.h"
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
@@ -45,20 +44,22 @@ inline constexpr int MAX_POOL_GRID_SIZE = 10;
 inline constexpr int MAX_RENDER_ITEMS = 2048;
 inline constexpr int PROGRESS_METER_COUNTER = 150;
 
-class LawnApp;
 struct BaseEvent;
+
+class Challenge;
 class CursorObject;
 class CursorPreview;
-class GameButton;
+class CutScene;
 class CustomMessageWidget;
+class GameButton;
+class GamepadControls;
+class LawnApp;
+class Reanimation;
+class SaveGameContext;
 class SeedBank;
 class SeedPacket;
-class ToolTipWidget;
-class CutScene;
-class Challenge;
-class Reanimation;
 class TodParticleSystem;
-class GamepadControls;
+class ToolTipWidget;
 
 class HitResult {
 public:

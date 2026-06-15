@@ -517,7 +517,7 @@ bool WaitForSecondPlayerDialog::ServerTryAlignSpectateStream(std::vector<std::by
     }
 
     const std::size_t keepBytes = kPingEventSize * (kNeededHits + 2);
-    const std::size_t oldSize = recvBuffer.size();
+    [[maybe_unused]] const std::size_t oldSize = recvBuffer.size();
     if (recvBuffer.size() > keepBytes) {
         recvBuffer.erase(recvBuffer.begin(), recvBuffer.end() - static_cast<std::ptrdiff_t>(keepBytes));
     }
@@ -2777,7 +2777,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 if (len >= 11) {
                     int rid = homura::ReadBEI32(payload);
                     bool reserve = payload[4] != 0;
-                    bool relayMode = payload[5] != 0;
+                    [[maybe_unused]] bool relayMode = payload[5] != 0;
                     bool relayOpen = payload[6] != 0;
                     std::uint32_t relayEpoch = (std::uint32_t)homura::ReadBEI32(payload + 7);
                     if (mServerSpectating && rid == mServerJoinedRoomId) {

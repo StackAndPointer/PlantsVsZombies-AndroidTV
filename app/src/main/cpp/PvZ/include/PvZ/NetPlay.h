@@ -25,7 +25,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "GlobalVariable.h"
 #include <concepts>
 #include <string>
 #include <unordered_map>
