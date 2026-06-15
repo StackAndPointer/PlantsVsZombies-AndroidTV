@@ -58,6 +58,8 @@
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
 #include <cmath>
+#include <cstring>
+#include <mutex>
 #include <unistd.h>
 
 #include <numbers>
@@ -109,6 +111,8 @@ void Board::_constructor(LawnApp *theApp) {
     mAdvice = new CustomMessageWidget(mApp);
 
     if (theApp->IsVSMode()) {
+        gShovelWidget = new ShovelRedirectWidget(this);
+        gShovelWidget->Resize(gTouchVSShovelRect.mX, gTouchVSShovelRect.mY, gTouchVSShovelRect.mWidth, gTouchVSShovelRect.mHeight);
         serverPlantIDMap.clear();
         serverZombieIDMap.clear();
         serverCoinIDMap.clear();
@@ -123,11 +127,22 @@ void Board::_destructor() {
 void Board::AddedToManager(WidgetManager *theWidgetManager) {
     old_Board_AddedToManager(this, theWidgetManager);
 
+    if (gShovelWidget != nullptr && mParent != nullptr) {
+        mParent->AddWidget(gShovelWidget);
+    }
     AddWidget(gBoardMenuButton);
     AddWidget(gBoardStoreButton);
 }
 
 void Board::RemovedFromManager(WidgetManager *theWidgetManager) {
+    if (gShovelWidget != nullptr) {
+        if (gShovelWidget->mParent != nullptr) {
+            gShovelWidget->mParent->RemoveWidget(gShovelWidget);
+        }
+        mApp->SafeDeleteWidget(gShovelWidget);
+        gShovelWidget = nullptr;
+    }
+
     RemoveWidget(gBoardStoreButton);
     // 在 LawnApp::MakeNewBoard 中, 旧 Board 对象的析构可能在新 Board 对象的构造之后 (因为 SafeDeleteWidget 不会立即销毁)
     // 所以子控件的销毁从 Board::_destructor 提前到 Board::RemovedFromManager
@@ -3196,10 +3211,12 @@ void Board::DrawShovelButton(Sexy::Graphics *g, LawnApp *theApp) {
         // return;  原版游戏在此处就return了，所以对战中不绘制铲子按钮。
         if (gKeyboardMode)
             return;
-        // 对战模式采用移动端铲子图标
-        TodDrawImageScaledF(g, addonImages.IMAGE_SHOVELBANK_VERTICAL, gTouchVSShovelRect.mX, gTouchVSShovelRect.mY, 0.8f, 0.8f);
-        if (!requestDrawShovelInCursor)
-            TodDrawImageScaledF(g, addonImages.IMAGE_SHOVEL_VERTICAL, gTouchVSShovelRect.mX - 3, gTouchVSShovelRect.mY - 3, 0.9f, 0.9f);
+
+
+        g->DrawImage(Sexy::IMAGE_SHOVELBANK, gTouchVSShovelRect.mX, gTouchVSShovelRect.mY);
+        if (!requestDrawShovelInCursor) {
+            g->DrawImage(Sexy::IMAGE_SHOVEL, gTouchVSShovelRect.mX - 7, gTouchVSShovelRect.mY - 3);
+        }
         return;
     }
 

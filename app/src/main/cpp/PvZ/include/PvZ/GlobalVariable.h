@@ -36,6 +36,7 @@ inline bool requestPause;
 inline bool isKeyboardTwoPlayerMode;
 inline bool doKeyboardTwoPlayerDialog;
 inline bool requestDrawShovelInCursor;
+inline ShovelRedirectWidget *gShovelWidget;
 inline GameButton *gBoardMenuButton;
 inline GameButton *gBoardStoreButton;
 inline bool requestDrawButterInCursor; // 2P黄油绘制

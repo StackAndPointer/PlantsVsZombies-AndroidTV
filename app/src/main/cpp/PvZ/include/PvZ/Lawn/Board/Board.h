@@ -20,14 +20,13 @@
 #ifndef PVZ_LAWN_BOARD_BOARD_H
 #define PVZ_LAWN_BOARD_BOARD_H
 
+#include "PvZ/Lawn/Board/ShovelRedirectWidget.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/System/SaveGame.h"
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
-#include "PvZ/SexyAppFramework/Widget/Widget.h"
-#include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/DataArray.h"
 #include "PvZ/TodLib/Common/TodCommon.h"
 
@@ -694,7 +693,7 @@ inline int choiceSeedPacketIndex;
 inline SeedType choiceSeedType = SeedType::SEED_NONE;
 inline bool isImitaterSeed;
 inline bool setSeedPacket;
-inline Sexy::Rect gTouchVSShovelRect = {0, 90, 34, 56};
+inline Sexy::Rect gTouchVSShovelRect = {-50, 90, 70, 72};
 
 inline bool hideCoverLayer;
 inline bool infiniteSun; // 无限阳光
