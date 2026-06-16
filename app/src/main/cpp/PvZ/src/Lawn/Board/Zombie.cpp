@@ -1594,10 +1594,12 @@ void Zombie::UpdateGigaPolevaulter() {
         return;
     }
 
-    auto findNearestVaultPlant = [this]() -> Plant * {
+    auto findNearestVaultPlant = [this](bool theOnlyLeftSide) -> Plant * {
         Rect aAttackRect = GetZombieAttackRect();
         Plant *aBestPlant = nullptr;
-        int aBestPlantLeft = BOARD_WIDTH + 1;
+        int aBestPlantLeft = -1;
+        Plant *aBestTallnut = nullptr;
+        int aBestTallnutLeft = -1;
 
         Plant *aPlant = nullptr;
         while (mBoard->IteratePlants(aPlant)) {
@@ -1610,15 +1612,28 @@ void Zombie::UpdateGigaPolevaulter() {
                 continue;
             }
 
-            if (aPlant->mSeedType == SeedType::SEED_TALLNUT) {
-                return aPlant;
+            // Before takeoff we only want plants on the zombie's left side.
+            if (theOnlyLeftSide && aPlant->mX > mX) {
+                continue;
             }
 
-            int aPlantLeft = aPlantRect.mX;
-            if (aBestPlant == nullptr || aPlantLeft < aBestPlantLeft) {
+            if (aPlant->mSeedType == SeedType::SEED_TALLNUT) {
+                if (aBestTallnut == nullptr || aPlant->mX > aBestTallnutLeft) {
+                    aBestTallnut = aPlant;
+                    aBestTallnutLeft = aPlant->mX;
+                }
+                continue;
+            }
+
+            int aPlantLeft = aPlant->mX;
+            if (aBestPlant == nullptr || aPlantLeft > aBestPlantLeft) {
                 aBestPlant = aPlant;
                 aBestPlantLeft = aPlantLeft;
             }
+        }
+
+        if (aBestTallnut != nullptr) {
+            return aBestTallnut;
         }
 
         return aBestPlant;
@@ -1657,7 +1672,7 @@ void Zombie::UpdateGigaPolevaulter() {
             return;
         }
 
-        Plant *aPlant = findNearestVaultPlant();
+        Plant *aPlant = findNearestVaultPlant(true);
         if (aPlant) {
             if (mBoard->GetLadderAt(aPlant->mPlantCol, aPlant->mRow)) {
                 float aPlantX = mBoard->GridToPixelX(aPlant->mPlantCol, aPlant->mRow) + 40;
@@ -1699,8 +1714,9 @@ void Zombie::UpdateGigaPolevaulter() {
 
         bool aJumpEnds = false;
         if (!gTcpConnected && !gIsReplayMode) {
-            if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
-                Plant *aPlant = findNearestVaultPlant();
+            // Keep checking for a blocking Tall-nut for the rest of the jump so a later one can still intercept.
+            if (aBodyReanim->mAnimTime > 0.6f) {
+                Plant *aPlant = findNearestVaultPlant(false);
                 if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
                     mApp->PlayFoley(FoleyType::FOLEY_BONK);
                     aJumpEnds = true;
