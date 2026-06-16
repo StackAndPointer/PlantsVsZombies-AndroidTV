@@ -144,7 +144,7 @@ public:
     bool mHas7Packets = false;
     bool mGlobalBpBansApplied = false;
     ChosenSeed mChosenSeedsExtended[NUM_SEED_TYPES_EXTENDED]{};
-    GameButton *mMainMenuButton;
+    GameButton *mMainMenuButton = nullptr;
 
     SeedChooserScreen(bool theIsZombieChooser) {
         _constructor(theIsZombieChooser);
