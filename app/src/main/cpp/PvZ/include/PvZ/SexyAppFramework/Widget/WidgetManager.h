@@ -43,6 +43,9 @@ public:
     int GetWidgetFlags() {
         return reinterpret_cast<int (*)(WidgetManager *)>(Sexy_WidgetManager_GetWidgetFlagsAddr)(this);
     }
+    void RehupMouse() {
+        reinterpret_cast<void (*)(WidgetManager *)>(Sexy_WidgetManager_RehupMouseAddr)(this);
+    }
 
     void MouseDown(int x, int y, int theClickCount);
     void MouseDrag(int x, int y);

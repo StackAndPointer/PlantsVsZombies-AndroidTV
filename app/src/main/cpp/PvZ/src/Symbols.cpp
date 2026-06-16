@@ -1147,6 +1147,7 @@ bool LoadGameMain() {
     Sexy_Widget_MoveAddr = libGameMain.GetSymbol("_ZN4Sexy6Widget4MoveEii");
     Sexy_WidgetManager_GetWidgetAtAddr = libGameMain.GetSymbol("_ZN4Sexy13WidgetManager11GetWidgetAtEiiPiS1_");
     Sexy_WidgetManager_GetWidgetFlagsAddr = libGameMain.GetSymbol("_ZN4Sexy13WidgetManager14GetWidgetFlagsEv");
+    Sexy_WidgetManager_RehupMouseAddr = libGameMain.GetSymbol("_ZN4Sexy13WidgetManager10RehupMouseEv");
     Sexy_WidgetContainer_GetWidgetAtHelperAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer17GetWidgetAtHelperEiiiPbPiS2_");
     Sexy_WidgetManager_SetFocusAddr = libGameMain.GetSymbol("_ZN4Sexy13WidgetManager8SetFocusEPNS_6WidgetE");
     Sexy_WidgetContainer_AddWidgetAddr = libGameMain.GetSymbol("_ZN4Sexy15WidgetContainer9AddWidgetEPNS_6WidgetE");

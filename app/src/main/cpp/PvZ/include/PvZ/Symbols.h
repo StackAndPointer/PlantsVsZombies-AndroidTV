@@ -1155,6 +1155,7 @@ inline void *Sexy_WidgetContainer_BringToFrontAddr;
 inline void *Sexy_WidgetContainer_BringToBackAddr;
 inline void *Sexy_WidgetManager_GetWidgetAtAddr;
 inline void *Sexy_WidgetManager_GetWidgetFlagsAddr;
+inline void *Sexy_WidgetManager_RehupMouseAddr;
 inline void *Sexy_WidgetContainer_GetWidgetAtHelperAddr;
 inline void *Sexy_WidgetManager_SetFocusAddr;
 inline void *Sexy_WidgetManager_MouseDownAddr;

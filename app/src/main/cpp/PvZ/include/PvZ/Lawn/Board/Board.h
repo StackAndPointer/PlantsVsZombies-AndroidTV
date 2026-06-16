@@ -270,9 +270,9 @@ public:
     int mUnkIntSecondPlayer2;                                         // 5688
     int *mStringSecondPlayer;                                         // 5689
     int unknownMembers[8];                                            // 5690 ~ 5697
-    GameButton *mBoardMenuButton;                                     // 新增成员
-    GameButton *mBoardStoreButton;                                    // 新增成员
-    ShovelRedirectWidget *mShovelWidget;
+    GameButton *mBoardMenuButton = nullptr;                           // 新增成员
+    GameButton *mBoardStoreButton = nullptr;                          // 新增成员
+    ShovelRedirectWidget *mShovelWidget = nullptr;
 
     Projectile *AddProjectile(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
         return reinterpret_cast<Projectile *(*)(Board *, int, int, int, int, ProjectileType)>(Board_AddProjectileAddr)(this, theX, theY, theRenderOrder, theRow, theProjectileType);

@@ -31,11 +31,26 @@ namespace Sexy {
 class Graphics;
 class WidgetManager;
 class Widget;
+struct WidgetListNode {
+    WidgetListNode *mNext;
+    WidgetListNode *mPrev;
+    Widget *mWidget;
+};
+
+struct WidgetListHead {
+    WidgetListNode *mNext;
+    WidgetListNode *mPrev;
+    int mSize;
+    int mReserved[2];
+};
+
+static_assert(sizeof(WidgetListNode) == 12);
+static_assert(sizeof(WidgetListHead) == 20);
 
 class WidgetContainer {
 public:
     void **vTable;                 // 0
-    int mWidgetsUnk[5];            // 1 ~ 5
+    WidgetListHead mWidgets;       // 1 ~ 5
     WidgetManager *mWidgetManager; // 6
     WidgetContainer *mParent;      // 7
     bool mUpdateIteratorModified;  // 32

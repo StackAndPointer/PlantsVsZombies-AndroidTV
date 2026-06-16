@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/Lawn/Widget/NewOptionsDialog.h"
+#include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
@@ -105,7 +106,8 @@ void NewOptionsDialog::ButtonDepress(int theId) {
         }
         return;
     }
+    LOG_DEBUG("ENTER");
 
-
-    return old_NewOptionsDialog_ButtonDepress(this, theId);
+    old_NewOptionsDialog_ButtonDepress(this, theId);
+    LOG_DEBUG("EXIT");
 }

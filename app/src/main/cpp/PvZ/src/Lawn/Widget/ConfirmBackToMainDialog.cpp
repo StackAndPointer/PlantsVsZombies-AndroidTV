@@ -18,13 +18,14 @@
  */
 
 #include "PvZ/Lawn/Widget/ConfirmBackToMainDialog.h"
+#include "Homura/Logger.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 
 void ConfirmBackToMainDialog_MouseDrag(ConfirmBackToMainDialog *confirmBackToMainDialog, int x, int y) {
-    // 修复拖动此Dialog后按钮错位。为三个Button做Resize即可。
+    // 修复拖动此Dialog后按钮错位。为三个Button做Resize即可
     old_ConfirmBackToMainDialog_MouseDrag(confirmBackToMainDialog, x, y);
     int theButtonXStart = (confirmBackToMainDialog->mWidth - 509) / 2;
     int mLawnYesButtonY = confirmBackToMainDialog->mLawnYesButton->mY;
@@ -45,6 +46,6 @@ void ConfirmBackToMainDialog_ButtonDepress(ConfirmBackToMainDialog *a, int a2) {
     // 修复重新开始时不关闭NEWOPTIONS
     old_ConfirmBackToMainDialog_ButtonDepress(a, a2);
     if (a2 == 1) {
-        a->mApp->KillDialog(Dialogs::DIALOG_NEWOPTIONS);
+        a->mApp->KillNewOptionsDialog();
     }
 }
