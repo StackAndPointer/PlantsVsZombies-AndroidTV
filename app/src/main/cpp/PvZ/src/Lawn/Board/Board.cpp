@@ -5794,15 +5794,18 @@ void Board::DoPlantingAchievementCheck(SeedType theSeedType) {
 void Board::DrawUITop(Sexy::Graphics *g) {
     if (seedBankPin && !mApp->IsSlotMachineLevel()) {
         if (mApp->mGameScene != GameScenes::SCENE_PLANTS_WON && mApp->mGameScene != GameScenes::SCENE_ZOMBIES_WON) {
-            if (mSeedBank[0]->BeginDraw(g)) {
-                mSeedBank[0]->SeedBank::Draw(g);
-                mSeedBank[0]->EndDraw(g);
-            }
-
-            if (mSeedBank[1] != nullptr) {
-                if (mSeedBank[1]->BeginDraw(g)) {
-                    mSeedBank[1]->SeedBank::Draw(g);
-                    mSeedBank[1]->EndDraw(g);
+            // 一路有巨人且种子栏处于选中种子状态时，置顶种子栏图层
+            Zombie *aGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_GARGANTUAR);
+            Zombie *aRedEyeGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_REDEYE_GARGANTUAR);
+            if ((aGargantuar != nullptr && aGargantuar->mRow == 0) || (aRedEyeGargantuar != nullptr && aRedEyeGargantuar->mRow == 0)) {
+                for (int i = 0; i < 2; ++i) {
+                    SeedBank *aSeedBank = mGamepadControls[i]->GetSeedBank();
+                    if (aSeedBank != nullptr && mGamepadControls[i]->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
+                        if (aSeedBank->BeginDraw(g)) {
+                            aSeedBank->SeedBank::Draw(g);
+                            aSeedBank->EndDraw(g);
+                        }
+                    }
                 }
             }
         }
