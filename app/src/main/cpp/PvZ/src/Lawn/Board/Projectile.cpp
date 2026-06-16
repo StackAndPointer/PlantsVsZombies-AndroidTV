@@ -433,24 +433,6 @@ void Projectile::PlayImpactSound(Zombie *theZombie) {
 }
 
 void Projectile::DoImpact(Zombie *theZombie) {
-    if (theZombie) {
-        if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-            if (theZombie->IsFlying()) {
-                if (mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
-                    unsigned int aDamageFlags = GetDamageFlags(theZombie);
-                    theZombie->TakeDamage(theZombie->mFlyingHealth, aDamageFlags);
-                    return;
-                }
-            }
-        }
-    }
-
-
-    if (!projectilePierce || IsOnlineServerModeActive()) {
-        old_Projectile_DoImpact(this, theZombie);
-        return;
-    }
-    // 负责 直线子弹帧伤
     PlayImpactSound(theZombie);
 
     if (IsSplashDamage(theZombie)) {
@@ -460,8 +442,14 @@ void Projectile::DoImpact(Zombie *theZombie) {
 
         DoSplashDamage(theZombie, nullptr);
     } else if (theZombie) {
-        unsigned int mDamageFlags = GetDamageFlags(theZombie);
-        theZombie->TakeDamage(GetProjectileDef().mDamage, mDamageFlags);
+        unsigned int aDamageFlags = GetDamageFlags(theZombie);
+        if (mApp->IsVSMode()) {
+            if (theZombie->IsFlying() && mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
+                theZombie->TakeDamage(theZombie->mFlyingHealth, aDamageFlags);
+                return;
+            }
+        }
+        theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
     }
 
     float aLastPosX = mPosX - mVelX;
@@ -533,10 +521,15 @@ void Projectile::DoImpact(Zombie *theZombie) {
         }
     }
 
-    if (mMotionType == ProjectileMotion::MOTION_LOBBED && theZombie == nullptr) {
-        // 如果玩家开启了“子弹帧伤”,且子弹是抛物线轨迹
+
+    if (!projectilePierce || IsOnlineServerModeActive()) {
         Die();
-        return;
+    } else // 负责 直线子弹帧伤
+    {
+        // 如果玩家开启了“子弹帧伤”,且子弹是抛物线轨迹
+        if (mMotionType == ProjectileMotion::MOTION_LOBBED && theZombie == nullptr) {
+            Die();
+        }
     }
 }
 
@@ -675,7 +668,9 @@ void Projectile::CheckForCollision() {
             if (aZombie->mOnHighGround && CantHitHighGround()) {
                 return;
             }
-            mProjectileType = ProjectileType::PROJECTILE_PEA; // 将子弹类型修改为普通豌豆，从而修复子弹打到魅惑僵尸身上没有击中特效。
+            if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
+                mProjectileType = ProjectileType::PROJECTILE_PEA; // 将子弹类型修改为普通豌豆，从而修复子弹打到魅惑僵尸身上没有击中特效。
+            }
             DoImpact(aZombie);
         }
         return;

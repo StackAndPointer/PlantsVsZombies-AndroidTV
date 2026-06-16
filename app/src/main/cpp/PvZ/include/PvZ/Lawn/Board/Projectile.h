@@ -127,8 +127,6 @@ inline void (*old_Projectile_ConvertToPea)(Projectile *projectile, int aGridX);
 
 inline void (*old_Projectile_Update)(Projectile *a);
 
-inline void (*old_Projectile_DoImpact)(Projectile *a1, Zombie *a2);
-
 inline void (*old_Projectile_Draw)(Projectile *, Sexy::Graphics *);
 
 inline void (*old_Projectile_DrawShadow)(Projectile *, Sexy::Graphics *);
