@@ -3109,23 +3109,23 @@ void Zombie::ShowDoorArms(bool theShow) {
 }
 
 void Zombie::StartEating() {
-    if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
-            return;
-        }
-
-        if (mIsEating) {
-            return;
-        }
-
-        if (gTcpClientSocket >= 0) {
-            U16UNI32_Event event{};
-            event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_START_EATING;
-            event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
-            event.data2.f32 = mPosX;
-            netplay::PutEvent(event);
-        }
-    }
+    //    if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
+    //        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
+    //            return;
+    //        }
+    //
+    //        if (mIsEating) {
+    //            return;
+    //        }
+    //
+    //        if (gTcpClientSocket >= 0) {
+    //            U16UNI32_Event event{};
+    //            event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_START_EATING;
+    //            event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+    //            event.data2.f32 = mPosX;
+    //            netplay::PutEvent(event);
+    //        }
+    //    }
 
     StartEating_Origin();
 }
