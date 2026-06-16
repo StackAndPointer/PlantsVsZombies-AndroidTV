@@ -137,8 +137,8 @@ public:
     int mPhaseCounter;                                // 30
     int mFromWave;                                    // 31
     bool mDroppedLoot;                                // 128
-    bool mRevived;                                    // 新增成员，用于复生僵尸着色
-    bool mIsDeadFollowers;                            // 新增成员，用于计入复生池
+    bool mIsRevived;                                  // 新增成员，用于复生僵尸着色
+    bool mCanRevived;                                 // 新增成员，用于计入复生池
     int mZombieFade;                                  // 33
     bool mFlatTires;                                  // 136
     int mUseLadderCol;                                // 35
@@ -559,8 +559,6 @@ inline void (*old_Zombie_ReanimShowTrack)(Zombie *, const char *, int);
 inline float (*old_Zombie_GetPosYBasedOnRow)(Zombie *, int theRow);
 
 inline void (*old_Zombie_SetRow)(Zombie *, int theRow);
-
-inline void (*old_Zombie_StartMindControlled)(Zombie *);
 
 inline void (*old_Zombie_UpdateReanim)(Zombie *);
 

@@ -108,8 +108,8 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     old_Zombie_ZombieInitialize(this, theRow, theType, theVariant, theParentZombie, theFromWave, isVisible);
 
     mSquashHeadCol = -1;
-    mRevived = false;
-    mIsDeadFollowers = false;
+    mIsRevived = false;
+    mCanRevived = true;
 
     if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineServerModeActive() && !gIsReplayMode) {
         mScaleZombie = 0.2f * zombieSetScale;
@@ -995,7 +995,7 @@ void Zombie::UpdateZombieJackson() {
     if (mIsEating)
         return;
 
-    if (mSummonCounter == 0) {
+    if (mSummonCounter == 0 && !mMindControlled) {
         if (!msDeadFollowers.empty() && GetDancerFrame() == 12 && mHasHead && mPosX < 700.0f) {
             if (!(mApp->IsVSMode() && gTcpConnected)) {
                 mZombiePhase = ZombiePhase::PHASE_DANCER_SNAPPING_FINGERS_WITH_LIGHT;
@@ -1084,7 +1084,7 @@ void Zombie::UpdateZombieJackson() {
 }
 
 bool Zombie::CanRevived() const {
-    if (mRevived)
+    if (mIsRevived)
         return false;
 
     return mZombieType != ZombieType::ZOMBIE_DANCER && mZombieType != ZombieType::ZOMBIE_SNORKEL && mZombieType != ZombieType::ZOMBIE_ZAMBONI && mZombieType != ZombieType::ZOMBIE_BOBSLED
@@ -1101,7 +1101,7 @@ ZombieID Zombie::RaiseDeadZombie(ZombieType theZombieType, int theRow, int theCo
     if (aZombie == nullptr)
         return ZombieID::ZOMBIEID_NULL;
 
-    aZombie->mRevived = true;
+    aZombie->mIsRevived = true;
     aZombie->RiseFromGrave(theCol, theRow);
     aZombie->mBodyHealth -= aZombie->mBodyMaxHealth / 3;
     if (aZombie->mHelmHealth > 0) {
@@ -2599,7 +2599,7 @@ void Zombie::UpdateDamageStates(unsigned int theDamageFlags) {
         }
 
         if (mApp->IsVSMode() && mBoard->GetAliveJacksonZombie() && CanRevived()) {
-            mIsDeadFollowers = true;
+            mCanRevived = false;
             if (msDeadFollowers.size() >= 15) {
                 msDeadFollowers.erase(msDeadFollowers.begin());
             }
@@ -3214,8 +3214,8 @@ void Zombie::EatPlant(Plant *thePlant) {
                 event.data4 = uint16_t(mPhaseCounter);
                 netplay::PutEvent(event);
             }
+            return;
         }
-        return;
     }
 
     if (mYuckyFace) {
@@ -3734,8 +3734,8 @@ void Zombie::DieNoLoot() {
     DieNoLoot_Origin();
 
     if (mApp->IsVSMode()) {
-        if (mBoard && mBoard->GetAliveJacksonZombie() && CanRevived() && !mIsDeadFollowers) {
-            mIsDeadFollowers = true;
+        if (mBoard && mBoard->GetAliveJacksonZombie() && CanRevived() && mCanRevived) {
+            mCanRevived = false;
             if (msDeadFollowers.size() >= 15) {
                 msDeadFollowers.erase(msDeadFollowers.begin());
             }
@@ -4120,7 +4120,7 @@ void Zombie::DrawReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos, int t
         aColorOverride = Color(100, 150, 25, aFadeAlpha);
         aExtraAdditiveColor = aColorOverride;
         aEnableExtraAdditiveDraw = true;
-    } else if (mRevived) {
+    } else if (mIsRevived) {
         aColorOverride = ZOMBIE_REVIVED_COLOR;
         aColorOverride.mAlpha = aFadeAlpha;
         aExtraAdditiveColor = aColorOverride;
@@ -5060,7 +5060,35 @@ void Zombie::StartMindControlled() {
 }
 
 void Zombie::StartMindControlled_Origin() {
-    old_Zombie_StartMindControlled(this);
+    mApp->PlaySample(SOUND_MINDCONTROLLED);
+    mMindControlled = true;
+    mLastPortalX = -1;
+    mCanRevived = false;
+
+    if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_JACKSON) {
+        for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
+            mFollowerZombieID[i] = ZombieID::ZOMBIEID_NULL;
+        }
+    } else if (mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON) {
+        Zombie *aLeader = mBoard->ZombieTryToGet(mRelatedZombieID);
+        if (aLeader) {
+            ZombieID aId = mBoard->ZombieGetID(this);
+            for (int i = 0; i < NUM_BACKUP_DANCERS; i++) {
+                if (aLeader->mFollowerZombieID[i] == aId) {
+                    aLeader->mFollowerZombieID[i] = ZombieID::ZOMBIEID_NULL;
+                    break;
+                }
+            }
+        }
+
+        mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+    } else {
+        Zombie *aZombie = mBoard->ZombieTryToGet(mRelatedZombieID);
+        if (aZombie) {
+            aZombie->mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+            mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+        }
+    }
 
     if (mZombieType == ZombieType::ZOMBIE_JACKSON && !mBoard->GetLiveZombieByType(ZombieType::ZOMBIE_JACKSON)) {
         mBoard->SetDanceMode(false);
@@ -5384,7 +5412,7 @@ void Zombie::ApplyBurn() {
 
     // 被灰烬炸死的僵尸禁止复活
     if (CanRevived()) {
-        mIsDeadFollowers = true;
+        mCanRevived = false;
     }
 
     if (mZombiePhase == ZombiePhase::PHASE_ZOMBIE_DYING || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT || mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN

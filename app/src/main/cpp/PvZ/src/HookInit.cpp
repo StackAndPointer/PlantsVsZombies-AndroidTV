@@ -466,7 +466,7 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_ReanimShowTrackAddr, &Zombie::ReanimShowTrack, &old_Zombie_ReanimShowTrack);
     homura::HookFunc(Zombie_GetPosYBasedOnRowAddr, &Zombie::GetPosYBasedOnRow, &old_Zombie_GetPosYBasedOnRow);
     homura::HookFunc(Zombie_SetRowAddr, &Zombie::SetRow, &old_Zombie_SetRow);
-    homura::HookFunc(Zombie_StartMindControlledAddr, &Zombie::StartMindControlled, &old_Zombie_StartMindControlled);
+    homura::HookFunc(Zombie_StartMindControlledAddr, &Zombie::StartMindControlled, nullptr);
     homura::HookFunc(Zombie_UpdateReanimAddr, &Zombie::UpdateReanim, &old_Zombie_UpdateReanim);
     homura::HookFunc(Zombie_GetBobsledPositionAddr, &Zombie::GetBobsledPosition, &old_Zombie_GetBobsledPosition);
     homura::HookFunc(Zombie_SquishAllInSquareAddr, &Zombie::SquishAllInSquare, &old_Zombie_SquishAllInSquare);
