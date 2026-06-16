@@ -1481,11 +1481,12 @@ void WaitForSecondPlayerDialog::Update() {
             }
         }
 
-        // 自动 Query：仅在“空闲态”每秒一次
-        // 空闲态定义：已连接 && 未创建房间 && 未加入房间 && 未进入 relay
+        // 自动 Query：空闲房间列表每秒刷新；进房/观战席也低频发送，避免服务端按应用层空闲断开。
         mServerLastQueryTick++;
-        if (mServerConnected && !mServerGameStarting && !mServerHosting && !mServerJoined && !mServerCreatePending) {
-            if (mServerLastQueryTick >= 100) { // ~1秒
+        if (mServerConnected && !mServerGameStarting && !mServerCreatePending && mServerSock >= 0) {
+            const bool inRoom = mServerHosting || mServerJoined || mServerSpectating;
+            const int queryInterval = inRoom ? 1500 : 100; // ~15s in-room keepalive, ~1s list refresh.
+            if (mServerLastQueryTick >= queryInterval) {
                 mServerLastQueryTick = 0;
                 ServerSendQuery();
             }

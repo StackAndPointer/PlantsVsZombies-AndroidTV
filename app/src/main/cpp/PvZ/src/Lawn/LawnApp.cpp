@@ -91,7 +91,7 @@ void TickNetDelayAwaitingPong() {
 }
 
 void SendPeriodicNetPing() {
-    if (gTcpClientSocket >= 0 && !gTcpConnected) {
+    if (gTcpClientSocket >= 0 && !gTcpConnected && !gIsServerModeSpectator) {
         return;
     }
     ++gNetPingSendCounter;
@@ -484,7 +484,15 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
         } else if (event->type == EVENT_SERVER_PONG) {
             auto *eventPong = static_cast<const U16_Event *>(event);
             if (gIsServerModeSpectator) {
-                if (gSpectatePeerPingValid && eventPong->data == gSpectatePeerPingToken) {
+                if (gNetPingAwaitingPong && eventPong->data == gNetPingLatestSentTick) {
+                    const auto rttTicks = static_cast<uint16_t>(gNetPingNowTick - eventPong->data);
+                    if (rttTicks <= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
+                        gNetDelayNow = static_cast<int>(rttTicks);
+                        gNetPingHasValidDelay = true;
+                        gNetPingLastPongTick = gNetPingNowTick;
+                        gNetPingAwaitingPong = false;
+                    }
+                } else if (gSpectatePeerPingValid && eventPong->data == gSpectatePeerPingToken) {
                     const auto rttTicks = static_cast<uint16_t>(gNetPingNowTick - gSpectatePeerPingRecvTick);
                     if (rttTicks <= static_cast<uint16_t>(kNetPingTimeoutTicks)) {
                         gNetDelayNow = std::max<int>(1, static_cast<int>(rttTicks));
@@ -566,9 +574,7 @@ void LawnApp::UpdateFrames() {
             }
         }
         if (!replay::IsPlaybackActive()) {
-            if (!gIsServerModeSpectator) {
-                SendPeriodicNetPing();
-            }
+            SendPeriodicNetPing();
         } else {
             replay::AdvancePlaybackTick();
         }
@@ -635,7 +641,7 @@ void LawnApp::UpdateFrames() {
 
     if (gTcpConnected) {
         if (gIsServerModeSpectator) {
-            netplay::ClearSendBuffer();
+            netplay::FlushSendBuffer(gTcpServerSocket);
         } else {
             netplay::FlushSendBuffer(gTcpServerSocket);
         }
