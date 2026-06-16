@@ -730,7 +730,7 @@ void Zombie::UpdateSuperFanImp() {
     if (mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN) {
         mVelZ -= KICKED_ZOMBIE_GRAVITY;
         mAltitude += mVelZ;
-        mPosX -= mVelX;
+        mPosX -= mMindControlled ? -mVelX : mVelX;
 
         float aDiffY = GetPosYBasedOnRow(mRow) - mPosY;
         mPosY += aDiffY;
@@ -743,7 +743,7 @@ void Zombie::UpdateSuperFanImp() {
         int aPosY = mY + mHeight / 2;
         int aGridX = mBoard->PixelToGridXKeepOnBoard(aPosX, aPosY);
         Plant *aPlant = mBoard->FindUmbrellaPlant(aGridX, mRow);
-        if (aPlant) {
+        if (aPlant && !mMindControlled) {
             mApp->PlaySample(SOUND_BOING);
             mApp->PlayFoley(FoleyType::FOLEY_UMBRELLA);
 
