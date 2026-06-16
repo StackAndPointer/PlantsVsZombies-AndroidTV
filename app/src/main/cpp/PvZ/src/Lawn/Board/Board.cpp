@@ -81,39 +81,38 @@ bool gPauseSyncFromRemote = false;
 
 void Board::_constructor(LawnApp *theApp) {
     old_Board_Board(this, theApp);
-
     pvzstl::string str = (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || theApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) ? "[MAIN_MENU_BUTTON]" : "[MENU_BUTTON]";
-    gBoardMenuButton = MakeButton(1000, this, this, str);
-    gBoardMenuButton->Resize(705, -3, 120, 80);
-    gBoardMenuButton->mBtnNoDraw = true;
-    gBoardMenuButton->mDisabled = true;
+    mBoardMenuButton = MakeButton(1000, this, this, str);
+    mBoardMenuButton->Resize(705, -3, 120, 80);
+    mBoardMenuButton->mBtnNoDraw = true;
+    mBoardMenuButton->mDisabled = true;
     if (theApp->IsCoopMode() || theApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-        gBoardMenuButton->Resize(880, -3, 120, 80);
+        mBoardMenuButton->Resize(880, -3, 120, 80);
     } else if (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || theApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
-        gBoardMenuButton->Resize(650, 550, 170, 120);
+        mBoardMenuButton->Resize(650, 550, 170, 120);
     }
 
     if (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND) {
-        gBoardStoreButton = MakeButton(1001, this, this, "[START_ONSLAUGHT]");
-        gBoardStoreButton->Resize(0, 0, 0, 0);
-        gBoardStoreButton->mBtnNoDraw = true;
-        gBoardStoreButton->mDisabled = true;
+        mBoardStoreButton = MakeButton(1001, this, this, "[START_ONSLAUGHT]");
+        mBoardStoreButton->Resize(0, 0, 0, 0);
+        mBoardStoreButton->mBtnNoDraw = true;
+        mBoardStoreButton->mDisabled = true;
     } else {
-        gBoardStoreButton = MakeButton(1001, this, this, "[SHOP_BUTTON]");
+        mBoardStoreButton = MakeButton(1001, this, this, "[SHOP_BUTTON]");
         if (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || theApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
-            gBoardStoreButton->Resize(0, 550, 170, 120);
+            mBoardStoreButton->Resize(0, 550, 170, 120);
         } else {
-            gBoardStoreButton->Resize(0, 0, 0, 0);
-            gBoardStoreButton->mBtnNoDraw = true;
-            gBoardStoreButton->mDisabled = true;
+            mBoardStoreButton->Resize(0, 0, 0, 0);
+            mBoardStoreButton->mBtnNoDraw = true;
+            mBoardStoreButton->mDisabled = true;
         }
     }
     delete mAdvice;
     mAdvice = new CustomMessageWidget(mApp);
 
     if (theApp->IsVSMode()) {
-        gShovelWidget = new ShovelRedirectWidget(this);
-        gShovelWidget->Resize(gTouchVSShovelRect.mX, gTouchVSShovelRect.mY, gTouchVSShovelRect.mWidth, gTouchVSShovelRect.mHeight);
+        mShovelWidget = new ShovelRedirectWidget(this);
+        mShovelWidget->Resize(gTouchVSShovelRect.mX, gTouchVSShovelRect.mY, gTouchVSShovelRect.mWidth, gTouchVSShovelRect.mHeight);
         serverPlantIDMap.clear();
         serverZombieIDMap.clear();
         serverCoinIDMap.clear();
@@ -122,37 +121,32 @@ void Board::_constructor(LawnApp *theApp) {
 }
 
 void Board::_destructor() {
+    delete mBoardStoreButton;
+    delete mBoardMenuButton;
+    delete mShovelWidget;
     old_Board__destructor(this);
 }
 
 void Board::AddedToManager(WidgetManager *theWidgetManager) {
     old_Board_AddedToManager(this, theWidgetManager);
 
-    if (gShovelWidget != nullptr && mParent != nullptr) {
-        mParent->AddWidget(gShovelWidget);
+    if (mShovelWidget != nullptr && mParent != nullptr) {
+        mParent->AddWidget(mShovelWidget);
     }
-    AddWidget(gBoardMenuButton);
-    AddWidget(gBoardStoreButton);
+    AddWidget(mBoardMenuButton);
+    AddWidget(mBoardStoreButton);
 }
 
 void Board::RemovedFromManager(WidgetManager *theWidgetManager) {
-    if (gShovelWidget != nullptr) {
-        if (gShovelWidget->mParent != nullptr) {
-            gShovelWidget->mParent->RemoveWidget(gShovelWidget);
+    if (mShovelWidget != nullptr) {
+        if (mShovelWidget->mParent != nullptr) {
+            mShovelWidget->mParent->RemoveWidget(mShovelWidget);
         }
-        mApp->SafeDeleteWidget(gShovelWidget);
-        gShovelWidget = nullptr;
     }
 
-    RemoveWidget(gBoardStoreButton);
-    // 在 LawnApp::MakeNewBoard 中, 旧 Board 对象的析构可能在新 Board 对象的构造之后 (因为 SafeDeleteWidget 不会立即销毁)
-    // 所以子控件的销毁从 Board::_destructor 提前到 Board::RemovedFromManager
-    mApp->SafeDeleteWidget(gBoardStoreButton);
-    gBoardStoreButton = nullptr;
+    RemoveWidget(mBoardStoreButton);
+    RemoveWidget(mBoardMenuButton);
 
-    RemoveWidget(gBoardMenuButton);
-    mApp->SafeDeleteWidget(gBoardMenuButton);
-    gBoardMenuButton = nullptr;
 
     old_Board_RemovedFromManager(this, theWidgetManager);
 }
@@ -2816,7 +2810,7 @@ void Board::Update() {
             }
         }
     }
-    // GameButton_Update(gBoardMenuButton);
+    // GameButton_Update(mBoardMenuButton);
     if (isKeyboardTwoPlayerMode) {
         mGamepadControls[0]->mIsInShopSeedBank = false;
         mGamepadControls[1]->mIsInShopSeedBank = false;
@@ -5600,24 +5594,24 @@ void Board::UpdateButtons() {
         gGamePlayerIndex = -1;
     }
 
-    if (gBoardMenuButton != nullptr) {
+    if (mBoardMenuButton != nullptr) {
         if (mApp->IsVSMode()) {
             const bool spectatorReadOnly = gIsServerModeSpectator;
-            gBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
-            gBoardMenuButton->mDisabled = spectatorReadOnly;
+            mBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
+            mBoardMenuButton->mDisabled = spectatorReadOnly;
         } else {
             if (mApp->mGameScene == GameScenes::SCENE_PLAYING) {
-                gBoardMenuButton->mBtnNoDraw = false;
-                gBoardMenuButton->mDisabled = false;
+                mBoardMenuButton->mBtnNoDraw = false;
+                mBoardMenuButton->mDisabled = false;
             } else {
-                gBoardMenuButton->mBtnNoDraw = true;
-                gBoardMenuButton->mDisabled = true;
+                mBoardMenuButton->mBtnNoDraw = true;
+                mBoardMenuButton->mDisabled = true;
             }
         }
 
         if (mBoardFadeOutCounter > 0) {
-            gBoardMenuButton->mBtnNoDraw = true;
-            gBoardMenuButton->mDisabled = true;
+            mBoardMenuButton->mBtnNoDraw = true;
+            mBoardMenuButton->mDisabled = true;
         }
     }
 }
@@ -5646,9 +5640,9 @@ void Board::ButtonDepress(int theId) {
         if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND) {
             Board *mBoard = lawnApp->mBoard;
             mBoard->mChallenge->mChallengeState = ChallengeState::STATECHALLENGE_LAST_STAND_ONSLAUGHT;
-            gBoardStoreButton->mBtnNoDraw = true;
-            gBoardStoreButton->mDisabled = true;
-            gBoardStoreButton->Resize(0, 0, 0, 0);
+            mBoardStoreButton->mBtnNoDraw = true;
+            mBoardStoreButton->mDisabled = true;
+            mBoardStoreButton->Resize(0, 0, 0, 0);
             mBoard->mZombieCountDown = 9;
             mBoard->mZombieCountDownStart = mBoard->mZombieCountDown;
         } else if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {

@@ -490,7 +490,6 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
         mShowExtendedSeeds = mApp->mVSSetupMenu->mAddonWidget->mExtendedSeedsMode;
         mHas7Packets = mApp->mVSSetupMenu->mAddonWidget->mExtraPacketMode;
         if (mIsZombieChooser && mShowExtendedSeeds) {
-            // Todo: 构造函数还原后新增的按钮被点击会闪退，暂时用伪按钮来替代
             mPageButton = MakeNewButton(SeedChooserScreen::SeedChooserScreen_Page, this, this, "", nullptr, Sexy::IMAGE_ZEN_NEXTGARDEN, Sexy::IMAGE_ZEN_NEXTGARDEN, Sexy::IMAGE_ZEN_NEXTGARDEN);
             mPageButton->Resize(225, 525, 60, 60);
         }
@@ -510,19 +509,15 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     }
 
     if (mApp->mGameMode != GameMode::GAMEMODE_MP_VS && !mIsZombieChooser) {
-        gSeedChooserScreenMainMenuButton = MakeButton(104, this, this, "[MENU_BUTTON]");
-        gSeedChooserScreenMainMenuButton->Resize(mApp->IsCoopMode() ? 345 : 650, -3, 120, 80);
+        mMainMenuButton = MakeButton(104, this, this, "[MENU_BUTTON]");
+        mMainMenuButton->Resize(mApp->IsCoopMode() ? 345 : 650, -3, 120, 80);
     }
 }
 
 void SeedChooserScreen::_destructor() {
-    if (gSeedChooserScreenMainMenuButton != nullptr) {
-        mApp->SafeDeleteWidget(gSeedChooserScreenMainMenuButton);
-        gSeedChooserScreenMainMenuButton = nullptr;
-    }
-    if (mPageButton != nullptr) {
-        mApp->SafeDeleteWidget(mPageButton);
-    }
+
+    delete mMainMenuButton;
+    delete mPageButton;
 
     old_SeedChooserScreen__destructor(this);
 }
@@ -533,8 +528,8 @@ void SeedChooserScreen::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
     if (mPageButton != nullptr) {
         AddWidget(mPageButton);
     }
-    if (gSeedChooserScreenMainMenuButton != nullptr) {
-        AddWidget(gSeedChooserScreenMainMenuButton);
+    if (mMainMenuButton != nullptr) {
+        AddWidget(mMainMenuButton);
     }
 }
 
@@ -542,8 +537,8 @@ void SeedChooserScreen::RemovedFromManager(Sexy::WidgetManager *theWidgetManager
     if (mPageButton != nullptr) {
         RemoveWidget(mPageButton);
     }
-    if (gSeedChooserScreenMainMenuButton != nullptr) {
-        RemoveWidget(gSeedChooserScreenMainMenuButton);
+    if (mMainMenuButton != nullptr) {
+        RemoveWidget(mMainMenuButton);
     }
 
     old_SeedChooserScreen_RemovedFromManager(this, theWidgetManager);

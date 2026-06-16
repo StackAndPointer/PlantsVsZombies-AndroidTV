@@ -31,7 +31,7 @@ void CreditScreen::_constructor(LawnApp *theApp, bool theBool) {
 }
 
 void CreditScreen::_destructor() {
-    gLawnApp->SafeDeleteWidget(gCreditScreenBackButton);
+    delete gCreditScreenBackButton;
     gCreditScreenBackButton = nullptr;
 
     old_CreditScreen__destructor(this);

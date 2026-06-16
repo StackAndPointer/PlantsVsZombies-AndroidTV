@@ -272,7 +272,7 @@ void ChallengeScreen::_constructor(LawnApp *theApp, ChallengePage thePage) {
 }
 
 void ChallengeScreen::_destructor() {
-    mApp->SafeDeleteWidget(mBackButton);
+    delete mBackButton;
     old_ChallengeScreen__destructor(this);
 }
 

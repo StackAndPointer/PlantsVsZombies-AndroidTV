@@ -290,9 +290,6 @@ public:
     void SafeDeleteWidget(Sexy::Widget *widget) { // vTable + 4 * 47
         reinterpret_cast<void (*)(LawnApp *, Sexy::Widget *)>(LawnApp_SafeDeleteWidgetAddr)(this, widget);
     }
-    void MakeNewBoard() {
-        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_MakeNewBoardAddr)(this);
-    }
     void KillVSSetupScreen() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_KillVSSetupScreenAddr)(this);
     }
@@ -312,6 +309,7 @@ public:
     }
     void HardwareInit();
     void DoBackToMain();
+    void MakeNewBoard();
     Sexy::Dialog *ConfirmQuit() {
         return reinterpret_cast<Sexy::Dialog *(*)(LawnApp *)>(LawnApp_ConfirmQuitAddr)(this);
     }

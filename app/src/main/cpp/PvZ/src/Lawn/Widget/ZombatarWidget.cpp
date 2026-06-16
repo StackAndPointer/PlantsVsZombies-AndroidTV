@@ -142,11 +142,11 @@ void ZombatarWidget::_destructor() {
     mPreviewZombie->DieNoLoot();
     delete mPreviewZombie;
 
-    mApp->SafeDeleteWidget(mDeleteButton);
-    mApp->SafeDeleteWidget(mNewButton);
-    mApp->SafeDeleteWidget(mViewPortraitButton);
-    mApp->SafeDeleteWidget(mFinishButton);
-    mApp->SafeDeleteWidget(mBackButton);
+    delete mDeleteButton;
+    delete mNewButton;
+    delete mViewPortraitButton;
+    delete mFinishButton;
+    delete mBackButton;
 
     MenuWidget::_destructor();
 }

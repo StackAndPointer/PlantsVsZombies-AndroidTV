@@ -138,7 +138,7 @@ void VSResultsMenu::_constructor() {
 }
 
 void VSResultsMenu::_destructor() {
-    gLawnApp->SafeDeleteWidget(mBackButton);
+    delete mBackButton;
 
     old_VSResultsMenu_Destructor(this);
 }

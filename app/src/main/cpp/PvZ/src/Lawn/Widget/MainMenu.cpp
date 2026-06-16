@@ -544,11 +544,11 @@ void MainMenu::RemovedFromManager(WidgetManager *theWidgetManager) {
 
 void MainMenu::_destructor2() {
     if (gMainMenuAchievementsWidget != nullptr) {
-        mApp->SafeDeleteWidget(gMainMenuAchievementsWidget);
+        delete gMainMenuAchievementsWidget;
         gMainMenuAchievementsWidget = nullptr;
     }
     if (gMainMenuAchievementsBack != nullptr) {
-        mApp->SafeDeleteWidget(gMainMenuAchievementsBack);
+        delete gMainMenuAchievementsBack;
         gMainMenuAchievementsBack = nullptr;
     }
 

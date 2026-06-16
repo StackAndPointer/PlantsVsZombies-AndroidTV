@@ -282,13 +282,13 @@ ReplayManageWidget::~ReplayManageWidget() {
 }
 
 void ReplayManageWidget::_destructor() {
-    mApp->SafeDeleteWidget(mPlayButton);
-    mApp->SafeDeleteWidget(mDeleteButton);
-    mApp->SafeDeleteWidget(mExportButton);
-    mApp->SafeDeleteWidget(mImportButton);
-    mApp->SafeDeleteWidget(mCloseButton);
-    mApp->SafeDeleteWidget(mScrollContent);
-    mApp->SafeDeleteWidget(mScrollWidget);
+    delete mPlayButton;
+    delete mDeleteButton;
+    delete mExportButton;
+    delete mImportButton;
+    delete mCloseButton;
+    delete mScrollContent;
+    delete mScrollWidget;
 
     Widget::_destructor();
 }

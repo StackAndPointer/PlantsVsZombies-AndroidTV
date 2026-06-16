@@ -125,7 +125,7 @@ VSSetupAddonWidget::~VSSetupAddonWidget() {
     delete mExtendedSeedsCheckbox;
     delete mBanModeCheckbox;
     delete mBalancePatchCheckbox;
-    gLawnApp->SafeDeleteWidget(mGlobalBpButton);
+    delete mGlobalBpButton;
 }
 
 void VSSetupAddonWidget::ResetGlobalBpState() {

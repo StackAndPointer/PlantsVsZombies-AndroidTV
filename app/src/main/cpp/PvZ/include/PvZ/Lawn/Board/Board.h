@@ -60,6 +60,7 @@ class SeedBank;
 class SeedPacket;
 class TodParticleSystem;
 class ToolTipWidget;
+class ShovelRedirectWidget;
 
 class HitResult {
 public:
@@ -269,6 +270,9 @@ public:
     int mUnkIntSecondPlayer2;                                         // 5688
     int *mStringSecondPlayer;                                         // 5689
     int unknownMembers[8];                                            // 5690 ~ 5697
+    GameButton *mBoardMenuButton;                                     // 新增成员
+    GameButton *mBoardStoreButton;                                    // 新增成员
+    ShovelRedirectWidget *mShovelWidget;
 
     Projectile *AddProjectile(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
         return reinterpret_cast<Projectile *(*)(Board *, int, int, int, int, ProjectileType)>(Board_AddProjectileAddr)(this, theX, theY, theRenderOrder, theRow, theProjectileType);
@@ -490,7 +494,9 @@ public:
         return reinterpret_cast<bool (*)(Board *)>(Board_StageHasFogAddr)((this));
     }
 
-    Board(LawnApp *theApp) = delete;
+    Board(LawnApp *theApp) {
+        _constructor(theApp);
+    }
     ~Board() = delete;
 
     void InitLevel();

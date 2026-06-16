@@ -56,7 +56,7 @@ void HelpTextScreen::_constructor(LawnApp *theApp, int thePage) {
 }
 
 void HelpTextScreen::_destructor() {
-    mApp->SafeDeleteWidget(gHelpTextScreenCloseButton);
+    delete gHelpTextScreenCloseButton;
     gHelpTextScreenCloseButton = nullptr;
 
     old_HelpTextScreen__destructor(this);

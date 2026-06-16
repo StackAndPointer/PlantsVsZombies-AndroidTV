@@ -218,13 +218,13 @@ LeaderboardsWidget::LeaderboardsWidget(LawnApp *theApp) {
 void LeaderboardsWidget::_destructor() {
     delete mZombieTrashBin;
     delete mPlantTrashBin;
-    for (int i = 0; i < 5; ++i) {
-        delete mLeaderboardReanimations->backgroundReanim[i];
+    for (auto &i : mLeaderboardReanimations->backgroundReanim) {
+        delete i;
     }
-    for (int i = 0; i < AchievementType::NUM_ACHIEVEMENT_TYPES; ++i) {
-        delete mLeaderboardReanimations->achievementReanim[i];
+    for (auto &i : mLeaderboardReanimations->achievementReanim) {
+        delete i;
     }
-    mApp->SafeDeleteWidget(mBackButton);
+    delete mBackButton;
     delete mLeaderboardReanimations;
 
     Widget::_constructor();

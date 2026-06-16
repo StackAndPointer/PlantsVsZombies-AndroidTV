@@ -88,7 +88,7 @@ public:
     void AddDialog(Dialog *theDialog) {
         reinterpret_cast<void (*)(SexyAppBase *, Dialog *)>(Sexy_SexyAppBase_AddDialogAddr)(this, theDialog);
     }
-    int GetDialogCount() {
+    int GetDialogCount() { // vTable + 4 * 109
         return reinterpret_cast<int (*)(SexyAppBase *)>(Sexy_SexyAppBase_GetDialogCountAddr)(this);
     }
     void DoParseCmdLine() { // vTable + 4 * 62

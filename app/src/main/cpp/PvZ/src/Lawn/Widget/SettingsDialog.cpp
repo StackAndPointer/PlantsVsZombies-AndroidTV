@@ -64,8 +64,8 @@ void SettingsDialog::RemovedFromManager(WidgetManager *theWidgetManager) {
 }
 
 void SettingsDialog::_destructor() {
-    mApp->SafeDeleteWidget(mHapticFeedbackCheckbox);
-    mApp->SafeDeleteWidget(mHardwareAccelerationCheckbox);
+    delete mHapticFeedbackCheckbox;
+    delete mHardwareAccelerationCheckbox;
     old_SettingsDialog__destructor(this);
 }
 

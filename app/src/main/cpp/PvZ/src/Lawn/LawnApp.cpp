@@ -699,7 +699,7 @@ void LawnApp::UpdateFrames() {
 
 void LawnApp::UpdateApp() {
     if (doCheatDialog) {
-        if (mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineServerModeActive() && !gIsReplayMode) {
+        if (!IsOnlineServerModeActive() && !gIsReplayMode) {
             DoCheatDialog();
         }
         doCheatDialog = false;
@@ -1245,12 +1245,6 @@ void LawnApp::ShowSeedChooserScreen() {
 }
 
 void LawnApp::KillSeedChooserScreen() {
-    // 删除主菜单按钮
-    if (mSeedChooserScreen != nullptr && mGameMode != GameMode::GAMEMODE_MP_VS) {
-        mSeedChooserScreen->RemoveWidget(gSeedChooserScreenMainMenuButton);
-        gSeedChooserScreenMainMenuButton->~GameButton();
-        gSeedChooserScreenMainMenuButton = nullptr;
-    }
 
     if (mSeedChooserScreen) {
         mWidgetManager->RemoveWidget(mSeedChooserScreen);
@@ -1679,4 +1673,17 @@ void LawnApp::LoadZombatarResources() {
     //            LOG_DEBUG("没成功{}", i);
     //        }
     //    }
+}
+
+void LawnApp::MakeNewBoard() {
+
+    KillBoard();
+    mBoard = new Board(this);
+    mBoard->Resize(0, 0, mWidth, mHeight);
+    mWidgetManager->AddWidget(mBoard);
+    mWidgetManager->BringToBack(mBoard);
+
+    if (GetDialogCount() != 0) {
+        mWidgetManager->SetFocus(mBoard);
+    }
 }

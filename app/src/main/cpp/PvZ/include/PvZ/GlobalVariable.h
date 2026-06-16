@@ -39,9 +39,6 @@ inline bool requestPause;
 inline bool isKeyboardTwoPlayerMode;
 inline bool doKeyboardTwoPlayerDialog;
 inline bool requestDrawShovelInCursor;
-inline class ShovelRedirectWidget *gShovelWidget;
-inline GameButton *gBoardMenuButton;
-inline GameButton *gBoardStoreButton;
 inline bool requestDrawButterInCursor; // 2P黄油绘制
 inline int VSBackGround;
 inline bool seedPacketFastCoolDown; // 选卡冷却开关
