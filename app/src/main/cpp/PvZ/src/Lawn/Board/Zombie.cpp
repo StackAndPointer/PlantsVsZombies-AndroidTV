@@ -2220,7 +2220,7 @@ void Zombie::BurnRow(int theRow) {
     if (mMindControlled) {
         GridItem *aGridItem = nullptr;
         while (mBoard->IterateGridItems(aGridItem)) {
-            if (aGridItem->mGridY == theRow && aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER) {
+            if (aGridItem->mGridY == theRow && (aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER || aGridItem->mGridItemType == GridItemType::GRIDITEM_POLE)) {
                 aGridItem->GridItemDie();
             }
         }
@@ -2229,6 +2229,8 @@ void Zombie::BurnRow(int theRow) {
         if (aBossZombie && aBossZombie->mFireballRow == theRow) {
             aBossZombie->BossDestroyIceballInRow(theRow);
         }
+
+        mBoard->mIceTimer[theRow] = 20;
     }
 }
 
