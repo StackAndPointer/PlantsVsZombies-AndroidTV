@@ -443,13 +443,12 @@ void Projectile::DoImpact(Zombie *theZombie) {
         DoSplashDamage(theZombie, nullptr);
     } else if (theZombie) {
         unsigned int aDamageFlags = GetDamageFlags(theZombie);
+        theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
         if (mApp->IsVSMode()) {
             if (theZombie->IsFlying() && mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
                 theZombie->TakeDamage(theZombie->mFlyingHealth, aDamageFlags);
-                return;
             }
         }
-        theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
     }
 
     float aLastPosX = mPosX - mVelX;
@@ -559,6 +558,11 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
 
     Rect aProjectileRect = GetProjectileRect();
     while (mBoard->IterateGridItems(aGridItem)) {
+        // 修复对空发射的尖刺会被墓碑阻挡
+        if (mProjectileType == ProjectileType::PROJECTILE_SPIKE && mDamageRangeFlags == DamageRangeFlags::DAMAGES_SUBMERGED) {
+            continue;
+        }
+
         if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND) {
             if (mRow != aGridItem->mGridY) {
                 continue;
