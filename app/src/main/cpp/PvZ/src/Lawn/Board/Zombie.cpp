@@ -3289,7 +3289,7 @@ void Zombie::EatPlant(Plant *thePlant) {
     }
 
     if (thePlant->mPlantHealth <= 0) {
-        if (!(mApp->IsVSMode() && gTcpConnected)) {
+        if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
             mApp->PlaySample(SOUND_GULP);
         }
         if (gTcpClientSocket >= 0) {
