@@ -1586,8 +1586,6 @@ void SeedChooserScreen::DrawPacket(
 
     // int aConvertedGrayness = ((theColor->mRed + theColor->mGreen + theColor->mBlue) / 3 + theGrayness) / 2;
     // 此算法用于在对战模式将非选卡的一方的卡片整体变暗。但这种算法下，55亮度会变成155亮度，115亮度会变成185亮度，严重影响非对战模式的选卡体验。所以需要修复。
-    if (theSeedType == SEED_IMITATER)
-        LOG_DEBUG("theGrayness {}", theGrayness);
     int aConvertedGrayness = (mApp->IsVSMode()) ? ((theColor->mRed + theColor->mGreen + theColor->mBlue) / 3 + theGrayness) / 2 : theGrayness;
     if (mApp->IsVSMode()) {
         if (mIsZombieChooser && SeedNotAllowedToPick(theSeedType)) {
@@ -1606,8 +1604,6 @@ void SeedChooserScreen::DrawPacket(
             }
         }
     }
-    if (theSeedType == SEED_IMITATER)
-        LOG_DEBUG("aConvertedGrayness {}", aConvertedGrayness);
     DrawSeedPacket(g, x, y, theSeedType, theImitaterType, thePercentDark, aConvertedGrayness, theDrawCost, false, mIsZombieChooser, theUseCurrentCost);
 }
 

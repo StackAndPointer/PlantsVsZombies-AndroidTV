@@ -1594,7 +1594,10 @@ void Zombie::UpdateGigaPolevaulter() {
         return;
     }
 
-    auto findNearestVaultPlant = [this](bool theOnlyLeftSide) -> Plant * {
+    auto findNearestVaultPlant = [this]() -> Plant * {
+        if (mMindControlled)
+            return nullptr;
+
         Rect aAttackRect = GetZombieAttackRect();
         Plant *aBestPlant = nullptr;
         int aBestPlantLeft = -1;
@@ -1608,12 +1611,7 @@ void Zombie::UpdateGigaPolevaulter() {
             }
 
             Rect aPlantRect = aPlant->GetPlantRect();
-            if (GetRectOverlap(aAttackRect, aPlantRect) < 0) {
-                continue;
-            }
-
-            // Before takeoff we only want plants on the zombie's left side.
-            if (theOnlyLeftSide && aPlant->mX > mX) {
+            if (GetRectOverlap(aAttackRect, aPlantRect) < 20) {
                 continue;
             }
 
@@ -1672,7 +1670,7 @@ void Zombie::UpdateGigaPolevaulter() {
             return;
         }
 
-        Plant *aPlant = findNearestVaultPlant(true);
+        Plant *aPlant = findNearestVaultPlant();
         if (aPlant) {
             if (mBoard->GetLadderAt(aPlant->mPlantCol, aPlant->mRow)) {
                 float aPlantX = mBoard->GridToPixelX(aPlant->mPlantCol, aPlant->mRow) + 40;
@@ -1714,9 +1712,8 @@ void Zombie::UpdateGigaPolevaulter() {
 
         bool aJumpEnds = false;
         if (!gTcpConnected && !gIsReplayMode) {
-            // Keep checking for a blocking Tall-nut for the rest of the jump so a later one can still intercept.
-            if (aBodyReanim->mAnimTime > 0.6f) {
-                Plant *aPlant = findNearestVaultPlant(false);
+            if (aBodyReanim->mAnimTime > 0.6f && aBodyReanim->mAnimTime <= 0.7f) {
+                Plant *aPlant = findNearestVaultPlant();
                 if (aPlant && aPlant->mSeedType == SeedType::SEED_TALLNUT) {
                     mApp->PlayFoley(FoleyType::FOLEY_BONK);
                     aJumpEnds = true;
