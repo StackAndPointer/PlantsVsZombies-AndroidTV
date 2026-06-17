@@ -3270,7 +3270,19 @@ void Zombie::EatPlant(Plant *thePlant) {
 
     thePlant->mPlantHealth -= DAMAGE_PER_EAT;
     thePlant->mRecentlyEatenCountdown = 50;
-    if ((mApp->IsIZombieLevel() || (mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode)) && mJustGotShotCounter < -500) {
+    auto absorbedEating = [this]() {
+        if (mJustGotShotCounter >= -500) {
+            return false;
+        }
+        if (mApp->IsIZombieLevel()) {
+            return true;
+        }
+        if (mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode) {
+            return mZombieType != ZombieType::ZOMBIE_NORMAL && mZombieType != ZombieType::ZOMBIE_BOBSLED && mZombieType != ZombieType::ZOMBIE_PEA_HEAD;
+        }
+        return false;
+    };
+    if (absorbedEating()) {
         if (thePlant->mSeedType == SeedType::SEED_WALLNUT || thePlant->mSeedType == SeedType::SEED_TALLNUT || thePlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
             thePlant->mPlantHealth -= DAMAGE_PER_EAT;
         }
