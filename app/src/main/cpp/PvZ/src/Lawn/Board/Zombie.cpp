@@ -662,7 +662,7 @@ void Zombie::UpdateSuperFanImp() {
     }
 
     if (Zombie *aZombie = mBoard->ZombieTryToGet(mRelatedZombieID)) {
-        if (!(mApp->IsVSMode() && gTcpConnected)) {
+        if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
             bool isKicked = false;
             if (aZombie->mZombiePhase == ZombiePhase::PHASE_FOOTBALL_CHARGING) {
                 isKicked = true;
@@ -997,7 +997,7 @@ void Zombie::UpdateZombieJackson() {
 
     if (mSummonCounter == 0 && !mMindControlled) {
         if (!msDeadFollowers.empty() && GetDancerFrame() == 12 && mHasHead && mPosX < 700.0f) {
-            if (!(mApp->IsVSMode() && gTcpConnected)) {
+            if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
                 mZombiePhase = ZombiePhase::PHASE_DANCER_SNAPPING_FINGERS_WITH_LIGHT;
                 PlayZombieReanim("anim_point", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
             }
@@ -1174,7 +1174,7 @@ void Zombie::JacksonDie() {
 }
 
 void Zombie::SquishAllInSquare(int theX, int theY, ZombieAttackType theAttackType) {
-    if (mApp->IsVSMode() && gTcpConnected) {
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
         return;
     }
 
@@ -1361,7 +1361,7 @@ void Zombie::UpdateZombieDolphinRider() {
         return;
     }
 
-    bool isRemoteClient = mApp->IsVSMode() && gTcpConnected;
+    bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsReplayMode);
     auto syncDolphinPhaseCounter = [this]() {
         if (gTcpClientSocket >= 0) {
             U8U8U16U16_Event event{};
@@ -1637,7 +1637,7 @@ void Zombie::UpdateGigaPolevaulter() {
         return aBestPlant;
     };
 
-    bool isRemoteClient = mApp->IsVSMode() && gTcpConnected;
+    bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsReplayMode);
     auto syncGigaPolevaulterPhaseCounter = [this]() {
         if (gTcpClientSocket >= 0) {
             U8U8U16U16_Event event{};
@@ -2300,7 +2300,7 @@ void Zombie::UpdateZombieJalapenoHead() {
 }
 
 void Zombie::UpdateZombieSquashHead() {
-    bool isRemoteClient = mApp->IsVSMode() && gTcpConnected;
+    bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsReplayMode);
 
     if (mHasHead && mIsEating && mZombiePhase == ZombiePhase::PHASE_SQUASH_PRE_LAUNCH) {
         StopEating();
@@ -3199,7 +3199,7 @@ void Zombie::EatPlant(Plant *thePlant) {
     if (mZombieType == ZombieType::ZOMBIE_JACKSON && mSummonCounter == 0) {
         if (!msDeadFollowers.empty() && mHasHead && mPosX < 700.0f) {
             StopEating();
-            if (!(mApp->IsVSMode() && gTcpConnected)) {
+            if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
                 mZombiePhase = ZombiePhase::PHASE_DANCER_SNAPPING_FINGERS_WITH_LIGHT;
                 PlayZombieReanim("anim_point", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
             }
