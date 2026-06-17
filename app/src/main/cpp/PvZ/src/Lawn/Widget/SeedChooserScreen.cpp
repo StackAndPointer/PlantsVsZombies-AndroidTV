@@ -730,7 +730,7 @@ void SeedChooserScreen::UpdateImitaterButton() {
     }
 
     mImitaterButton->mBtnNoDraw = false;
-    mImitaterButton->SetDisabled(mSeedsInBank != 4);
+    mImitaterButton->SetDisabled(mChosenSeeds[SEED_IMITATER].mSeedState != SEED_PACKET_HIDDEN);
 }
 
 void SeedChooserScreen::UpdateCursor() {
@@ -1586,7 +1586,8 @@ void SeedChooserScreen::DrawPacket(
 
     // int aConvertedGrayness = ((theColor->mRed + theColor->mGreen + theColor->mBlue) / 3 + theGrayness) / 2;
     // 此算法用于在对战模式将非选卡的一方的卡片整体变暗。但这种算法下，55亮度会变成155亮度，115亮度会变成185亮度，严重影响非对战模式的选卡体验。所以需要修复。
-
+    if (theSeedType == SEED_IMITATER)
+        LOG_DEBUG("theGrayness {}", theGrayness);
     int aConvertedGrayness = (mApp->IsVSMode()) ? ((theColor->mRed + theColor->mGreen + theColor->mBlue) / 3 + theGrayness) / 2 : theGrayness;
     if (mApp->IsVSMode()) {
         if (mIsZombieChooser && SeedNotAllowedToPick(theSeedType)) {
@@ -1605,7 +1606,8 @@ void SeedChooserScreen::DrawPacket(
             }
         }
     }
-
+    if (theSeedType == SEED_IMITATER)
+        LOG_DEBUG("aConvertedGrayness {}", aConvertedGrayness);
     DrawSeedPacket(g, x, y, theSeedType, theImitaterType, thePercentDark, aConvertedGrayness, theDrawCost, false, mIsZombieChooser, theUseCurrentCost);
 }
 
@@ -2307,10 +2309,7 @@ int SeedChooserScreen::GetNextSeedInDir(int theNumSeed, SeedDir theMoveDirection
     return aNextSeed;
 }
 
-void SeedChooserScreen::Draw(Graphics *g) {
-    // Early returns for dialogs
-    if (mApp->GetDialog(DIALOG_STORE) || mApp->GetDialog(DIALOG_ALMANAC))
-        return;
+void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp->GetDialog(DIALOG_STORE) || mApp->GetDialog(DIALOG_ALMANAC))return;
 
     g->SetLinearBlend(true);
 
@@ -2527,47 +2526,32 @@ void SeedChooserScreen::Draw(Graphics *g) {
         }
     }
 
-    // Draw dragging seeds for player 1
-    if (mSeedIndex1 != SEED_NONE && ShouldDisplayCursor(0)) {
-        int x = 0, y = 0;
-        GetSeedPositionInChooser(mSeedIndex1, x, y);
-        auto aSeedType = SeedType(mSeedIndex1);
-        SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(mSeedIndex1) : aSeedType;
-        ChosenSeed &aChosenSeed = mChosenSeeds[mSeedIndex1];
+    auto DrawDraggingSeed = [&](int thePageSeedIndex, int thePlayerIndex) {
+        if (thePageSeedIndex == SEED_NONE || !ShouldDisplayCursor(thePlayerIndex)) {
+            return;
+        }
+        int x = 0;
+        int y = 0;
+        GetSeedPositionInChooser(thePageSeedIndex, x, y);
+        const int aPageOffset = (mIsZombieChooser && mPageIndex == 1) ? 25 : 0;
+        const int aChosenSeedIndex = thePageSeedIndex + aPageOffset;
+        ChosenSeed &aChosenSeed = mChosenSeeds[aChosenSeedIndex];
+        const SeedType aChooserSeedType = SeedType(aChosenSeedIndex);
+        const SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(aChooserSeedType) : aChosenSeed.mSeedType;
         int aGrayness = 255;
-        if (mPageIndex == 0 && aChosenSeed.mSeedState != SEED_IN_CHOOSER)
+        // 模仿者在未选中时状态为SEED_PACKET_HIDDEN，而不是SEED_IN_CHOOSER
+        if (aChosenSeed.mSeedState != (aChosenSeed.mSeedType == SEED_IMITATER ? SEED_PACKET_HIDDEN : SEED_IN_CHOOSER)) {
             aGrayness = 55;
-        if (mPageIndex == 1 && mChosenSeeds[mSeedIndex1 + 25].mSeedState != SEED_IN_CHOOSER)
-            aGrayness = 55;
-        if ((!mIsZombieChooser && ((SeedNotRecommendedToPick(aSeedType) || SeedNotAllowedToPick(aSeedType))) && aChosenSeed.mSeedState == SEED_IN_CHOOSER) || SeedNotAllowedDuringTrial(aSeedType))
+        }
+        const SeedType aSeedType = aChosenSeed.mSeedType;
+        if ((!mIsZombieChooser && (SeedNotRecommendedToPick(aSeedType) || SeedNotAllowedToPick(aSeedType)) && aChosenSeed.mSeedState == SEED_IN_CHOOSER) || SeedNotAllowedDuringTrial(aSeedType)) {
             aGrayness = 115;
-
-        if (mPageIndex == 1) {
-            aDisplaySeedType = SeedType(aDisplaySeedType + 25);
         }
         DrawPacket(g, x, y + 5, aDisplaySeedType, SEED_NONE, 0.0f, aGrayness, &aBaseColor, true, true);
-    }
+    };
 
-    // Draw dragging seeds for player 2
-    if (mSeedIndex2 != SEED_NONE && ShouldDisplayCursor(1)) {
-        int x = 0, y = 0;
-        GetSeedPositionInChooser(mSeedIndex2, x, y);
-        auto aSeedType = SeedType(mSeedIndex2);
-        SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(mSeedIndex2) : aSeedType;
-        ChosenSeed &aChosenSeed = mChosenSeeds[mSeedIndex2];
-        int aGrayness = 255;
-        if (mPageIndex == 0 && aChosenSeed.mSeedState != SEED_IN_CHOOSER)
-            aGrayness = 55;
-        if (mPageIndex == 1 && mChosenSeeds[mSeedIndex2 + 25].mSeedState != SEED_IN_CHOOSER)
-            aGrayness = 55;
-        if ((!mIsZombieChooser && ((SeedNotRecommendedToPick(aSeedType) || SeedNotAllowedToPick(aSeedType))) && aChosenSeed.mSeedState == SEED_IN_CHOOSER) || SeedNotAllowedDuringTrial(aSeedType))
-            aGrayness = 115;
-
-        if (mPageIndex == 1) {
-            aDisplaySeedType = SeedType(aDisplaySeedType + 25);
-        }
-        DrawPacket(g, x, y + 5, aDisplaySeedType, SEED_NONE, 0.0f, aGrayness, &aBaseColor, true, true);
-    }
+    DrawDraggingSeed(mSeedIndex1, 0);
+    DrawDraggingSeed(mSeedIndex2, 1);
 
     // 绘制对战禁用叉叉
     DrawBanIcon(g);
