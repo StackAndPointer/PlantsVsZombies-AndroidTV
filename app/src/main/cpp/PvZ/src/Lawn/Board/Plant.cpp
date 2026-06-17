@@ -1586,6 +1586,34 @@ static int GetVSRefreshTimeShuffle(SeedType theSeedType) {
 }
 
 int Plant::GetCost(SeedType theSeedType, SeedType theImitaterType) {
+    if (gLawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED || gLawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST) {
+        if (theSeedType == SeedType::SEED_REPEATER) {
+            return 1000;
+        } else if (theSeedType == SeedType::SEED_FUMESHROOM) {
+            return 500;
+        } else if (theSeedType == SeedType::SEED_TALLNUT) {
+            return 250;
+        } else if (theSeedType == SeedType::SEED_BEGHOULED_BUTTON_SHUFFLE) {
+            return 100;
+        } else if (theSeedType == SeedType::SEED_BEGHOULED_BUTTON_CRATER) {
+            return 200;
+        }
+    }
+    if (gLawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) {
+        if (theSeedType == SeedType::SEED_REPEATER) {
+            return 200;
+        } else if (theSeedType == SeedType::SEED_THREEPEATER) {
+            return 400;
+        } else if (theSeedType == SeedType::SEED_CATTAIL) {
+            return 200;
+        } else if (theSeedType == SeedType::SEED_SNOWPEA) {
+            return 100;
+        } else if (theSeedType == SeedType::SEED_TORCHWOOD) {
+            return 125;
+        } else if (theSeedType == SeedType::SEED_DOOMSHROOM) {
+            return 200;
+        }
+    }
     if (gLawnApp->IsVSMode()) {
         if (theSeedType == SEED_BEGHOULED_BUTTON_SHUFFLE) {
             if (gOpeningEncounter && gOpeningEncounter->mType == EncounterType::ENCOUNTER_FREE_SHUFFLE) {
@@ -1612,9 +1640,57 @@ int Plant::GetCost(SeedType theSeedType, SeedType theImitaterType) {
             return GetVSCostShuffle(theSeedType);
         }
         return VSSetupAddonWidget::msBalancePatchMode ? GetVSCostBalanced(theSeedType) : GetVSCostDefault(theSeedType);
+    } else {
+        switch (theSeedType) {
+            case SeedType::SEED_SLOT_MACHINE_SUN:
+                return 0;
+            case SeedType::SEED_SLOT_MACHINE_DIAMOND:
+                return 0;
+            case SeedType::SEED_ZOMBIQUARIUM_SNORKLE:
+                return 100;
+            case SeedType::SEED_ZOMBIQUARIUM_TROPHY:
+                return 1000;
+            case SeedType::SEED_ZOMBIE_NORMAL:
+                return 50;
+            case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
+                return 75;
+            case SeedType::SEED_ZOMBIE_POLEVAULTER:
+                return 75;
+            case SeedType::SEED_ZOMBIE_PAIL:
+                return 125;
+            case SeedType::SEED_ZOMBIE_LADDER:
+                return 150;
+            case SeedType::SEED_ZOMBIE_DIGGER:
+                return 125;
+            case SeedType::SEED_ZOMBIE_BUNGEE:
+                return 125;
+            case SeedType::SEED_ZOMBIE_FOOTBALL:
+                return 175;
+            case SeedType::SEED_ZOMBIE_BALLOON:
+                return 150;
+            case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
+                return 100;
+            case SeedType::SEED_ZOMBONI:
+                return 175;
+            case SeedType::SEED_ZOMBIE_POGO:
+                return 200;
+            case SeedType::SEED_ZOMBIE_DANCER:
+                return 350;
+            case SeedType::SEED_ZOMBIE_GARGANTUAR:
+                return 300;
+            case SeedType::SEED_ZOMBIE_IMP:
+                return 50;
+            default: {
+                if (theSeedType == SeedType::SEED_IMITATER && theImitaterType != SeedType::SEED_NONE) {
+                    const PlantDefinition &aPlantDef = GetPlantDefinition(theImitaterType);
+                    return aPlantDef.mSeedCost;
+                } else {
+                    const PlantDefinition &aPlantDef = GetPlantDefinition(theSeedType);
+                    return aPlantDef.mSeedCost;
+                }
+            }
+        }
     }
-
-    return old_Plant_GetCost(theSeedType, theImitaterType);
 }
 
 int Plant::GetRefreshTime(SeedType theSeedType, SeedType theImitaterType) {
