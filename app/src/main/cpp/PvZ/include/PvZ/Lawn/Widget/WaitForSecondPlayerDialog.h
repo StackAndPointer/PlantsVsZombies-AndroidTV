@@ -116,12 +116,10 @@ public:
     bool mServerAskedWantStart;  // guest side: ask-start sent
     bool mServerJoinedRoomGaming;
     bool mServerSpectateReservationActive;
-    bool mServerSpectateStreamAligned;
     int mServerHostedRoomId;  // created room id
     int mServerJoinedRoomId;  // joined room id (optional)
     int mServerLastQueryTick; // frame tick for auto query
     int mServerLastRecvTick;  // for debug/timeout if needed
-    int mServerSpectateAlignHitCount;
     int mServerSpectateReserveTick;
     int mServerSpectateReserveWarnTick;
     char mServerHostedRoomName[128];
@@ -196,9 +194,9 @@ public:
 
 
     bool ServerTryReadOneFrame(uint8_t &outType, uint8_t *outPayload, uint16_t &outLen);
+    void ServerMoveBufferedRelayBytesToVsStream(bool asHost);
     bool ServerHostRoomLocked() const;
-    bool ServerNeedsSpectateStreamAlignment() const;
-    bool ServerTryAlignSpectateStream(std::vector<std::byte> &recvBuffer);
+    bool ServerIsWaitingReservedSpectate() const;
     void ServerOnBorrowedSocketClosed(const char *why);
 
     // MODE3 drawing + selection

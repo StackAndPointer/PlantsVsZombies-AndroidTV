@@ -475,53 +475,8 @@ bool WaitForSecondPlayerDialog::ServerHostRoomLocked() const {
     return mUIMode == UIMode::MODE3_SERVER && mServerConnected && mServerHosting && (mServerHostHasGuest || mServerSpectating);
 }
 
-bool WaitForSecondPlayerDialog::ServerNeedsSpectateStreamAlignment() const {
-    return mServerSpectating && mServerJoinedRoomGaming && mServerSpectateReservationActive && !mServerSpectateStreamAligned;
-}
-
-bool WaitForSecondPlayerDialog::ServerTryAlignSpectateStream(std::vector<std::byte> &recvBuffer) {
-    if (!ServerNeedsSpectateStreamAlignment()) {
-        return true;
-    }
-
-    constexpr std::size_t kPingEventSize = sizeof(U16_Event);
-    constexpr int kNeededHits = 5;
-    const auto isPingPongAt = [&recvBuffer](std::size_t pos) {
-        if (pos + kPingEventSize > recvBuffer.size()) {
-            return false;
-        }
-        const auto type = std::to_integer<uint8_t>(recvBuffer[pos]);
-        const auto size = std::to_integer<uint8_t>(recvBuffer[pos + offsetof(BaseEvent, size)]);
-        return size == kPingEventSize && (type == EVENT_CLIENT_PING || type == EVENT_SERVER_PONG);
-    };
-
-    for (std::size_t start = 0; start + kPingEventSize * kNeededHits <= recvBuffer.size(); ++start) {
-        bool ok = true;
-        for (int i = 0; i < kNeededHits; ++i) {
-            if (!isPingPongAt(start + kPingEventSize * i)) {
-                ok = false;
-                break;
-            }
-        }
-        if (!ok) {
-            continue;
-        }
-
-        if (start > 0) {
-            recvBuffer.erase(recvBuffer.begin(), recvBuffer.begin() + static_cast<std::ptrdiff_t>(start));
-        }
-        mServerSpectateAlignHitCount = kNeededHits;
-        mServerSpectateStreamAligned = true;
-        mServerStatusText = TodStringTranslate("[SPECTATE_ALIGN_READY]");
-        return true;
-    }
-
-    const std::size_t keepBytes = kPingEventSize * (kNeededHits + 2);
-    [[maybe_unused]] const std::size_t oldSize = recvBuffer.size();
-    if (recvBuffer.size() > keepBytes) {
-        recvBuffer.erase(recvBuffer.begin(), recvBuffer.end() - static_cast<std::ptrdiff_t>(keepBytes));
-    }
-    return false;
+bool WaitForSecondPlayerDialog::ServerIsWaitingReservedSpectate() const {
+    return mServerSpectating && mServerJoinedRoomGaming && mServerSpectateReservationActive && gIsServerModeSpectator;
 }
 
 void WaitForSecondPlayerDialog::SetMode(UIMode mode) {
@@ -875,14 +830,12 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     mServerAskedWantStart = false;
     mServerJoinedRoomGaming = false;
     mServerSpectateReservationActive = false;
-    mServerSpectateStreamAligned = false;
     mServerSpectateReserveTick = 0;
     mServerSpectateReserveWarnTick = 0;
     mServerHostedRoomId = 0;
     mServerJoinedRoomId = 0;
     mServerLastQueryTick = 0;
     mServerLastRecvTick = 0;
-    mServerSpectateAlignHitCount = 0;
     mServerSpectateReserveTick = 0;
     mServerSpectateReserveWarnTick = 0;
     mServerHostedRoomName[0] = '\0';
@@ -1462,8 +1415,6 @@ void WaitForSecondPlayerDialog::Update() {
                 mServerAskedWantStart = false;
                 mServerJoinedRoomGaming = false;
                 mServerSpectateReservationActive = false;
-                mServerSpectateStreamAligned = false;
-                mServerSpectateAlignHitCount = 0;
                 mServerSpectateReserveTick = 0;
                 mServerSpectateReserveWarnTick = 0;
                 mServerHostedRoomId = 0;
@@ -1564,8 +1515,6 @@ void WaitForSecondPlayerDialog::processServerEvent(const BaseEvent *event) {
                 gVSBackground = BackgroundType(syncEvent->data2);
                 mServerJoinedRoomGaming = false;
                 mServerSpectateReservationActive = false;
-                mServerSpectateStreamAligned = false;
-                mServerSpectateAlignHitCount = 0;
                 mServerSpectateReserveTick = 0;
                 mServerSpectateReserveWarnTick = 0;
                 LawnDialog::ButtonDepress(WaitForSecondPlayerDialog_Enter);
@@ -2202,9 +2151,6 @@ void WaitForSecondPlayerDialog::ButtonDepress_Thunk(this ButtonListener &self, i
                             return;
                         }
                         aDialog->ServerSendReserveSpectate(true);
-                        aDialog->mServerSpectateReservationActive = true;
-                        aDialog->mServerSpectateStreamAligned = false;
-                        aDialog->mServerSpectateAlignHitCount = 0;
                         aDialog->mServerSpectateReserveTick = 0;
                         aDialog->mServerSpectateReserveWarnTick = 0;
                         aDialog->mServerStatusText = TodStringTranslate("[RESERVING_SPECTATE_NEXT_GAME]");
@@ -2409,6 +2355,17 @@ bool WaitForSecondPlayerDialog::ServerTryReadOneFrame(uint8_t &outType, uint8_t 
     }
     mSrvRecvLen = remain;
     return true;
+}
+
+void WaitForSecondPlayerDialog::ServerMoveBufferedRelayBytesToVsStream(bool asHost) {
+    if (mSrvRecvLen <= 0) {
+        return;
+    }
+
+    auto &recvBuffer = asHost ? clientRecvBuffer : serverRecvBuffer;
+    const auto *begin = reinterpret_cast<const std::byte *>(mSrvRecvBuf);
+    recvBuffer.insert(recvBuffer.end(), begin, begin + mSrvRecvLen);
+    mSrvRecvLen = 0;
 }
 
 void WaitForSecondPlayerDialog::ServerUpdateIO() {
@@ -2624,8 +2581,6 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                     mServerAskedWantStart = false;
                     mServerJoinedRoomGaming = (roomFlags & 1) != 0;
                     mServerSpectateReservationActive = false;
-                    mServerSpectateStreamAligned = false;
-                    mServerSpectateAlignHitCount = 0;
                     mServerSpectateReserveTick = 0;
                     mServerSpectateReserveWarnTick = 0;
                     mServerHostedRoomName[0] = '\0';
@@ -2786,7 +2741,11 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                         mServerRelayEpoch = relayEpoch;
                         mServerSpectateReserveTick = 0;
                         mServerSpectateReserveWarnTick = 0;
-                        mServerStatusText = relayOpen ? TodStringTranslate("[SPECTATE_RESERVE_STREAM_OPEN]") : TodStringTranslate("[SPECTATE_RESERVE_WAIT_STREAM]");
+                        if (reserve) {
+                            mServerStatusText = TodStringTranslate("[SPECTATE_ALIGN_READY]");
+                        } else {
+                            mServerStatusText = relayOpen ? TodStringTranslate("[SPECTATE_RESERVE_STREAM_OPEN]") : TodStringTranslate("[SPECTATE_RESERVE_WAIT_STREAM]");
+                        }
                     }
                 }
                 break;
@@ -2865,8 +2824,6 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 mServerAskedWantStart = false;
                 mServerJoinedRoomGaming = false;
                 mServerSpectateReservationActive = false;
-                mServerSpectateStreamAligned = false;
-                mServerSpectateAlignHitCount = 0;
                 mServerSpectateReserveTick = 0;
                 mServerSpectateReserveWarnTick = 0;
                 mServerGameStartingTick = 0;
@@ -2949,6 +2906,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                 gTcpConnected = false;
                 gTcpConnecting = false;
                 ResetVsStreamBuffersForServerMode();
+                ServerMoveBufferedRelayBytesToVsStream(mServerHosting);
 
                 if (mServerHosting) {
                     gTcpClientSocket = mServerSock;
@@ -2967,7 +2925,7 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
                         gIsServerModeNetplay = true;
                         gServerModeTransport = ServerModeTransport::RELAY;
                         gIsServerModeSpectator = true;
-                        mServerStatusText = TodStringTranslate("[SPECTATE_RESERVE_WAIT_NEXT_GAME]");
+                        mServerStatusText = TodStringTranslate("[SPECTATE_ALIGN_READY]");
                         break;
                     }
                 } else {
@@ -4015,7 +3973,6 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
     mServerAskedWantStart = false;
     mServerJoinedRoomGaming = false;
     mServerSpectateReservationActive = false;
-    mServerSpectateStreamAligned = false;
     mServerHostedRoomId = 0;
     mServerJoinedRoomId = 0;
     netplay::MetricsResetSettlementEvents();
@@ -4030,7 +3987,6 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
     mSrvRecvLen = 0;
     mServerP2PTick = 0;
     mServerGameStartingTick = 0;
-    mServerSpectateAlignHitCount = 0;
     mServerSpectateReserveTick = 0;
     mServerSpectateReserveWarnTick = 0;
 

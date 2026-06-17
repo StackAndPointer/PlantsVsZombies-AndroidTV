@@ -100,6 +100,13 @@ void SendPeriodicNetPing() {
     }
 
     gNetPingSendCounter = 0;
+    if (gIsServerModeSpectator) {
+        gNetPingAwaitingPong = false;
+        U16_Event eventPing = {{EVENT_CLIENT_PING}, static_cast<uint16_t>(gNetPingNowTick)};
+        netplay::PutEvent(eventPing);
+        return;
+    }
+
     if (!gNetPingAwaitingPong) {
         gNetPingLatestSentTick = gNetPingNowTick;
         gNetPingAwaitingPong = true;
@@ -452,11 +459,6 @@ void LawnApp::HandleTcpClientMessage(const std::byte *buf, size_t bufSize) {
 void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
     serverRecvBuffer.append_range(std::views::counted(buf, bufSize));
     auto *waitDialog = WaitForSecondPlayerDialog::GetInstance();
-    if (waitDialog != nullptr && waitDialog->ServerNeedsSpectateStreamAlignment()) {
-        if (!waitDialog->ServerTryAlignSpectateStream(serverRecvBuffer)) {
-            return;
-        }
-    }
     size_t offset = 0;
 
     while (serverRecvBuffer.size() >= offset + sizeof(BaseEvent)) {
@@ -470,6 +472,14 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
         BaseEvent *event = netplay::GetEvent(alignedBuf, serverRecvPtr);
         replay::RecordPacket(ReplayPacketDir::InboundServer, serverRecvPtr, event->size, static_cast<std::uint32_t>(mAppCounter));
         LOG_DEBUG("event.type = {}", int(event->type));
+
+        if (waitDialog != nullptr && waitDialog->ServerIsWaitingReservedSpectate()) {
+            if (event->type == EVENT_SERVER_VSSETUPMENU_SYNC_VS_MODE) {
+                waitDialog->processServerEvent(event);
+            }
+            offset += event->size;
+            continue;
+        }
 
         if (event->type == EVENT_CLIENT_PING) {
             auto *eventPing = static_cast<const U16_Event *>(event);
@@ -575,7 +585,7 @@ void LawnApp::UpdateFrames() {
         }
         if (!replay::IsPlaybackActive()) {
             SendPeriodicNetPing();
-        } else {
+        } else if (replay::IsPlaybackActive()) {
             replay::AdvancePlaybackTick();
         }
     }
