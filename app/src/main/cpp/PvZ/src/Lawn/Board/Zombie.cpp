@@ -1611,7 +1611,8 @@ void Zombie::UpdateGigaPolevaulter() {
             }
 
             Rect aPlantRect = aPlant->GetPlantRect();
-            if (GetRectOverlap(aAttackRect, aPlantRect) < 20) {
+            // 修复跳跃过程中因mPosX后移导致撞上身后的高坚果
+            if (GetRectOverlap(aAttackRect, aPlantRect) < (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT ? 60 : 20)) {
                 continue;
             }
 
