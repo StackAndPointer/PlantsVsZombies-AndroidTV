@@ -3270,7 +3270,7 @@ void Zombie::EatPlant(Plant *thePlant) {
 
     thePlant->mPlantHealth -= DAMAGE_PER_EAT;
     thePlant->mRecentlyEatenCountdown = 50;
-    if (mApp->IsIZombieLevel() && mJustGotShotCounter < -500) {
+    if ((mApp->IsIZombieLevel() || (mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode)) && mJustGotShotCounter < -500) {
         if (thePlant->mSeedType == SeedType::SEED_WALLNUT || thePlant->mSeedType == SeedType::SEED_TALLNUT || thePlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
             thePlant->mPlantHealth -= DAMAGE_PER_EAT;
         }
