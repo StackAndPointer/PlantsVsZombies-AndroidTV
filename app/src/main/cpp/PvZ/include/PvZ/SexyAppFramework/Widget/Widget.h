@@ -76,12 +76,6 @@ public:
     void Update() {
         reinterpret_cast<void (*)(Widget *)>(Sexy_Widget_UpdateAddr)(this);
     }
-    void MarkDirtyFull() {
-        (*((void (**)(Widget *))this->vTable + 26))(this);
-    }
-    void AddedToManager(WidgetManager *theWidgetManager) {
-        (*((void (**)(Widget *, WidgetManager *))this->vTable + 29))(this, theWidgetManager);
-    }
 
     void MarkDirty();
     void AddWidget(Widget *theWidget);
