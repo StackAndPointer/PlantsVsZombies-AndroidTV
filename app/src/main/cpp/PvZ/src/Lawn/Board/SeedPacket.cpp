@@ -188,7 +188,7 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
         bool aIsBalancePatch = VSSetupAddonWidget::msBalancePatchMode;
         bool aIsStageNight = mBoard->StageIsNight();
         switch (theSeedType) {
-            case SEED_PUFFSHROOM:
+                //            case SEED_PUFFSHROOM:
             case SEED_ZOMBIE_NORMAL:
                 if (aIsBalancePatch) {
                     mRefreshTime = 1000;
@@ -205,7 +205,9 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
                 break;
             case SEED_PUMPKINSHELL:
                 if (aIsBalancePatch) {
-                    mRefreshTime = 2000; // 35 -> 20
+                    mRefreshTime = 0; // 35 -> 0
+                    mRefreshing = false;
+                    mActive = true;
                 }
                 break;
             case SEED_ZOMBIE_TRAFFIC_CONE:
