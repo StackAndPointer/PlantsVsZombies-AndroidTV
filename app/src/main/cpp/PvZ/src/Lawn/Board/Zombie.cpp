@@ -1611,12 +1611,15 @@ void Zombie::UpdateGigaPolevaulter() {
             }
 
             Rect aPlantRect = aPlant->GetPlantRect();
-            // 修复跳跃过程中因mPosX后移导致撞上身后的高坚果
-            if (GetRectOverlap(aAttackRect, aPlantRect) < (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT ? 60 : 20)) {
+            if (GetRectOverlap(aAttackRect, aPlantRect) < 20) {
                 continue;
             }
 
             if (aPlant->mSeedType == SeedType::SEED_TALLNUT) {
+                // 修复跳跃过程中因mPosX后移导致撞上身后的高坚果
+                if (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT && aPlant->mX > mX) {
+                    continue;
+                }
                 if (aBestTallnut == nullptr || aPlant->mX > aBestTallnutLeft) {
                     aBestTallnut = aPlant;
                     aBestTallnutLeft = aPlant->mX;
