@@ -41,9 +41,9 @@ static int GetPrioritySidePickSlot(const VSSetupMenu *menu) {
     if (menu == nullptr || VSSetupAddonWidget::msGlobalBpMode == VSSetupAddonWidget::GLOBALBP_CLOSED) {
         return -1;
     }
-    // 第一轮 P1 优先选边
+    // 第一轮 P2 优先选边，客户端承受延迟故对其进行补偿
     if (VSSetupAddonWidget::msGlobalBpWins[0] == 0 && VSSetupAddonWidget::msGlobalBpWins[1] == 0) {
-        return 0;
+        return 1;
     }
     if (VSSetupMenu::msNextSidePickPlayerIndex < 0 || VSSetupMenu::msNextSidePickPlayerIndex > 1) {
         return -1;
