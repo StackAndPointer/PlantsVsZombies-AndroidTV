@@ -2354,12 +2354,15 @@ void Zombie::UpdateZombieSquashHead() {
         int aPosX = TodAnimateCurve(50, 20, mPhaseCounter, 0, aDestX - mPosX, TodCurves::CURVE_EASE_IN_OUT);
         int aPosY = TodAnimateCurve(50, 20, mPhaseCounter, 0, -20, TodCurves::CURVE_EASE_IN_OUT);
 
-        Reanimation *aHeadReanim = mApp->ReanimationGet(mSpecialHeadReanimID);
-        aHeadReanim->SetPosition(mPosX + aPosX + 6.0f, mPosY + aPosY - 21.0f);
+        Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+        if (aHeadReanim) {
+            aHeadReanim->SetPosition(mPosX + aPosX + 6.0f, mPosY + aPosY - 21.0f);
+        }
 
         if (mPhaseCounter == 0) {
-            aHeadReanim = mApp->ReanimationGet(mSpecialHeadReanimID);
-            aHeadReanim->PlayReanim("anim_jumpdown", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 60.0f);
+            if (aHeadReanim) {
+                aHeadReanim->PlayReanim("anim_jumpdown", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 60.0f);
+            }
             mZombiePhase = ZombiePhase::PHASE_SQUASH_FALLING;
             mPhaseCounter = 10;
         }
@@ -2386,8 +2389,10 @@ void Zombie::UpdateZombieSquashHead() {
             }
         }
 
-        Reanimation *aHeadReanim = mApp->ReanimationGet(mSpecialHeadReanimID);
-        aHeadReanim->SetPosition(mPosX + 6.0f + aDestX - mPosX, mPosY - 21.0f + aPosY);
+        Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+        if (aHeadReanim) {
+            aHeadReanim->SetPosition(mPosX + 6.0f + aDestX - mPosX, mPosY - 21.0f + aPosY);
+        }
 
         float aSquashX = mX;
         if (mApp->IsVSMode()) {
@@ -2430,8 +2435,10 @@ void Zombie::UpdateZombieSquashHead() {
     }
 
     if (mZombiePhase == ZombiePhase::PHASE_SQUASH_DONE_FALLING && mPhaseCounter == 0) {
-        Reanimation *aHeadReanim = mApp->ReanimationGet(mSpecialHeadReanimID);
-        aHeadReanim->ReanimationDie();
+        Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+        if (aHeadReanim) {
+            aHeadReanim->ReanimationDie();
+        }
         mSpecialHeadReanimID = ReanimationID::REANIMATIONID_NULL;
 
         TakeDamage(1800, 9U);

@@ -55,6 +55,7 @@
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
+#include "PvZ/TodLib/Effect/Attachment.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
@@ -2332,6 +2333,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             uint16_t serverPhaseCounter = eventZombiePhaseCounter->data4;
             if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                ZombiePhase oldZombiePhase = aZombie->mZombiePhase;
                 aZombie->mZombiePhase = ZombiePhase(serverZombiePhase);
                 aZombie->mPhaseCounter = serverPhaseCounter;
                 if (aZombie->mZombieType == ZombieType::ZOMBIE_LADDER && aZombie->mZombiePhase == ZombiePhase::PHASE_LADDER_CARRYING) {
@@ -2423,6 +2425,35 @@ void Board::processServerEvent(const BaseEvent *event) {
                         aZombie->mZombieHeight = ZombieHeight::HEIGHT_OUT_OF_POOL;
                         aZombie->mAltitude = -40.0f;
                         aZombie->PlayZombieReanim("anim_walkdolphin", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
+                    }
+                } else if (aZombie->mZombieType == ZombieType::ZOMBIE_SQUASH_HEAD) {
+                    aZombie->mSquashHeadCol = serverZombieSummonCounter == 255 ? -1 : short(serverZombieSummonCounter);
+
+                    if (aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_RISING && oldZombiePhase != ZombiePhase::PHASE_SQUASH_RISING) {
+                        aZombie->StopEating();
+                        aZombie->PlayZombieReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 20, 12.0f);
+                        aZombie->mHasHead = false;
+
+                        Reanimation *aHeadReanim = aZombie->mApp->ReanimationTryToGet(aZombie->mSpecialHeadReanimID);
+                        if (aHeadReanim) {
+                            aHeadReanim->PlayReanim("anim_jumpup", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+                            aHeadReanim->mRenderOrder = aZombie->mRenderOrder + 1;
+                            aHeadReanim->SetPosition(aZombie->mPosX + 6.0f, aZombie->mPosY - 21.0f);
+                            aHeadReanim->OverrideScale(0.75f, 0.75f);
+                            aHeadReanim->mOverlayMatrix.m10 = 0.0f;
+                        }
+                        Reanimation *aBodyReanim = aZombie->mApp->ReanimationTryToGet(aZombie->mBodyReanimID);
+                        if (aBodyReanim) {
+                            ReanimatorTrackInstance *aTrackInstance = aBodyReanim->GetTrackInstanceByName("anim_head1");
+                            if (aTrackInstance) {
+                                AttachmentDetach(aTrackInstance->mAttachmentID);
+                            }
+                        }
+                    } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_FALLING && oldZombiePhase != ZombiePhase::PHASE_SQUASH_FALLING) {
+                        Reanimation *aHeadReanim = aZombie->mApp->ReanimationTryToGet(aZombie->mSpecialHeadReanimID);
+                        if (aHeadReanim) {
+                            aHeadReanim->PlayReanim("anim_jumpdown", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 60.0f);
+                        }
                     }
                 }
             }

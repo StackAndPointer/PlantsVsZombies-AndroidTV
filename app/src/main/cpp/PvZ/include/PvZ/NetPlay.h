@@ -36,8 +36,8 @@ inline constexpr uint32_t NETPLAY_VERSION = 3175;
 enum EventType : uint8_t {
     EVENT_NULL,
 
-    EVENT_CLIENT_PING,
-    EVENT_SERVER_PONG,
+    EVENT_PING, // 双方都会发PING
+    EVENT_PONG, // 双方都会回PONG
     /************************************************************/
     EVENT_SERVER_WAITFORSECONDPALYER_VERSION_CHECK,
 
