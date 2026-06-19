@@ -1923,6 +1923,29 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aMagnetItem->mItemType = MagnetItemType::MAGNET_ITEM_LADDER_PLACED;
             }
         } break;
+        case EVENT_SERVER_BOARD_PLANT_SQUASH_STATE: {
+            auto *eventPlantSquashState = static_cast<const U16U16I16I16_Event *>(event);
+            uint16_t serverPlantID = eventPlantSquashState->data1;
+            uint16_t clientPlantID = 0;
+            if (homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
+                Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
+                PlantState oldState = aPlant->mState;
+                auto serverState = PlantState(eventPlantSquashState->data2);
+                aPlant->mState = serverState;
+                aPlant->mStateCountdown = eventPlantSquashState->data3;
+                aPlant->mTargetX = eventPlantSquashState->data4;
+
+                if (serverState == PlantState::STATE_SQUASH_LOOK && oldState != PlantState::STATE_SQUASH_LOOK) {
+                    aPlant->PlayBodyReanim(aPlant->mTargetX < aPlant->mX ? "anim_lookleft" : "anim_lookright", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 10, 24.0f);
+                } else if (serverState == PlantState::STATE_SQUASH_PRE_LAUNCH && oldState != PlantState::STATE_SQUASH_PRE_LAUNCH) {
+                    aPlant->PlayBodyReanim("anim_jumpup", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+                } else if (serverState == PlantState::STATE_SQUASH_RISING && oldState != PlantState::STATE_SQUASH_RISING) {
+                    aPlant->mRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, aPlant->mRow, 0);
+                } else if (serverState == PlantState::STATE_SQUASH_FALLING && oldState != PlantState::STATE_SQUASH_FALLING) {
+                    aPlant->PlayBodyReanim("anim_jumpdown", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 60.0f);
+                }
+            }
+        } break;
         case EVENT_SERVER_BOARD_PLANT_WIN: {
             //            auto *plantWinEvent = static_cast<const U16_Event *>(event);
             //            uint16_t serverGridItemID = plantWinEvent->data;

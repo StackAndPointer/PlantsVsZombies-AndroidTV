@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3176;
+inline constexpr uint32_t NETPLAY_VERSION = 3177;
 
 enum EventType : uint8_t {
     EVENT_NULL,
@@ -126,6 +126,7 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_PLANT_CHOMPER_BIT,
     EVENT_SERVER_BOARD_PLANT_MAGNETSHROOM_ATTACK,
     EVENT_SERVER_BOARD_PLANT_MAGNETSHROOM_ATTACK_LADDER,
+    EVENT_SERVER_BOARD_PLANT_SQUASH_STATE,
     EVENT_SERVER_BOARD_PLANT_WIN, // 植物方通过杀够3只靶子胜利，目前版本由于已同步上级GridItemDie，故不需要同步
 
     EVENT_SERVER_BOARD_ZOMBIE_DIE,
@@ -252,6 +253,13 @@ struct U8U8U16_Event : BaseEvent {
 struct U16U16_Event : BaseEvent {
     uint16_t data1;
     uint16_t data2;
+};
+
+struct U16U16I16I16_Event : BaseEvent {
+    uint16_t data1;
+    uint16_t data2;
+    int16_t data3;
+    int16_t data4;
 };
 
 struct I16I16_Event : BaseEvent {

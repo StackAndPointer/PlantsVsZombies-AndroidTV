@@ -759,6 +759,8 @@ inline void *Plant_IceZombiesAddr;
 inline void *Plant_BlowAwayFliersAddr;
 inline void *Plant_UpdateChomperAddr;
 inline void *Plant_UpdateGraveBusterAddr;
+inline void *Plant_DoSquashDamageAddr;
+inline void *Plant_FindSquashTargetAddr;
 inline void *Plant_UpdateSquashAddr;
 inline void *Plant_IsUpgradableToAddr;
 inline void *Plant_MagnetShroomAttactItemAddr;

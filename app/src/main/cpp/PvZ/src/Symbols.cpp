@@ -757,6 +757,8 @@ bool LoadGameMain() {
     Plant_BlowAwayFliersAddr = libGameMain.GetSymbol("_ZN5Plant14BlowAwayFliersEii");
     Plant_UpdateChomperAddr = libGameMain.GetSymbol("_ZN5Plant13UpdateChomperEv");
     Plant_UpdateGraveBusterAddr = libGameMain.GetSymbol("_ZN5Plant17UpdateGraveBusterEv");
+    Plant_DoSquashDamageAddr = libGameMain.GetSymbol("_ZN5Plant14DoSquashDamageEv");
+    Plant_FindSquashTargetAddr = libGameMain.GetSymbol("_ZN5Plant16FindSquashTargetEv");
     Plant_UpdateSquashAddr = libGameMain.GetSymbol("_ZN5Plant12UpdateSquashEv");
     Plant_IsUpgradableToAddr = libGameMain.GetSymbol("_ZN5Plant14IsUpgradableToE8SeedType");
     Plant_MagnetShroomAttactItemAddr = libGameMain.GetSymbol("_ZN5Plant22MagnetShroomAttactItemEP6Zombie");

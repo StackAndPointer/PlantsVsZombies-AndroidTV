@@ -2589,9 +2589,105 @@ void Plant::UpdateMagnetShroom() {
 }
 
 void Plant::UpdateSquash() {
-    old_Plant_UpdateSquash(this);
+    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
+    auto syncSquashState = [this]() {
+        if (gTcpClientSocket < 0) {
+            return;
+        }
+        U16U16I16I16_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_PLANT_SQUASH_STATE;
+        event.data1 = uint16_t(mBoard->mPlants.DataArrayGetID(this));
+        event.data2 = uint16_t(mState);
+        event.data3 = int16_t(mStateCountdown);
+        event.data4 = int16_t(mTargetX);
+        netplay::PutEvent(event);
+    };
 
-    if (mState == PlantState::STATE_SQUASH_PRE_LAUNCH && mStateCountdown == 1) {
-        TriggerVibration(VibrationEffect::VIVRATION_JUMP); // 这窝瓜有力气!!
+    if (mState == PlantState::STATE_NOTREADY) {
+        if (isRemoteClient) {
+            return;
+        }
+        Zombie *aZombie = FindSquashTarget();
+        if (aZombie) {
+            mTargetZombieID = mBoard->ZombieGetID(aZombie);
+            mTargetX = aZombie->ZombieTargetLeadX(0.0f) - mWidth / 2;
+            mState = PlantState::STATE_SQUASH_LOOK;
+            mStateCountdown = 80;
+            PlayBodyReanim(mTargetX < mX ? "anim_lookleft" : "anim_lookright", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 10, 24.0f);
+            mApp->PlayFoley(FoleyType::FOLEY_SQUASH_HMM);
+            syncSquashState();
+        }
+    } else if (mState == PlantState::STATE_SQUASH_LOOK) {
+        if (isRemoteClient) {
+            return;
+        }
+        if (mStateCountdown <= 0) {
+            PlayBodyReanim("anim_jumpup", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+            mState = PlantState::STATE_SQUASH_PRE_LAUNCH;
+            mStateCountdown = 45;
+            syncSquashState();
+        }
+    } else if (mState == PlantState::STATE_SQUASH_PRE_LAUNCH) {
+        if (mStateCountdown == 1) {
+            TriggerVibration(VibrationEffect::VIVRATION_JUMP); // 这窝瓜有力气!!
+        }
+        if (isRemoteClient) {
+            return;
+        }
+        if (mStateCountdown <= 0) {
+            Zombie *aZombie = FindSquashTarget();
+            if (aZombie) {
+                mTargetX = aZombie->ZombieTargetLeadX(30.0f) - mWidth / 2;
+            }
+
+            mState = PlantState::STATE_SQUASH_RISING;
+            mStateCountdown = 50;
+            mRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, mRow, 0);
+            syncSquashState();
+        }
+    } else {
+        int aTargetCol = mBoard->PixelToGridXKeepOnBoard(mTargetX, mY);
+        int aDestY = mBoard->GridToPixelY(aTargetCol, mRow) + 8;
+
+        if (mState == PlantState::STATE_SQUASH_RISING) {
+            mX = TodAnimateCurve(50, 20, mStateCountdown, mBoard->GridToPixelX(mPlantCol, mStartRow), mTargetX, TodCurves::CURVE_EASE_IN_OUT);
+            mY = TodAnimateCurve(50, 20, mStateCountdown, mBoard->GridToPixelY(mPlantCol, mStartRow), aDestY - 120, TodCurves::CURVE_EASE_IN_OUT);
+
+            if (mStateCountdown == 0) {
+                PlayBodyReanim("anim_jumpdown", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 60.0f);
+                mState = PlantState::STATE_SQUASH_FALLING;
+                mStateCountdown = 10;
+                syncSquashState();
+            }
+        } else if (mState == PlantState::STATE_SQUASH_FALLING) {
+            mY = TodAnimateCurve(10, 0, mStateCountdown, aDestY - 120, aDestY, TodCurves::CURVE_LINEAR);
+
+            if (mStateCountdown == 5) {
+                DoSquashDamage();
+            }
+
+            if (mStateCountdown == 0) {
+                if (mBoard->IsPoolSquare(aTargetCol, mRow)) {
+                    mApp->AddReanimation(mX - 11, mY + 20, mRenderOrder + 1, ReanimationType::REANIM_SPLASH);
+                    mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
+                    mApp->PlaySample(SOUND_ZOMBIESPLASH);
+
+                    Die();
+                } else {
+                    mState = PlantState::STATE_SQUASH_DONE_FALLING;
+                    mStateCountdown = 100;
+
+                    mBoard->ShakeBoard(1, 4);
+                    mApp->PlayFoley(FoleyType::FOLEY_THUMP);
+                    float aOffsetY = mBoard->StageHasRoof() ? 69.0f : 80.0f;
+                    mApp->AddTodParticle(mX + 40, mY + aOffsetY, mRenderOrder + 4, ParticleEffect::PARTICLE_DUST_SQUASH);
+                }
+            }
+        } else if (mState == PlantState::STATE_SQUASH_DONE_FALLING) {
+            if (mStateCountdown == 0) {
+                Die();
+            }
+        }
     }
 }

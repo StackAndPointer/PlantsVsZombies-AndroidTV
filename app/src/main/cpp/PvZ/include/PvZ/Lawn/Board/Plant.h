@@ -258,6 +258,12 @@ public:
     static pvzstl::string GetToolTip(SeedType theSeedType) {
         return reinterpret_cast<pvzstl::string (*)(SeedType)>(Plant_GetToolTipAddr)(theSeedType);
     }
+    void DoSquashDamage() {
+        return reinterpret_cast<void (*)(Plant *)>(Plant_DoSquashDamageAddr)(this);
+    }
+    Zombie *FindSquashTarget() {
+        return reinterpret_cast<Zombie *(*)(Plant *)>(Plant_FindSquashTargetAddr)(this);
+    }
 
     void PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, SeedType theImitaterType, int a6);
     void Update();
