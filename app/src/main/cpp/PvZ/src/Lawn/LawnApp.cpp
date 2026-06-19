@@ -552,7 +552,7 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
 
 
 void LawnApp::UpdateFrames() {
-    const bool replayPaused = replay::IsPlaybackActive() && gReplayPauseByMenu && mBoard != nullptr && mBoard->mPaused;
+    const bool replayPaused = replay::IsPlaybackPaused();
     if ((gTcpClientSocket >= 0 || gTcpConnected || replay::IsPlaybackActive()) && !replayPaused) {
         ++gNetPingNowTick;
         if (!gIsServerModeSpectator) {
@@ -568,10 +568,12 @@ void LawnApp::UpdateFrames() {
         if (!replay::IsPlaybackActive()) {
             SendPeriodicNetPing();
         } else if (replay::IsPlaybackActive()) {
-            replay::AdvancePlaybackTick();
+            replay::AdvancePlaybackOneTick();
         }
     }
-    replay::TickPlayback();
+    if (!replay::IsPlaybackActive()) {
+        replay::TickPlayback();
+    }
 
     std::byte buf[1024];
 

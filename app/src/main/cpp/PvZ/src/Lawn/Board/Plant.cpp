@@ -290,7 +290,7 @@ void Plant::Update() {
         return;
     }
 
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         // 如果开了高级暂停
         UpdateReanimColor();
         if (mHighLightCounter == 1000) {

@@ -293,6 +293,9 @@ public:
     void KillVSSetupScreen() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_KillVSSetupScreenAddr)(this);
     }
+    void StartPlaying() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_StartPlayingAddr)(this);
+    }
     bool IsTrialStageLocked() {
         return reinterpret_cast<bool (*)(LawnApp *)>(LawnApp_IsTrialStageLockedAddr)(this);
     }

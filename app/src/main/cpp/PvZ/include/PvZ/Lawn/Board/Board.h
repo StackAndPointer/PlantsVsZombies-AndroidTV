@@ -55,6 +55,7 @@ class GameButton;
 class GamepadControls;
 class LawnApp;
 class Reanimation;
+class ReplayControlsWidget;
 class SaveGameContext;
 class SeedBank;
 class SeedPacket;
@@ -273,6 +274,7 @@ public:
     GameButton *mBoardMenuButton = nullptr;                           // 新增成员
     GameButton *mBoardStoreButton = nullptr;                          // 新增成员
     ShovelRedirectWidget *mShovelWidget = nullptr;
+    ReplayControlsWidget *mReplayControlsWidget = nullptr;
 
     Projectile *AddProjectile(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
         return reinterpret_cast<Projectile *(*)(Board *, int, int, int, int, ProjectileType)>(Board_AddProjectileAddr)(this, theX, theY, theRenderOrder, theRow, theProjectileType);

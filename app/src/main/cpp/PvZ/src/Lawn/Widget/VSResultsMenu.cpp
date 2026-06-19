@@ -422,7 +422,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
         }
         meta.mapName = StrFormat("VSBG_%d", int(mBoardBackground));
         meta.vsBackground = int(mBoardBackground);
-        meta.durationTicks = mBoardMainCounter > 0 ? mBoardMainCounter : replay::EstimateRecordedDurationTicks();
+        meta.boardTicks = mBoardMainCounter;
         meta.plantDeck = BuildDeckText(mPlantSeeds, 6);
         meta.zombieDeck = BuildDeckText(mZombieSeeds, 6);
         meta.createdAt = timeText;

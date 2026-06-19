@@ -177,7 +177,7 @@ void Challenge::Update() {
         }
     }
 
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         return;
     }
 

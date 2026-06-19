@@ -45,8 +45,14 @@ struct ReplayPacketRecord {
 
 struct PlaybackState {
     bool active = false;
+    bool paused = false;
     std::uint32_t playbackTick = 0;
+    std::uint32_t durationTicks = 0;
+    std::uint32_t boardTicks = 0;
     std::size_t nextIndex = 0;
+    int speedLevel = 0;
+    int vsBackground = 0;
+    std::string filePath;
     std::vector<ReplayPacketRecord> packets;
 };
 
@@ -58,7 +64,8 @@ bool gRecordStartTickReady = false;
 std::string BuildMetaText(const ReplayMetaInfo &meta) {
     return "host=" + meta.hostName + "\n" + "guest=" + meta.guestName + "\n" + "winner=" + meta.winnerName + "\n" + "map=" + meta.mapName + "\n" + "vs_background=" + std::to_string(meta.vsBackground)
         + "\n" + "created_at=" + meta.createdAt + "\n" + "host_camp=" + meta.hostCamp + "\n" + "guest_camp=" + meta.guestCamp + "\n" + "plant_deck=" + meta.plantDeck + "\n"
-        + "zombie_deck=" + meta.zombieDeck + "\n" + "duration_ticks=" + std::to_string(meta.durationTicks) + "\n" + "netplay_version=" + std::to_string(NETPLAY_VERSION) + "\n";
+        + "zombie_deck=" + meta.zombieDeck + "\n" + "duration_ticks=" + std::to_string(meta.durationTicks) + "\n" + "board_tick=" + std::to_string(meta.boardTicks) + "\n"
+        + "netplay_version=" + std::to_string(NETPLAY_VERSION) + "\n";
 }
 
 std::string ReadMetaValue(const std::string &meta, const char *key) {
@@ -112,6 +119,14 @@ void replay::AdvancePlaybackTick() {
     ++gPlaybackState.playbackTick;
 }
 
+void replay::AdvancePlaybackOneTick() {
+    if (!gPlaybackState.active || gPlaybackState.paused) {
+        return;
+    }
+    AdvancePlaybackTick();
+    TickPlayback();
+}
+
 void replay::RecordPacket(ReplayPacketDir dir, const std::byte *data, std::size_t len, std::uint32_t tick) {
     if (gPlaybackState.active) {
         return;
@@ -154,14 +169,17 @@ bool replay::SaveCurrentMatchReplay(const ReplayMetaInfo &meta) {
         return false;
     }
 
-    const std::string outPath = std::string(kReplayDir) + "/" + meta.fileName;
+    ReplayMetaInfo metaToWrite = meta;
+    metaToWrite.durationTicks = static_cast<int>(packetsToSave.back().tick);
+
+    const std::string outPath = std::string(kReplayDir) + "/" + metaToWrite.fileName;
     std::ofstream out(outPath, std::ios::binary);
     if (!out.is_open()) {
         LOG_ERROR("[REPLAY] open failed path={}", outPath);
         return false;
     }
 
-    const std::string metaText = BuildMetaText(meta);
+    const std::string metaText = BuildMetaText(metaToWrite);
     const std::uint32_t metaLen = static_cast<std::uint32_t>(metaText.size());
     const std::uint32_t packetCount = static_cast<std::uint32_t>(packetsToSave.size());
     out.write(kReplayMagic.data(), kReplayMagic.size());
@@ -228,6 +246,10 @@ std::vector<ReplayMetaInfo> replay::ListReplayFiles() {
         info.plantDeck = ReadMetaValue(meta, "plant_deck");
         info.zombieDeck = ReadMetaValue(meta, "zombie_deck");
         info.durationTicks = std::atoi(ReadMetaValue(meta, "duration_ticks").c_str());
+        info.boardTicks = std::atoi(ReadMetaValue(meta, "board_tick").c_str());
+        if (info.boardTicks == 0) {
+            info.boardTicks = info.durationTicks;
+        }
         info.netplayVersion = std::atoi(ReadMetaValue(meta, "netplay_version").c_str());
         info.packetCount = packetCount;
         infos.push_back(std::move(info));
@@ -318,9 +340,22 @@ bool replay::BeginPlaybackFromFile(const std::string &path) {
     }
 
     gPlaybackState.active = true;
+    gPlaybackState.paused = false;
+    requestPause = false;
     gPlaybackState.playbackTick = 0;
+    gPlaybackState.durationTicks = static_cast<std::uint32_t>(std::max(0, std::atoi(ReadMetaValue(meta, "duration_ticks").c_str())));
+    gPlaybackState.boardTicks = static_cast<std::uint32_t>(std::max(0, std::atoi(ReadMetaValue(meta, "board_tick").c_str())));
     gPlaybackState.nextIndex = 0;
+    gPlaybackState.speedLevel = 0;
+    gPlaybackState.vsBackground = std::atoi(ReadMetaValue(meta, "vs_background").c_str());
+    gPlaybackState.filePath = path;
     gPlaybackState.packets = std::move(packets);
+    if (gPlaybackState.durationTicks == 0 && !gPlaybackState.packets.empty()) {
+        gPlaybackState.durationTicks = gPlaybackState.packets.back().tick;
+    }
+    if (gPlaybackState.boardTicks == 0) {
+        gPlaybackState.boardTicks = gPlaybackState.durationTicks;
+    }
     LOG_INFO("[REPLAY] playback begin path={} packets={}", path, gPlaybackState.packets.size());
     return true;
 }
@@ -342,10 +377,96 @@ void replay::StopPlayback() {
     gPlaybackState = {};
     gIsReplayMode = false;
     gReplayPauseByMenu = false;
+    requestPause = false;
 }
 
 bool replay::IsPlaybackActive() {
     return gPlaybackState.active;
+}
+
+bool replay::IsPlaybackPaused() {
+    return gPlaybackState.active && gPlaybackState.paused;
+}
+
+void replay::SetPlaybackPaused(bool paused) {
+    if (!gPlaybackState.active) {
+        return;
+    }
+    gPlaybackState.paused = paused;
+    requestPause = paused;
+}
+
+int replay::GetPlaybackSpeedLevel() {
+    return gPlaybackState.speedLevel;
+}
+
+int replay::GetPlaybackSpeedMultiplier() {
+    switch (gPlaybackState.speedLevel) {
+        case 1:
+            return 2;
+        case 2:
+            return 3;
+        case 3:
+            return 5;
+        case 4:
+            return 10;
+        default:
+            return 1;
+    }
+}
+
+void replay::SetPlaybackSpeedLevel(int speedLevel) {
+    if (!gPlaybackState.active) {
+        return;
+    }
+    gPlaybackState.speedLevel = std::clamp(speedLevel, 0, 4);
+}
+
+void replay::CyclePlaybackSpeed() {
+    if (!gPlaybackState.active) {
+        return;
+    }
+    gPlaybackState.speedLevel = (gPlaybackState.speedLevel + 1) % 5;
+}
+
+int replay::GetPlaybackTick() {
+    return static_cast<int>(gPlaybackState.playbackTick);
+}
+
+int replay::GetPlaybackDurationTicks() {
+    return static_cast<int>(gPlaybackState.durationTicks);
+}
+
+int replay::GetPlaybackBoardTicks() {
+    return static_cast<int>(gPlaybackState.boardTicks);
+}
+
+const std::string &replay::GetPlaybackFilePath() {
+    return gPlaybackState.filePath;
+}
+
+int replay::GetPlaybackVsBackground() {
+    return gPlaybackState.vsBackground;
+}
+
+int replay::FindPlaybackEventTick(EventType eventType) {
+    if (!gPlaybackState.active) {
+        return -1;
+    }
+    for (const auto &pkt : gPlaybackState.packets) {
+        std::size_t offset = 0;
+        while (offset + sizeof(BaseEvent) <= pkt.data.size()) {
+            const auto *event = reinterpret_cast<const BaseEvent *>(pkt.data.data() + offset);
+            if (event->size == 0 || offset + event->size > pkt.data.size()) {
+                break;
+            }
+            if (event->type == eventType) {
+                return static_cast<int>(pkt.tick);
+            }
+            offset += event->size;
+        }
+    }
+    return -1;
 }
 
 void replay::TickPlayback() {
@@ -366,7 +487,7 @@ void replay::TickPlayback() {
         }
         ++gPlaybackState.nextIndex;
     }
-    if (gPlaybackState.nextIndex >= gPlaybackState.packets.size()) {
+    if (gPlaybackState.nextIndex >= gPlaybackState.packets.size() && gPlaybackState.playbackTick >= gPlaybackState.durationTicks) {
         StopPlayback();
     }
 }

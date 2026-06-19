@@ -43,7 +43,7 @@ void SeedPacket::Update() {
         mRefreshing = false;
     }
 
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         // 在IZ模式不暂停刷新种子卡片
         if (!mApp->IsIZombieLevel()) {
             return;

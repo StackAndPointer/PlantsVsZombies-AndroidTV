@@ -45,12 +45,14 @@
 #include "PvZ/Lawn/System/Music.h"
 #include "PvZ/Lawn/Widget/ChallengeScreen.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
+#include "PvZ/Lawn/Widget/ReplayControlsWidget.h"
 #include "PvZ/Lawn/Widget/SeedChooserScreen.h"
 #include "PvZ/Lawn/Widget/VSResultsMenu.h"
 #include "PvZ/Lawn/Widget/VSSetupMenu.h"
 #include "PvZ/Misc.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/PatchList.h"
+#include "PvZ/ReplaySystem.h"
 #include "PvZ/SexyAppFramework/GamepadApp.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
@@ -59,6 +61,7 @@
 #include "PvZ/TodLib/Effect/Reanimator.h"
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
 
@@ -78,6 +81,26 @@ IdMap serverGridItemIDMap;
 
 // 新增：远端暂停同步保护
 bool gPauseSyncFromRemote = false;
+
+void SafeLaunchThreepeaterForRemote(Plant *plant) {
+    if (plant == nullptr || plant->mApp == nullptr) {
+        return;
+    }
+
+    Reanimation *headReanim1 = plant->mApp->ReanimationTryToGet(plant->mHeadReanimID);
+    Reanimation *headReanim2 = plant->mApp->ReanimationTryToGet(plant->mHeadReanimID2);
+    Reanimation *headReanim3 = plant->mApp->ReanimationTryToGet(plant->mHeadReanimID3);
+    if (headReanim1 == nullptr || headReanim2 == nullptr || headReanim3 == nullptr) {
+        LOG_WARN("[NETPLAY] skip remote threepeater launch: missing head reanim plantId={} head1={} head2={} head3={}",
+                 plant->mBoard ? plant->mBoard->mPlants.DataArrayGetID(plant) : -1,
+                 static_cast<void *>(headReanim1),
+                 static_cast<void *>(headReanim2),
+                 static_cast<void *>(headReanim3));
+        return;
+    }
+
+    plant->LaunchThreepeater();
+}
 } // namespace
 
 void Board::_constructor(LawnApp *theApp) {
@@ -119,9 +142,11 @@ void Board::_constructor(LawnApp *theApp) {
         serverCoinIDMap.clear();
         serverGridItemIDMap.clear();
     }
+    mReplayControlsWidget = new ReplayControlsWidget(this);
 }
 
 void Board::_destructor() {
+    delete mReplayControlsWidget;
     delete mBoardStoreButton;
     delete mBoardMenuButton;
     delete mShovelWidget;
@@ -136,6 +161,7 @@ void Board::AddedToManager(WidgetManager *theWidgetManager) {
     }
     AddWidget(mBoardMenuButton);
     AddWidget(mBoardStoreButton);
+    AddWidget(mReplayControlsWidget);
 }
 
 void Board::RemovedFromManager(WidgetManager *theWidgetManager) {
@@ -147,6 +173,7 @@ void Board::RemovedFromManager(WidgetManager *theWidgetManager) {
 
     RemoveWidget(mBoardStoreButton);
     RemoveWidget(mBoardMenuButton);
+    RemoveWidget(mReplayControlsWidget);
 
 
     old_Board_RemovedFromManager(this, theWidgetManager);
@@ -366,7 +393,7 @@ void Board::ShovelDown() {
 }
 
 void Board::UpdateGame() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         UpdateGameObjects();
         return;
     }
@@ -842,7 +869,7 @@ Coin *Board::AddCoin(int theX, int theY, CoinType theCoinType, CoinMotion theCoi
 }
 
 void Board::UpdateSunSpawning() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         // 如果开了高级暂停
         return;
     }
@@ -905,7 +932,7 @@ void Board::UpdateSunSpawning() {
 }
 
 void Board::UpdateZombieSpawning() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         // 如果开了高级暂停
         return;
     }
@@ -1002,7 +1029,7 @@ void Board::UpdateZombieSpawning() {
 }
 
 void Board::UpdateIce() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         // 如果开了高级暂停
         return;
     }
@@ -1239,7 +1266,7 @@ bool Board::StageHas6Rows() const {
 
 
 void Board::UpdateFwoosh() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         return;
     }
 
@@ -1247,7 +1274,7 @@ void Board::UpdateFwoosh() {
 }
 
 void Board::UpdateFog() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         return;
     }
 
@@ -1445,7 +1472,7 @@ Zombie *Board::AddZombie_Origin(ZombieType theZombieType, int theFromWave, bool 
 // void (*old_Board_UpdateCoverLayer)(Board *this);
 //
 // void Board_UpdateCoverLayer(Board *this) {
-// if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+// if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
 // return;
 // }
 // old_Board_UpdateCoverLayer(this);
@@ -1840,7 +1867,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             if (homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
                 Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
                 if (aPlant->mSeedType == SEED_THREEPEATER) {
-                    aPlant->LaunchThreepeater();
+                    SafeLaunchThreepeaterForRemote(aPlant);
                 } else if (aPlant->mSeedType == SEED_STARFRUIT) {
                     aPlant->LaunchStarFruit();
                 }
@@ -2893,11 +2920,32 @@ void Board::Update() {
             }
         }
 
+        if (gIsReplayMode && replay::IsPlaybackActive() && !replay::IsPlaybackPaused()) {
+            const int extraUpdates = replay::GetPlaybackSpeedMultiplier() - 1;
+            for (int i = 0; i < extraUpdates; ++i) {
+                replay::AdvancePlaybackOneTick();
+                if (mApp->mGameScene == GameScenes::SCENE_LEVEL_INTRO && mCutScene != nullptr) {
+                    mCutScene->Update();
+                } else {
+                    SpeedUpUpdate();
+                }
+            }
+        }
+
         // 为夜晚泳池场景补全泳池反射闪光特效
         // if ( this->mBackground == BackgroundType::BACKGROUND_4_FOG && this->mPoolSparklyParticleID == 0 && this->mDrawCount > 0 ){
         // TodParticleSystem * poolSparklyParticle = AddTodParticle(this->mApp, 450.0, 295.0, 220000, a::PARTICLE_POOL_SPARKLY);
         // this->mPoolSparklyParticleID = LawnApp_ParticleGetID(this->mApp, poolSparklyParticle);
         // }
+    }
+
+    if (mReplayControlsWidget != nullptr) {
+        mReplayControlsWidget->SetVisible(gIsReplayMode && replay::IsPlaybackActive());
+        const int replayControlsY = ReplayControlsWidget::kInitialY;
+        if (mReplayControlsWidget->mX != ReplayControlsWidget::kX || mReplayControlsWidget->mY != replayControlsY || mReplayControlsWidget->mWidth != ReplayControlsWidget::kWidth
+            || mReplayControlsWidget->mHeight != ReplayControlsWidget::kHeight) {
+            mReplayControlsWidget->Resize(ReplayControlsWidget::kX, replayControlsY, ReplayControlsWidget::kWidth, ReplayControlsWidget::kHeight);
+        }
     }
 
     if (clearAllPlant) {
@@ -3318,8 +3366,6 @@ void Board::Draw(Sexy::Graphics *g) {
 
         if (gIsReplayMode) {
 
-            TodDrawString(g, "[REPLAY]", 400, -20, Sexy::FONT_DWARVENTODCRAFT18, aColor, DS_ALIGN_CENTER);
-
         } else if (gTcpConnected) {
             if (gNetDelayNow == 0) {
                 pvzstl::string status = TodStringTranslate(gIsServerModeSpectator ? "[SPECTATE]" : "[VS_STATUS_IN_ROOM]");
@@ -3376,7 +3422,15 @@ void Board::PauseFromSecondPlayer(bool thePause) {
 void Board::Pause(bool thePause) {
     //    LOG_DEBUG("Pause={}, remoteSync={}", thePause, gPauseSyncFromRemote);
 
-    // Spectator is read-only: block any local pause/resume attempts.
+    if (gIsReplayMode && !gPauseSyncFromRemote) {
+        replay::SetPlaybackPaused(thePause);
+        if (!thePause) {
+            gReplayPauseByMenu = false;
+        }
+        return;
+    }
+
+    // Spectator is read-only: block local pause/resume attempts.
     if (gIsServerModeSpectator && !gPauseSyncFromRemote) {
         //        LOG_DEBUG("Pause blocked for spectator");
         return;
@@ -3689,14 +3743,14 @@ bool Board::GetAliveJacksonZombie() {
 
 void Board::UpdateLevelEndSequence() {
     // 修复无尽最后一波僵尸出现后高级暂停无法暂停下一关的到来
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode)
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode))
         return;
 
     old_Board_UpdateLevelEndSequence(this);
 }
 
 void Board::UpdateGridItems() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode)
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode))
         return;
 
     old_Board_UpdateGridItems(this);

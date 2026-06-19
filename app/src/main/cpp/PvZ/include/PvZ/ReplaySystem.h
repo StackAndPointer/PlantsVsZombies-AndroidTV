@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+enum EventType : std::uint8_t;
+
 enum class ReplayPacketDir : std::uint8_t {
     Outbound = 0,
     InboundClient = 1,
@@ -46,6 +48,7 @@ struct ReplayMetaInfo {
     int netplayVersion = 0;
     int vsBackground = 0;
     int durationTicks = 0;
+    int boardTicks = 0;
     std::size_t packetCount = 0;
 };
 
@@ -56,9 +59,22 @@ bool SaveCurrentMatchReplay(const ReplayMetaInfo &meta);
 std::vector<ReplayMetaInfo> ListReplayFiles();
 bool BeginPlaybackFromFile(const std::string &path);
 void AdvancePlaybackTick();
+void AdvancePlaybackOneTick();
 int EstimateRecordedDurationTicks();
 void StopPlayback();
 bool IsPlaybackActive();
+bool IsPlaybackPaused();
+void SetPlaybackPaused(bool paused);
+int GetPlaybackSpeedLevel();
+int GetPlaybackSpeedMultiplier();
+void SetPlaybackSpeedLevel(int speedLevel);
+void CyclePlaybackSpeed();
+int GetPlaybackTick();
+int GetPlaybackDurationTicks();
+int GetPlaybackBoardTicks();
+const std::string &GetPlaybackFilePath();
+int GetPlaybackVsBackground();
+int FindPlaybackEventTick(EventType eventType);
 void TickPlayback();
 } // namespace replay
 

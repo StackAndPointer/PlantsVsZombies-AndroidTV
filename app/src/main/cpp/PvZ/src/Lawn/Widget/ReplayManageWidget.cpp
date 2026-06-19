@@ -125,7 +125,7 @@ public:
             [[maybe_unused]] const int rightDeckX = mWidth - sideMargin - (6 * 50);
             const int rightDeckRightmostX = mWidth - sideMargin - 50;
             const int rightNameX = mWidth - sideMargin;
-            const int secs = item.durationTicks / 100;
+            const int secs = item.boardTicks / 100;
             const int mm = secs / 60;
             const int ss = secs % 60;
             const char *plantPlayer = "Unknown";

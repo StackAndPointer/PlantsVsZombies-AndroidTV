@@ -24,7 +24,7 @@
 #include "PvZ/NetPlay.h"
 
 void LawnMower::Update() {
-    if (!requestPause || IsOnlineServerModeActive()) {
+    if (!requestPause || (IsOnlineServerModeActive() && !gIsReplayMode)) {
         old_LawnMower_Update(this);
     }
 }

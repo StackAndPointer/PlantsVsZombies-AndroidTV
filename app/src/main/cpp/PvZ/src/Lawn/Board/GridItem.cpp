@@ -279,7 +279,7 @@ void GridItem::DrawScaryPot(Sexy::Graphics *g) {
 }
 
 void GridItem::Update() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         return; // 高级暂停
     }
 

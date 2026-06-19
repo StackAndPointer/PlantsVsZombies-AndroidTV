@@ -347,7 +347,7 @@ void Zombie::Update() {
         mBloated = mZombieType == ZombieType::ZOMBIE_NORMAL && !mInPool;
     }
 
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         // 如果开了高级暂停
         return;
     }
@@ -2305,8 +2305,21 @@ void Zombie::UpdateZombieJalapenoHead() {
 
 void Zombie::UpdateZombieSquashHead() {
     bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsReplayMode);
+    bool justEnteredSquashRising = false;
+    auto syncSquashHeadPhase = [this]() {
+        if (gTcpClientSocket < 0) {
+            return;
+        }
+        U8U8U16U16_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER;
+        event.data1 = uint8_t(mZombiePhase);
+        event.data2 = mSquashHeadCol == -1 ? uint8_t(255) : uint8_t(mSquashHeadCol);
+        event.data3 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+        event.data4 = uint16_t(mPhaseCounter);
+        netplay::PutEvent(event);
+    };
 
-    if (mHasHead && mIsEating && mZombiePhase == ZombiePhase::PHASE_SQUASH_PRE_LAUNCH) {
+    if (!isRemoteClient && mHasHead && mIsEating && mZombiePhase == ZombiePhase::PHASE_SQUASH_PRE_LAUNCH) {
         StopEating();
         PlayZombieReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 20, 12.0f);
         mHasHead = false;
@@ -2324,12 +2337,13 @@ void Zombie::UpdateZombieSquashHead() {
 
         mZombiePhase = ZombiePhase::PHASE_SQUASH_RISING;
         mPhaseCounter = 95;
+        justEnteredSquashRising = true;
     }
 
     if (mZombiePhase == ZombiePhase::PHASE_SQUASH_RISING) {
         int aDestX = mBoard->GridToPixelX(mBoard->PixelToGridXKeepOnBoard(mX, mY), mRow);
 
-        if (mMindControlled) {
+        if (!isRemoteClient && mMindControlled) {
             Zombie *aZombie = FindZombieTarget();
             if (aZombie) {
                 aDestX = aZombie->ZombieTargetLeadX(0.0f);
@@ -2340,18 +2354,23 @@ void Zombie::UpdateZombieSquashHead() {
 
         if (mApp->IsVSMode()) {
             if (mSquashHeadCol == -1) { // 空压修复
-                if (Zombie *aZombie = FindZombieTarget()) {
-                    aDestX = aZombie->ZombieTargetLeadX(0.0f) - mWidth / 2;
-                } else {
-                    Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
-                    if (aPlant) {
-                        mSquashHeadCol = aPlant->mPlantCol;
+                if (!isRemoteClient) {
+                    if (Zombie *aZombie = FindZombieTarget()) {
+                        aDestX = aZombie->ZombieTargetLeadX(0.0f) - mWidth / 2;
+                    } else {
+                        Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
+                        if (aPlant) {
+                            mSquashHeadCol = aPlant->mPlantCol;
+                        }
+                        aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
                     }
-                    aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
                 }
             } else {
                 aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
             }
+        }
+        if (justEnteredSquashRising) {
+            syncSquashHeadPhase();
         }
 
         int aPosX = TodAnimateCurve(50, 20, mPhaseCounter, 0, aDestX - mPosX, TodCurves::CURVE_EASE_IN_OUT);
@@ -2368,6 +2387,7 @@ void Zombie::UpdateZombieSquashHead() {
             }
             mZombiePhase = ZombiePhase::PHASE_SQUASH_FALLING;
             mPhaseCounter = 10;
+            syncSquashHeadPhase();
         }
     }
 
@@ -2375,7 +2395,7 @@ void Zombie::UpdateZombieSquashHead() {
         int aPosY = TodAnimateCurve(10, 0, mPhaseCounter, -20, 74, TodCurves::CURVE_LINEAR);
         int aDestX = mBoard->GridToPixelX(mBoard->PixelToGridXKeepOnBoard(mX, mY), mRow);
 
-        if (mMindControlled) {
+        if (!isRemoteClient && mMindControlled) {
             Zombie *aZombie = FindZombieTarget();
             if (aZombie) {
                 aDestX = aZombie->ZombieTargetLeadX(0.0f);
@@ -2385,8 +2405,12 @@ void Zombie::UpdateZombieSquashHead() {
         }
 
         if (mApp->IsVSMode()) {
-            if (Zombie *aZombie = FindZombieTarget()) {
-                aDestX = aZombie->ZombieTargetLeadX(0.0f) - mWidth / 2;
+            if (!isRemoteClient) {
+                if (Zombie *aZombie = FindZombieTarget()) {
+                    aDestX = aZombie->ZombieTargetLeadX(0.0f) - mWidth / 2;
+                } else if (mSquashHeadCol != -1) {
+                    aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
+                }
             } else if (mSquashHeadCol != -1) {
                 aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
             }
@@ -2402,7 +2426,7 @@ void Zombie::UpdateZombieSquashHead() {
             aSquashX = mPosX + 6.0f + aDestX - mPosX;
         }
 
-        if (mPhaseCounter == 2) {
+        if (mPhaseCounter == 2 && !isRemoteClient) {
             if (mMindControlled) // 魅惑修复
             {
                 Rect aAttackRect(aDestX - 73, mPosY + 4, 65, 90); // 具体数值未实测，待定
@@ -2422,9 +2446,7 @@ void Zombie::UpdateZombieSquashHead() {
                         aZombie->TakeDamage(1800, 18U);
                     }
                 }
-                if (!isRemoteClient) {
-                    SquishAllInSquare(mBoard->PixelToGridXKeepOnBoard(aSquashX, mY), mRow, ZombieAttackType::ATTACKTYPE_CHEW);
-                }
+                SquishAllInSquare(mBoard->PixelToGridXKeepOnBoard(aSquashX, mY), mRow, ZombieAttackType::ATTACKTYPE_CHEW);
             }
         }
 

@@ -235,6 +235,7 @@ bool LoadGameMain() {
     CutScene_FindAndPlaceZombieAddr = libGameMain.GetSymbol("_ZN8CutScene18FindAndPlaceZombieE10ZombieTypePA5_b");
     CutScene_PlaceStreetZombiesAddr = libGameMain.GetSymbol("_ZN8CutScene18PlaceStreetZombiesEv");
     CutScene_StartLevelIntroAddr = libGameMain.GetSymbol("_ZN8CutScene15StartLevelIntroEv");
+    CutScene_CancelIntroAddr = libGameMain.GetSymbol("_ZN8CutScene11CancelIntroEv");
     CutScene_ClearUpsellBoardAddr = libGameMain.GetSymbol("_ZN8CutScene16ClearUpsellBoardEv");
     CutScene_EndSeedChooserAddr = libGameMain.GetSymbol("_ZN8CutScene14EndSeedChooserEv");
     CutScene_LoadUpsellChallengeScreenAddr = libGameMain.GetSymbol("_ZN8CutScene25LoadUpsellChallengeScreenEv");
@@ -360,6 +361,7 @@ bool LoadGameMain() {
     LawnApp_SafeDeleteWidgetAddr = libGameMain.GetSymbol("_ZN7LawnApp16SafeDeleteWidgetEPN4Sexy6WidgetE");
     LawnApp_NewGameAddr = libGameMain.GetSymbol("_ZN7LawnApp7NewGameEv");
     LawnApp_MakeNewBoardAddr = libGameMain.GetSymbol("_ZN7LawnApp12MakeNewBoardEv");
+    LawnApp_StartPlayingAddr = libGameMain.GetSymbol("_ZN7LawnApp12StartPlayingEv");
     LawnApp_ShowVSSetupScreenAddr = libGameMain.GetSymbol("_ZN7LawnApp17ShowVSSetupScreenEv");
     LawnApp_KillVSSetupScreenAddr = libGameMain.GetSymbol("_ZN7LawnApp17KillVSSetupScreenEv");
     LawnApp_HasBeatenChallengeAddr = libGameMain.GetSymbol("_ZN7LawnApp18HasBeatenChallengeE8GameMode");

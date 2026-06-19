@@ -81,7 +81,9 @@ public:
     void ClearUpsellBoard() {
         reinterpret_cast<void (*)(CutScene *)>(CutScene_ClearUpsellBoardAddr)(this);
     }
-
+    void CancelIntro() {
+        reinterpret_cast<void (*)(CutScene *)>(CutScene_CancelIntroAddr)(this);
+    }
     void MouseDown(int x, int y) {
         reinterpret_cast<bool (*)(CutScene *, int, int)>(CutScene_MouseDownAddr)(this, x, y);
     }

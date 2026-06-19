@@ -235,7 +235,7 @@ void Projectile::ConvertToPea(int theGridX) {
 }
 
 void Projectile::Update() {
-    if (requestPause && !IsOnlineServerModeActive() && !gIsReplayMode) {
+    if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
         // 如果开了高级暂停
         return;
     }
