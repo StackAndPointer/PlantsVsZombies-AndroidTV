@@ -95,7 +95,9 @@ public:
     int mScaryPotterPots;                                   // 50
     int mRainCounter;                                       // 51
     int mTreeOfWisdomTalkIndex;                             // 52
-    int unk53[3];                                           // 53 ~ 55
+    int mBeghouledMouseDown;                                // 53
+    int mBeghouledMouseCaptureCountdown;                    // 54
+    int mUnknown55;                                         // 55
     int mBobSledMPCounter;                                  // 56
     int mSuddenDeathCounter;                                // 57, 原 mSuddenDeathStartTick，现改为 mSuddenDeathCounter。将导致VS_HIDE中的计时胜利模式不可用。
     int mPauseStartTick;                                    // 58, 废弃
