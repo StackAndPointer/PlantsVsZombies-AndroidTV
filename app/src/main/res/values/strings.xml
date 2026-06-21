@@ -136,6 +136,7 @@
     <string name="addon_contact_me_title">Disclaimer</string>
     <string name="addon_contact_me_message">PvZ TV Touch allows anyone to modify and publish custom releases, but some mods may be poorly crafted and cause issues like crashes.\n\nWe are only responsible for bugs in the original PvZ TV Touch. You can visit my Bilibili homepage to report bugs or provide suggestions for the PvZ TV Touch.\n\nFor crashes or other issues with modified versions, please contact the respective mod author directly to report them.\n\nIf you are the modder, please replace the \"Bilibili Homepage\" link with your own homepage or QQ group. This ensures players can reach you directly when reporting issues (instead of flooding my inbox—I\'m nearly overwhelmed by bug reports for mods).\n</string>
     <string name="addon_contact_me_button">Bilibili Homepage</string>
+    <string name="addon_export_log">Export Log</string>
     <string name="addon_launch">Launch Game</string>
     <string name="addon_hide_self">%1$s Shortcut of Additional Settings</string>
     <string name="show">Show</string>

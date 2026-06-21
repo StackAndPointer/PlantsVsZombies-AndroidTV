@@ -68,6 +68,7 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.NumberPicker;
@@ -76,7 +77,6 @@ import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.SeekBar;
 import android.widget.Switch;
-import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -1319,6 +1319,18 @@ public class SetActivity extends Activity {
                 })
                 .show());
 
+        final Button buttonExportLog = new Button(this);
+        buttonExportLog.setText(R.string.addon_export_log);
+        buttonExportLog.setTextSize(15f);
+        buttonExportLog.setTypeface(Typeface.DEFAULT_BOLD);
+        buttonExportLog.setOnClickListener(view -> {
+            var intent = new Intent(Intent.ACTION_CREATE_DOCUMENT)
+                    .addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType("text/plain")
+                    .putExtra(Intent.EXTRA_TITLE, "log.txt");
+            startActivityForResult(intent, 3);
+        });
+
         final Button buttonOpenGame = new Button(this);
         buttonOpenGame.setText(R.string.addon_launch);
         buttonOpenGame.setTextSize(15f);
@@ -1361,6 +1373,7 @@ public class SetActivity extends Activity {
         linearLayout.addView(adventureLayout);
 
         linearLayout.addView(buttonAbout);
+        linearLayout.addView(buttonExportLog);
         linearLayout.addView(buttonOpenGame);
         linearLayout.addView(buttonHide);
         scrollView.addView(linearLayout);
@@ -1382,6 +1395,20 @@ public class SetActivity extends Activity {
                 } else {
                     Toast.makeText(this, R.string.addon_appearance_importpak_toast2, Toast.LENGTH_SHORT).show();
                 }
+            }
+        }
+
+        if (requestCode == 3 && resultCode == Activity.RESULT_OK) {
+            final var cmd = new String[]{
+                    "logcat",
+                    "-d",
+                    "-s", "pvztv",
+            };
+            try (var in = Runtime.getRuntime().exec(cmd).getInputStream();
+                 var out = getContentResolver().openOutputStream(data.getData());
+            ) {
+                out.write(in.readAllBytes());
+            } catch (Exception ignored) {
             }
         }
 
