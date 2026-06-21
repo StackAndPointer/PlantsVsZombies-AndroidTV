@@ -970,25 +970,30 @@ void GamepadControls::UpdatePreviewReanim() {
 
 void GamepadControls::UpdateStates(float dt) {
     BaseGamepadControls::UpdateStates(dt);
-    mGamepadState = mGamepadState;
-    //    if ( mGamepadState == 6 || mGamepadState == 8 )
 
     // 在状态为MOVEMENT_STATE_PLANT_CURSOR下也要执行UpdateSeedSelect，此函数会更新CursorObject的mType为GetSeedBank->mSeedPackets[mSelectedSeedIndex].mPacketType，或许可以修复偶现的种下种子与SeedBank选中种子不一致的BUG
-    if (mGamepadState == MOVEMENT_STATE_SELECT_SEED || mGamepadState == MOVEMENT_STATE_PLANT_CURSOR || mGamepadState == MOVEMENT_STATE_DIG_HOLD) {
+    if (mGamepadState == MOVEMENT_STATE_PLANT_CURSOR) {
+        UpdateSeedSelect(dt);
+        return;
+    }
+
+    //    if ( mGamepadState == 6 || mGamepadState == 8 )
+    if (mGamepadState == MOVEMENT_STATE_SELECT_SEED || mGamepadState == MOVEMENT_STATE_DIG_HOLD) {
         UpdateSeedSelect(dt);
         float v5 = mGridCenterPositionX - mCursorPositionX;
         float v6 = mGridCenterPositionY - mCursorPositionY;
-        float v7 = (v5 * v5) + (v6 * v6);
-        if (v7 < 3.0f * 3.0f) {
+        float distanceSquared = (v5 * v5) + (v6 * v6);
+        if (distanceSquared < 3.0f * 3.0f) {
             mGamepadVelocityLeftX = 0.0f;
             mGamepadVelocityLeftY = 0.0f;
             mGridCenterPositionY = mGridCenterPositionY;
             mCursorPositionX = mGridCenterPositionX;
             mCursorPositionY = mGridCenterPositionY;
         } else {
-            if (v7 != 0.0f) {
-                v6 = v6 / v7;
-                v5 = v5 / v7;
+            if (distanceSquared != 0.0f) {
+                const float distance = std::sqrt(distanceSquared);
+                v6 = v6 / distance;
+                v5 = v5 / distance;
             }
             mGamepadVelocityLeftX = v5 * 250.0f;
             mGamepadVelocityLeftY = v6 * 250.0f;
