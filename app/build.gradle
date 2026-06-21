@@ -82,7 +82,8 @@ android {
     flavorDimensions += "version"
 
     productFlavors {
-        register("v111") {
+        // w 代替 v 以降低默认优先级
+        register("w111") {
             dimension = "version"
             applicationId = "com.trans.pvz"
             versionName = "1.1.1"
@@ -93,7 +94,7 @@ android {
             }
         }
 
-        register("recommend-v115") {
+        register("v115") {
             dimension = "version"
             versionName = "1.1.5"
             externalNativeBuild {

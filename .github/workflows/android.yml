@@ -23,19 +23,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # 原来的 v111，不需要改名
-          - flavor: v111
-            legacy_version: v111
-            build_type: release
-            gradle_task: ':app:assembleV111Release'
-
-          # 实际 flavor 是 recommend-v115
-          # 但产物名称继续使用旧名称 v115
-          - flavor: recommend-v115
-            legacy_version: v115
-            build_type: release
-            gradle_task: ':app:assembleRecommend-v115Release'
+        version: [ w111, v115 ]
+        build_type: [ release ]
 
     steps:
       - name: Checkout
@@ -71,7 +60,6 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_ENCODED" ]; then
             echo "$KEYSTORE_ENCODED" | base64 -d > app/keystore.jks
-
             echo "storeFile=keystore.jks" >> keystore.properties
             echo "storePassword=$KEYSTORE_PASSWORD" >> keystore.properties
             echo "keyAlias=$KEY_ALIAS" >> keystore.properties
@@ -79,99 +67,34 @@ jobs:
           fi
 
       - name: Build with Gradle
-        env:
-          GRADLE_TASK: ${{ matrix.gradle_task }}
         run: |
-          set -euo pipefail
-
+          VERSION="${{ matrix.version }}"
+          BUILD_TYPE="${{ matrix.build_type }}"
           chmod +x gradlew
+          ./gradlew assemble${VERSION^}${BUILD_TYPE^}
 
-          echo "Running Gradle task: $GRADLE_TASK"
-          ./gradlew "$GRADLE_TASK"
-
-      # 将 recommend-v115 生成的 APK 文件名恢复成原来的 v115
-      #
-      # 例如：
-      # app-recommend-v115-release.apk
-      # 改为：
-      # app-v115-release.apk
-      - name: Prepare APK artifact
-        env:
-          FLAVOR: ${{ matrix.flavor }}
-          LEGACY_VERSION: ${{ matrix.legacy_version }}
-          BUILD_TYPE: ${{ matrix.build_type }}
-        run: |
-          set -euo pipefail
-
-          SOURCE_DIR="app/build/outputs/apk/${FLAVOR}/${BUILD_TYPE}"
-          OUTPUT_DIR="ci-output"
-
-          mkdir -p "$OUTPUT_DIR"
-
-          echo "APK source directory: $SOURCE_DIR"
-
-          if [ ! -d "$SOURCE_DIR" ]; then
-            echo "::error::APK output directory does not exist: $SOURCE_DIR"
-            echo "Available APK files:"
-            find app/build/outputs/apk -type f -name '*.apk' -print 2>/dev/null || true
-            exit 1
-          fi
-
-          shopt -s nullglob
-          APK_FILES=("$SOURCE_DIR"/*.apk)
-
-          if [ "${#APK_FILES[@]}" -eq 0 ]; then
-            echo "::error::No APK files found in: $SOURCE_DIR"
-            echo "Available APK files:"
-            find app/build/outputs/apk -type f -name '*.apk' -print 2>/dev/null || true
-            exit 1
-          fi
-
-          for APK_FILE in "${APK_FILES[@]}"; do
-            ORIGINAL_FILENAME="$(basename "$APK_FILE")"
-
-            # 把文件名中的真实 flavor 替换为旧版本名。
-            # v111 -> v111，因此 v111 文件名不会变化。
-            # recommend-v115 -> v115。
-            LEGACY_FILENAME="${ORIGINAL_FILENAME//$FLAVOR/$LEGACY_VERSION}"
-
-            echo "Original APK: $APK_FILE"
-            echo "Output APK:   $OUTPUT_DIR/$LEGACY_FILENAME"
-
-            cp "$APK_FILE" "$OUTPUT_DIR/$LEGACY_FILENAME"
-          done
-
-          echo "Prepared APK files:"
-          find "$OUTPUT_DIR" -maxdepth 1 -type f -name '*.apk' -print
-
-      # Artifact 名仍然保持：
-      # PvZ-TV-v111-release
-      # PvZ-TV-v115-release
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: PvZ-TV-${{ matrix.legacy_version }}-${{ matrix.build_type }}
-          path: ci-output/*.apk
-          if-no-files-found: error
+          name: PvZ-TV-${{ matrix.version }}-${{ matrix.build_type }}
+          path: app/build/outputs/apk/${{ matrix.version }}/${{ matrix.build_type }}/*.apk
 
-      # dev 分支只发布 recommend-v115，
-      # 但发布的 APK 文件名仍然显示为 v115。
       - name: Publish pre-release
         uses: marvinpinto/action-automatic-releases@latest
         if: >
           github.ref == 'refs/heads/dev' &&
           github.repository_owner == 'ZombieYetis' &&
-          matrix.flavor == 'recommend-v115' &&
+          matrix.version == 'v115' &&
           matrix.build_type == 'release'
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           prerelease: true
           automatic_release_tag: nightly
           title: Nightly Build
-          files: ci-output/*.apk
+          files: app/build/outputs/apk/${{ matrix.version }}/${{ matrix.build_type }}/*.apk
 
   release:
-    needs: [build]
+    needs: [ build ]
     if: github.ref == 'refs/heads/main' && github.repository_owner == 'ZombieYetis'
     runs-on: ubuntu-latest
 
@@ -187,17 +110,11 @@ jobs:
           echo "date=$(git log --date=format:%y%m%d --pretty=format:'%cd' -n 1)" >> "$GITHUB_OUTPUT"
           echo "commits_count=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
 
-      # Artifact 名仍然是旧名称 PvZ-TV-v115-release
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:
           name: PvZ-TV-v115-release
           path: artifact
-
-      - name: Show downloaded APK files
-        run: |
-          echo "Downloaded APK files:"
-          find artifact -type f -name '*.apk' -print
 
       - name: Publish release
         uses: softprops/action-gh-release@v3
@@ -209,4 +126,3 @@ jobs:
           tag_name: ${{ steps.build_vars.outputs.date }}-${{ steps.build_vars.outputs.commits_count }}
           body: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
           files: artifact/*.apk
-
