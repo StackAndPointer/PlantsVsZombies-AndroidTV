@@ -93,7 +93,7 @@ android {
             }
         }
 
-        register("v115") {
+        register("recommend-v115") {
             dimension = "version"
             versionName = "1.1.5"
             externalNativeBuild {
