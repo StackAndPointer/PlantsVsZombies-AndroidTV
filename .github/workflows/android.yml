@@ -1,4 +1,3 @@
-```yaml
 name: Android CI
 
 on:
@@ -210,4 +209,4 @@ jobs:
           tag_name: ${{ steps.build_vars.outputs.date }}-${{ steps.build_vars.outputs.commits_count }}
           body: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
           files: artifact/*.apk
-```
+
