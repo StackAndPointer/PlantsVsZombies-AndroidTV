@@ -70,6 +70,30 @@ static bool CanControlSideSlot(const VSSetupMenu *menu, int slot) {
     }
     return slot == prioritySlot;
 }
+
+static VSSide ResolveRequestedSide(const VSSetupMenu *menu, int slot, VSSide requestedSide) {
+    if (menu == nullptr || slot < 0 || slot > 1) {
+        return VS_SIDE_NONE;
+    }
+    if (requestedSide < VS_SIDE_NONE || requestedSide > VS_SIDE_ZOMBIE) {
+        return VS_SIDE_NONE;
+    }
+    if (requestedSide == VS_SIDE_NONE) {
+        return VS_SIDE_NONE;
+    }
+
+    const int otherSlot = 1 - slot;
+    if (requestedSide != menu->mSides[otherSlot]) {
+        return requestedSide;
+    }
+
+    const VSSide currentSide = menu->mSides[slot];
+    if (currentSide != VS_SIDE_NONE && currentSide != menu->mSides[otherSlot]) {
+        return currentSide;
+    }
+    return VS_SIDE_NONE;
+}
+
 } // namespace
 
 void VSSetupMenu::_constructor() {
@@ -519,10 +543,7 @@ void VSSetupMenu::MouseUp(int x, int y, int theCount) {
         handledControllerMouseUp = true;
         Sexy::Widget *aControllerWidgetP1 = FindWidget(7);
         VSSide aSideP1 = aControllerWidgetP1->mX > 400 ? VS_SIDE_ZOMBIE : aControllerWidgetP1->mX > 250 ? VS_SIDE_NONE : VS_SIDE_PLANT;
-        VSSide resolvedSideP1 = aSideP1;
-        if (resolvedSideP1 != VS_SIDE_NONE && resolvedSideP1 == mSides[1]) {
-            resolvedSideP1 = mSides[0];
-        }
+        VSSide resolvedSideP1 = ResolveRequestedSide(this, 0, aSideP1);
         mSides[0] = resolvedSideP1;
         mSideLocked[0] = (mSides[0] != VS_SIDE_NONE);
         aControllerWidgetP1->Move(GetControllerSideAnchorX(mSides[0]), aControllerWidgetP1->mY);
@@ -540,14 +561,15 @@ void VSSetupMenu::MouseUp(int x, int y, int theCount) {
         Sexy::Widget *aControllerWidgetP2 = FindWidget(8);
         VSSide aSideP2 = aControllerWidgetP2->mX > 400 ? VS_SIDE_ZOMBIE : aControllerWidgetP2->mX > 250 ? VS_SIDE_NONE : VS_SIDE_PLANT;
 
-        if (aSideP2 == mSides[1]) {
+        VSSide resolvedSideP2 = ResolveRequestedSide(this, 1, aSideP2);
+        if (resolvedSideP2 == mSides[1]) {
             mSideLocked[1] = (mSides[1] != VS_SIDE_NONE);
         }
         if (gTcpServerSocket >= 0) {
-            U8_Event event = {{EventType::EVENT_CLIENT_VSSETUPMENU_REQUEST_SIDE}, aSideP2 == VS_SIDE_NONE ? uint8_t(2) : uint8_t(aSideP2)};
+            U8_Event event = {{EventType::EVENT_CLIENT_VSSETUPMENU_REQUEST_SIDE}, resolvedSideP2 == VS_SIDE_NONE ? uint8_t(2) : uint8_t(resolvedSideP2)};
             netplay::PutEvent(event);
         } else {
-            mSides[1] = aSideP2;
+            mSides[1] = resolvedSideP2;
             mSideLocked[1] = (mSides[1] != VS_SIDE_NONE);
             aControllerWidgetP2->Move(GetControllerSideAnchorX(mSides[1]), aControllerWidgetP2->mY);
             is2PControllerMoving = false;
@@ -700,7 +722,9 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
             auto *event1 = static_cast<const U8x3_Event *>(event);
             auto seedType = SeedType(event1->data[0]);
             bool isZombieChooser = event1->data[1] != 0;
-            bool moveOnly = event1->data[2] != 0;
+            const uint8_t cursorFlags = event1->data[2];
+            bool moveOnly = (cursorFlags & SeedChooserScreen::kCursorMoveOnlyEventFlag) != 0;
+            int syncedPageIndex = (cursorFlags & SeedChooserScreen::kCursorPageOneEventFlag) != 0 ? 1 : 0;
             SeedChooserScreen *seedChooser = (isZombieChooser ? mApp->mZombieChooserScreen : mApp->mSeedChooserScreen);
             if (seedChooser == nullptr) {
                 break;
@@ -718,8 +742,14 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
             if (seedIndex < 0 || seedIndex >= seedChooser->GetSeedChooserCount()) {
                 break;
             }
+            if (isZombieChooser) {
+                if ((syncedPageIndex == 0 && seedIndex >= 25) || (syncedPageIndex == 1 && seedIndex < 25)) {
+                    break;
+                }
+                seedChooser->SetPageIndex(syncedPageIndex);
+            }
             int cursorSeedIndex = seedIndex;
-            if (seedChooser->mIsZombieChooser && seedChooser->mPageIndex == 1 && cursorSeedIndex >= 25) {
+            if (seedChooser->mIsZombieChooser && syncedPageIndex == 1 && cursorSeedIndex >= 25) {
                 cursorSeedIndex -= 25;
             }
             VSSide targetSide = isZombieChooser ? VSSide::VS_SIDE_ZOMBIE : VSSide::VS_SIDE_PLANT;
@@ -786,12 +816,7 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 break;
             }
 
-            // Host authoritative resolution:
-            // keep sides different when both are selected; reject conflicting client side.
-            VSSide resolvedSide = requestedSide;
-            if (resolvedSide != VS_SIDE_NONE && mSides[0] == resolvedSide) {
-                resolvedSide = mSides[1];
-            }
+            VSSide resolvedSide = ResolveRequestedSide(this, 1, requestedSide);
 
             Sexy::Widget *controllerWidget = FindWidget(8);
             mSides[1] = resolvedSide;
@@ -845,7 +870,9 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             auto *event1 = static_cast<const U8x3_Event *>(event);
             auto seedType = SeedType(event1->data[0]);
             bool isZombieChooser = event1->data[1] != 0;
-            bool moveOnly = event1->data[2] != 0;
+            const uint8_t cursorFlags = event1->data[2];
+            bool moveOnly = (cursorFlags & SeedChooserScreen::kCursorMoveOnlyEventFlag) != 0;
+            int syncedPageIndex = (cursorFlags & SeedChooserScreen::kCursorPageOneEventFlag) != 0 ? 1 : 0;
             SeedChooserScreen *seedChooser = (isZombieChooser ? mApp->mZombieChooserScreen : mApp->mSeedChooserScreen);
             if (seedChooser == nullptr) {
                 break;
@@ -863,8 +890,14 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             if (seedIndex < 0 || seedIndex >= seedChooser->GetSeedChooserCount()) {
                 break;
             }
+            if (isZombieChooser) {
+                if ((syncedPageIndex == 0 && seedIndex >= 25) || (syncedPageIndex == 1 && seedIndex < 25)) {
+                    break;
+                }
+                seedChooser->SetPageIndex(syncedPageIndex);
+            }
             int cursorSeedIndex = seedIndex;
-            if (seedChooser->mIsZombieChooser && seedChooser->mPageIndex == 1 && cursorSeedIndex >= 25) {
+            if (seedChooser->mIsZombieChooser && syncedPageIndex == 1 && cursorSeedIndex >= 25) {
                 cursorSeedIndex -= 25;
             }
             VSSide targetSide = isZombieChooser ? VSSide::VS_SIDE_ZOMBIE : VSSide::VS_SIDE_PLANT;

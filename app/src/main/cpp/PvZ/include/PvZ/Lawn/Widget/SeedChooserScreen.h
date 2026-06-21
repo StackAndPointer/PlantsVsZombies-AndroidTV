@@ -29,6 +29,8 @@
 
 #include "VSSetupMenu.h"
 
+#include <cstdint>
+
 class Board;
 class LawnApp;
 class SeedBank;
@@ -91,6 +93,9 @@ private:
     };
 
 public:
+    static constexpr uint8_t kCursorMoveOnlyEventFlag = 0x01;
+    static constexpr uint8_t kCursorPageOneEventFlag = 0x02;
+
     enum SeedDir {
         SEED_DIR_UP,
         SEED_DIR_DOWN,
@@ -220,6 +225,7 @@ public:
     int GetNextSeedInDir(int theNumSeed, SeedDir theMoveDirection);
     void Draw(Sexy::Graphics *g);
     void DrawBanIcon(Sexy::Graphics *g);
+    void SetPageIndex(int thePageIndex);
     SeedType SeedHitTest(int x, int y);
     SeedType SeedHitTest_Origin(int x, int y);
     void VSAutoPickResourceGen();

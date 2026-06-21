@@ -1019,16 +1019,17 @@ void SeedChooserScreen::ClickedSeedInChooser(ChosenSeed &theChosenSeed, int theP
     selectedSeed.mSeedType = selectedSeedType;
 
     if (mApp->IsVSMode()) {
+        const uint8_t cursorFlags = (mIsZombieChooser && mPageIndex == 1) ? kCursorPageOneEventFlag : 0;
         if (gTcpConnected) {
             // 客户端始终上报点击事件：即使选卡失败，也用于同步光标位置。
             U8x3_Event event = {{mBanningPhase ? EventType::EVENT_CLIENT_SEEDCHOOSER_BAN_SEED : EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED},
-                                {uint8_t(selectedSeedType), uint8_t(mIsZombieChooser), 0}};
+                                {uint8_t(selectedSeedType), uint8_t(mIsZombieChooser), cursorFlags}};
             netplay::PutEvent(event);
             return;
         } else if (gTcpClientSocket >= 0) {
             // 主机也广播该点击，远端可据此同步光标，再由主机权威决定是否入槽。
             U8x3_Event event = {{mBanningPhase ? EventType::EVENT_SERVER_SEEDCHOOSER_BAN_SEED : EventType::EVENT_SERVER_SEEDCHOOSER_SELECT_SEED},
-                                {uint8_t(selectedSeedType), uint8_t(mIsZombieChooser), 0}};
+                                {uint8_t(selectedSeedType), uint8_t(mIsZombieChooser), cursorFlags}};
             netplay::PutEvent(event);
         }
 
@@ -1842,11 +1843,12 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
                     int y = (aPlayerIndex == 0) ? mCursorPositionY1 : mCursorPositionY2;
                     SeedType aSeedType = SeedHitTest(x, y);
                     if (aSeedType != SeedType::SEED_NONE) {
+                        const uint8_t cursorFlags = kCursorMoveOnlyEventFlag | ((mIsZombieChooser && mPageIndex == 1) ? kCursorPageOneEventFlag : 0);
                         if (gTcpConnected) {
-                            U8x3_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), 1}};
+                            U8x3_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), cursorFlags}};
                             netplay::PutEvent(event);
                         } else if (gTcpClientSocket >= 0) {
-                            U8x3_Event event = {{EventType::EVENT_SERVER_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), 1}};
+                            U8x3_Event event = {{EventType::EVENT_SERVER_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), cursorFlags}};
                             netplay::PutEvent(event);
                         }
                     }
@@ -1945,6 +1947,11 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
 
 void SeedChooserScreen::DrawPacket(
     Sexy::Graphics *g, int x, int y, SeedType theSeedType, SeedType theImitaterType, float thePercentDark, int theGrayness, Color *theColor, bool theDrawCost, bool theUseCurrentCost) {
+    if (theSeedType == SEED_NONE) {
+        return; // 绘制SEED_NONE会导致闪退，这里做个安全检查
+    }
+
+
     // 修复SeedChooser里的卡片亮度不正确。
     // 已选的卡片grayness为55，不推荐的卡片grayness为115。theColor则固定为{255,255,255,255}。
 
@@ -2009,14 +2016,7 @@ void SeedChooserScreen::ButtonDepress_Origin(int theId) {
     }
 
     if (theId == SeedChooserScreen_Page) {
-        mPageIndex = (mPageIndex == 0) ? 1 : 0;
-        // 翻至第一页时光标移动回第一张卡，翻至第二页时光标移动至最后一张卡
-        int x = 0, y = 0;
-        int aSeedIndex = mPageIndex ? (NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE - 26) : 0;
-        GetSeedPositionInChooser(aSeedIndex, x, y);
-        mCursorPositionX1 = mCursorPositionX2 = x;
-        mCursorPositionY1 = mCursorPositionY2 = y;
-        mSeedIndex1 = mSeedIndex2 = aSeedIndex;
+        SetPageIndex(mPageIndex == 0 ? 1 : 0);
         return;
     }
 
@@ -2550,12 +2550,13 @@ void SeedChooserScreen::MouseDrag(int x, int y) {
                 return;
             }
 
-            // data3 flags: bit0 = moveOnly(sync cursor without picking)
+            // data3 flags: bit0 = moveOnly(sync cursor without picking), bit1 = sender page index for zombie chooser
+            const uint8_t cursorFlags = kCursorMoveOnlyEventFlag | ((mIsZombieChooser && mPageIndex == 1) ? kCursorPageOneEventFlag : 0);
             if (gTcpConnected) {
-                U8x3_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED}, {uint8_t(hoverSeedType), uint8_t(mIsZombieChooser), 1}};
+                U8x3_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED}, {uint8_t(hoverSeedType), uint8_t(mIsZombieChooser), cursorFlags}};
                 netplay::PutEvent(event);
             } else if (gTcpClientSocket >= 0) {
-                U8x3_Event event = {{EventType::EVENT_SERVER_SEEDCHOOSER_SELECT_SEED}, {uint8_t(hoverSeedType), uint8_t(mIsZombieChooser), 1}};
+                U8x3_Event event = {{EventType::EVENT_SERVER_SEEDCHOOSER_SELECT_SEED}, {uint8_t(hoverSeedType), uint8_t(mIsZombieChooser), cursorFlags}};
                 netplay::PutEvent(event);
             }
             gLastDragSyncSeedType[chooserIndex][ownerPlayerIndex] = hoverSeedType;
@@ -2897,8 +2898,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
         const int aPageOffset = (mIsZombieChooser && mPageIndex == 1) ? 25 : 0;
         const int aChosenSeedIndex = thePageSeedIndex + aPageOffset;
         ChosenSeed &aChosenSeed = mChosenSeedsExtended[aChosenSeedIndex];
-        const SeedType aChooserSeedType = SeedType(aChosenSeedIndex);
-        const SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(aChooserSeedType) : aChosenSeed.mSeedType;
+        const SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(aChosenSeedIndex) : aChosenSeed.mSeedType;
         int aGrayness = 255;
         // 模仿者在未选中时状态为SEED_PACKET_HIDDEN，而不是SEED_IN_CHOOSER
         if (aChosenSeed.mSeedState != (aChosenSeed.mSeedType == SEED_IMITATER ? SEED_PACKET_HIDDEN : SEED_IN_CHOOSER)) {
@@ -3046,6 +3046,17 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
     //    }
 
     DeferOverlay(0);
+}
+
+void SeedChooserScreen::SetPageIndex(int thePageIndex) {
+    mPageIndex = thePageIndex == 0 ? 0 : 1;
+    // 翻至第一页时光标移动回第一张卡，翻至第二页时光标移动至最后一张卡
+    int x = 0, y = 0;
+    int aSeedIndex = mPageIndex ? (NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE - 26) : 0;
+    GetSeedPositionInChooser(aSeedIndex, x, y);
+    mCursorPositionX1 = mCursorPositionX2 = x;
+    mCursorPositionY1 = mCursorPositionY2 = y;
+    mSeedIndex1 = mSeedIndex2 = aSeedIndex;
 }
 
 void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
