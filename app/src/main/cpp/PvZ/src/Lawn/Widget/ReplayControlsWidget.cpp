@@ -201,7 +201,6 @@ void ReplayControlsWidget::MouseDown(int x, int y, int theClickCount) {
         const bool crossesStartLevel = startLevelTick > replay::GetPlaybackTick() && startLevelTick <= aTargetTick;
         if (crossesStartLevel) {
             SeekReplayBoard(GetCurrentBoard(), startLevelTick, false, true);
-            SeekReplayBoard(GetCurrentBoard(), aTargetTick, false);
         } else {
             SeekReplayBoard(GetCurrentBoard(), aTargetTick, false);
         }

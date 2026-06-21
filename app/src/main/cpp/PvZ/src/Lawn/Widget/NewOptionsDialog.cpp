@@ -106,8 +106,6 @@ void NewOptionsDialog::ButtonDepress(int theId) {
         }
         return;
     }
-    LOG_DEBUG("ENTER");
 
     old_NewOptionsDialog_ButtonDepress(this, theId);
-    LOG_DEBUG("EXIT");
 }

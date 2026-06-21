@@ -131,7 +131,6 @@ void SeedPacket::Draw(Sexy::Graphics *g) {
 }
 
 void SeedPacket::MouseDown(int x, int y, int theClickCount, int thePlayerIndex) {
-    LOG_DEBUG("");
     old_SeedPacket_MouseDown(this, x, y, theClickCount, thePlayerIndex);
 }
 
