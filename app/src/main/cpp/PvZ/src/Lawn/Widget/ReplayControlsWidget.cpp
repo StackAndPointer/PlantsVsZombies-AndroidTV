@@ -197,6 +197,10 @@ void ReplayControlsWidget::MouseDown(int x, int y, int theClickCount) {
     }
     if (Contains(ForwardButtonRect(), x, y)) {
         const int startLevelTick = GetStartLevelTick();
+        const int maxBoardForwardableTick = replay::GetPlaybackBoardTicks() - GetCurrentBoard()->mMainCounter;
+        if (maxBoardForwardableTick < 1000) {
+            return;
+        }
         const int aTargetTick = replay::GetPlaybackTick() + 1000;
         const bool crossesStartLevel = startLevelTick > replay::GetPlaybackTick() && startLevelTick <= aTargetTick;
         if (crossesStartLevel) {
