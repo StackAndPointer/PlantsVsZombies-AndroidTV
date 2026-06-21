@@ -710,12 +710,12 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                     break;
                 }
             } else {
-                if (seedType < SeedType::SEED_PEASHOOTER || seedType >= SeedType::NUM_SEEDS_IN_CHOOSER) {
+                if (seedType < SeedType::SEED_PEASHOOTER || seedChooser->GetSeedPacketIndex(seedType) < 0) {
                     break;
                 }
             }
             int seedIndex = seedChooser->GetSeedPacketIndex(seedType);
-            if (seedIndex < 0 || seedIndex >= NUM_SEEDS_IN_CHOOSER) {
+            if (seedIndex < 0 || seedIndex >= seedChooser->GetSeedChooserCount()) {
                 break;
             }
             int cursorSeedIndex = seedIndex;
@@ -749,7 +749,7 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 break;
             }
 
-            ChosenSeed &chosenSeed = seedChooser->mChosenSeeds[seedIndex];
+            ChosenSeed &chosenSeed = seedChooser->mChosenSeedsExtended[seedIndex];
             if (chosenSeed.mSeedState != ChosenSeedState::SEED_IN_CHOOSER) {
                 break;
             }
@@ -855,12 +855,12 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
                     break;
                 }
             } else {
-                if (seedType < SeedType::SEED_PEASHOOTER || seedType >= SeedType::NUM_SEEDS_IN_CHOOSER) {
+                if (seedType < SeedType::SEED_PEASHOOTER || seedChooser->GetSeedPacketIndex(seedType) < 0) {
                     break;
                 }
             }
             int seedIndex = seedChooser->GetSeedPacketIndex(seedType);
-            if (seedIndex < 0 || seedIndex >= NUM_SEEDS_IN_CHOOSER) {
+            if (seedIndex < 0 || seedIndex >= seedChooser->GetSeedChooserCount()) {
                 break;
             }
             int cursorSeedIndex = seedIndex;
@@ -888,7 +888,7 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
                 break;
             }
 
-            ChosenSeed &chosenSeed = seedChooser->mChosenSeeds[seedIndex];
+            ChosenSeed &chosenSeed = seedChooser->mChosenSeedsExtended[seedIndex];
             if (chosenSeed.mSeedState != ChosenSeedState::SEED_IN_CHOOSER) {
                 break;
             }

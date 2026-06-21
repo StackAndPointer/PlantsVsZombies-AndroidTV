@@ -575,6 +575,7 @@ bool LoadGameMain() {
     SeedChooserScreen_RemoveToolTipAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen13RemoveToolTipEi");
     SeedChooserScreen_ClickedSeedInChooserAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen20ClickedSeedInChooserER10ChosenSeedi");
     SeedChooserScreen_CrazyDavePickSeedsAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen18CrazyDavePickSeedsEv");
+    SeedChooserScreen_PickedPlantTypeAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen15PickedPlantTypeE8SeedType");
     SeedChooserScreen_FindSeedInBankAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen14FindSeedInBankEii");
     SeedChooserScreen_DrawAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen4DrawEPN4Sexy8GraphicsE");
     SeedChooserScreen_SeedNotRecommendedToPickAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen24SeedNotRecommendedToPickE8SeedType");

@@ -576,6 +576,7 @@ inline void *SeedChooserScreen_PickRandomSeedsAddr;
 inline void *SeedChooserScreen_RemoveToolTipAddr;
 inline void *SeedChooserScreen_ClickedSeedInChooserAddr;
 inline void *SeedChooserScreen_CrazyDavePickSeedsAddr;
+inline void *SeedChooserScreen_PickedPlantTypeAddr;
 inline void *SeedChooserScreen_FindSeedInBankAddr;
 inline void *SeedChooserScreen_DrawAddr;
 inline void *SeedChooserScreen_SeedNotRecommendedToPickAddr;

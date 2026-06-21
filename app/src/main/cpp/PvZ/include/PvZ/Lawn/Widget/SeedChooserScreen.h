@@ -100,7 +100,7 @@ public:
 
     bool mShowHelpText;                      // 65
     GameButton *mImitaterButton;             // 66
-    ChosenSeed mChosenSeeds[NUM_SEED_TYPES]; // 67 ~ 930
+    ChosenSeed mChosenSeeds[NUM_SEED_TYPES]; // 67 ~ 930, 已用 mChosenSeedsExtended 替代
     LawnApp *mApp;                           // 931
     Board *mBoard;                           // 932
     int mSeedChooserAge;                     // 933
@@ -138,12 +138,12 @@ public:
     int mPageIndex = 0;
     int mNumBanPackets = 2;
     int mSeedsInBanned = 0;
-    BannedSeed mBannedSeed[NUM_ZOMBIE_SEED_TYPES]{};
+    BannedSeed mBannedSeed[NUM_SEEDS_IN_CHOOSER_EXTENDED]{};
     bool mBanningPhase = false;
     bool mShowExtendedSeeds = false;
     bool mHas7Packets = false;
     bool mGlobalBpBansApplied = false;
-    ChosenSeed mChosenSeedsExtended[NUM_SEED_TYPES_EXTENDED]{};
+    ChosenSeed mChosenSeedsExtended[NUM_SEEDS_IN_CHOOSER_EXTENDED]{};
     GameButton *mMainMenuButton = nullptr;
 
     SeedChooserScreen(bool theIsZombieChooser) {
@@ -185,7 +185,10 @@ public:
     void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void EnableStartButton(int theIsEnabled);
     void RebuildHelpbar();
+    SeedType PickedPlantType(SeedType theSeedType);
     SeedType GetZombieSeedType(int theSeedIndex);
+    SeedType GetPlantSeedType(int theSeedIndex) const;
+    int GetSeedChooserCount() const;
     int GetSeedPacketIndex(int theSeedIndex) const;
     void OnPlayerPickedSeed(int thePlayerIndex);
     void ClickedSeedInChooser(ChosenSeed &theChosenSeed, int thePlayerIndex);

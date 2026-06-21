@@ -53,7 +53,7 @@ void ImitaterDialog::MouseDown(int x, int y, int theCount) {
     if (aSeedType != SeedType::SEED_NONE) {
         SeedChooserScreen *aSeedChooser = mApp->mSeedChooserScreen;
         if (!aSeedChooser->SeedNotAllowedToPick(aSeedType)) {
-            ChosenSeed &aImitater = aSeedChooser->mChosenSeeds[SeedType::SEED_IMITATER];
+            ChosenSeed &aImitater = aSeedChooser->mChosenSeedsExtended[SeedType::SEED_IMITATER];
             aImitater.mImitaterType = aSeedType;
             aImitater.mSeedState = ChosenSeedState::SEED_IN_CHOOSER;
             aSeedChooser->GetSeedPositionInChooser(SeedType::SEED_IMITATER, aImitater.mX, aImitater.mY);
