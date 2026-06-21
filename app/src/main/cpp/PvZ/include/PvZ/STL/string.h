@@ -20,6 +20,7 @@
 #ifndef PVZ_STL_STRING_H
 #define PVZ_STL_STRING_H
 
+#include "PvZ/MagicNumbers.h"
 #include "ext/string_conversions.h"
 
 #include <cassert>
