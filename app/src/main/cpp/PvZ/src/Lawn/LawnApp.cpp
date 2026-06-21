@@ -813,7 +813,7 @@ void LawnApp::Init() {
 
     mProfileMgr->Load();
     if (mProfileMgr->GetAnyProfile() == nullptr) {
-        pvzstl::string defaultName = "player";
+        pvzstl::string defaultName = "Player";
         mProfileMgr->AddProfile(defaultName);
         mProfileMgr->Save();
         mPlayerInfo = mProfileMgr->GetProfile(defaultName);

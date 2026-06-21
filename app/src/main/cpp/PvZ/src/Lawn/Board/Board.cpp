@@ -337,7 +337,7 @@ const char *GetServerModeTransportSuffix() {
 void Board::ShovelDown() {
     // 用于铲掉光标正下方的植物。
 
-    if (mApp->mGameScene != SCENE_PLAYING) { // 正式开始对局后才能真正铲除植物
+    if (mApp->IsVSMode() && mApp->mGameScene != SCENE_PLAYING) { // 对战正式开始对局后才能真正铲除植物
         return;
     }
 
@@ -3056,7 +3056,7 @@ void Board::Update() {
     }
 
     if (passNowLevel) {
-        if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineServerModeActive() && !gIsReplayMode) {
+        if (!IsOnlineServerModeActive() && !gIsReplayMode) {
             mLevelComplete = true;
             mApp->mBoardResult = mApp->mGameMode == GameMode::GAMEMODE_MP_VS ? BoardResult::BOARDRESULT_VS_PLANT_WON : BoardResult::BOARDRESULT_WON;
         }

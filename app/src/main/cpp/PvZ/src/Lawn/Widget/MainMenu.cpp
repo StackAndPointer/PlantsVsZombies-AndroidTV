@@ -85,10 +85,11 @@ void MainMenu::Update() {
     }
 
     // 首次启动游戏时指导玩家重命名
-    if (!mApp->mPlayerInfo->mRenamed && mApp->mPlayerInfo->mName) {
-        //        mApp->DoNewOptions(false, 0);
-        mApp->DoUserDialog();
-        mApp->DoRenameUserDialog(mApp->mPlayerInfo->mName);
+    if (!mApp->mPlayerInfo->mRenamed) {
+        if (mApp->mPlayerInfo->mName && std::strcmp(mApp->mPlayerInfo->mName, "Player") == 0) {
+            mApp->DoUserDialog();
+            mApp->DoRenameUserDialog(mApp->mPlayerInfo->mName);
+        }
         mApp->mPlayerInfo->mRenamed = true;
         mApp->mPlayerInfo->SaveDetails();
     }
