@@ -867,7 +867,7 @@ void LawnApp::Init() {
 
     mIsFullVersion = true;
     Sexy::Graphics::SetTrackingDeviceState(false);
-    (*(void (**)(int, int *))(*(int *)unkMem6[109] + 172))(unkMem6[109], &unkMem8[1]);
+    //    (*(void (**)(int, int *))(*(int *)unkMem6[109] + 172))(unkMem6[109], &unkMem8[1]); // Sexy::IGameCenter::SetListener(int this, Sexy::IGameCenter::Listener *a2)
 
     mNewIs3DAccelerated = mPlayerInfo == nullptr || !mPlayerInfo->mIs3DAcceleratedClosed;
 }

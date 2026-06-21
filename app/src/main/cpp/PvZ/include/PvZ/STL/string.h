@@ -824,7 +824,7 @@ protected:
         [[nodiscard]] static _rep &_empty_rep() noexcept {
 #ifdef PVZ_VERSION
             assert(::gLibGameMainBaseAddr != 0);
-            constexpr uintptr_t offset = std::is_same_v<CharT, char> ? /* string */ 0x71BB54 : /* basic_string<int> */ 0x69E45C;
+            constexpr uintptr_t offset = std::is_same_v<CharT, char> ? /* string */ STRING_EMPTY_REP1 : /* basic_string<int> */ STRING_EMPTY_REP2;
             return *reinterpret_cast<_rep *>(::gLibGameMainBaseAddr + offset);
 #else
             alignas(_rep) static std::byte empty_rep_storage[sizeof(_rep) + sizeof(CharT)] = {};
