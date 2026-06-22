@@ -2164,6 +2164,9 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
             } else if (aSeedType == SEED_ZOMBIE_GRAVESTONE) {
                 aToolTip->SetTitle(TodStringTranslate("[ZOMBIE_GRAVESTONE]"));
                 aToolTip->SetLabel(TodStringTranslate("[ZOMBIE_GRAVESTONE_DESCRIPTION]"));
+            } else if (aSeedType == SEED_ZOMBIE_MOUND) {
+                aToolTip->SetTitle(TodStringTranslate("[ZOMBIE_MOUND]"));
+                aToolTip->SetLabel(TodStringTranslate("[ZOMBIE_MOUND_DESCRIPTION]"));
             } else {
                 ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(aSeedType);
                 if (aZombieType == ZombieType(-1)) {
@@ -2249,13 +2252,6 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
                         aTitle = "[TALLNUT_HEAD_ZOMBIE]";
                         aLabel = "[TALLNUT_HEAD_ZOMBIE_DESCRIPTION_HEADER]";
                         aToolTip->mX = aSeedX + 2 * (SEED_PACKET_WIDTH + 6);
-                        break;
-                    case SeedType::SEED_ZOMBIE_MOUND: // 召唤墓碑
-                        aTitle = "[ZOMBIE_MOUND]";
-                        aLabel = "[ZOMBIE_MOUND_DESCRIPTION]";
-                        aToolTip->mX = aSeedX + 9 * (SEED_PACKET_WIDTH + 1);
-                        aToolTip->mY = aSeedY - 4 * (SEED_PACKET_HEIGHT + 3);
-                        aToolTip->mVisible = true;
                         break;
                     default:
                         return;

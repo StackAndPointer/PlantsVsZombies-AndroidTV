@@ -35,6 +35,7 @@
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/SexyAppFramework/Misc/SexyVector.h"
 #include "PvZ/Symbols.h"
+#include "PvZ/TodLib/Common/TodStringFile.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
@@ -1850,6 +1851,28 @@ Rect Plant::GetPlantAttackRect(PlantWeapon thePlantWeapon) {
 Image *Plant::GetImage(SeedType theSeedType) {
     Image **aImages = GetPlantDefinition(theSeedType).mPlantImage;
     return aImages ? aImages[0] : nullptr;
+}
+
+pvzstl::string Plant::GetNameString(SeedType theSeedType, SeedType theImitaterType) {
+    const PlantDefinition &aPlantDef = GetPlantDefinition(theSeedType);
+    pvzstl::string aName = StrFormat("[%s]", aPlantDef.mPlantName);
+    pvzstl::string aTranslatedName = TodStringTranslate(aName.c_str());
+
+    if (theSeedType == SeedType::SEED_IMITATER && theImitaterType != SeedType::SEED_NONE) {
+        const PlantDefinition &aImitaterDef = GetPlantDefinition(theImitaterType);
+        pvzstl::string aImitaterName = StrFormat("[%s]", aImitaterDef.mPlantName);
+        pvzstl::string aTranslatedImitaterName = TodStringTranslate(aImitaterName.c_str());
+        pvzstl::string aTranslatedTemplate = TodStringTranslate("[IMITATED_PLANT]");
+        return TodReplaceString(aTranslatedTemplate, "{PLANT}", aTranslatedImitaterName);
+    }
+
+    return aTranslatedName;
+}
+
+pvzstl::string Plant::GetToolTip(SeedType theSeedType) {
+    const PlantDefinition &aPlantDef = GetPlantDefinition(theSeedType);
+    pvzstl::string aToolTip = StrFormat("[%s_TOOLTIP]", aPlantDef.mPlantName);
+    return TodStringTranslate(aToolTip.c_str());
 }
 
 void Plant::SetImitaterFilterEffect() {

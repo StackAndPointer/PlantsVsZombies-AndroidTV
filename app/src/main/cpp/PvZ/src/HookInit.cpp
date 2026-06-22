@@ -362,6 +362,8 @@ void InitHookFunction() {
     homura::HookFunc(Plant_DoSpecialAddr, &Plant::DoSpecial, nullptr);
     homura::HookFunc(Plant_DrawAddr, &Plant::Draw, &old_Plant_Draw);
     homura::HookFunc(Plant_DrawSeedTypeAddr, &Plant::DrawSeedType, nullptr);
+    homura::HookFunc(Plant_GetNameStringAddr, &Plant::GetNameString, nullptr);
+    homura::HookFunc(Plant_GetToolTipAddr, &Plant::GetToolTip, nullptr);
     homura::HookFunc(Plant_IsUpgradeAddr, &Plant::IsUpgrade, &old_Plant_IsUpgrade);
     homura::HookFunc(Plant_PlantInitializeAddr, &Plant::PlantInitialize, &old_Plant_PlantInitialize);
     homura::HookFunc(Plant_SetSleepingAddr, &Plant::SetSleeping, &old_Plant_SetSleeping);

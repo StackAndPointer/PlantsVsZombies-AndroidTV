@@ -252,12 +252,6 @@ public:
     MagnetItem *GetFreeMagnetItem() {
         return reinterpret_cast<MagnetItem *(*)(Plant *)>(Plant_GetFreeMagnetItemAddr)(this);
     }
-    static pvzstl::string GetNameString(SeedType theSeedType, SeedType theImitaterType) {
-        return reinterpret_cast<pvzstl::string (*)(SeedType, SeedType)>(Plant_GetNameStringAddr)(theSeedType, theImitaterType);
-    }
-    static pvzstl::string GetToolTip(SeedType theSeedType) {
-        return reinterpret_cast<pvzstl::string (*)(SeedType)>(Plant_GetToolTipAddr)(theSeedType);
-    }
     void DoSquashDamage() {
         return reinterpret_cast<void (*)(Plant *)>(Plant_DoSquashDamageAddr)(this);
     }
@@ -276,6 +270,8 @@ public:
     void Die();
     void Die_Origin();
     static Sexy::Image *GetImage(SeedType theSeedType);
+    static pvzstl::string GetNameString(SeedType theSeedType, SeedType theImitaterType);
+    static pvzstl::string GetToolTip(SeedType theSeedType);
     static int GetCost(SeedType theSeedType, SeedType theImitaterType);
     static int GetRefreshTime(SeedType theSeedType, SeedType theImitaterType);
     static bool IsNocturnal(SeedType theSeedType);
