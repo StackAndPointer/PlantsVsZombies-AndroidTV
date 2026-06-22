@@ -25,7 +25,7 @@
 using namespace Sexy;
 
 namespace {
-constexpr int kReplayButtonY = 6;
+constexpr int kReplayButtonY = 5;
 constexpr int kReplayButtonH = 28;
 constexpr int kReplayButtonW = 108;
 constexpr int kReplayTicksPerSecond = 100;
@@ -109,7 +109,7 @@ bool SeekReplayBoard(Board *board, int targetTick, bool allowRestart, bool cance
         return false;
     }
 
-    const std::string path = replay::GetPlaybackFilePath();
+    const std::string &path = replay::GetPlaybackFilePath();
     const int vsBackground = replay::GetPlaybackVsBackground();
     const bool wasPaused = replay::IsPlaybackPaused();
     const int speedLevel = replay::GetPlaybackSpeedLevel();
@@ -148,7 +148,6 @@ ReplayControlsWidget::ReplayControlsWidget(Board *board) {
     });
     vTable = sReplayControlsWidgetVTable;
 
-    mBoard = board;
     Resize(kX, kInitialY, kWidth, kHeight);
     mClip = false;
 }
@@ -162,10 +161,11 @@ void ReplayControlsWidget::Draw(Graphics *g) {
         return;
     }
 
-    g->SetColor(Color(20, 20, 20, 170));
-    g->FillRect(Rect(0, 0, mWidth, mHeight));
-    g->SetColor(Color(255, 238, 170, 210));
-    g->DrawRect(Rect(0, 0, mWidth, mHeight));
+    TodDrawImageScaledF(g, IMAGE_CONVEYORBELT_BACKDROP, 0, 0, (float)mWidth / (float)IMAGE_CONVEYORBELT_BACKDROP->mWidth, (float)mHeight / (float)IMAGE_CONVEYORBELT_BACKDROP->mHeight);
+    //    g->SetColor(Color(20, 20, 20, 170));
+    //    g->FillRect(Rect(0, 0, mWidth, mHeight));
+    //    g->SetColor(Color(255, 238, 170, 210));
+    //    g->DrawRect(Rect(0, 0, mWidth, mHeight));
 
     TodDrawString(g, "[REPLAY]", 56, 26, FONT_DWARVENTODCRAFT18, Color(0, 205, 0, 255), DS_ALIGN_CENTER);
     DrawButton(g, PauseButtonRect(), replay::IsPlaybackPaused() ? "[REPLAY_PLAY]" : "[REPLAY_PAUSE]");
@@ -179,7 +179,7 @@ void ReplayControlsWidget::Draw(Graphics *g) {
     Board *board = GetCurrentBoard();
     if (board != nullptr && board->mApp != nullptr && board->mApp->mGameScene == GameScenes::SCENE_PLAYING) {
         const pvzstl::string timeText = FormatReplayTime(board->mMainCounter) + " / " + FormatReplayTime(replay::GetPlaybackBoardTicks());
-        TodDrawString(g, timeText.c_str(), 728, 28, FONT_HOUSEOFTERROR16, Color(255, 255, 255, 255), DS_ALIGN_CENTER);
+        TodDrawString(g, timeText.c_str(), 718, 28, FONT_HOUSEOFTERROR16, Color(255, 255, 255, 255), DS_ALIGN_CENTER);
     }
 }
 
@@ -217,6 +217,7 @@ void ReplayControlsWidget::MouseDown(int x, int y, int theClickCount) {
     if (ShowSkipSetupButton() && Contains(SkipSetupButtonRect(), x, y)) {
         const int startLevelTick = GetStartLevelTick();
         if (startLevelTick >= 0) {
+            replay::SetPlaybackPaused(false);
             SeekReplayBoard(GetCurrentBoard(), startLevelTick, false, true);
         }
     }
@@ -231,18 +232,15 @@ bool ReplayControlsWidget::Contains(const Rect &rect, int x, int y) {
 }
 
 void ReplayControlsWidget::DrawButton(Graphics *g, const Rect &rect, const char *label) {
-    g->SetColor(Color(30, 30, 30, 210));
+    g->SetColor(Color(20, 20, 20, 170));
     g->FillRect(rect);
-    g->SetColor(Color(255, 255, 255, 230));
+    g->SetColor(Color(255, 238, 170, 210));
     g->DrawRect(rect);
-    TodDrawString(g, label, rect.mX + rect.mWidth / 2, rect.mY + 23, FONT_HOUSEOFTERROR16, Color(255, 255, 255), DS_ALIGN_CENTER);
+    TodDrawString(g, label, rect.mX + rect.mWidth / 2, rect.mY + 24, FONT_HOUSEOFTERROR16, Color(255, 255, 255), DS_ALIGN_CENTER);
 }
 
-Board *ReplayControlsWidget::GetCurrentBoard() const {
-    if (gLawnApp != nullptr && gLawnApp->mBoard != nullptr) {
-        return gLawnApp->mBoard;
-    }
-    return mBoard;
+Board *ReplayControlsWidget::GetCurrentBoard() {
+    return gLawnApp->mBoard;
 }
 
 int ReplayControlsWidget::GetStartLevelTick() {
@@ -252,28 +250,28 @@ int ReplayControlsWidget::GetStartLevelTick() {
     return mStartLevelTick;
 }
 
-bool ReplayControlsWidget::ShowSkipSetupButton() const {
+bool ReplayControlsWidget::ShowSkipSetupButton() {
     Board *board = GetCurrentBoard();
     return board != nullptr && board->mApp != nullptr && board->mApp->mVSSetupMenu != nullptr;
 }
 
-Rect ReplayControlsWidget::PauseButtonRect() const {
+Rect ReplayControlsWidget::PauseButtonRect() {
     return {112, kReplayButtonY, kReplayButtonW, kReplayButtonH};
 }
 
-Rect ReplayControlsWidget::SpeedButtonRect() const {
+Rect ReplayControlsWidget::SpeedButtonRect() {
     return {228, kReplayButtonY, kReplayButtonW, kReplayButtonH};
 }
 
-Rect ReplayControlsWidget::ForwardButtonRect() const {
+Rect ReplayControlsWidget::ForwardButtonRect() {
     return {344, kReplayButtonY, kReplayButtonW, kReplayButtonH};
 }
 
-Rect ReplayControlsWidget::RestartButtonRect() const {
+Rect ReplayControlsWidget::RestartButtonRect() {
     return {460, kReplayButtonY, kReplayButtonW, kReplayButtonH};
 }
 
-Rect ReplayControlsWidget::SkipSetupButtonRect() const {
+Rect ReplayControlsWidget::SkipSetupButtonRect() {
     return {576, kReplayButtonY, kReplayButtonW, kReplayButtonH};
 }
 

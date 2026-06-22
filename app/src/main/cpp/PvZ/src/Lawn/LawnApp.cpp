@@ -335,12 +335,21 @@ void LawnApp::DoSettingsDialog(bool theIsModal) {
 
 void LawnApp::DoNewOptions(bool theFromGameSelector, unsigned int a3) {
     old_LawnApp_DoNewOptions(this, theFromGameSelector, a3);
-    if (gIsServerModeSpectator || gIsReplayMode) {
+    if (gIsServerModeSpectator) { // 观战不显示投降按钮
         if (auto *dialog = GetDialog(Dialogs::DIALOG_NEWOPTIONS)) {
 
             if (auto *concedeButton = dialog->FindWidget(5)) {
                 concedeButton->mDisabled = true;
                 ((Sexy::ButtonWidget *)concedeButton)->mBtnNoDraw = true;
+            }
+        }
+    }
+
+    if (gIsReplayMode) { // 回放中把投降按钮替换为回放管理按钮
+        if (auto *dialog = GetDialog(Dialogs::DIALOG_NEWOPTIONS)) {
+
+            if (auto *concedeButton = dialog->FindWidget(5)) {
+                *((Sexy::ButtonWidget *)concedeButton)->mLabel = TodStringTranslate("[REPLAY_MANAGE]");
             }
         }
     }
@@ -1294,7 +1303,7 @@ void LawnApp::ShowVSResultsScreen() {
     mWidgetManager->AddWidget(mVSResultsMenu);
     mWidgetManager->BringToFront(mVSResultsMenu);
     mWidgetManager->SetFocus(mVSResultsMenu);
-    if (gIsServerModeNetplay) {
+    if (gIsServerModeNetplay && !mVSResultsMenu->mIsReplaySession) {
         mVSResultsMenu->mCheckboxController = new VSResultsCheckboxController();
         mVSResultsMenu->mCheckboxController->InitCheckboxWidget(mVSResultsMenu);
     }

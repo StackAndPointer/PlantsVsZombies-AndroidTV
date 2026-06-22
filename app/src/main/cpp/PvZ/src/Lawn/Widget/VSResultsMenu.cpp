@@ -22,6 +22,7 @@
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/Widget/ChallengeScreen.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 #include "PvZ/Lawn/Widget/VSSetupMenu.h"
@@ -93,6 +94,19 @@ static void DisablePlayAgainButton(VSResultsMenu *menu) {
         (*playAgain->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = gColorGray;
     }
 }
+
+static void SetPlayAgainAsReplayManageButton(VSResultsMenu *menu) {
+    if (menu == nullptr) {
+        return;
+    }
+    if (Sexy::Widget *playAgain = menu->FindWidget(VSResultsMenu::VSResultsMenu_Play_Again)) {
+        auto *button = reinterpret_cast<GameButton *>(playAgain);
+        button->SetLabel("[REPLAY_MANAGE]");
+        button->mDisabled = false;
+        (*button->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
+        (*button->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
+    }
+}
 } // namespace
 
 static std::string BuildDeckText(const SeedType *seeds, int count) {
@@ -147,6 +161,9 @@ void VSResultsMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
     old_VSResultsMenu_AddedToManager(this, theWidgetManager);
 
     AddWidget(mBackButton);
+    if (mIsReplaySession) {
+        SetPlayAgainAsReplayManageButton(this);
+    }
     if (Sexy::Widget *quitVsWidget = FindWidget(VSResultsMenu::VSResultsMenu_Quit_VS)) {
         auto *quitVsButton = static_cast<GameButton *>(quitVsWidget);
         quitVsButton->SetLabel(mIsOnlineSession && IsOnlineResultsSessionActive() ? "[DISCONNECT]" : "[QUIT_VS]");
@@ -377,6 +394,13 @@ void VSResultsMenu::OnExit() const {
 void VSResultsMenu::ButtonDepress(int theId) {
     if (mIsFading)
         return;
+
+    if (theId == VSResultsMenu::VSResultsMenu_Play_Again && mIsReplaySession) {
+        gChallengeScreenOpenReplayManage = true;
+        gLawnApp->ShowChallengeScreen(ChallengePage::CHALLENGE_PAGE_VS);
+        gLawnApp->KillVSResultsScreen();
+        return;
+    }
 
     if (theId == VSResultsMenu::VSResultsMenu_Save_Replay) {
         if (mIsReplaySession) {

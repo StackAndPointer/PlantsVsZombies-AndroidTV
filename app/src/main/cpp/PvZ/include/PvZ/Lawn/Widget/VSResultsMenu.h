@@ -142,7 +142,7 @@ public:
 
     void InitCheckboxWidget(VSResultsMenu *parentMenu) {
         mParentMenu = parentMenu;
-        if (mParentMenu == nullptr || mParentMenu->mWidgetManager == nullptr) {
+        if (mParentMenu == nullptr || mParentMenu->mWidgetManager == nullptr || mParentMenu->mIsReplaySession) {
             return;
         }
         if (mSendPlayerNameCheckbox != nullptr) {

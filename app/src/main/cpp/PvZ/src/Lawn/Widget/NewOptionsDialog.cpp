@@ -24,6 +24,7 @@
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/System/Music.h"
+#include "PvZ/Lawn/Widget/ChallengeScreen.h"
 #include "PvZ/Lawn/Widget/ConfirmBackToMainDialog.h"
 #include "PvZ/Lawn/Widget/VSResultsMenu.h"
 #include "PvZ/NetPlay.h"
@@ -47,12 +48,20 @@ void NewOptionsDialog::ButtonDepress(int theId) {
         aConfirmDialog->mRestartButton->mDisabled = true;
         return;
     }
-
+    if (theId == 5 && gIsReplayMode) {
+        gChallengeScreenOpenReplayManage = true;
+        mApp->KillNewOptionsDialog();
+        mApp->KillBoard();
+        mApp->ShowChallengeScreen(ChallengePage::CHALLENGE_PAGE_VS);
+        return;
+    }
     if (theId == 5 && (gTcpConnected || gTcpClientSocket >= 0)) {
-        if (gIsServerModeSpectator || gIsReplayMode) {
+        if (gIsServerModeSpectator) {
             mApp->PlaySample(Sexy::SOUND_BUZZER);
             return;
         }
+
+
         mApp->PlaySample(Sexy::SOUND_GRAVEBUTTON);
 
         Sexy::Dialog::ButtonDepress(theId);

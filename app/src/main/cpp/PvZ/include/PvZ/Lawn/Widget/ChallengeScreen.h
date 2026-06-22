@@ -129,6 +129,7 @@ extern ChallengeDefinition gChallengeDefs[200];
 ChallengeDefinition &GetChallengeDefinition(int theChallengeMode);
 /***************************************************************************************************************/
 inline int gChallengeScreenRequestState = 0;
+inline bool gChallengeScreenOpenReplayManage = false;
 
 inline void (*old_ChallengeScreen_ChallengeScreen)(ChallengeScreen *challengeScreen, LawnApp *lawnApp, ChallengePage page);
 

@@ -498,6 +498,11 @@ void ChallengeScreen::Update() {
             mConnectDialog = new WaitForSecondPlayerDialog(mApp);
             mApp->AddDialog(mConnectDialog);
             VSSetupAddonWidget::ResetGlobalBpState();
+            if (gChallengeScreenOpenReplayManage) {
+                gChallengeScreenOpenReplayManage = false;
+                mConnectDialog->SetMode(UIMode::MODE3_SERVER);
+                mConnectDialog->OpenReplayManageWidget();
+            }
 
             int aButtonId = mConnectDialog->WaitForResult(true);
             if (aButtonId == WaitForSecondPlayerDialog::WaitForSecondPlayerDialog_Back) {

@@ -18,7 +18,6 @@ public:
     static constexpr int kWidth = 800;
     static constexpr int kHeight = 40;
 
-    Board *mBoard = nullptr;
     int mStartLevelTick = -2;
 
     explicit ReplayControlsWidget(Board *board);
@@ -33,14 +32,14 @@ protected:
     static bool Contains(const Sexy::Rect &rect, int x, int y);
     static void DrawButton(Sexy::Graphics *g, const Sexy::Rect &rect, const char *label);
 
-    Board *GetCurrentBoard() const;
+    static Board *GetCurrentBoard();
     int GetStartLevelTick();
-    bool ShowSkipSetupButton() const;
-    Sexy::Rect PauseButtonRect() const;
-    Sexy::Rect SpeedButtonRect() const;
-    Sexy::Rect ForwardButtonRect() const;
-    Sexy::Rect RestartButtonRect() const;
-    Sexy::Rect SkipSetupButtonRect() const;
+    static bool ShowSkipSetupButton();
+    static Sexy::Rect PauseButtonRect();
+    static Sexy::Rect SpeedButtonRect();
+    static Sexy::Rect ForwardButtonRect();
+    static Sexy::Rect RestartButtonRect();
+    static Sexy::Rect SkipSetupButtonRect();
 
     void _destructor();
     void _destructor2();
