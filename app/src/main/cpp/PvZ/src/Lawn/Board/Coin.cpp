@@ -18,7 +18,6 @@
  */
 
 #include "PvZ/Lawn/Board/Coin.h"
-#include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
@@ -183,7 +182,6 @@ void Coin::ScoreCoin() {
 }
 
 void Coin::UpdateCollected() {
-    LOG_DEBUG("mApp->mGameMode {}", (int)mApp->mGameMode);
     int aDoubleSunDestX = *reinterpret_cast<bool *>(mApp->unkMem2[19] + 96) ? 600 : 480;
     int aDestX = 15;
     int aDestY = 0;
@@ -242,7 +240,6 @@ void Coin::UpdateCollected() {
         mPosY = TodAnimateCurveFloat(0, 350, mDisappearCounter, mCollectY, aDestY, TodCurves::CURVE_EASE_OUT);
         return;
     }
-    LOG_DEBUG("aDestX {}", (int)aDestX);
     float aDeltaX = fabsf(mPosX - aDestX);
     float aDeltaY = fabsf(mPosY - aDestY);
     if (mPosX > aDestX) {
