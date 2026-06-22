@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/Lawn/Board/Coin.h"
+#include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
@@ -182,6 +183,7 @@ void Coin::ScoreCoin() {
 }
 
 void Coin::UpdateCollected() {
+    LOG_DEBUG("mApp->mGameMode {}", (int)mApp->mGameMode);
     int aDoubleSunDestX = *reinterpret_cast<bool *>(mApp->unkMem2[19] + 96) ? 600 : 480;
     int aDestX = 15;
     int aDestY = 0;
@@ -205,7 +207,7 @@ void Coin::UpdateCollected() {
         aDestY = 558;
         aDoubleSunDestX = 0;
 
-        if (mApp->HasFinishedAdventure()) {
+        if (mApp->GetDialog(Dialogs::DIALOG_STORE)) {
             aDestX = 662;
             aDestY = 546;
         } else if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {
@@ -219,7 +221,7 @@ void Coin::UpdateCollected() {
         aDoubleSunDestX = 0;
     } else if (mType == CoinType::COIN_AWARD_PRESENT || mType == CoinType::COIN_PRESENT_PLANT) {
         ++mDisappearCounter;
-        if (mDisappearCounter >= 199) {
+        if (mDisappearCounter >= 200) {
             StartFade();
         }
         return;
@@ -235,12 +237,12 @@ void Coin::UpdateCollected() {
     }
 
     if (IsLevelAward()) {
-        mScale = TodAnimateCurveFloat(0, 400, mDisappearCounter, 1.01f, 2.0f, TodCurves::CURVE_BOUNCE);
-        mPosX = TodAnimateCurveFloat(0, 350, mDisappearCounter, mCollectX, aDestX, TodCurves::CURVE_EASE_IN_OUT);
-        mPosY = TodAnimateCurveFloat(0, 350, mDisappearCounter, mCollectY, aDestY, TodCurves::CURVE_EASE_IN_OUT);
+        mScale = TodAnimateCurveFloat(0, 400, mDisappearCounter, 1.01f, 2.0f, TodCurves::CURVE_EASE_IN_OUT);
+        mPosX = TodAnimateCurveFloat(0, 350, mDisappearCounter, mCollectX, aDestX, TodCurves::CURVE_EASE_OUT);
+        mPosY = TodAnimateCurveFloat(0, 350, mDisappearCounter, mCollectY, aDestY, TodCurves::CURVE_EASE_OUT);
         return;
     }
-
+    LOG_DEBUG("aDestX {}", (int)aDestX);
     float aDeltaX = fabsf(mPosX - aDestX);
     float aDeltaY = fabsf(mPosY - aDestY);
     if (mPosX > aDestX) {
@@ -275,8 +277,8 @@ void Coin::UpdateCollected() {
             return;
         }
 
-        if (mBoard->mHelpDisplayed[66]) {
-            if (mBoard->mHelpIndex != AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED || mBoard->mAdvice == nullptr || mBoard->mAdvice->mDuration <= 0) {
+        if (mBoard->mHelpDisplayed[ADVICE_NEED_ACHIVEMENT_EARNED]) {
+            if (mBoard->mHelpIndex != ADVICE_NEED_ACHIVEMENT_EARNED || mBoard->mAdvice == nullptr || mBoard->mAdvice->mDuration <= 0 /* IsBeingDisplayed() */) {
                 Die();
             }
             return;
@@ -286,15 +288,20 @@ void Coin::UpdateCollected() {
             case CoinType::COIN_PRESENT_MINIGAMES:
                 mBoard->DisplayAdvice("[UNLOCKED_MINIGAMES]", MessageStyle::MESSAGE_STYLE_HINT_TALL_UNLOCKMESSAGE, AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED);
                 break;
-            case CoinType::COIN_PRESENT_PUZZLE_MODE:
+
             case CoinType::Present32:
                 mBoard->DisplayAdvice("[UNLOCKED_PUZZLE_MODE]", MessageStyle::MESSAGE_STYLE_HINT_TALL_UNLOCKMESSAGE, AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED);
                 break;
+
             case CoinType::Present1024:
                 mBoard->DisplayAdvice("[UNLOCKED_SURVIVAL_MODE]", MessageStyle::MESSAGE_STYLE_HINT_TALL_UNLOCKMESSAGE, AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED);
                 break;
-            default:
+
+            case CoinType::COIN_PRESENT_PUZZLE_MODE:
                 mBoard->DisplayAdvice("[UNLOCKED_COOP_CHALLENGES]", MessageStyle::MESSAGE_STYLE_HINT_TALL_UNLOCKMESSAGE, AdviceType::ADVICE_NEED_ACHIVEMENT_EARNED);
+                break;
+
+            default:
                 break;
         }
         return;
@@ -343,7 +350,7 @@ void Coin::UpdateFallForAward() {
                 mVelY = 0.0f;
             }
         }
-        if (mCoinAge > 199) {
+        if (mCoinAge >= 200) {
             Collect(0);
         }
     } else if (mCoinMotion == CoinMotion::COIN_MOTION_FROM_NEAR_CURSOR) {
