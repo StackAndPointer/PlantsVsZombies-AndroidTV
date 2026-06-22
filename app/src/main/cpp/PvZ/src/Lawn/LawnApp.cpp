@@ -199,6 +199,7 @@ void LawnApp::LoadAddonImages() {
     addonImages.seedpacket_Zombie_Upgrade = GetImageByFileName("addonFiles/images/seedpacket_Zombie_Upgrade");
     addonImages.VS_Button = GetImageByFileName("images/VS Button");
     addonImages.VS_Button_selected = GetImageByFileName("images/VS Button_selected");
+    addonImages.zombie_target = GetImageByFileName("reanim/zombie_target");
 
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_FOOTBALL_HELMET2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_berserker_helmet2");
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_FOOTBALL_HELMET3 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_berserker_helmet3");

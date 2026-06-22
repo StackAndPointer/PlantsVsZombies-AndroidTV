@@ -469,6 +469,27 @@ int replay::FindPlaybackEventTick(EventType eventType) {
     return -1;
 }
 
+std::vector<int> replay::FindPlaybackEventTicks(EventType eventType) {
+    std::vector<int> ticks;
+    if (!gPlaybackState.active) {
+        return ticks;
+    }
+    for (const auto &pkt : gPlaybackState.packets) {
+        std::size_t offset = 0;
+        while (offset + sizeof(BaseEvent) <= pkt.data.size()) {
+            const auto *event = reinterpret_cast<const BaseEvent *>(pkt.data.data() + offset);
+            if (event->size == 0 || offset + event->size > pkt.data.size()) {
+                break;
+            }
+            if (event->type == eventType) {
+                ticks.push_back(static_cast<int>(pkt.tick));
+            }
+            offset += event->size;
+        }
+    }
+    return ticks;
+}
+
 void replay::TickPlayback() {
     if (!gPlaybackState.active || gLawnApp == nullptr) {
         return;

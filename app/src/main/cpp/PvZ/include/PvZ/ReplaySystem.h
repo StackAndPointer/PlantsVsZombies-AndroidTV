@@ -75,6 +75,7 @@ int GetPlaybackBoardTicks();
 const std::string &GetPlaybackFilePath();
 int GetPlaybackVsBackground();
 int FindPlaybackEventTick(EventType eventType);
+std::vector<int> FindPlaybackEventTicks(EventType eventType);
 void TickPlayback();
 } // namespace replay
 

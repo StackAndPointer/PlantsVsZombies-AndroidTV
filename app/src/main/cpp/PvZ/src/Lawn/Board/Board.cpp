@@ -43,6 +43,7 @@
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/System/Music.h"
+#include "PvZ/Lawn/System/ReanimationLawn.h"
 #include "PvZ/Lawn/Widget/ChallengeScreen.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/Lawn/Widget/ReplayControlsWidget.h"
@@ -1534,7 +1535,9 @@ void Board::processClientEvent(const BaseEvent *event) {
         } break;
         case EVENT_CLIENT_BOARD_PAUSE: {
             auto *event1 = static_cast<const U8_Event *>(event);
-            PauseFromSecondPlayer(event1->data);
+            if (mApp->mGameScene == SCENE_PLAYING) { // 在对局结束后，不接收对方暂停的信息
+                PauseFromSecondPlayer(event1->data);
+            }
         } break;
         case EVENT_CLIENT_BOARD_CONCEDE: {
             mApp->KillNewOptionsDialog();
@@ -3227,8 +3230,51 @@ void Board::SpawnZombieWave() {
 }
 
 void Board::DrawProgressMeter(Sexy::Graphics *g, int theX, int theY) {
-    // 修改此函数，以做到在进度条上正常绘制旗帜波的旗帜。
+
+
+    if (gIsReplayMode) {
+        // 先画上面的空进度条
+        g->DrawImageCel(Sexy::IMAGE_FLAGMETER, theX, theY, 0);
+        int aCelWidth = Sexy::IMAGE_FLAGMETER->GetCelWidth();
+        int aCelHeight = Sexy::IMAGE_FLAGMETER->GetCelHeight();
+        constexpr int aMeterWidth = 143;
+        int aTotalTicks = std::max(1, replay::GetPlaybackBoardTicks());
+        int aCurrentTicks = std::clamp(mMainCounter, 0, aTotalTicks);
+        int aClipWidth = aCurrentTicks * aMeterWidth / aTotalTicks;
+        Rect aSrcRect(aCelWidth - aClipWidth - 7, aCelHeight, aClipWidth, aCelHeight);
+        Rect aDstRect(aCelWidth - aClipWidth + theX - 7, theY, aClipWidth, aCelHeight);
+        g->DrawImage(Sexy::IMAGE_FLAGMETER, aDstRect, aSrcRect);
+
+        const int aMeterRight = aCelWidth + theX - 7;
+        const int aMeterTop = theY;
+        const int aBoardStartTick = std::max(0, replay::FindPlaybackEventTick(EVENT_SERVER_BOARD_START_LEVEL));
+        auto getMarkerX = [&](int theReplayTick) {
+            int aBoardTick = std::clamp(theReplayTick - aBoardStartTick, 0, aTotalTicks);
+            return aMeterRight - aBoardTick * aMeterWidth / aTotalTicks;
+        };
+        auto drawMarker = [&](Sexy::Image *theImage, int theReplayTick, int theWidth, int theHeight, int theYOffset) {
+            if (theImage == nullptr) {
+                return;
+            }
+            int aMarkerX = getMarkerX(theReplayTick) - theWidth / 2;
+            int aMarkerY = aMeterTop + theYOffset;
+            Rect aSrc(0, 0, theImage->mWidth, theImage->mHeight);
+            Rect aDst(aMarkerX, aMarkerY, theWidth, theHeight);
+            g->DrawImage(theImage, aDst, aSrc);
+        };
+
+        for (int aTick : replay::FindPlaybackEventTicks(EVENT_SERVER_BOARD_GRIDITEM_DIE)) {
+            drawMarker(addonImages.zombie_target, aTick, 18, 24, -20);
+        }
+        for (int aTick : replay::FindPlaybackEventTicks(EVENT_SERVER_BOARD_LAWNMOWER_START)) {
+            drawMarker(mApp->mReanimatorCache->mLawnMowers[LAWNMOWER_LAWN], aTick, 30, 33, 14);
+        }
+
+        return;
+    }
+
     if (normalLevel) {
+        // 修改此函数，以做到在进度条上正常绘制旗帜波的旗帜。
         if (mApp->IsAdventureMode() && ProgressMeterHasFlags()) {
             mApp->mGameMode = GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON; // 修改关卡信息为非冒险模式
             old_Board_DrawProgressMeter(this, g, theX, theY);
