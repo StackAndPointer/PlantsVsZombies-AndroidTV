@@ -2270,7 +2270,7 @@ void Zombie::UpdateZombieJalapenoHead() {
                 } else if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
                     if (aPlant->mSeedType == SeedType::SEED_JALAPENO || aPlant->mSeedType == SeedType::SEED_CHERRYBOMB || aPlant->mSeedType == SeedType::SEED_DOOMSHROOM
                         || aPlant->mSeedType == SeedType::SEED_ICESHROOM || aPlant->mSeedType == SeedType::SEED_HYPNOSHROOM || aPlant->mSeedType == SeedType::SEED_SQUASH
-                        || aPlant->mSeedType == SeedType::SEED_GARLIC) {
+                        || aPlant->mSeedType == SeedType::SEED_GARLIC || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
                         if (!aPlant->mIsAsleep) {
                             return;
                         }
@@ -3267,7 +3267,8 @@ void Zombie::EatPlant(Plant *thePlant) {
     StartEating();
     if (thePlant->mSeedType == SeedType::SEED_JALAPENO || thePlant->mSeedType == SeedType::SEED_CHERRYBOMB || thePlant->mSeedType == SeedType::SEED_DOOMSHROOM
         || thePlant->mSeedType == SeedType::SEED_ICESHROOM || thePlant->mSeedType == SeedType::SEED_HYPNOSHROOM || thePlant->mState == PlantState::STATE_FLOWERPOT_INVULNERABLE
-        || thePlant->mState == PlantState::STATE_LILYPAD_INVULNERABLE || thePlant->mState == PlantState::STATE_SQUASH_LOOK || thePlant->mState == PlantState::STATE_SQUASH_PRE_LAUNCH) {
+        || thePlant->mState == PlantState::STATE_LILYPAD_INVULNERABLE || thePlant->mState == PlantState::STATE_SQUASH_LOOK || thePlant->mState == PlantState::STATE_SQUASH_PRE_LAUNCH
+        || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
         if (!thePlant->mIsAsleep) {
             return;
         }
@@ -3604,7 +3605,7 @@ bool Zombie::CanBeFrozen() {
     if (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_INTO_POOL || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP
         || mZombiePhase == ZombiePhase::PHASE_SNORKEL_INTO_POOL || IsFlying() || mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN || mZombiePhase == ZombiePhase::PHASE_IMP_LANDING
         || mZombiePhase == ZombiePhase::PHASE_BOBSLED_CRASHING || mZombiePhase == ZombiePhase::PHASE_JACK_IN_THE_BOX_POPPING || mZombiePhase == ZombiePhase::PHASE_SQUASH_RISING
-        || mZombiePhase == ZombiePhase::PHASE_SQUASH_FALLING || mZombiePhase == ZombiePhase::PHASE_SQUASH_DONE_FALLING || IsBouncingPogo())
+        || mZombiePhase == ZombiePhase::PHASE_SQUASH_FALLING || mZombiePhase == ZombiePhase::PHASE_SQUASH_DONE_FALLING || IsBouncingPogo() || mZombiePhase == ZombiePhase::PHASE_IMP_POPPING)
         return false;
 
     return mZombieType != ZombieType::ZOMBIE_BUNGEE || mZombiePhase == ZombiePhase::PHASE_BUNGEE_AT_BOTTOM;
@@ -4796,7 +4797,7 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
 
     if (theAttackType == ZombieAttackType::ATTACKTYPE_DRIVE_OVER) {
         if (thePlant->mSeedType == SeedType::SEED_CHERRYBOMB || thePlant->mSeedType == SeedType::SEED_JALAPENO || thePlant->mSeedType == SeedType::SEED_BLOVER
-            || thePlant->mSeedType == SeedType::SEED_SQUASH) {
+            || thePlant->mSeedType == SeedType::SEED_SQUASH || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
             return false;
         }
         if (thePlant->mSeedType == SeedType::SEED_DOOMSHROOM || thePlant->mSeedType == SeedType::SEED_ICESHROOM) {
@@ -4835,7 +4836,8 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
 
     if (theAttackType == ZombieAttackType::ATTACKTYPE_POLE) {
         if (thePlant->mSeedType == SeedType::SEED_PUFFSHROOM || thePlant->mSeedType == SeedType::SEED_SUNSHROOM || thePlant->mSeedType == SeedType::SEED_POTATOMINE
-            || thePlant->mSeedType == SeedType::SEED_SPIKEWEED || thePlant->mSeedType == SeedType::SEED_SPIKEROCK || thePlant->mSeedType == SeedType::SEED_LILYPAD) {
+            || thePlant->mSeedType == SeedType::SEED_SPIKEWEED || thePlant->mSeedType == SeedType::SEED_SPIKEROCK || thePlant->mSeedType == SeedType::SEED_LILYPAD
+            || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
             return false;
         }
         Plant *aTopPlant = mBoard->GetTopPlantAt(thePlant->mPlantCol, thePlant->mRow, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);

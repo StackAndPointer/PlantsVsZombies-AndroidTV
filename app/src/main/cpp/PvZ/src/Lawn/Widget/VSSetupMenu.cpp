@@ -739,7 +739,7 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 }
             }
             int seedIndex = seedChooser->GetSeedPacketIndex(seedType);
-            if (seedIndex < 0 || seedIndex >= seedChooser->GetSeedChooserCount()) {
+            if (seedIndex < 0 || seedIndex >= seedChooser->GetSeedStorageCount()) {
                 break;
             }
             if (isZombieChooser) {
@@ -887,7 +887,7 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
                 }
             }
             int seedIndex = seedChooser->GetSeedPacketIndex(seedType);
-            if (seedIndex < 0 || seedIndex >= seedChooser->GetSeedChooserCount()) {
+            if (seedIndex < 0 || seedIndex >= seedChooser->GetSeedStorageCount()) {
                 break;
             }
             if (isZombieChooser) {

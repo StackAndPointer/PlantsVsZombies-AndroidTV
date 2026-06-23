@@ -102,13 +102,20 @@ PlantDefinition gPlantDefs[SeedType::NUM_SEED_TYPES] = {
     {SeedType::SEED_LEFTPEATER, nullptr, ReanimationType::REANIM_REPEATER, 5, 200, 750, PlantSubClass::SUBCLASS_SHOOTER, 150, "REPEATER"}};
 
 PlantDefinition gExtendedPlantDefs[]{
-    {SeedType::SEED_ICEBERG_LETTUCE, nullptr, ReanimationType::REANIM_WALLNUT, 0, 0, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "ICEBERG_LETTUCE"},
+    {SeedType::SEED_ICEBERG_LETTUCE, nullptr, ReanimationType::REANIM_ICEBERG_LETTUCE, 0, 0, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "ICEBERG_LETTUCE"},
 };
 
 void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, SeedType theImitaterType, int a6) {
     // 在初始化植物后更新一次动画，以解决开场前存在的植物只绘制阴影而不绘制植物本体的问题
     old_Plant_PlantInitialize(this, theGridX, theGridY, theSeedType, theImitaterType, a6);
     UpdateReanim();
+
+    switch (theSeedType) {
+        case SeedType::SEED_ICEBERG_LETTUCE:
+            break;
+        default:
+            break;
+    }
 
     if (mApp->IsVSMode()) {
         //        if (mLaunchRate > 0) {
@@ -313,6 +320,48 @@ void Plant::Update() {
 
     old_Plant_Update(this);
 }
+
+void Plant::UpdateAbilities() {
+    old_Plant_UpdateAbilities(this);
+
+    if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE)
+        UpdateIcebergLettuce();
+}
+
+void Plant::Squish() {
+    if (NotOnGround())
+        return;
+
+    if (!mIsAsleep) {
+        if (mSeedType == SeedType::SEED_CHERRYBOMB || mSeedType == SeedType::SEED_JALAPENO || mSeedType == SeedType::SEED_DOOMSHROOM || mSeedType == SeedType::SEED_ICESHROOM
+            || mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+            DoSpecial();
+            return;
+        } else if (mSeedType == SeedType::SEED_POTATOMINE && mState != PlantState::STATE_NOTREADY) {
+            DoSpecial();
+            return;
+        }
+    }
+
+    if (mSeedType == SeedType::SEED_SQUASH && mState != PlantState::STATE_NOTREADY)
+        return;
+
+    mRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, mRow, 8);
+    mSquished = true;
+    mDisappearCountdown = 500;
+    mApp->PlayFoley(FoleyType::FOLEY_SQUISH);
+    RemoveEffects();
+
+    GridItem *aLadder = mBoard->GetLadderAt(mPlantCol, mRow);
+    if (aLadder) {
+        aLadder->GridItemDie();
+    }
+
+    if (mApp->IsIZombieLevel()) {
+        mBoard->mChallenge->IZombiePlantDropRemainingSun(this);
+    }
+}
+
 
 bool Plant::NotOnGround() const {
     if (mSeedType == SeedType::SEED_SQUASH) {
@@ -603,7 +652,11 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
                 v32 = v31 - 1;
             TodDrawImageCelScaledF(g, aImage, v25 + thePosX, v24 + thePosY, v32, v29, g->mScaleX, g->mScaleY);
         } else {
-            lawnApp->mReanimatorCache->DrawCachedPlant(g, v25 + thePosX, v24 + thePosY, theSeedType2, theDrawVariation);
+            if (theSeedType < NUM_SEED_TYPES) {
+                lawnApp->mReanimatorCache->DrawCachedPlant(g, v25 + thePosX, v24 + thePosY, theSeedType2, theDrawVariation);
+            } else {
+                lawnApp->mReanimatorCache->DrawCachedExtendedPlant(g, v25 + thePosX, v24 + thePosY, theSeedType2, theDrawVariation);
+            }
         }
     }
     g->mClipRect = oldClipRect;
@@ -744,6 +797,22 @@ void Plant::DoSpecial_Origin() {
             PlayBodyReanim("anim_crumble", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 22.0f);
             mApp->PlayFoley(FoleyType::FOLEY_COFFEE);
 
+            break;
+        }
+        case SeedType::SEED_ICEBERG_LETTUCE: {
+            if (Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY)) {
+                aZombie->mIceTrapCounter = 1000;
+                aZombie->StopZombieSound();
+                if (aZombie->mZombieType == ZombieType::ZOMBIE_BALLOON) {
+                    aZombie->BalloonPropellerHatSpin(false);
+                }
+                if (aZombie->mZombiePhase == ZombiePhase::PHASE_BOSS_HEAD_SPIT) {
+                    mBoard->RemoveParticleByType(ParticleEffect::PARTICLE_ZOMBIE_BOSS_FIREBALL);
+                }
+                aZombie->UpdateAnimSpeed();
+            }
+
+            Die();
             break;
         }
         default:
@@ -1111,7 +1180,7 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
         }
 
         if (!aZombie->mHasHead || aZombie->IsTangleKelpTarget()) {
-            if (mSeedType == SeedType::SEED_POTATOMINE || mSeedType == SeedType::SEED_CHOMPER || mSeedType == SeedType::SEED_TANGLEKELP) {
+            if (mSeedType == SeedType::SEED_POTATOMINE || mSeedType == SeedType::SEED_CHOMPER || mSeedType == SeedType::SEED_TANGLEKELP || mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
                 continue;
             }
         }
@@ -1133,6 +1202,18 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
                     continue;
                 }
             } else if (aRowDeviation) {
+                continue;
+            }
+        }
+
+        if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+            if (!aZombie->CanBeFrozen() || aZombie->IsImmobilizied() || (aZombie->mZombieType == ZombieType::ZOMBIE_POGO && aZombie->mHasObject)
+                || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT
+                || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_RISING || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_FALLING
+                || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_DONE_FALLING || aZombie->IsFlying() || aZombie->mZombieHeight != ZombieHeight::HEIGHT_ZOMBIE_NORMAL) {
+                continue;
+            }
+            if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE && aZombie->mTargetCol != mPlantCol) {
                 continue;
             }
         }
@@ -1322,8 +1403,8 @@ void Plant::Die_Origin() {
 }
 
 PlantDefinition &GetPlantDefinition(SeedType theSeedType) {
-    if (theSeedType >= SeedType::NUM_ZOMBIE_SEED_TYPES && theSeedType < SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED) {
-        return gExtendedPlantDefs[theSeedType - SeedType::NUM_ZOMBIE_SEED_TYPES];
+    if (theSeedType >= SeedType::SEED_ICEBERG_LETTUCE && theSeedType < SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED) {
+        return gExtendedPlantDefs[theSeedType - SEED_ICEBERG_LETTUCE];
     }
     return gPlantDefs[theSeedType];
 }
@@ -1839,6 +1920,9 @@ Rect Plant::GetPlantAttackRect(PlantWeapon thePlantWeapon) {
                 break;
             case SeedType::SEED_CATTAIL:
                 aRect = Rect(-BOARD_WIDTH, -BOARD_HEIGHT, BOARD_WIDTH * 2, BOARD_HEIGHT * 2);
+                break;
+            case SeedType::SEED_ICEBERG_LETTUCE:
+                aRect = Rect(mX, mY, mWidth, mHeight);
                 break;
             default:
                 aRect = Rect(mX + 60, mY, BOARD_WIDTH, mHeight);
@@ -2718,6 +2802,23 @@ void Plant::UpdateSquash() {
             if (mStateCountdown == 0) {
                 Die();
             }
+        }
+    }
+}
+
+void Plant::UpdateIcebergLettuce() {
+    Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+
+    if (mState == PlantState::STATE_NOTREADY) {
+        Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
+        if (aZombie != nullptr) {
+            mApp->PlayFoley(FoleyType::FOLEY_ICEBERG);
+            PlayBodyReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
+            mState = PlantState::STATE_READY;
+        }
+    } else if (mState == PlantState::STATE_READY) {
+        if (aBodyReanim->ShouldTriggerTimedEvent(0.35f)) {
+            DoSpecial();
         }
     }
 }

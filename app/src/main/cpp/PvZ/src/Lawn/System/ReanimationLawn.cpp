@@ -20,6 +20,7 @@
 #include "PvZ/Lawn/System/ReanimationLawn.h"
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
+#include "PvZ/Lawn/Board/Plant.h"
 #include "PvZ/Lawn/Board/Zombie.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
@@ -69,8 +70,10 @@ void ReanimatorCache::ReanimatorCacheInitialize() {
     for (int i = 0; i < ZombieType::NUM_ZOMBIE_TYPES; i++)
         mZombieImages[i] = nullptr;
 
+    for (int i = 0; i < NUM_SEED_TYPES_EXTENDED; i++)
+        msExtendedPlantImages[i] = nullptr;
     for (int i = 0; i < EXTENDED_NUM_ZOMBIE_TYPES - NUM_CACHED_ZOMBIE_TYPES; i++)
-        gExtendedZombieImages[i] = nullptr;
+        msExtendedZombieImages[i] = nullptr;
 }
 
 void ReanimatorCache::ReanimatorCacheDispose() {
@@ -85,8 +88,10 @@ void ReanimatorCache::ReanimatorCacheDispose() {
     for (int i = 0; i < ZombieType::NUM_ZOMBIE_TYPES; i++)
         delete mZombieImages[i];
 
+    for (int i = 0; i < NUM_SEED_TYPES_EXTENDED; i++)
+        delete msExtendedPlantImages[i];
     for (int i = 0; i < EXTENDED_NUM_ZOMBIE_TYPES - NUM_CACHED_ZOMBIE_TYPES; i++)
-        delete gExtendedZombieImages[i];
+        delete msExtendedZombieImages[i];
 }
 
 void ReanimatorCache::DrawCachedPlant(Graphics *g, float thePosX, float thePosY, SeedType theSeedType, DrawVariation theDrawVariation) {
@@ -121,6 +126,51 @@ void ReanimatorCache::DrawCachedPlant(Graphics *g, float thePosX, float thePosY,
     }
 }
 
+void ReanimatorCache::DrawCachedExtendedPlant(Graphics *g, float thePosX, float thePosY, SeedType theSeedType, DrawVariation theDrawVariation) {
+    MemoryImage *aImage = nullptr;
+    if (theDrawVariation != DrawVariation::VARIATION_NORMAL) {
+        //        for (TodListNode<ReanimCacheImageVariation> *aNode = mImageVariationList.mHead; aNode != nullptr; aNode = aNode->mNext) {
+        //            ReanimCacheImageVariation &aImageVariation = aNode->mValue;
+        //            if (aImageVariation.mSeedType == theSeedType && aImageVariation.mDrawVariation == theDrawVariation) {
+        //                aImage = aImageVariation.mImage;
+        //                break;
+        //            }
+        //        }
+
+        if (aImage == nullptr) {
+            return;
+            //            aImage = MakeCachedPlantFrame(theSeedType, theDrawVariation);
+            //            ReanimCacheImageVariation aNewImageVariation;
+            //            aNewImageVariation.mSeedType = theSeedType;
+            //            aNewImageVariation.mDrawVariation = theDrawVariation;
+            //            aNewImageVariation.mImage = aImage;
+            //            mImageVariationList.AddHead(aNewImageVariation);
+        }
+    } else {
+        aImage = msExtendedPlantImages[theSeedType - SEED_ICEBERG_LETTUCE];
+        if (aImage == nullptr) {
+            //            aImage = MakeCachedPlantFrame(theSeedType, DrawVariation::VARIATION_NORMAL);
+            int aOffsetX, aOffsetY, aWidth, aHeight;
+            GetPlantImageSize(theSeedType, aOffsetX, aOffsetY, aWidth, aHeight);
+            MemoryImage *aMemoryImage = MakeBlankCanvasImage(aWidth, aHeight);
+            Graphics aMemoryGraphics(aMemoryImage);
+            aMemoryGraphics.SetLinearBlend(true);
+
+            PlantDefinition &aPlantDef = GetPlantDefinition(theSeedType);
+            DrawReanimatorFrame(&aMemoryGraphics, -aOffsetX, -aOffsetY, aPlantDef.mReanimationType, "anim_idle", theDrawVariation);
+            aImage = aMemoryImage;
+            msExtendedPlantImages[theSeedType - SEED_ICEBERG_LETTUCE] = aImage;
+        }
+    }
+
+    int aOffsetX, aOffsetY, aWidth, aHeight;
+    GetPlantImageSize(theSeedType, aOffsetX, aOffsetY, aWidth, aHeight);
+    if (!mApp->Is3DAccelerated() && g->mScaleX == 1.0f && g->mScaleY == 1.0f)
+        g->DrawImage(aImage, thePosX + aOffsetX, thePosY + aOffsetY);
+    else
+        TodDrawImageScaledF(g, aImage, thePosX + (aOffsetX * g->mScaleX), thePosY + (aOffsetY * g->mScaleY), g->mScaleX, g->mScaleY);
+}
+
 void ReanimatorCache::DrawCachedZombie(Graphics *g, float thePosX, float thePosY, ZombieType theZombieType) {
     if (mZombieImages[theZombieType])
         TodDrawImageScaledF(g, mZombieImages[theZombieType], thePosX, thePosY, g->mScaleX, g->mScaleY);
@@ -128,9 +178,9 @@ void ReanimatorCache::DrawCachedZombie(Graphics *g, float thePosX, float thePosY
 
 void ReanimatorCache::DrawCachedExtendedZombie(Sexy::Graphics *g, float thePosX, float thePosY, ZombieType theZombieType) {
     int aExtendedIndex = theZombieType - NUM_CACHED_ZOMBIE_TYPES;
-    if (gExtendedZombieImages[aExtendedIndex] == nullptr)
-        gExtendedZombieImages[aExtendedIndex] = MakeCachedZombieFrame(theZombieType);
-    TodDrawImageScaledF(g, gExtendedZombieImages[aExtendedIndex], thePosX, thePosY, g->mScaleX, g->mScaleY);
+    if (msExtendedZombieImages[aExtendedIndex] == nullptr)
+        msExtendedZombieImages[aExtendedIndex] = MakeCachedZombieFrame(theZombieType);
+    TodDrawImageScaledF(g, msExtendedZombieImages[aExtendedIndex], thePosX, thePosY, g->mScaleX, g->mScaleY);
 }
 
 MemoryImage *ReanimatorCache::MakeBlankMemoryImage(int theWidth, int theHeight) {
@@ -176,7 +226,7 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
             aReanim.mAnimTime = 0.5f;
             aReanim.Update();
             aReanim.Draw(&aMemoryGraphics);
-            gExtendedZombieImages[aExtendedIndex] = aMemoryImage;
+            msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
         } else if (theZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
             Reanimation aReanim;
             aReanim.ReanimationInitializeType(aPosX, aPosY, aZombieDef.mReanimationType);
@@ -186,7 +236,7 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
             aReanim.AssignRenderGroupToPrefix("anim_pole3", RENDER_GROUP_HIDDEN);
             aReanim.Update();
             aReanim.Draw(&aMemoryGraphics);
-            gExtendedZombieImages[aExtendedIndex] = aMemoryImage;
+            msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
         }
         return aMemoryImage;
     }

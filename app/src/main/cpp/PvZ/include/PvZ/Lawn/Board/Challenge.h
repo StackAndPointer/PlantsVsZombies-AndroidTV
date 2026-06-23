@@ -195,6 +195,9 @@ public:
     void IZombieMouseDownWithZombie(int x, int y, int theClickCount, int thePlayerIndex) {
         reinterpret_cast<void (*)(Challenge *, int, int, int, int)>(Challenge_IZombieMouseDownWithZombieAddr)(this, x, y, theClickCount, thePlayerIndex);
     }
+    void IZombiePlantDropRemainingSun(Plant *thePlant) {
+        reinterpret_cast<void (*)(Challenge *, Plant *)>(Challenge_IZombiePlantDropRemainingSunAddr)(this, thePlant);
+    }
 
 
     void Update();

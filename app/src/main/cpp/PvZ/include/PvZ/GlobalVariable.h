@@ -211,6 +211,7 @@ struct AddonSounds {
     int thriller;
     int allstardbl;
     int whistle;
+    int iceberg;
 } inline addonSounds; // 此处是新增音频的列表。注意新增的音频数量有限制，最多新增62个。（最大总音频256个，原版游戏已经使用了194个，还剩62个空余。未来我也许会拓宽此限制。）
 
 struct AddonZombatarImages {

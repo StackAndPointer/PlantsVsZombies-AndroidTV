@@ -44,6 +44,9 @@ class Reanimation;
 
 class ReanimatorCache {
 public:
+    static inline Sexy::MemoryImage *msExtendedPlantImages[NUM_SEED_TYPES_EXTENDED];
+    static inline Sexy::MemoryImage *msExtendedZombieImages[EXTENDED_NUM_ZOMBIE_TYPES - NUM_CACHED_ZOMBIE_TYPES];
+
     ImageVariationList mImageVariationList;
     Sexy::MemoryImage *mPlantImages[SeedType::NUM_SEED_TYPES];             // 4 ~ 57
     Sexy::MemoryImage *mLawnMowers[LawnMowerType::NUM_MOWER_TYPES];        // 58 ~ 61
@@ -69,12 +72,11 @@ public:
     void LoadCachedImages();
     Sexy::MemoryImage *MakeCachedZombieFrame(ZombieType theZombieType);
     void DrawCachedPlant(Sexy::Graphics *g, float thePosX, float thePosY, SeedType theSeedType, DrawVariation theDrawVariation);
+    void DrawCachedExtendedPlant(Sexy::Graphics *g, float thePosX, float thePosY, SeedType theSeedType, DrawVariation theDrawVariation);
     void DrawCachedZombie(Sexy::Graphics *g, float thePosX, float thePosY, ZombieType theZombieType);
     void DrawCachedExtendedZombie(Sexy::Graphics *g, float thePosX, float thePosY, ZombieType theZombieType);
     Sexy::MemoryImage *MakeBlankMemoryImage(int theWidth, int theHeight);
 };
-
-inline Sexy::MemoryImage *gExtendedZombieImages[EXTENDED_NUM_ZOMBIE_TYPES - NUM_CACHED_ZOMBIE_TYPES];
 
 inline void (*old_ReanimatorCache_LoadCachedImages)(ReanimatorCache *a1);
 

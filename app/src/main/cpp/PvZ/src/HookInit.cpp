@@ -294,6 +294,7 @@ void InitHookFunction() {
 
     homura::HookFunc(SeedChooserScreen_SeedChooserScreenAddr, &SeedChooserScreen::_constructor, nullptr);
     homura::HookFunc(SeedChooserScreen__destructorAddr, &SeedChooserScreen::_destructor, &old_SeedChooserScreen__destructor);
+    homura::HookFunc(SeedChooserScreen_HasPacketAddr, &SeedChooserScreen::HasPacket, nullptr);
     homura::HookFunc(SeedChooserScreen_EnableStartButtonAddr, &SeedChooserScreen::EnableStartButton, &old_SeedChooserScreen_EnableStartButton);
     homura::HookFunc(SeedChooserScreen_RebuildHelpbarAddr, &SeedChooserScreen::RebuildHelpbar, &old_SeedChooserScreen_RebuildHelpbar);
     homura::HookFunc(SeedChooserScreen_GetZombieSeedTypeAddr, &SeedChooserScreen::GetZombieSeedType, nullptr);
@@ -358,6 +359,8 @@ void InitHookFunction() {
 
 
     homura::HookFunc(Plant_UpdateAddr, &Plant::Update, &old_Plant_Update);
+    homura::HookFunc(Plant_UpdateAbilitiesAddr, &Plant::UpdateAbilities, &old_Plant_UpdateAbilities);
+    homura::HookFunc(Plant_SquishAddr, &Plant::Squish, nullptr);
     homura::HookFunc(Plant_GetRefreshTimeAddr, &Plant::GetRefreshTime, &old_Plant_GetRefreshTime);
     homura::HookFunc(Plant_DoSpecialAddr, &Plant::DoSpecial, nullptr);
     homura::HookFunc(Plant_DrawAddr, &Plant::Draw, &old_Plant_Draw);
@@ -372,6 +375,7 @@ void InitHookFunction() {
     homura::HookFunc(Plant_FindTargetGridItemAddr, &Plant::FindTargetGridItem, nullptr);
     homura::HookFunc(Plant_GetCostAddr, &Plant::GetCost, &old_Plant_GetCost);
     homura::HookFunc(Plant_DieAddr, &Plant::Die, nullptr);
+    homura::HookFunc(GetPlantDefinitionAddr, &GetPlantDefinition, nullptr);
     homura::HookFunc(Plant_PlayBodyReanimAddr, &Plant::PlayBodyReanim, &old_Plant_PlayBodyReanim);
     homura::HookFunc(Plant_UpdateProductionPlantAddr, &Plant::UpdateProductionPlant, &old_Plant_UpdateProductionPlant);
     homura::HookFunc(Plant_FireAddr, &Plant::Fire, nullptr);
@@ -383,8 +387,7 @@ void InitHookFunction() {
     homura::HookFunc(Plant_UpdateChomperAddr, &Plant::UpdateChomper, nullptr);
     homura::HookFunc(Plant_UpdateGraveBusterAddr, &Plant::UpdateGraveBuster, nullptr);
     homura::HookFunc(Plant_UpdateMagnetShroomAddr, &Plant::UpdateMagnetShroom, nullptr);
-    homura::HookFunc(Plant_UpdateSquashAddr, &Plant::UpdateSquash, &old_Plant_UpdateSquash);
-
+    homura::HookFunc(Plant_UpdateSquashAddr, &Plant::UpdateSquash, nullptr);
     homura::HookFunc(Plant_CobCannonFireAddr, &Plant::CobCannonFire, nullptr);
     // homura::HookFunc(Plant_UpdateReanimAddr, Plant_UpdateReanim, &old_Plant_UpdateReanim);
 

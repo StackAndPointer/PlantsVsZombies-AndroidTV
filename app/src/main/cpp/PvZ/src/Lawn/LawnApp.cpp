@@ -245,6 +245,7 @@ void LawnApp::LoadAddonSounds() {
     addonSounds.thriller = GetSoundByFileName("addonFiles/sounds/thriller");
     addonSounds.allstardbl = GetSoundByFileName("addonFiles/sounds/allstardbl");
     addonSounds.whistle = GetSoundByFileName("addonFiles/sounds/whistle");
+    addonSounds.iceberg = GetSoundByFileName("addonFiles/sounds/iceberg");
 
     int addonSoundsNum = (sizeof(addonSounds) / sizeof(int));
     mCompletedLoadingThreadTasks += 54 * addonSoundsNum;

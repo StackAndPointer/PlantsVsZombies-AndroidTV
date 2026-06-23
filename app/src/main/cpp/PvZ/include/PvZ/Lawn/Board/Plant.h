@@ -206,9 +206,6 @@ public:
     int unk;                                   // 86
     // 大小87个整数
 
-    void UpdateAbilities() {
-        reinterpret_cast<void (*)(Plant *)>(Plant_UpdateAbilitiesAddr)(this);
-    }
     void Animate() {
         reinterpret_cast<void (*)(Plant *)>(Plant_AnimateAddr)(this);
     }
@@ -261,6 +258,8 @@ public:
 
     void PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, SeedType theImitaterType, int a6);
     void Update();
+    void UpdateAbilities();
+    void Squish();
     void Draw(Sexy::Graphics *g);
     void KillAllPlantsNearDoom();
     void DoSpecial();
@@ -314,6 +313,7 @@ public:
     void UpdateGraveBuster();
     void UpdateMagnetShroom();
     void UpdateSquash();
+    void UpdateIcebergLettuce();
 };
 
 inline float PlantDrawHeightOffset(Board *theBoard, Plant *thePlant, SeedType theSeedType, int theCol, int theRow) {
@@ -355,6 +355,8 @@ inline int (*old_Plant_GetCost)(SeedType theSeedType, SeedType theImitaterType);
 
 inline void (*old_Plant_Update)(Plant *plant);
 
+inline void (*old_Plant_UpdateAbilities)(Plant *);
+
 inline void (*old_Plant_SetSleeping)(Plant *a, bool a2);
 
 inline void (*old_Plant_UpdateReanimColor)(Plant *a);
@@ -372,8 +374,6 @@ inline void (*old_Plant_UpdateShooter)(Plant *);
 inline void (*old_Plant_DoRowAreaDamage)(Plant *, int, unsigned int);
 
 inline bool (*old_Plant_FindTargetAndFire)(Plant *, int, PlantWeapon);
-
-inline void (*old_Plant_UpdateSquash)(Plant *);
 
 inline int (*old_Plant_CobCannonFire)(Plant *plant, int x, int y);
 int Plant_CobCannonFire(Plant *plant, int x, int y);

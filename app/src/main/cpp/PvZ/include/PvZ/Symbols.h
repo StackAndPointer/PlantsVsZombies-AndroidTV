@@ -708,6 +708,7 @@ inline void *Challenge_ZombiquariumUpdateAddr;
 inline void *Challenge_TreeOfWisdomUpdateAddr;
 inline void *Challenge_IsMPResourceProducerAddr;
 inline void *Challenge_ISMPSeedSuddenDeathDisabledAddr;
+inline void *Challenge_IZombiePlantDropRemainingSunAddr;
 
 
 inline void *Plant_UpdateAddr;
@@ -741,6 +742,7 @@ inline void *Plant_IsInPlayAddr;
 inline void *Plant_DrawMagnetItemsOnTopAddr;
 inline void *Plant_DrawMagnetItemsAddr;
 inline void *Plant_UpdateAbilitiesAddr;
+inline void *Plant_SquishAddr;
 inline void *Plant_AnimateAddr;
 inline void *GetPlantDefinitionAddr;
 inline void *Plant_PlayBodyReanimAddr;

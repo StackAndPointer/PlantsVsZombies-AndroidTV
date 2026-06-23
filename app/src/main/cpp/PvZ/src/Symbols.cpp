@@ -706,6 +706,7 @@ bool LoadGameMain() {
     Challenge_TreeOfWisdomUpdateAddr = libGameMain.GetSymbol("_ZN9Challenge18TreeOfWisdomUpdateEv");
     Challenge_IsMPResourceProducerAddr = libGameMain.GetSymbol("_ZN9Challenge20IsMPResourceProducerE8SeedType");
     Challenge_ISMPSeedSuddenDeathDisabledAddr = libGameMain.GetSymbol("_ZN9Challenge27ISMPSeedSuddenDeathDisabledEi8SeedType");
+    Challenge_IZombiePlantDropRemainingSunAddr = libGameMain.GetSymbol("_ZN9Challenge28IZombiePlantDropRemainingSunEP5Plant");
 
 
     Plant_UpdateAddr = libGameMain.GetSymbol("_ZN5Plant6UpdateEv");
@@ -739,6 +740,7 @@ bool LoadGameMain() {
     Plant_DrawMagnetItemsOnTopAddr = libGameMain.GetSymbol("_ZN5Plant20DrawMagnetItemsOnTopEv");
     Plant_DrawMagnetItemsAddr = libGameMain.GetSymbol("_ZN5Plant15DrawMagnetItemsEPN4Sexy8GraphicsE");
     Plant_UpdateAbilitiesAddr = libGameMain.GetSymbol("_ZN5Plant15UpdateAbilitiesEv");
+    Plant_SquishAddr = libGameMain.GetSymbol("_ZN5Plant6SquishEv");
     Plant_AnimateAddr = libGameMain.GetSymbol("_ZN5Plant7AnimateEv");
     GetPlantDefinitionAddr = libGameMain.GetSymbol("_Z18GetPlantDefinition8SeedType");
     Plant_PlayBodyReanimAddr = libGameMain.GetSymbol("_ZN5Plant14PlayBodyReanimEPKc14ReanimLoopTypeif");

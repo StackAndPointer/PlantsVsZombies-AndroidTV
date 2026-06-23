@@ -803,7 +803,8 @@ void GamepadControls::UpdatePreviewReanim() {
             }
             aNewPreviewingReanim = zombieReanim;
         } else {
-            if (aSeedType >= SeedType::NUM_SEED_TYPES || aSeedType == SeedType::NUM_SEEDS_IN_CHOOSER)
+            if (aSeedType == SeedType::NUM_SEEDS_IN_CHOOSER
+                || (aSeedType >= SeedType::NUM_SEED_TYPES && aSeedType < SeedType::SEED_ICEBERG_LETTUCE && aSeedType >= SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED))
                 return;
             Reanimation *plantReanim = anApp->AddReanimation(0.0, theDrawHeightOffset, aRenderOrder + 2, GetPlantDefinition(aSeedType).mReanimationType);
             plantReanim->mIsAttachment = true;
@@ -1276,7 +1277,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             return;
         }
 
-        if (aPacketType < SeedType::NUM_SEED_TYPES) {
+        if (aPacketType < SeedType::NUM_SEED_TYPES || (aPacketType >= SeedType::SEED_ICEBERG_LETTUCE && aPacketType < SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED)) {
             //            LOG_DEBUG("before MouseDownWithPlant {}", mPlayerIndex1);
             mBoard->MouseDownWithPlant(mCursorPositionX, mCursorPositionY, 1, mPlayerIndex1);
             mBoard->ClearCursor(mPlayerIndex1);

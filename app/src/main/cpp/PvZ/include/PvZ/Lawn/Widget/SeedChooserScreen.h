@@ -148,7 +148,7 @@ public:
     bool mShowExtendedSeeds = false;
     bool mHas7Packets = false;
     bool mGlobalBpBansApplied = false;
-    ChosenSeed mChosenSeedsExtended[NUM_SEEDS_IN_CHOOSER_EXTENDED]{};
+    ChosenSeed mChosenSeedsExtended[NUM_SEEDS_IN_CHOOSER + NUM_SEED_TYPES_EXTENDED]{};
     GameButton *mMainMenuButton = nullptr;
 
     SeedChooserScreen(bool theIsZombieChooser) {
@@ -157,9 +157,6 @@ public:
 
     ~SeedChooserScreen() = delete;
 
-    bool HasPacket(SeedType theSeedType, bool theIsZombieChooser) {
-        return reinterpret_cast<bool (*)(SeedChooserScreen *, SeedType, bool)>(SeedChooserScreen_HasPacketAddr)(this, theSeedType, theIsZombieChooser);
-    }
     bool Has7Rows() {
         return reinterpret_cast<bool (*)(SeedChooserScreen *)>(SeedChooserScreen_Has7RowsAddr)(this);
     }
@@ -193,7 +190,9 @@ public:
     SeedType PickedPlantType(SeedType theSeedType);
     SeedType GetZombieSeedType(int theSeedIndex);
     SeedType GetPlantSeedType(int theSeedIndex) const;
-    int GetSeedChooserCount() const;
+    int GetSeedStorageCount() const;
+    int GetCurrentPageSeedCount() const;
+    int GetPageSeedStorageIndex(int theSeedIndex) const;
     int GetSeedPacketIndex(int theSeedIndex) const;
     void OnPlayerPickedSeed(int thePlayerIndex);
     void ClickedSeedInChooser(ChosenSeed &theChosenSeed, int thePlayerIndex);
@@ -231,13 +230,14 @@ public:
     void VSAutoPickResourceGen();
     int ResolveGlobalBpPlayerIndex() const;
     void ApplyGlobalBpBans();
-    bool KeyDown(Sexy::KeyCode theKey);
-    bool KeyUp(Sexy::KeyCode theKey);
+    bool HasPacket(SeedType theSeedType, bool theIsZombieChooser);
 
     void MouseMove(int x, int y);
     void MouseDown(int x, int y, int theClickCount);
     void MouseUp(int x, int y);
     void MouseDrag(int x, int y);
+    bool KeyDown(Sexy::KeyCode theKey);
+    bool KeyUp(Sexy::KeyCode theKey);
     void ButtonPress(int theId);
     void ButtonDepress(int theId);
     void ButtonDepress_Origin(int theId);
