@@ -456,6 +456,7 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_DrawReanimAddr, &Zombie::DrawReanim, nullptr);
     homura::HookFunc(Zombie_DropHeadAddr, &Zombie::DropHead, &old_Zombie_DropHead);
     homura::HookFunc(Zombie_DropHelmAddr, &Zombie::DropHelm, nullptr);
+    homura::HookFunc(Zombie_DropShieldAddr, &Zombie::DropShield, nullptr);
     homura::HookFunc(Zombie_DropArmAddr, &Zombie::DropArm, &old_Zombie_DropArm);
     homura::HookFunc(Zombie_ZombieInitializeAddr, &Zombie::ZombieInitialize, &old_Zombie_ZombieInitialize);
     homura::HookFunc(Zombie_DieNoLootAddr, &Zombie::DieNoLoot, &old_Zombie_DieNoLoot);
@@ -466,6 +467,8 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_TakeDamageAddr, &Zombie::TakeDamage, nullptr);
     homura::HookFunc(Zombie_TakeHelmDamageAddr, &Zombie::TakeHelmDamage, &old_Zombie_TakeHelmDamage);
     homura::HookFunc(Zombie_TakeFlyingDamageAddr, &Zombie::TakeFlyingDamage, nullptr);
+    homura::HookFunc(Zombie_TakeShieldDamageAddr, &Zombie::TakeShieldDamage, nullptr);
+    homura::HookFunc(Zombie_AttachShieldAddr, &Zombie::AttachShield, nullptr);
     homura::HookFunc(Zombie_PlayZombieReanimAddr, &Zombie::PlayZombieReanim, &old_Zombie_PlayZombieReanim);
     homura::HookFunc(Zombie_StartWalkAnimAddr, &Zombie::StartWalkAnim, nullptr);
     homura::HookFunc(Zombie_ReanimShowPrefixAddr, &Zombie::ReanimShowPrefix, &old_Zombie_ReanimShowPrefix);
@@ -488,6 +491,7 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_CheckIfPreyCaughtAddr, &Zombie::CheckIfPreyCaught, nullptr);
     homura::HookFunc(Zombie_CanTargetPlantAddr, &Zombie::CanTargetPlant, nullptr);
     homura::HookFunc(Zombie_HitIceTrapAddr, &Zombie::HitIceTrap, nullptr);
+    homura::HookFunc(Zombie_HasYuckyFaceImageAddr, &Zombie::HasYuckyFaceImage, nullptr);
     homura::HookFunc(Zombie_UpdateYuckyFaceAddr, &Zombie::UpdateYuckyFace, &old_Zombie_UpdateYuckyFace);
     homura::HookFunc(Zombie_UpdateZombiePoolAddr, &Zombie::UpdateZombiePool, nullptr);
     homura::HookFunc(Zombie_SummonBackupDancersAddr, &Zombie::SummonBackupDancers, nullptr);

@@ -108,6 +108,7 @@ static ReanimationParams gExtendedReanimationParamArray[] = {
     {ReanimationType::REANIM_JACKSON, "addonFiles/compiled/reanim/Zombie_jackson.reanim", 0},
     {ReanimationType::REANIM_BACKUP_JACKSON, "addonFiles/compiled/reanim/Zombie_backup.reanim", 0},
     {ReanimationType::REANIM_GIGA_POLEVAULTER, "addonFiles/compiled/reanim/Zombie_giga_polevaulter.reanim", 0},
+    {ReanimationType::REANIM_SUNDAY_EDITION, "addonFiles/compiled/reanim/Zombie_sunday_edition.reanim", 0},
     {ReanimationType::REANIM_ICEBERG_LETTUCE, "addonFiles/compiled/reanim/iceberg_lettuce.reanim", 0},
 };
 

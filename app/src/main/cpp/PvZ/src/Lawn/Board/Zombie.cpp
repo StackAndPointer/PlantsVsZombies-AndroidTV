@@ -90,6 +90,7 @@ ZombieDefinition gExtendedZombieDefs[] = {
     {ZOMBIE_JACKSON, REANIM_JACKSON, 5, 18, 5, 1000, "JACKSON_ZOMBIE"},
     {ZOMBIE_BACKUP_JACKSON, REANIM_BACKUP_JACKSON, 1, 18, 1, 0, "BACKUP_JACKSON"},
     {ZOMBIE_GIGA_POLEVAULTER, REANIM_GIGA_POLEVAULTER, 2, 6, 5, 2000, "GIGA_POLE_VAULTING_ZOMBIE"},
+    {ZOMBIE_SUNDAY_EDITION, REANIM_SUNDAY_EDITION, 2, 11, 1, 1000, "SUNDAY_EDITION_ZOMBIE"},
 };
 
 ZombieDefinition &GetZombieDefinition(ZombieType theZombieType) {
@@ -266,6 +267,16 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             }
             break;
 
+        case ZombieType::ZOMBIE_SUNDAY_EDITION:
+            mZombieAttackRect = Rect(20, 0, 50, 115);
+            mZombiePhase = ZombiePhase::PHASE_NEWSPAPER_READING;
+            mShieldType = ShieldType::SHIELDTYPE_SUNDAY_EDITION;
+            mShieldHealth = 370;
+            mBodyHealth = 500;
+            mVariant = false;
+            AttachShield();
+            break;
+
         default:
             break;
     }
@@ -439,6 +450,9 @@ void Zombie::UpdateActions() {
     }
     if (mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
         UpdateGigaPolevaulter();
+    }
+    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+        UpdateSundayEdition();
     }
 }
 
@@ -1876,6 +1890,21 @@ void Zombie::UpdateGigaPolevaulter() {
     }
 }
 
+void Zombie::UpdateSundayEdition() {
+    if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MADDENING) {
+        Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+        if (aBodyReanim->mLoopCount > 0) {
+            mZombiePhase = ZombiePhase::PHASE_NEWSPAPER_MAD;
+            if (mBoard->CountZombiesOnScreen() <= 10 && mHasHead) {
+                mApp->PlayFoley(FoleyType::FOLEY_NEWSPAPER_RARRGH);
+            }
+
+            StartWalkAnim(20);
+            aBodyReanim->SetImageOverride("anim_head1", IMAGE_REANIM_ZOMBIE_PAPER_MADHEAD);
+        }
+    }
+}
+
 void Zombie::UpdateZombieGargantuar() {
     // 修复魅惑巨人不索敌敌方僵尸的BUG
     if (mZombiePhase == ZombiePhase::PHASE_GARGANTUAR_SMASHING) {
@@ -2802,7 +2831,7 @@ void Zombie::DrawShadow(Graphics *g) {
             aShadowOffsetX += 20.0f + 21.0f * mScaleZombie;
         }
         aShadowOffsetY += 16.0f;
-    } else if (mZombieType == ZombieType::ZOMBIE_NEWSPAPER) {
+    } else if (mZombieType == ZombieType::ZOMBIE_NEWSPAPER || mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
         if (IsWalkingBackwards()) {
             aShadowOffsetX += 5.0f;
         } else {
@@ -2876,7 +2905,7 @@ void Zombie::DrawShadow(Graphics *g) {
         }
     }
 
-    if (mZombieType == ZombieType::ZOMBIE_NEWSPAPER) {
+    if (mZombieType == ZombieType::ZOMBIE_NEWSPAPER || mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
         aShadowOffsetY += 4.0f;
     } else if (mZombieType == ZombieType::ZOMBIE_BALLOON) {
         aShadowOffsetY += 13.0f;
@@ -3145,6 +3174,35 @@ void Zombie::SetupDoorArms(Reanimation *aReanim, bool theShow) {
     aReanim->AssignRenderGroupToPrefix("Zombie_outerarm_screendoor", aHandGroup);
 }
 
+void Zombie::SetupReanimLayers(Reanimation *aReanim, ZombieType theZombieType) {
+    aReanim->AssignRenderGroupToPrefix("anim_cone", RENDER_GROUP_HIDDEN);
+    aReanim->AssignRenderGroupToPrefix("anim_bucket", RENDER_GROUP_HIDDEN);
+    aReanim->AssignRenderGroupToPrefix("anim_screendoor", RENDER_GROUP_HIDDEN);
+    aReanim->AssignRenderGroupToPrefix("Zombie_flaghand", RENDER_GROUP_HIDDEN);
+    aReanim->AssignRenderGroupToPrefix("Zombie_duckytube", RENDER_GROUP_HIDDEN);
+    aReanim->AssignRenderGroupToPrefix("anim_tongue", RENDER_GROUP_HIDDEN);
+    aReanim->AssignRenderGroupToPrefix("Zombie_mustache", RENDER_GROUP_HIDDEN);
+    SetupDoorArms(aReanim, false);
+
+    if (theZombieType == ZombieType::ZOMBIE_TRAFFIC_CONE) {
+        aReanim->AssignRenderGroupToPrefix("anim_cone", RENDER_GROUP_NORMAL);
+        aReanim->AssignRenderGroupToPrefix("anim_hair", RENDER_GROUP_HIDDEN);
+    } else if (theZombieType == ZombieType::ZOMBIE_PAIL) {
+        aReanim->AssignRenderGroupToPrefix("anim_bucket", RENDER_GROUP_NORMAL);
+        aReanim->AssignRenderGroupToPrefix("anim_hair", RENDER_GROUP_HIDDEN);
+    } else if (theZombieType == ZombieType::ZOMBIE_DOOR) {
+        SetupDoorArms(aReanim, true);
+    } else if (theZombieType == ZombieType::ZOMBIE_NEWSPAPER || theZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+        aReanim->AssignRenderGroupToPrefix("Zombie_paper_paper", RENDER_GROUP_HIDDEN);
+    } else if (theZombieType == ZombieType::ZOMBIE_FLAG) {
+        aReanim->AssignRenderGroupToPrefix("anim_innerarm", RENDER_GROUP_HIDDEN);
+        aReanim->AssignRenderGroupToTrack("Zombie_flaghand", RENDER_GROUP_NORMAL);
+        aReanim->AssignRenderGroupToTrack("Zombie_innerarm_screendoor", RENDER_GROUP_NORMAL);
+    } else if (theZombieType == ZombieType::ZOMBIE_DUCKY_TUBE) {
+        aReanim->AssignRenderGroupToPrefix("Zombie_duckytube", RENDER_GROUP_NORMAL);
+    }
+}
+
 void Zombie::ShowDoorArms(bool theShow) {
     Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
     if (aBodyReanim) {
@@ -3321,6 +3379,12 @@ void Zombie::EatPlant(Plant *thePlant) {
             thePlant->mPlantHealth -= DAMAGE_PER_EAT;
         }
     }
+    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+        thePlant->mPlantHealth -= DAMAGE_PER_EAT;
+        if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
+            thePlant->mPlantHealth -= 2 * DAMAGE_PER_EAT;
+        }
+    }
 
     if (thePlant->mPlantHealth <= 0) {
         if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
@@ -3344,10 +3408,18 @@ void Zombie::EatPlant(Plant *thePlant) {
 }
 
 void Zombie::DetachShield() {
-    // 修复梯子僵尸断手后掉梯子时手会恢复的BUG。
+    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    if (aBodyReanim) {
+        if (mShieldType == ShieldType::SHIELDTYPE_SUNDAY_EDITION) {
+            ReanimShowPrefix("Zombie_paper_hands", RENDER_GROUP_NORMAL);
+        }
+    }
+
     old_Zombie_DetachShield(this);
+
+    // 修复扶梯僵尸搭梯后断臂重生的 Bug
     if (mShieldType == ShieldType::SHIELDTYPE_LADDER && !mHasArm) {
-        ReanimShowPrefix("Zombie_outerarm", -1);
+        ReanimShowPrefix("Zombie_outerarm", RENDER_GROUP_HIDDEN);
     }
 }
 
@@ -4229,7 +4301,7 @@ void Zombie::DrawReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos, int t
         g->mTransX -= aShieldHitOffset;
 
         if (mShieldType == ShieldType::SHIELDTYPE_NEWSPAPER || mShieldType == ShieldType::SHIELDTYPE_DOOR || mShieldType == ShieldType::SHIELDTYPE_LADDER
-            || mShieldType == ShieldType::SHIELDTYPE_TRASHCAN) {
+            || mShieldType == ShieldType::SHIELDTYPE_TRASHCAN || mShieldType == ShieldType::SHIELDTYPE_SUNDAY_EDITION) {
             aBodyReanim->mColorOverride = aColorOverride;
             aBodyReanim->mExtraAdditiveColor = aExtraAdditiveColor;
             aBodyReanim->mEnableExtraAdditiveDraw = aEnableExtraAdditiveDraw;
@@ -4317,6 +4389,9 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
         }
         if (mZombieType == ZombieType::ZOMBIE_JACKSON) {
             aRenderOrder = mRenderOrder - 1;
+        }
+        if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+            aEffect = ParticleEffect::PARTICLE_ZOMBIE_NEWSPAPER_HEAD;
         }
 
         TodParticleSystem *aParticle = mApp->AddTodParticle(aPosX, aPosY, aRenderOrder, aEffect);
@@ -4555,6 +4630,57 @@ void Zombie::DropHelm(unsigned int theDamageFlags) {
     mHelmType = HelmType::HELMTYPE_NONE;
 }
 
+void Zombie::DropShield(unsigned int theDamageFlags) {
+    if (mShieldType == ShieldType::SHIELDTYPE_NONE)
+        return;
+
+    if (mShieldType == ShieldType::SHIELDTYPE_DOOR) {
+        DetachShield();
+        if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_LEAVE_BODY)) {
+            float aPosX, aPosY;
+            GetTrackPosition("anim_screendoor", aPosX, aPosY);
+            TodParticleSystem *aParticle = mApp->AddTodParticle(aPosX, aPosY, mRenderOrder + 1, ParticleEffect::PARTICLE_ZOMBIE_DOOR);
+            OverrideParticleScale(aParticle);
+        }
+    } else if (mShieldType == ShieldType::SHIELDTYPE_NEWSPAPER || mShieldType == ShieldType::SHIELDTYPE_SUNDAY_EDITION) {
+        StopEating();
+        if (mYuckyFace) {
+            ShowYuckyFace(false);
+            mYuckyFace = false;
+            mYuckyFaceCounter = 0;
+        }
+
+        mZombiePhase = ZombiePhase::PHASE_NEWSPAPER_MADDENING;
+        PlayZombieReanim("anim_gasp", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 10, 8.0f);
+        DetachShield();
+
+        if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_LEAVE_BODY)) {
+            float aPosX, aPosY;
+            GetTrackPosition("Zombie_paper_paper", aPosX, aPosY);
+            TodParticleSystem *aParticle = mApp->AddTodParticle(aPosX, aPosY, mRenderOrder + 1, ParticleEffect::PARTICLE_ZOMBIE_NEWSPAPER);
+            OverrideParticleScale(aParticle);
+            if (aParticle && mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+                aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER3);
+            }
+        }
+
+        if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_LEAVE_BODY) && !TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_BYPASSES_SHIELD)) {
+            mApp->PlayFoley(FoleyType::FOLEY_NEWSPAPER_RIP);
+            AddAttachedReanim(-11, 0, ReanimationType::REANIM_ZOMBIE_SURPRISE);
+        }
+    } else if (mShieldType == ShieldType::SHIELDTYPE_LADDER) {
+        DetachShield();
+        if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_LEAVE_BODY)) {
+            float aPosX = mPosX + 31.0f;
+            float aPosY = mPosY + 80.0f;
+            TodParticleSystem *aParticle = mApp->AddTodParticle(aPosX, aPosY, mRenderOrder + 1, ParticleEffect::PARTICLE_ZOMBIE_LADDER);
+            OverrideParticleScale(aParticle);
+        }
+    }
+
+    mShieldType = ShieldType::SHIELDTYPE_NONE;
+}
+
 void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
     switch (mZombieType) {
         case ZombieType::ZOMBIE_GIGA_FOOTBALL:
@@ -4572,6 +4698,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
         case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
             ReanimShowTrack("Zombie_polevaulter_outerarm_lower", RENDER_GROUP_HIDDEN);
             ReanimShowTrack("Zombie_outerarm_hand", RENDER_GROUP_HIDDEN);
+            break;
+        case ZombieType::ZOMBIE_SUNDAY_EDITION:
+            ReanimShowTrack("Zombie_paper_hands", RENDER_GROUP_HIDDEN);
+            ReanimShowTrack("Zombie_paper_leftarm_lower", RENDER_GROUP_HIDDEN);
             break;
         default:
             ReanimShowPrefix("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
@@ -4609,6 +4739,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
             case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
                 GetTrackPosition("Zombie_polevaulter_outerarm_lower", aPosX, aPosY);
                 aBodyReanim->SetImageOverride("Zombie_polevaulter_outerarm_upper", IMAGE_REANIM_ZOMBIE_POLEVAULTER_OUTERARM_UPPER2);
+                break;
+            case ZombieType::ZOMBIE_SUNDAY_EDITION:
+                GetTrackPosition("Zombie_paper_leftarm_lower", aPosX, aPosY);
+                aBodyReanim->SetImageOverride("Zombie_paper_leftarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_UPPER2);
                 break;
             default:
                 GetTrackPosition("Zombie_outerarm_lower", aPosX, aPosY);
@@ -4652,6 +4786,9 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
                 case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
                     aParticle->OverrideImage(nullptr, IMAGE_REANIM_ZOMBIE_OUTERARM_HAND);
                     break;
+                case ZombieType::ZOMBIE_SUNDAY_EDITION:
+                    aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_LOWER);
+                    break;
                 default:
                     break;
             }
@@ -4664,8 +4801,8 @@ void Zombie::DropArm(unsigned int theDamageFlags) {
         if (!CanLoseBodyParts()) {
             return;
         }
-        if (mShieldType == ShieldType::SHIELDTYPE_DOOR || mShieldType == ShieldType::SHIELDTYPE_TRASHCAN || mShieldType == ShieldType::SHIELDTYPE_NEWSPAPER
-            || mZombieType == ZombieType::ZOMBIE_BUNGEE) {
+        if (mShieldType == ShieldType::SHIELDTYPE_DOOR || mShieldType == ShieldType::SHIELDTYPE_TRASHCAN || mShieldType == ShieldType::SHIELDTYPE_NEWSPAPER || mZombieType == ZombieType::ZOMBIE_BUNGEE
+            || mShieldType == ShieldType::SHIELDTYPE_SUNDAY_EDITION) {
             return;
         }
         if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_INTO_POOL || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_INTO_POOL
@@ -5020,6 +5157,82 @@ int Zombie::TakeFlyingDamage(int theDamage, unsigned int theDamageFlags) {
     }
 
     return aDamageRemaining;
+}
+
+int Zombie::TakeShieldDamage(int theDamage, unsigned int theDamageFlags) {
+    if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_CAUSE_FLASH)) {
+        mShieldJustGotShotCounter = 25;
+        if (mJustGotShotCounter < 0) {
+            mJustGotShotCounter = 0;
+        }
+    }
+
+    if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_CAUSE_FLASH) && !TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_HITS_SHIELD_AND_BODY)) {
+        mShieldRecoilCounter = 12;
+        if (mShieldType == ShieldType::SHIELDTYPE_DOOR || mShieldType == ShieldType::SHIELDTYPE_LADDER) {
+            mApp->PlayFoley(FoleyType::FOLEY_SHIELD_HIT);
+        }
+    }
+
+    int aDamageIndexBeforeDamage = GetShieldDamageIndex();
+    int aDamageActual = std::min(mShieldHealth, theDamage);
+    int aDamageRemaining = theDamage - aDamageActual;
+    mShieldHealth -= aDamageActual;
+    if (mShieldHealth == 0) {
+        DropShield(theDamageFlags);
+        return aDamageRemaining;
+    }
+
+    int aDamageIndexAfterDamage = GetShieldDamageIndex();
+    if (aDamageIndexAfterDamage != aDamageIndexBeforeDamage) {
+        Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+        if (mShieldType == ShieldType::SHIELDTYPE_DOOR && aDamageIndexAfterDamage == 1) {
+            aBodyReanim->SetImageOverride("anim_screendoor", IMAGE_REANIM_ZOMBIE_SCREENDOOR2);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_DOOR && aDamageIndexAfterDamage == 2) {
+            aBodyReanim->SetImageOverride("anim_screendoor", IMAGE_REANIM_ZOMBIE_SCREENDOOR3);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_TRASHCAN && aDamageIndexAfterDamage == 1) {
+            aBodyReanim->SetImageOverride("anim_screendoor", IMAGE_REANIM_ZOMBIE_TRASHCAN2);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_TRASHCAN && aDamageIndexAfterDamage == 2) {
+            aBodyReanim->SetImageOverride("anim_screendoor", IMAGE_REANIM_ZOMBIE_TRASHCAN3);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_NEWSPAPER && aDamageIndexAfterDamage == 1) {
+            aBodyReanim->SetImageOverride("Zombie_paper_paper", IMAGE_REANIM_ZOMBIE_PAPER_PAPER2);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_NEWSPAPER && aDamageIndexAfterDamage == 2) {
+            aBodyReanim->SetImageOverride("Zombie_paper_paper", IMAGE_REANIM_ZOMBIE_PAPER_PAPER3);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_SUNDAY_EDITION && aDamageIndexAfterDamage == 1) {
+            aBodyReanim->SetImageOverride("Zombie_paper_paper", addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER2);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_SUNDAY_EDITION && aDamageIndexAfterDamage == 2) {
+            aBodyReanim->SetImageOverride("Zombie_paper_paper", addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER3);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_LADDER && aDamageIndexAfterDamage == 1) {
+            aBodyReanim->SetImageOverride("Zombie_ladder_1", IMAGE_REANIM_ZOMBIE_LADDER_1_DAMAGE1);
+        } else if (mShieldType == ShieldType::SHIELDTYPE_LADDER && aDamageIndexAfterDamage == 2) {
+            aBodyReanim->SetImageOverride("Zombie_ladder_1", IMAGE_REANIM_ZOMBIE_LADDER_1_DAMAGE2);
+        }
+    }
+
+    return aDamageRemaining;
+}
+
+void Zombie::AttachShield() {
+    const char *aTrackName = nullptr;
+    Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+    if (mShieldType == ShieldType::SHIELDTYPE_DOOR) {
+        ShowDoorArms(true);
+        ReanimShowPrefix("Zombie_outerarm_screendoor", RENDER_GROUP_OVER_SHIELD);
+        aTrackName = "anim_screendoor";
+    } else if (mShieldType == ShieldType::SHIELDTYPE_TRASHCAN) {
+        ShowDoorArms(true);
+        ReanimShowPrefix("Zombie_outerarm_screendoor", RENDER_GROUP_OVER_SHIELD);
+        aTrackName = "anim_screendoor";
+        aBodyReanim->SetImageOverride("anim_screendoor", IMAGE_REANIM_ZOMBIE_TRASHCAN1);
+    } else if (mShieldType == ShieldType::SHIELDTYPE_NEWSPAPER || mShieldType == ShieldType::SHIELDTYPE_SUNDAY_EDITION) {
+        ReanimShowPrefix("Zombie_paper_hands", RENDER_GROUP_OVER_SHIELD);
+        aTrackName = "Zombie_paper_paper";
+    } else if (mShieldType == ShieldType::SHIELDTYPE_LADDER) {
+        ReanimShowPrefix("Zombie_outerarm", RENDER_GROUP_OVER_SHIELD);
+        aTrackName = "Zombie_ladder_1";
+    }
+
+    aBodyReanim->AssignRenderGroupToTrack(aTrackName, RENDER_GROUP_SHIELD);
 }
 
 void Zombie::PlayZombieReanim(const char *theTrackName, ReanimLoopType theLoopType, int theBlendTime, float theAnimRate) {
@@ -6030,6 +6243,15 @@ bool Zombie::NeedsMoreBackupDancers() {
 
 void Zombie::DropLoot() {
     old_Zombie_DropLoot(this);
+}
+
+bool Zombie::HasYuckyFaceImage() {
+    if (mBoard->mFutureMode)
+        return false;
+
+    return mZombieType == ZombieType::ZOMBIE_NORMAL || mZombieType == ZombieType::ZOMBIE_TRAFFIC_CONE || mZombieType == ZombieType::ZOMBIE_PAIL || mZombieType == ZombieType::ZOMBIE_FLAG
+        || mZombieType == ZombieType::ZOMBIE_DOOR || mZombieType == ZombieType::ZOMBIE_DUCKY_TUBE || mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER
+        || mZombieType == ZombieType::ZOMBIE_NEWSPAPER || mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION;
 }
 
 void Zombie::UpdateYuckyFace() {

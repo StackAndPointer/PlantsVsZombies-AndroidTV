@@ -707,6 +707,10 @@ void GamepadControls::UpdatePreviewReanim() {
             if (aZombieType == ZombieType::ZOMBIE_DOOR || aZombieType == ZombieType::ZOMBIE_TRASHCAN || aZombieType == ZombieType::ZOMBIE_NEWSPAPER || aZombieType == ZombieType::ZOMBIE_LADDER) {
                 Zombie::SetupShieldReanims(aZombieType, zombieReanim);
             }
+            if (aZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+                zombieReanim->AssignRenderGroupToPrefix("Zombie_paper_hands", RENDER_GROUP_OVER_SHIELD);
+                zombieReanim->AssignRenderGroupToTrack("Zombie_paper_paper", RENDER_GROUP_SHIELD);
+            }
             zombieReanim->mIsAttachment = true;
             if (aZombieType == ZombieType::ZOMBIE_POGO) {
                 zombieReanim->PlayReanim("anim_pogo", ReanimLoopType::REANIM_LOOP, 0, 12.0);
@@ -716,7 +720,7 @@ void GamepadControls::UpdatePreviewReanim() {
                 zombieReanim->PlayReanim("anim_drive", ReanimLoopType::REANIM_LOOP, 0, 12.0);
             } else if (aZombieType == ZombieType::ZOMBIE_IMP || aZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
                 zombieReanim->PlayReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 12.0);
-            } else if (aZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL) {
+            } else if (aZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL || aZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
                 zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
             } else if (aZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
                 zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);

@@ -835,6 +835,8 @@ ZombieType Challenge::IZombieSeedTypeToZombieType(SeedType theSeedType) {
             return ZOMBIE_JACKSON;
         case SEED_ZOMBIE_GIGA_POLEVAULTER:
             return ZOMBIE_GIGA_POLEVAULTER;
+        case SEED_ZOMBIE_SUNDAY_EDITION:
+            return ZOMBIE_SUNDAY_EDITION;
         default:
             return ZOMBIE_INVALID;
     }
