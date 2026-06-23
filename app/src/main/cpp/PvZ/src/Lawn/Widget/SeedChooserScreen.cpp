@@ -2791,16 +2791,15 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
     // Calculate seed count
     int aNumSeeds = 19;
     if (!mIsZombieChooser) {
-        if (mPageIndex == 1)
-            aNumSeeds = NUM_SEED_TYPES_EXTENDED;
-        else
+        if (mApp->IsVSMode()) {
+            aNumSeeds = GetCurrentPageSeedCount();
+        } else if (!Has7Rows()) {
             aNumSeeds = 40;
-        //        if (mApp->IsVSMode() || !Has7Rows())
-        //            aNumSeeds = 40;
-        //        else if (HasPacket(SEED_IMITATER, false))
-        //            aNumSeeds = 49;
-        //        else
-        //            aNumSeeds = 48;
+        } else if (HasPacket(SEED_IMITATER, false)) {
+            aNumSeeds = 49;
+        } else {
+            aNumSeeds = 48;
+        }
     } else {
         if (mShowExtendedSeeds) {
             if (mPageIndex == 0) {
@@ -2810,8 +2809,6 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
             }
         }
     }
-
-    const int pageSeedCount = GetCurrentPageSeedCount();
 
     // Draw seed packet shadows (two passes)
     for (int aPass = 0; aPass < 2; aPass++) {
@@ -2878,12 +2875,6 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
 
     // Draw seeds in chooser and bank
     for (int seedIndex = 0; seedIndex < GetSeedStorageCount(); ++seedIndex) {
-        //        const int storageIndex = GetPageSeedStorageIndex(seedIndex);
-
-        //        if (storageIndex < 0 || storageIndex >= GetSeedStorageCount()) {
-        //            continue;
-        //        }
-
         SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(seedIndex) : GetPlantSeedType(seedIndex);
 
         if (aDisplaySeedType == SEED_NONE || !HasPacket(aDisplaySeedType, mIsZombieChooser))
@@ -2917,7 +2908,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
                     }
                 }
             } else {
-                if (mPageIndex == 0 && aDisplaySeedType > SeedType::SEED_MELONPULT) {
+                if (mPageIndex == 0 && aDisplaySeedType >= aNumSeeds) {
                     continue;
                 }
                 if (mPageIndex == 1) {
