@@ -6619,7 +6619,7 @@ int Board::KillAllZombiesInRadius_Custom(int theRow, int theX, int theY, int the
     int aGridY = PixelToGridYKeepOnBoard(theX, theY);
     GridItem *aGridItem = nullptr;
     while (IterateGridItems(aGridItem)) {
-        if (aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER || aGridItem->mGridItemType == GridItemType::GRIDITEM_POLE) {
+        if (aGridItem->mGridItemType == GridItemType::GRIDITEM_LADDER || (theDamageRangeFlags == 127 && aGridItem->mGridItemType == GridItemType::GRIDITEM_POLE)) {
             if (GridInRange(aGridItem->mGridX, aGridItem->mGridY, aGridX, aGridY, theRowRange, theRowRange)) {
                 aGridItem->GridItemDie();
             }
