@@ -19,7 +19,11 @@
 
 #include "Homura/TypeUtils.h"
 
-#if defined(__GNUC__) || defined(__clang__)
+#if defined(__GNUC__) || (defined(__has_include) && __has_include(<cxxabi.h>))
+#define HOMURA_HAS_CXXABI_H
+#endif
+
+#ifdef HOMURA_HAS_CXXABI_H
 #include <cxxabi.h>
 #endif
 
@@ -30,7 +34,7 @@
 
 std::string homura::Demangle(const char *name) {
     assert(name != nullptr);
-#if defined(__GNUC__) || defined(__clang__)
+#ifdef HOMURA_HAS_CXXABI_H
     // https://itanium-cxx-abi.github.io/cxx-abi/abi.html#demangler
     std::unique_ptr<char, decltype(&std::free)> res{abi::__cxa_demangle(name, nullptr, nullptr, nullptr), std::free};
     return res ? res.get() : name;

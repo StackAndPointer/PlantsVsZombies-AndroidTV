@@ -20,14 +20,14 @@
 #ifndef HOMURA_PRAGMAUTILS_H
 #define HOMURA_PRAGMAUTILS_H
 
-#define HOMURA_STRINGIZE(x) #x
+#define HOMURA_PRAGMA(x) _Pragma(#x)
 
 #if defined(__GNUC__) || defined(__clang__)
 // https://gcc.gnu.org/onlinedocs/gcc/Diagnostic-Pragmas.html
-#define DISABLE_WARNING_BEGIN(flag) _Pragma("GCC diagnostic push") _Pragma(HOMURA_STRINGIZE(GCC diagnostic ignored flag))
+#define DISABLE_WARNING_BEGIN(diag_flag) _Pragma("GCC diagnostic push") HOMURA_PRAGMA(GCC diagnostic ignored diag_flag)
 #define DISABLE_WARNING_END _Pragma("GCC diagnostic pop")
 #else
-#define DISABLE_WARNING_BEGIN(flag)
+#define DISABLE_WARNING_BEGIN(diag_flag)
 #define DISABLE_WARNING_END
 #endif
 
