@@ -1015,6 +1015,7 @@ public class SetActivity extends Activity {
         container.addView(newOptions);
         container.addView(useXboxMusics);
         container.addView(useOpenSL);
+        container.addView(playVideo);
         container.addView(jumpLogo);
         try {
             Class.forName("com.android.support.CkHomuraMenu");
