@@ -1399,16 +1399,13 @@ public class SetActivity extends Activity {
         }
 
         if (requestCode == 3 && resultCode == Activity.RESULT_OK) {
-            final var cmd = new String[]{
-                    "logcat",
-                    "-d",
-                    "-s", "pvztv",
-            };
+            final var cmd = new String[]{"logcat", "-d", "-s", "pvztv"};
             try (var in = Runtime.getRuntime().exec(cmd).getInputStream();
                  var out = getContentResolver().openOutputStream(data.getData());
             ) {
                 out.write(in.readAllBytes());
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
         }
 
