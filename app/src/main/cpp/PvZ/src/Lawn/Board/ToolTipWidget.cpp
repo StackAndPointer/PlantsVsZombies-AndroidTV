@@ -88,10 +88,11 @@ void ToolTipWidget::Draw(Sexy::Graphics *g) {
     float transY = g->mTransY;
 
     float screenOffsetX = NAN;
-    if (*(bool *)(gLawnApp->unkMem2[19] + 96))
-        screenOffsetX = (float)LawnApp::FULLSCREEN_RECT.mX;
-    else
+    if (*reinterpret_cast<const bool *>(static_cast<const std::uint8_t *>(gLawnApp->mPlatformDriverOrQueue) + 0x60)) {
+        screenOffsetX = static_cast<float>(LawnApp::FULLSCREEN_RECT.mX);
+    } else {
         screenOffsetX = -80.0f;
+    }
 
     int drawX = mX - transX - screenOffsetX;
 

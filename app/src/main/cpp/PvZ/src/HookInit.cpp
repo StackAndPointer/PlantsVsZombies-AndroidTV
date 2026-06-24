@@ -688,6 +688,7 @@ void InitHookFunction() {
     homura::HookFunc(TitleScreen_DrawAddr, &TitleScreen::Draw, &old_TitleScreen_Draw);
     homura::HookFunc(TitleScreen_UpdateAddr, &TitleScreen::Update, &old_TitleScreen_Update);
     homura::HookFunc(TitleScreen_SwitchStateAddr, &TitleScreen::SwitchState, nullptr);
+    homura::HookFunc(TitleScreen_VideoCompletedAddr, &TitleScreen::VideoCompleted, nullptr);
 }
 
 void InitVTableHookFunction() {
@@ -826,13 +827,13 @@ void InitOpenSL() {
 
 void InitIntroVideo() {
 
-    // homura::HookFunc(j_AGVideoOpenAddr, AGVideoOpen, nullptr);
-    // homura::HookFunc(j_AGVideoShowAddr, AGVideoShow, nullptr);
-    // homura::HookFunc(j_AGVideoEnableAddr, AGVideoEnable, nullptr);
-    // homura::HookFunc(j_AGVideoIsPlayingAddr, AGVideoIsPlaying, nullptr);
-    // homura::HookFunc(j_AGVideoPlayAddr, AGVideoPlay, nullptr);
-    // homura::HookFunc(j_AGVideoPauseAddr, AGVideoPause, nullptr);
-    // homura::HookFunc(j_AGVideoResumeAddr, AGVideoResume, nullptr);
+    //     homura::HookFunc(j_AGVideoOpenAddr, AGVideoOpen, nullptr);
+    //     homura::HookFunc(j_AGVideoShowAddr, AGVideoShow, nullptr);
+    //     homura::HookFunc(j_AGVideoEnableAddr, AGVideoEnable, nullptr);
+    //     homura::HookFunc(j_AGVideoIsPlayingAddr, AGVideoIsPlaying, nullptr);
+    //     homura::HookFunc(j_AGVideoPlayAddr, AGVideoPlay, nullptr);
+    //     homura::HookFunc(j_AGVideoPauseAddr, AGVideoPause, nullptr);
+    //     homura::HookFunc(j_AGVideoResumeAddr, AGVideoResume, nullptr);
 
     constexpr auto &libGameMain = "libGameMain.so";
     homura::HookPltFunc(libGameMain, AGVideoOpenOffset, AGVideoOpen, nullptr);

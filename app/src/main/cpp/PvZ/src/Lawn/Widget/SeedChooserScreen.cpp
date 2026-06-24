@@ -1717,12 +1717,15 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
     if (mPlayerIndex == 0) {
         if (gamepadIndex != 0) {
             bool singlePad = false;
-            int runtimePtr = mApp->unkMem6[135];
-            if (runtimePtr != 0) {
-                singlePad = (*reinterpret_cast<int *>(runtimePtr + 412) <= 1);
+
+            Sexy::Gamepad *runtime = mApp->mGamepads[0];
+
+            if (runtime != nullptr) {
+                singlePad = *reinterpret_cast<const int *>(reinterpret_cast<const std::uint8_t *>(runtime) + 0x19C) <= 1;
             } else {
-                singlePad = int(mApp->mGamePad1IsOn) + int(mApp->mGamePad2IsOn) <= 1;
+                singlePad = static_cast<int>(mApp->mGamePad1IsOn) + static_cast<int>(mApp->mGamePad2IsOn) <= 1;
             }
+
 
             if (singlePad) {
                 mApp->SwapGamepadId(0, thePlayerIndex);

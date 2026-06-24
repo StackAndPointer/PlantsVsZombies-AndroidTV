@@ -66,13 +66,15 @@ bool WidgetManagerIsEscDown(Sexy::WidgetManager *widgetManager) {
 }
 
 bool GamepadButtonDown(LawnApp *app, int playerIndex, int button) {
-    if (playerIndex < 0) {
+    if (playerIndex < 0 || playerIndex >= 2) {
         return false;
     }
-    auto *gamepad = reinterpret_cast<Sexy::Gamepad *>(static_cast<std::uintptr_t>(app->unkMem6[playerIndex + 135]));
+
+    Sexy::Gamepad *gamepad = app->mGamepads[playerIndex];
     if (gamepad == nullptr) {
         return false;
     }
+
     return gamepad->IsButtonDown(button);
 }
 

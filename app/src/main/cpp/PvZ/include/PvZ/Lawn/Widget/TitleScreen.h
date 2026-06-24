@@ -46,8 +46,8 @@ public:
     bool mLoadingThreadComplete; // 289
     int mTitleAge;               // 73
     bool mNeedRegister;
-    bool mNeedShowRegisterBox;
     bool mNeedToInit;
+    bool mNeedShowRegisterBox;
     float mPrevLoadingPercent;  // 75
     TitleState mTitleState;     // 76
     int mTitleStateCounter;     // 77
@@ -71,6 +71,7 @@ public:
     void Draw(Sexy::Graphics *graphics);
     void Update();
     void SwitchState(TitleState state, int duration);
+    void VideoCompleted();
 
 protected:
     friend void InitHookFunction();

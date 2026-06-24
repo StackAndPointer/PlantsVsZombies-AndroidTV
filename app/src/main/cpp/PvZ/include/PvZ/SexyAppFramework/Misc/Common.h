@@ -57,7 +57,7 @@ inline int GetTickCount() {
     return reinterpret_cast<int (*)()>(Sexy_GetTickCountAddr)();
 }
 
-inline static bool GetEnvOption(const char *theOption, bool theDefault) {
+inline bool GetEnvOption(const char *theOption, bool theDefault) {
     return reinterpret_cast<bool (*)(const char *, bool)>(Sexy_GetEnvOptionAddr)(theOption, theDefault);
 }
 

@@ -975,6 +975,7 @@ bool LoadGameMain() {
     TitleScreen_DrawAddr = libGameMain.GetSymbol("_ZN11TitleScreen4DrawEPN4Sexy8GraphicsE");
     TitleScreen_UpdateAddr = libGameMain.GetSymbol("_ZN11TitleScreen6UpdateEv");
     TitleScreen_SwitchStateAddr = libGameMain.GetSymbol("_ZN11TitleScreen11SwitchStateE10TitleStatei");
+    TitleScreen_VideoCompletedAddr = libGameMain.GetSymbol("_ZN11TitleScreen14VideoCompletedEv");
 
 
     GridItem__constructorAddr = libGameMain.GetSymbol("_ZN8GridItemC2Ev");
@@ -1129,6 +1130,8 @@ bool LoadGameMain() {
     Sexy_SexyAppBase_AddDialogAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase9AddDialogEPNS_6DialogE");
     Sexy_SexyAppBase_GetDialogCountAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase14GetDialogCountEv");
     Sexy_SexyAppBase_DoParseCmdLineAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase14DoParseCmdLineEv");
+    Sexy_SexyAppBase_GetLoadingThreadProgressAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase24GetLoadingThreadProgressEv");
+    Sexy_SexyAppBase_StartLoadingThreadAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase18StartLoadingThreadEv");
     Sexy_SexyAppBase_LoadResourceManifestAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase20LoadResourceManifestEv");
     Sexy_SexyAppBase_GetIntegerAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase10GetIntegerERKSsi");
     Sexy_SexyAppBase_SetCursorAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase9SetCursorEi");
@@ -1187,6 +1190,7 @@ bool LoadGameMain() {
 
     Sexy_ButtonWidget__constructorAddr = libGameMain.GetSymbol("_ZN4Sexy12ButtonWidgetC2EiPNS_14ButtonListenerE");
     Sexy_ButtonWidget__destructorAddr = libGameMain.GetSymbol("_ZN4Sexy12ButtonWidgetD2Ev");
+    Sexy_ButtonWidget_SetDisabledAddr = libGameMain.GetSymbol("_ZN4Sexy12ButtonWidget11SetDisabledEb");
     Sexy_ButtonWidget_SetFontAddr = libGameMain.GetSymbol("_ZN4Sexy12ButtonWidget7SetFontEPNS_4FontE");
 
 
@@ -1345,6 +1349,7 @@ bool LoadGameMain() {
     MakeNewCheckboxAddr = libGameMain.GetSymbol("_Z15MakeNewCheckboxiPN4Sexy16CheckboxListenerEPNS_6WidgetEb");
     SaveGameContext_SyncIntAddr = libGameMain.GetSymbol("_ZN15SaveGameContext7SyncIntERi");
     SaveGameContext_SyncReanimationDefAddr = libGameMain.GetSymbol("_ZN15SaveGameContext18SyncReanimationDefERP20ReanimatorDefinition");
+    EffectSystem_UpdateAddr = libGameMain.GetSymbol("_ZN12EffectSystem6UpdateEv");
     EffectSystem_EffectSystemInitializeAddr = libGameMain.GetSymbol("_ZN12EffectSystem22EffectSystemInitializeEv");
 
     TodFoley_PlayFoleyAddr = libGameMain.GetSymbol("_ZN8TodFoley9PlayFoleyE9FoleyType");

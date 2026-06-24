@@ -74,7 +74,7 @@ public:
     void SetFocus(Widget *theWidget) { // vTable + 48
         reinterpret_cast<void (*)(WidgetContainer *, Widget *)>(Sexy_WidgetContainer_SetFocusAddr)(this, theWidget);
     }
-    void MarkDirty() { // vTable + 56
+    void MarkDirty() { // vTable + 100
         reinterpret_cast<void (*)(WidgetContainer *)>(Sexy_WidgetContainer_MarkDirtyAddr)(this);
     }
     void AddWidget(Widget *theWidget) { // vTable + 24

@@ -1038,6 +1038,7 @@ inline void *TitleScreen_TitleScreenAddr;
 inline void *TitleScreen_DrawAddr;
 inline void *TitleScreen_UpdateAddr;
 inline void *TitleScreen_SwitchStateAddr;
+inline void *TitleScreen_VideoCompletedAddr;
 
 
 inline void *CreditScreen_RemovedFromManagerAddr;
@@ -1133,6 +1134,8 @@ inline void *Sexy_SexyAppBase_AddDialog2Addr;
 inline void *Sexy_SexyAppBase_GetDialogCountAddr;
 inline void *Sexy_SexyAppBase_DoParseCmdLineAddr;
 inline void *Sexy_SexyAppBase_LoadResourceManifestAddr;
+inline void *Sexy_SexyAppBase_StartLoadingThreadAddr;
+inline void *Sexy_SexyAppBase_GetLoadingThreadProgressAddr;
 inline void *Sexy_SexyAppBase_GetIntegerAddr;
 inline void *Sexy_SexyAppBase_SetCursorAddr;
 inline void *Sexy_Ratio_SetAddr;
@@ -1186,6 +1189,7 @@ inline void *Sexy_Widget_SetColorAddr;
 inline void *Sexy_SexyMatrix3_SexyMatrix3Addr;
 inline void *Sexy_ButtonWidget__constructorAddr;
 inline void *Sexy_ButtonWidget__destructorAddr;
+inline void *Sexy_ButtonWidget_SetDisabledAddr;
 inline void *Sexy_ButtonWidget_SetFontAddr;
 
 
@@ -1353,6 +1357,7 @@ inline void *Mailbox_GetMessageByIndexAddr;
 inline void *SaveGameContext_SyncIntAddr;
 inline void *SaveGameContext_SyncReanimationDefAddr;
 inline void *EffectSystem_EffectSystemInitializeAddr;
+inline void *EffectSystem_UpdateAddr;
 
 inline void *TodFoley_PlayFoleyAddr;
 

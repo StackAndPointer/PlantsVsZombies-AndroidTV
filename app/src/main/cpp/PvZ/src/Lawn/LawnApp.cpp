@@ -795,8 +795,9 @@ void LawnApp::Init() {
     // 试图修复默认加载名为player用户的问题。
 
     DoParseCmdLine();
-    if (!mTodCheatKeys)
-        unkBool_1[2] = true;
+    if (!mTodCheatKeys) {
+        mOnlyAllowOneCopyToRun = true;
+    }
 
     unk9_2[1] = 0;
     unk9_2[2] = 0;

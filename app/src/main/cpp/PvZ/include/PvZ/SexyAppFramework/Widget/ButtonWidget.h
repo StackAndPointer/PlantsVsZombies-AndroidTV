@@ -71,6 +71,9 @@ public:
     void SetFont(Font *theFont) {
         reinterpret_cast<void (*)(ButtonWidget *, Font *)>(Sexy_ButtonWidget_SetFontAddr)(this, theFont);
     }
+    void SetDisabled(bool theState) {
+        reinterpret_cast<void (*)(ButtonWidget *, bool)>(Sexy_ButtonWidget_SetDisabledAddr)(this, theState);
+    }
 
 protected:
     ButtonWidget() = default;

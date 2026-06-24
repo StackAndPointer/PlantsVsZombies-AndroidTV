@@ -21,8 +21,13 @@
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
+#include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/System/Music.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
+#include "PvZ/TodLib/Common/TodCommon.h"
+#include "PvZ/TodLib/Common/TodStringFile.h"
+#include "PvZ/TodLib/Effect/Reanimator.h"
 
 void TitleScreen::Draw(Sexy::Graphics *graphics) {
     old_TitleScreen_Draw(this, graphics);
@@ -35,11 +40,196 @@ void TitleScreen::Draw(Sexy::Graphics *graphics) {
 }
 
 void TitleScreen::Update() {
-    old_TitleScreen_Update(this);
-    // LOGD("Update");
-    // int *q = nullptr;
-    // q[1] = 1;
+    Sexy::Widget::Update();
+
+    if (mApp->mShutDown) {
+        return;
+    }
+
+    // TODO: 视频后端完成后恢复。
+    // if (!AGVideoIsPlaying()) {
+    //     MarkDirty();
+    // }
+    MarkDirty();
+
+    if (!mNeedRegister) {
+        return;
+    }
+
+    if (mTitleState == WaitingForFirstDraw) {
+        mApp->StartLoadingThread();
+
+        if (mNeedPlayLogo) {
+            SwitchState(PopcapLogo_OR_IntroVideo, 500);
+
+            mIsPlayingIntroVideo = false;
+
+            if (!Sexy::GetEnvOption("LAWN_NO_INTRO_VIDEO", false)) {
+                // TODO: 打开并播放 intro.mp4。
+            }
+
+            mIntroVideoAge = 0;
+            mVideoCompleted = false;
+        } else {
+            SwitchState(Loading, 100);
+        }
+    }
+
+    ++mTitleAge;
+
+    if (mLoadingThreadComplete) {
+        mStartButton->mTextDrawMode = 2;
+    }
+
+    if (mTitleStateCounter > 0) {
+        --mTitleStateCounter;
+    }
+
+    if (mTitleState == ESRBLogo) {
+        if (mTitleStateCounter != 0) {
+            return;
+        }
+
+        SwitchState(Loading, 100);
+        return;
+    }
+
+    if (mTitleState == PopcapLogo_OR_IntroVideo) {
+        if (mIsPlayingIntroVideo) {
+            ++mIntroVideoAge;
+
+            if (mIntroVideoAge <= 2999 && !mVideoCompleted) {
+                return;
+            }
+
+            // TODO: 移除视频播放完成监听器，并关闭视频界面。
+            mIsPlayingIntroVideo = false;
+
+            if (mTitleAge <= 99) {
+                mTitleAge += 500;
+            }
+        } else if (mTitleStateCounter != 0) {
+            return;
+        }
+
+        if (mGuide) {
+            SwitchState(GuideLogo, 400);
+            return;
+        }
+
+        SwitchState(Loading, 100);
+        return;
+    }
+
+    if (mTitleState == GuideLogo && mTitleStateCounter == 0) {
+        // 原版会在同一帧继续执行下面的加载界面更新。
+        SwitchState(Loading, 100);
+    }
+
+    if (!mLoaderScreenIsLoaded) {
+        return;
+    }
+
+    if (!mMusicInitFinished) {
+        mApp->mMusic->MakeSureMusicIsPlaying(MusicTune::MUSIC_TUNE_TITLE_CRAZY_DAVE_MAIN_THEME);
+        mMusicInitFinished = true;
+    }
+
+    const float currentProgress = float(mApp->GetLoadingThreadProgress());
+
+    if (mNeedToInit && mTitleState == Loading) {
+        mNeedToInit = false;
+        *mStartButton->mLabel = TodStringTranslate("[LOADING]");
+        mStartButton->mFont = Sexy::FONT_DWARVENTODCRAFT24;
+        mStartButton->Resize(182, 800, int(mTotalBarWidth), 64);
+        mStartButton->mVisible = true;
+        float estimatedTotalLoadTime;
+        if (currentProgress > 0.000001f) {
+            estimatedTotalLoadTime = float(mTitleAge) / currentProgress;
+        } else {
+            estimatedTotalLoadTime = 3000.0f;
+        }
+        const float remainingLoadTime = ClampFloat(estimatedTotalLoadTime * (1.0f - currentProgress), 100.0f, 3000.0f);
+        mBarStartProgress = std::min(currentProgress, 0.9f);
+        mBarVel = mTotalBarWidth / remainingLoadTime;
+    }
+
+    const int buttonY = mTitleStateCounter <= 10 ? TodAnimateCurve(10, 0, mTitleStateCounter, 500, 529, CURVE_BOUNCE) : TodAnimateCurve(120, 10, mTitleStateCounter, 800, 500, CURVE_EASE_IN);
+    mStartButton->Resize(mStartButton->mX, buttonY, int(mTotalBarWidth), mStartButton->mHeight);
+    if (mTitleStateCounter > 0) {
+        return;
+    }
+    mApp->mEffectSystem->Update();
+    const float previousBarWidth = mCurBarWidth;
+    const float totalBarWidth = mTotalBarWidth;
+    mCurBarWidth += mBarVel;
+
+    if (mLoadingThreadComplete) {
+        if (mCurBarWidth > totalBarWidth) {
+            const pvzstl::string clickToStart = TodStringTranslate("[CLICK_TO_START]");
+            const pvzstl::string okButton = TodStringTranslate("[OK_BUTTON]");
+            *mStartButton->mLabel = TodReplaceString(clickToStart, "<A>", okButton);
+            mCurBarWidth = totalBarWidth;
+        }
+    } else if (mCurBarWidth > totalBarWidth * 0.99f) {
+        mCurBarWidth = totalBarWidth * 0.99f;
+    }
+
+    const float normalizedProgress = (currentProgress - mBarStartProgress) / (1.0f - mBarStartProgress);
+
+    if (normalizedProgress > mPrevLoadingPercent + 0.01f || mLoadingThreadComplete) {
+        const float desiredBarWidth = TodAnimateCurveFloatTime(0.0f, 1.0f, normalizedProgress, 0.0f, totalBarWidth, CURVE_EASE_IN);
+        const float barError = desiredBarWidth - mCurBarWidth;
+        const float acceleration = mLoadingThreadComplete ? 0.0001f : TodAnimateCurveFloatTime(0.0f, 1.0f, normalizedProgress, 0.0001f, 0.00001f, CURVE_LINEAR);
+        // 原始代码先把误差转换成 int，然后再取绝对值。
+        const int integerError = std::abs(int(barError));
+        mBarVel += float(integerError) * barError * acceleration;
+        const float normalMinVelocity = TodAnimateCurveFloatTime(0.0f, 1.0f, normalizedProgress, 0.2f, 0.01f, CURVE_LINEAR);
+        const float minVelocity = mApp->mTodCheatKeys ? 0.0f : normalMinVelocity;
+        const float maxVelocity = mApp->mTodCheatKeys ? 100.0f : 2.0f;
+        mBarVel = std::clamp(mBarVel, minVelocity, maxVelocity);
+        mPrevLoadingPercent = normalizedProgress;
+    }
+    if (!mLoadingThreadComplete && mApp->mLoadingThreadCompleted) {
+        mLoadingThreadComplete = true;
+        // 对应伪代码的虚表槽 48(false) 与 42(true)。
+        mStartButton->SetDisabled(false);
+        mStartButton->SetVisible(true);
+    }
+
+
+    const float milestones[5] = {
+        totalBarWidth * 0.11f,
+        totalBarWidth * 0.32f,
+        totalBarWidth * 0.54f,
+        totalBarWidth * 0.72f,
+        totalBarWidth * 0.95f,
+    };
+
+    for (int milestoneIndex = 0; milestoneIndex < 5; ++milestoneIndex) {
+        const float milestone = milestones[milestoneIndex];
+        // 本帧必须刚好跨过该位置：
+        // previousBarWidth < milestone <= mCurBarWidth
+        if (previousBarWidth >= milestone || milestone > mCurBarWidth) {
+            continue;
+        }
+        const bool isZombieMilestone = milestoneIndex == 4;
+        Reanimation *reanimation = mApp->AddReanimation(milestone + 140.0f, 481.0f, 0, ReanimationType(isZombieMilestone));
+        reanimation->mLoopType = REANIM_PLAY_ONCE_AND_HOLD;
+        reanimation->SetAnimRate(18.0f);
+        if (milestoneIndex == 1 || milestoneIndex == 3) {
+            reanimation->OverrideScale(-1.0f, 1.0f);
+        } else if (milestoneIndex == 2) {
+            reanimation->SetPosition(milestone + 140.0f, 476.0f);
+            reanimation->OverrideScale(1.1f, 1.3f);
+        } else if (isZombieMilestone) {
+            reanimation->SetPosition(milestone + 120.0f, 481.0f);
+            mApp->PlaySample(Sexy::SOUND_LOADINGBAR_FLOWER);
+        }
+        mApp->PlaySample(isZombieMilestone ? Sexy::SOUND_LOADINGBAR_ZOMBIE : Sexy::SOUND_LOADINGBAR_FLOWER);
+    }
 }
+
 
 void TitleScreen::SwitchState(TitleState state, int duration) {
     mTitleState = state;
@@ -54,4 +244,8 @@ void TitleScreen::_constructor(LawnApp *theApp) {
     }
     //    bool option = Sexy::GetEnvOption("LAWN_NO_INTRO_VIDEO", false);
     //    LOG_DEBUG("{}",option);
+}
+
+void TitleScreen::VideoCompleted() {
+    mVideoCompleted = true;
 }

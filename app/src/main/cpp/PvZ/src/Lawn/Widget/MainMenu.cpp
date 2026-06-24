@@ -205,7 +205,7 @@ void MainMenu::Update() {
     old_MainMenu_Update(this);
 }
 
-void MainMenu::ButtonPress(MainMenuButtonId theSelectedButton) {
+void MainMenu::ButtonPress(int theSelectedButton) {
     // 按下按钮的声音
     if (gLawnApp->mGameSelector->InTransition())
         return;
@@ -230,7 +230,7 @@ void MainMenu::ButtonPress(MainMenuButtonId theSelectedButton) {
     }
 }
 
-void MainMenu::ButtonDepress(MainMenuButtonId theSelectedButton) {
+void MainMenu::ButtonDepress(int theSelectedButton) {
     // 为1.1.5解锁触控或确认键进入“更多游戏模式”
     if (InTransition())
         return;

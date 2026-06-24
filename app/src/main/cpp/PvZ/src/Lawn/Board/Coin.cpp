@@ -182,7 +182,9 @@ void Coin::ScoreCoin() {
 }
 
 void Coin::UpdateCollected() {
-    int aDoubleSunDestX = *reinterpret_cast<bool *>(mApp->unkMem2[19] + 96) ? 600 : 480;
+    const auto *platformData = static_cast<const std::uint8_t *>(mApp->mPlatformDriverOrQueue);
+
+    int aDoubleSunDestX = *reinterpret_cast<const bool *>(platformData + 0x60) ? 600 : 480;
     int aDestX = 15;
     int aDestY = 0;
 

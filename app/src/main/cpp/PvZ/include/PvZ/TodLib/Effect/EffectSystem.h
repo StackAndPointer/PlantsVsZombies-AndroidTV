@@ -53,6 +53,10 @@ public:
     void EffectSystemInitialize() {
         reinterpret_cast<void (*)(EffectSystem *)>(EffectSystem_EffectSystemInitializeAddr)(this);
     }
+
+    void Update() {
+        reinterpret_cast<void (*)(EffectSystem *)>(EffectSystem_UpdateAddr)(this);
+    }
 };
 
 #endif // PVZ_SEXYAPPFRAMEWORK_EFFECT_EFFECT_SYSTEM_H

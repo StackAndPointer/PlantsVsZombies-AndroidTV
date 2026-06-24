@@ -61,7 +61,7 @@ public:
     void Resize(int theX, int theY, int theWidth, int theHeight) {
         reinterpret_cast<void (*)(Widget *, int, int, int, int)>(Sexy_Widget_ResizeAddr)(this, theX, theY, theWidth, theHeight);
     }
-    void SetVisible(bool isVisible) {
+    void SetVisible(bool isVisible) { // 42
         reinterpret_cast<void (*)(Widget *, bool)>(Sexy_Widget_SetVisibleAddr)(this, isVisible);
     }
     void Move(int theNewX, int theNewY) {

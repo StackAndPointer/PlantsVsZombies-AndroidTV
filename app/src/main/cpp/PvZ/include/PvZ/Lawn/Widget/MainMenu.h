@@ -81,7 +81,7 @@ public:
     ReanimationID mFallingLeavesReanimID; // 84
     ReanimationID mButterflyReanimID;     // 85
     ReanimationID mUnkReanimID2;          // 86
-    MainMenuButtonId mPressedButtonId;    // 87
+    int mPressedButtonId;                 // 87
     char *mExitTrackName;                 // 88
     int mEnterReanimationCounter;         // 89
     int mExitCounter;                     // 90
@@ -122,7 +122,8 @@ public:
 
     static FoleyType GetFoleyTypeByScene(int theScene);
     void KeyDown(Sexy::KeyCode theKeyCode);
-    void ButtonDepress(MainMenuButtonId theSelectedButton);
+    void ButtonPress(int theSelectedButton);
+    void ButtonDepress(int theSelectedButton);
     void Update();
     void SyncProfile(bool a2);
     void Enter();
@@ -137,7 +138,6 @@ public:
     void DrawOverlay(Sexy::Graphics *g);
     void DrawFade(Sexy::Graphics *g);
     void Draw(Sexy::Graphics *g);
-    void ButtonPress(MainMenuButtonId theSelectedButton);
     void UpdateHouseReanim() const;
     void EnableButtons();
 
@@ -151,7 +151,7 @@ protected:
 
 inline void (*old_MainMenu_Update)(MainMenu *instance);
 
-inline void (*old_MainMenu_ButtonDepress)(MainMenu *mainMenu, MainMenu::MainMenuButtonId a2);
+inline void (*old_MainMenu_ButtonDepress)(MainMenu *mainMenu, int a2);
 
 inline void (*old_MainMenu_KeyDown)(MainMenu *mainMenu, Sexy::KeyCode keyCode);
 
