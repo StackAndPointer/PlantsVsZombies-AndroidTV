@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/Lawn/Widget/TitleScreen.h"
+#include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
@@ -51,4 +52,6 @@ void TitleScreen::_constructor(LawnApp *theApp) {
     if (jumpLogo) {
         mNeedPlayLogo = false;
     }
+    //    bool option = Sexy::GetEnvOption("LAWN_NO_INTRO_VIDEO", false);
+    //    LOG_DEBUG("{}",option);
 }

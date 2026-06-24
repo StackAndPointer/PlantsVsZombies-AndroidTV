@@ -57,6 +57,10 @@ inline int GetTickCount() {
     return reinterpret_cast<int (*)()>(Sexy_GetTickCountAddr)();
 }
 
+inline static bool GetEnvOption(const char *theOption, bool theDefault) {
+    return reinterpret_cast<bool (*)(const char *, bool)>(Sexy_GetEnvOptionAddr)(theOption, theDefault);
+}
+
 inline pvzstl::string vformat(const char *fmt, std::va_list vList) {
     return reinterpret_cast<pvzstl::string (*)(const char *, std::va_list)>(Sexy_vformatAddr)(fmt, vList);
 }

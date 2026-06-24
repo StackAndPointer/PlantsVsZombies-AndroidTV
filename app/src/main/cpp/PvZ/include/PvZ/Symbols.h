@@ -1293,6 +1293,7 @@ inline void *TodAnimateCurveFloatAddr;
 inline void *TodAnimateCurveFloatTimeAddr;
 inline void *Sexy_StrFormatAddr;
 inline void *Sexy_vformatAddr;
+inline void *Sexy_GetEnvOptionAddr;
 inline void *TodStringListFindAddr;
 inline void *TodStringTranslateAddr;
 inline void *GetRectOverlapAddr;

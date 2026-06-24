@@ -834,10 +834,10 @@ void InitIntroVideo() {
     // homura::HookFunc(j_AGVideoPauseAddr, AGVideoPause, nullptr);
     // homura::HookFunc(j_AGVideoResumeAddr, AGVideoResume, nullptr);
 
-    // constexpr auto &libGameMain = "libGameMain.so";
-    // homura::HookPltFunc(libGameMain, AGVideoOpenOffset, AGVideoOpen, nullptr);
-    // homura::HookPltFunc(libGameMain, AGVideoShowOffset, AGVideoShow, nullptr);
-    // homura::HookPltFunc(libGameMain, AGVideoEnableOffset, AGVideoEnable, nullptr);
-    // homura::HookPltFunc(libGameMain, AGVideoIsPlayingOffset, AGVideoIsPlaying, nullptr);
-    // homura::HookPltFunc(libGameMain, AGVideoPlayOffset, AGVideoPlay, nullptr);
+    constexpr auto &libGameMain = "libGameMain.so";
+    homura::HookPltFunc(libGameMain, AGVideoOpenOffset, AGVideoOpen, nullptr);
+    homura::HookPltFunc(libGameMain, AGVideoShowOffset, AGVideoShow, nullptr);
+    homura::HookPltFunc(libGameMain, AGVideoEnableOffset, AGVideoEnable, nullptr);
+    homura::HookPltFunc(libGameMain, AGVideoIsPlayingOffset, AGVideoIsPlaying, nullptr);
+    homura::HookPltFunc(libGameMain, AGVideoPlayOffset, AGVideoPlay, nullptr);
 }

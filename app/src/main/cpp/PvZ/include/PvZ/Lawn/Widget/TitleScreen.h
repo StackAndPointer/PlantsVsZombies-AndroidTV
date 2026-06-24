@@ -55,9 +55,10 @@ public:
     int mIntroVideoAge;         // 79
     bool mVideoCompleted;       // 80 * 4 = 320
     bool mLoaderScreenIsLoaded; // 321
-    bool unkBool2;              // 322
+    bool mMusicInitFinished;    // 322
     bool mIsPlayingIntroVideo;  // 323
-    int unk2[2];
+    unsigned int mOverlayAlpha; // 81
+    int unk82;
     bool mNeedPlayLogo; // 4 * 83
     LawnApp *mApp;      // 84
 

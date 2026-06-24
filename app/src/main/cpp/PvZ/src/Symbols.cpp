@@ -1267,6 +1267,7 @@ bool LoadGameMain() {
     TodAnimateCurveFloatTimeAddr = libGameMain.GetSymbol("_Z24TodAnimateCurveFloatTimefffff9TodCurves");
     Sexy_StrFormatAddr = libGameMain.GetSymbol("_ZN4Sexy9StrFormatEPKcz");
     Sexy_vformatAddr = libGameMain.GetSymbol("_ZN4Sexy7vformatEPKcSt9__va_list");
+    Sexy_GetEnvOptionAddr = libGameMain.GetSymbol("_ZN4Sexy12GetEnvOptionEPKcb");
     TodStringListFindAddr = libGameMain.GetSymbol("_Z17TodStringListFindRKSs");
     TodStringTranslateAddr = libGameMain.GetSymbol("_Z18TodStringTranslatePKc");
     GetRectOverlapAddr = libGameMain.GetSymbol("_Z14GetRectOverlapRKN4Sexy5TRectIiEES3_");
