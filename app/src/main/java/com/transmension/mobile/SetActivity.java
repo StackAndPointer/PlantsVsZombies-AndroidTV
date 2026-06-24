@@ -976,6 +976,20 @@ public class SetActivity extends Activity {
             return true;
         });
 
+        final CheckBox playVideo = new CheckBox(this);
+        playVideo.setText(R.string.addon_ingame_playvideo);
+        playVideo.setChecked(sharedPreferences.getBoolean("playVideo", true));
+        playVideo.setOnCheckedChangeListener((compoundButton, bool) -> sharedPreferences.edit().putBoolean("playVideo", bool).apply());
+        playVideo.setLayoutParams(matchWrapParams);
+        playVideo.setOnLongClickListener(v -> {
+            new AlertDialog.Builder(SetActivity.this)
+                    .setTitle(R.string.addon_ingame_playvideo)
+                    .setMessage(R.string.addon_ingame_playvideo_info)
+                    .setPositiveButton("OK", null)
+                    .create().show();
+            return true;
+        });
+
         final CheckBox jumpLogo = new CheckBox(this);
         jumpLogo.setText(R.string.addon_ingame_jumplogo);
         jumpLogo.setChecked(sharedPreferences.getBoolean("jumpLogo", false));

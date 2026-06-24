@@ -669,11 +669,8 @@ extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_n
     jumpLogo = true;
 }
 
-extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativeIntroVideoCompleted(JNIEnv *env, jclass clazz) {
-    TitleScreen *aTitleScreen = (gLawnApp)->mTitleScreen;
-    if (aTitleScreen != nullptr) {
-        aTitleScreen->mVideoCompleted = true;
-    }
+extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativePlayVideo(JNIEnv *env, jclass clazz) {
+    playVideo = true;
 }
 
 extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativeHeavyWeaponAccel(JNIEnv *env, jclass clazz) {

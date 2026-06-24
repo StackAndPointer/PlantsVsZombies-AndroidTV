@@ -75,6 +75,13 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
 
+import android.content.res.AssetFileDescriptor;
+import android.view.SurfaceHolder;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+
 public class EnhanceActivity extends MainActivity {
 
 
@@ -125,9 +132,14 @@ public class EnhanceActivity extends MainActivity {
     private float boardWidgetLeft, boardWidgetRight, boardWidgetTop, boardWidgetBottom;
     private int keyCodePause = 0, keyCodeSwitchTwoPlayerMode = 0;
     private boolean useSpecialPause = false;
-    private MediaPlayer mMediaPlayer = null;
+    private boolean mVideoPrepared = false;
+    private boolean mVideoPlayWhenPrepared = false;
+    private boolean mVideoSurfaceReady = false;
+    private boolean mVideoCompletionSent = false;
     private boolean mVisible = false;
+    private MediaPlayer mMediaPlayer = null;
     private SurfaceView mView = null;
+    private volatile boolean mVideoPlaying = false;
     private static final int REQUEST_REPLAY_IMPORT = 0x9A01;
     private static final int REQUEST_REPLAY_EXPORT = 0x9A02;
     private String mReplayImportTargetDir = null;
@@ -136,6 +148,378 @@ public class EnhanceActivity extends MainActivity {
     private static native void nativeOnReplayImportFinished(boolean success, String message);
 
     private static native void nativeOnReplayExportFinished(boolean success, String message);
+
+
+    private <T> T callOnUiThreadBlocking(Callable<T> operation, T failureValue) {
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            try {
+                return operation.call();
+            } catch (Exception e) {
+                Log.e("PvZVideo", "UI operation failed", e);
+                return failureValue;
+            }
+        }
+
+        FutureTask<T> task = new FutureTask<>(operation);
+        runOnUiThread(task);
+        try {
+            return task.get(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            Log.e("PvZVideo", "Interrupted while waiting for UI thread", e);
+        } catch (Exception e) {
+            Log.e("PvZVideo", "Failed while waiting for UI thread", e);
+        }
+        return failureValue;
+    }
+
+    private String normalizeVideoPath(String path) throws IOException {
+        if (path == null) {
+            throw new IOException("Video path is null");
+        }
+
+        String normalized = path.trim().replace('\\', '/');
+        while (normalized.startsWith("/")) {
+            normalized = normalized.substring(1);
+        }
+        if (normalized.startsWith("files/")) {
+            normalized = normalized.substring("files/".length());
+        }
+        if (normalized.isEmpty()) {
+            throw new IOException("Video path is empty");
+        }
+
+        StringBuilder result = new StringBuilder();
+        for (String part : normalized.split("/")) {
+            if (part.isEmpty() || ".".equals(part)) {
+                continue;
+            }
+            if ("..".equals(part)) {
+                throw new IOException("Parent path is not allowed: " + path);
+            }
+            if (result.length() != 0) {
+                result.append('/');
+            }
+            result.append(part);
+        }
+
+        if (result.length() == 0) {
+            throw new IOException("Video path is empty after normalization");
+        }
+        return result.toString();
+    }
+
+    private File copyAssetVideoToCache(String assetPath, String logicalPath) throws IOException {
+        File cacheDirectory = new File(getCacheDir(), "video-assets");
+        if (!cacheDirectory.exists() && !cacheDirectory.mkdirs()) {
+            throw new IOException("Unable to create video cache: " + cacheDirectory);
+        }
+
+        String cacheName = Integer.toHexString(assetPath.hashCode()) + "-" + new File(logicalPath).getName();
+        File cacheFile = new File(cacheDirectory, cacheName);
+        File temporaryFile = new File(cacheDirectory, cacheName + ".tmp");
+
+        try (InputStream input = getAssets().open(assetPath); FileOutputStream output = new FileOutputStream(temporaryFile, false)) {
+            byte[] buffer = new byte[64 * 1024];
+            int count;
+            while ((count = input.read(buffer)) >= 0) {
+                if (count != 0) {
+                    output.write(buffer, 0, count);
+                }
+            }
+            output.flush();
+        }
+
+        if (cacheFile.exists() && !cacheFile.delete()) {
+            throw new IOException("Unable to replace cached video: " + cacheFile);
+        }
+        if (!temporaryFile.renameTo(cacheFile)) {
+            throw new IOException("Unable to finish cached video: " + cacheFile);
+        }
+        return cacheFile;
+    }
+
+    private String setVideoDataSource(MediaPlayer player, String requestedPath) throws IOException {
+        String logicalPath = normalizeVideoPath(requestedPath);
+
+        // Priority 1: <ExternalFiles>/<logicalPath>
+        File externalRoot = getUserDataFile();
+        if (externalRoot != null) {
+            File externalVideo = new File(externalRoot, logicalPath);
+            if (externalVideo.isFile()) {
+                try {
+                    player.setDataSource(externalVideo.getAbsolutePath());
+                    return "external:" + externalVideo.getAbsolutePath();
+                } catch (IOException externalFailure) {
+                    // A broken override must not prevent the packaged asset from
+                    // being used as the fallback source.
+                    Log.e("PvZVideo", "External video is unusable: " + externalVideo, externalFailure);
+                }
+            }
+        }
+
+        // Priority 2: assets/files/<logicalPath>
+        String assetPath = "files/" + logicalPath;
+        try (AssetFileDescriptor descriptor = getAssets().openFd(assetPath)) {
+            player.setDataSource(descriptor.getFileDescriptor(), descriptor.getStartOffset(), descriptor.getLength());
+            return "asset-fd:" + assetPath;
+        } catch (IOException openFdFailure) {
+            // openFd fails for compressed assets. Copy through AssetManager.open().
+            File cachedVideo = copyAssetVideoToCache(assetPath, logicalPath);
+            player.setDataSource(cachedVideo.getAbsolutePath());
+            return "asset-cache:" + assetPath;
+        }
+    }
+
+    private void ensureVideoViewOnUiThread() {
+        if (mView == null) {
+            mView = new MySurfaceView(this);
+            mView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            mView.setZOrderMediaOverlay(true);
+            mView.setKeepScreenOn(true);
+
+            mView.getHolder().addCallback(new SurfaceHolder.Callback() {
+                @Override
+                public void surfaceCreated(SurfaceHolder holder) {
+                    mVideoSurfaceReady = true;
+                    if (mMediaPlayer != null) {
+                        try {
+                            mMediaPlayer.setDisplay(holder);
+                        } catch (RuntimeException e) {
+                            Log.e("PvZVideo", "setDisplay failed", e);
+                            notifyVideoCompletedOnUiThread();
+                        }
+                    }
+                    maybeStartVideoOnUiThread();
+                }
+
+                @Override
+                public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+                }
+
+                @Override
+                public void surfaceDestroyed(SurfaceHolder holder) {
+                    mVideoSurfaceReady = false;
+                    if (mMediaPlayer != null) {
+                        try {
+                            mMediaPlayer.setDisplay(null);
+                        } catch (RuntimeException ignored) {
+                        }
+                    }
+                }
+            });
+        }
+
+        if (mView.getParent() != null && mView.getParent() != mLayout && mView.getParent() instanceof ViewGroup) {
+            ((ViewGroup) mView.getParent()).removeView(mView);
+        }
+        if (mView.getParent() == null) {
+            mLayout.addView(mView);
+        }
+
+        mView.setVisibility(View.VISIBLE);
+        mView.bringToFront();
+        mVisible = true;
+
+        SurfaceHolder holder = mView.getHolder();
+        mVideoSurfaceReady = holder.getSurface() != null && holder.getSurface().isValid();
+    }
+
+    private void hideVideoViewOnUiThread() {
+        if (mView != null) {
+            mView.setVisibility(View.INVISIBLE);
+            if (mView.getParent() instanceof ViewGroup) {
+                ((ViewGroup) mView.getParent()).removeView(mView);
+            }
+        }
+        mVideoSurfaceReady = false;
+        mVisible = false;
+    }
+
+    private void notifyVideoCompletedOnUiThread() {
+        mVideoPlaying = false;
+        if (!mVideoCompletionSent) {
+            mVideoCompletionSent = true;
+            nativeIntroVideoCompleted();
+        }
+    }
+
+    private void maybeStartVideoOnUiThread() {
+        if (mMediaPlayer == null || !mVideoPrepared || !mVideoPlayWhenPrepared || !mVideoSurfaceReady) {
+            return;
+        }
+
+        try {
+            mMediaPlayer.start();
+            mVideoPlaying = true;
+            mVideoPlayWhenPrepared = false;
+            Log.i("PvZVideo", "Video playback started");
+        } catch (RuntimeException e) {
+            Log.e("PvZVideo", "Unable to start video", e);
+            notifyVideoCompletedOnUiThread();
+        }
+    }
+
+    private void releaseVideoPlayerOnUiThread() {
+        MediaPlayer player = mMediaPlayer;
+        mMediaPlayer = null;
+        mVideoPrepared = false;
+        mVideoPlayWhenPrepared = false;
+        mVideoPlaying = false;
+
+        if (player == null) {
+            return;
+        }
+
+        try {
+            player.setOnPreparedListener(null);
+            player.setOnCompletionListener(null);
+            player.setOnErrorListener(null);
+            player.setDisplay(null);
+        } catch (RuntimeException ignored) {
+        }
+        try {
+            player.reset();
+        } catch (RuntimeException ignored) {
+        }
+        try {
+            player.release();
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    private boolean openVideoOnUiThread(String path) {
+        releaseVideoPlayerOnUiThread();
+        ensureVideoViewOnUiThread();
+
+        mVideoPrepared = false;
+        mVideoPlayWhenPrepared = false;
+        mVideoPlaying = false;
+        mVideoCompletionSent = false;
+
+        MediaPlayer player = new MediaPlayer();
+        mMediaPlayer = player;
+        player.setScreenOnWhilePlaying(true);
+
+        player.setOnPreparedListener(preparedPlayer -> {
+            if (preparedPlayer != mMediaPlayer) {
+                return;
+            }
+            mVideoPrepared = true;
+            Log.i("PvZVideo", "Video prepared");
+            maybeStartVideoOnUiThread();
+        });
+
+        player.setOnCompletionListener(completedPlayer -> {
+            if (completedPlayer == mMediaPlayer) {
+                Log.i("PvZVideo", "Video completed");
+                notifyVideoCompletedOnUiThread();
+            }
+        });
+
+        player.setOnErrorListener((failedPlayer, what, extra) -> {
+            if (failedPlayer == mMediaPlayer) {
+                Log.e("PvZVideo", "MediaPlayer error: what=" + what + ", extra=" + extra);
+                notifyVideoCompletedOnUiThread();
+            }
+            return true;
+        });
+
+        player.setOnVideoSizeChangedListener((mediaPlayer, width, height) -> {
+            if (mView != null) {
+                mView.requestLayout();
+            }
+        });
+
+        try {
+            String source = setVideoDataSource(player, path);
+            SurfaceHolder holder = mView.getHolder();
+            if (holder.getSurface() != null && holder.getSurface().isValid()) {
+                player.setDisplay(holder);
+                mVideoSurfaceReady = true;
+            }
+            player.prepareAsync();
+            Log.i("PvZVideo", "Opening " + path + " from " + source);
+            return true;
+        } catch (Exception e) {
+            Log.e("PvZVideo", "Unable to open video: " + path, e);
+            releaseVideoPlayerOnUiThread();
+            hideVideoViewOnUiThread();
+            return false;
+        }
+    }
+
+    public boolean videoOpen(String path) {
+        return callOnUiThreadBlocking(() -> openVideoOnUiThread(path), false);
+    }
+
+    public boolean videoPlay() {
+        return callOnUiThreadBlocking(() -> {
+            if (mMediaPlayer == null) {
+                return false;
+            }
+            mVideoPlayWhenPrepared = true;
+            maybeStartVideoOnUiThread();
+            return true;
+        }, false);
+    }
+
+    public boolean videoStop() {
+        return callOnUiThreadBlocking(() -> {
+            if (mMediaPlayer == null) {
+                return false;
+            }
+            mVideoPlayWhenPrepared = false;
+            try {
+                if (mVideoPrepared && mVideoPlaying) {
+                    mMediaPlayer.pause();
+                    mMediaPlayer.seekTo(0);
+                }
+                mVideoPlaying = false;
+                return true;
+            } catch (RuntimeException e) {
+                Log.e("PvZVideo", "Unable to stop video", e);
+                return false;
+            }
+        }, false);
+    }
+
+    public boolean videoClose() {
+        return callOnUiThreadBlocking(() -> {
+            releaseVideoPlayerOnUiThread();
+            hideVideoViewOnUiThread();
+            return true;
+        }, false);
+    }
+
+    public void videoShow(boolean show) {
+        Runnable operation = () -> {
+            if (show) {
+                ensureVideoViewOnUiThread();
+                if (mMediaPlayer != null && mVideoSurfaceReady) {
+                    try {
+                        mMediaPlayer.setDisplay(mView.getHolder());
+                    } catch (RuntimeException e) {
+                        Log.e("PvZVideo", "Unable to restore display", e);
+                    }
+                }
+                maybeStartVideoOnUiThread();
+            } else {
+                hideVideoViewOnUiThread();
+            }
+        };
+
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            operation.run();
+        } else {
+            runOnUiThread(operation);
+        }
+    }
+
+    public boolean videoIsPlaying() {
+        return mVideoPlaying;
+    }
+
     Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(Message msg) {
@@ -245,6 +629,8 @@ public class EnhanceActivity extends MainActivity {
     public static native void nativeEnableOpenSL();
 
     public static native void nativeJumpLogo();
+
+    public static native void nativePlayVideo();
 
     public static native void nativeHeavyWeaponAccel();
 
@@ -529,71 +915,56 @@ public class EnhanceActivity extends MainActivity {
     public void loadGameSettings(SharedPreferences sharedPreferences) {
 
         //读取设置中的“使用XBOX版背景音乐”设置项，决定是否使用XBOX版背景音乐
-        if (sharedPreferences.getBoolean("useXboxMusics", false))
-            nativeUseXboxMusics();
+        if (sharedPreferences.getBoolean("useXboxMusics", false)) nativeUseXboxMusics();
 
         //读取设置中的“手动收集阳光金币”设置项，决定是否开启手动收集
-        if (sharedPreferences.getBoolean("enableManualCollect", false))
-            nativeEnableManualCollect();
+        if (sharedPreferences.getBoolean("enableManualCollect", false)) nativeEnableManualCollect();
 
         //读取设置中的“关闭道具栏”设置项，决定是否关闭道具栏
-        if (sharedPreferences.getBoolean("disableShop", false))
-            nativeDisableShop();
+        if (sharedPreferences.getBoolean("disableShop", false)) nativeDisableShop();
 
         //读取设置中的“使用新暂停菜单”设置项，决定是否使用新暂停菜单
         if (sharedPreferences.getBoolean("enableNewOptionsDialog", true))
             nativeEnableNewOptionsDialog();
 
         //读取设置中的“去除草丛和电线杆”设置项，决定是否使用新暂停菜单
-        if (sharedPreferences.getBoolean("hideCoverLayer", false))
-            nativeHideCoverLayer();
+        if (sharedPreferences.getBoolean("hideCoverLayer", false)) nativeHideCoverLayer();
 
         //读取设置中的“显示卡片冷却进度”设置项，决定是否显示卡片冷却进度
-        if (sharedPreferences.getBoolean("showCoolDown", false))
-            nativeShowCoolDown();
+        if (sharedPreferences.getBoolean("showCoolDown", false)) nativeShowCoolDown();
 
         //读取设置中的“使用原版出怪”设置项，决定是否使用原版出怪
-        if (sharedPreferences.getBoolean("normalLevel", true))
-            nativeEnableNormalLevelMode();
+        if (sharedPreferences.getBoolean("normalLevel", true)) nativeEnableNormalLevelMode();
 
         //读取设置中的“经典铲子”设置项，决定是否使用经典铲子
-        if (sharedPreferences.getBoolean("useNewShovel", true))
-            nativeEnableNewShovel();
+        if (sharedPreferences.getBoolean("useNewShovel", true)) nativeEnableNewShovel();
 
         //读取设置中的“模仿者变灰色植物”设置项，决定是否让模仿者变灰色植物
-        if (sharedPreferences.getBoolean("imitater", true))
-            nativeEnableImitater();
+        if (sharedPreferences.getBoolean("imitater", true)) nativeEnableImitater();
 
         //读取设置中的“禁止无尽出垃圾桶”设置项，决定是否禁止无尽出垃圾桶
-        if (sharedPreferences.getBoolean("disableTrashBin", false))
-            nativeDisableTrashBinZombie();
+        if (sharedPreferences.getBoolean("disableTrashBin", false)) nativeDisableTrashBinZombie();
 
         //读取设置中的“显示房子”设置项，决定是否显示房子
-        if (sharedPreferences.getBoolean("showHouse", true))
-            nativeShowHouse();
+        if (sharedPreferences.getBoolean("showHouse", true)) nativeShowHouse();
 
         //读取设置中的“原版加农炮光标”设置项，决定是否使用原版加农炮光标
-        if (sharedPreferences.getBoolean("useNewCobCannon", true))
-            nativeUseNewCobCannon();
+        if (sharedPreferences.getBoolean("useNewCobCannon", true)) nativeUseNewCobCannon();
 
         //读取设置中的“自动归位游戏光标”设置项，决定是否自动归位游戏光标
-        if (sharedPreferences.getBoolean("positionAutoFix", true))
-            nativeAutoFixPosition();
+        if (sharedPreferences.getBoolean("positionAutoFix", true)) nativeAutoFixPosition();
 
-        if (sharedPreferences.getBoolean("seedBankPin", false))
-            nativeSeedBankPin();
+        if (sharedPreferences.getBoolean("seedBankPin", false)) nativeSeedBankPin();
 
-        if (sharedPreferences.getBoolean("dynamicPreview", true))
-            nativeDynamicPreview();
+        if (sharedPreferences.getBoolean("dynamicPreview", true)) nativeDynamicPreview();
 
-        if (sharedPreferences.getBoolean("useOpenSL", true))
-            nativeEnableOpenSL();
+        if (sharedPreferences.getBoolean("useOpenSL", true)) nativeEnableOpenSL();
 
-        if (sharedPreferences.getBoolean("jumpLogo", false))
-            nativeJumpLogo();
+        if (sharedPreferences.getBoolean("jumpLogo", false)) nativeJumpLogo();
 
-        if (sharedPreferences.getBoolean("heavyWeaponAccel", false))
-            nativeHeavyWeaponAccel();
+        if (sharedPreferences.getBoolean("playVideo", true)) nativePlayVideo();
+
+        if (sharedPreferences.getBoolean("heavyWeaponAccel", false)) nativeHeavyWeaponAccel();
 
     }
 
@@ -613,8 +984,7 @@ public class EnhanceActivity extends MainActivity {
         final int visibilityX = sharedPreferences.getInt("visibilityX", (int) (380 * density));
         final int visibilityY = sharedPreferences.getInt("visibilityY", (int) (-110 * density));
         final boolean isVisibilityLockPosition = sharedPreferences.getBoolean("isVisibilityLockPosition", false);
-        WindowManager.LayoutParams visibilityParams = new WindowManager.LayoutParams(visibilitySize, visibilitySize, visibilityX, visibilityY, WindowManager.LayoutParams.TYPE_APPLICATION_PANEL, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE |
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSPARENT);
+        WindowManager.LayoutParams visibilityParams = new WindowManager.LayoutParams(visibilitySize, visibilitySize, visibilityX, visibilityY, WindowManager.LayoutParams.TYPE_APPLICATION_PANEL, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSPARENT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
             visibilityParams.layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES;
         visibilityParams.gravity = Gravity.CENTER;
@@ -870,13 +1240,12 @@ public class EnhanceActivity extends MainActivity {
             SharedPreferences sharedPreferences = getSharedPreferences("data", 0);
 
             //读取设置中的“开启菜单修改器”设置项，决定是否开启菜单修改器
-            if (sharedPreferences.getBoolean("useMenu", true))
-                try {
-                    CkHomuraMenu menu = new CkHomuraMenu(this);
-                    menu.SetWindowManagerActivity();
-                    menu.ShowMenu();
-                } catch (NoClassDefFoundError ignored) {
-                }
+            if (sharedPreferences.getBoolean("useMenu", true)) try {
+                CkHomuraMenu menu = new CkHomuraMenu(this);
+                menu.SetWindowManagerActivity();
+                menu.ShowMenu();
+            } catch (NoClassDefFoundError ignored) {
+            }
 
 
             //暂停键
@@ -1001,9 +1370,20 @@ public class EnhanceActivity extends MainActivity {
 
     @Override
     public void onDestroy() {
-        if (isFileObserverLaunched) fileObserver.stopWatching();
-        if (isAddonWindowLoaded && visibilityWindow != null) mWindowManager.removeViewImmediate(visibilityWindow);
-        if (mOrientationListenerStarted) mOrientationListener.disable();
+        videoClose();
+
+        if (isFileObserverLaunched) {
+            fileObserver.stopWatching();
+        }
+
+        if (isAddonWindowLoaded && visibilityWindow != null) {
+            mWindowManager.removeViewImmediate(visibilityWindow);
+        }
+
+        if (mOrientationListenerStarted) {
+            mOrientationListener.disable();
+        }
+
         super.onDestroy();
     }
 
@@ -1107,143 +1487,16 @@ public class EnhanceActivity extends MainActivity {
         }
     }
 
-    public boolean videoIsPlaying() {
-        if (mMediaPlayer == null) {
-            return false;
-        }
-        return mMediaPlayer.isPlaying();
-    }
-
-    public void videoShow(boolean show) {
-        if (show) {
-            if (mView == null) {
-                mView = new MySurfaceView(this);
-                mView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-            }
-            mView.setVisibility(View.VISIBLE);
-            mLayout.addView(mView);
-        } else {
-            mView.setVisibility(View.INVISIBLE);
-            mLayout.removeView(mView);
-        }
-
-//        Message m = mHandler.obtainMessage(show ? SHOW_VIDEO : HIDE_VIDEO);
-//        mHandler.sendMessage(m);
-    }
 
     public void _show(boolean show) {
         if (mVisible != show) {
             mView.setVisibility(show ? View.VISIBLE : View.INVISIBLE);
             mVisible = show;
-            if (show)
-                mLayout.addView(mView);
-            else
-                mLayout.removeView(mView);
+            if (show) mLayout.addView(mView);
+            else mLayout.removeView(mView);
         }
     }
 
-    public boolean videoOpen(String path) {
-        return true;
-//        path = "files/" + path;
-//        Log.d("TAG", "open(): " + path);
-//
-//        try {
-//            AssetFileDescriptor aFd = getAssets().openFd(path);
-//            FileDescriptor fd = aFd.getFileDescriptor();
-//            if (mView == null) {
-//                mView = new MySurfaceView(this);
-//                mView.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-//            }
-//            SurfaceHolder mHolder = mView.getHolder();
-//            mHolder.addCallback(new SurfaceHolder.Callback() {
-//                @Override
-//                public void surfaceCreated(SurfaceHolder surfaceholder) {
-//                    Log.d("TAG", "surfaceCreated()");
-//                    if (mMediaPlayer != null) {
-//                        mMediaPlayer.setDisplay(mView.getHolder());
-//                    }
-//                }
-//                @Override // android.view.SurfaceHolder.Callback
-//                public void surfaceChanged(SurfaceHolder surfaceholder, int i, int j, int k) {
-//                    Log.d("TAG", String.format("surfaceChanged(): %d %d %d", i, j, k));
-//                }
-//                @Override // android.view.SurfaceHolder.Callback
-//                public void surfaceDestroyed(SurfaceHolder surfaceholder) {
-//                    Log.d("TAG", "surfaceDestroyed()");
-//                }
-//            });
-//            mHolder.setFormat(-2);
-//            mHolder.setType(3);
-//            mMediaPlayer = new MediaPlayer();
-//            mMediaPlayer.setOnCompletionListener(mediaPlayer -> nativeIntroVideoCompleted());
-//            mMediaPlayer.setOnErrorListener((mediaPlayer, i, i1) -> {
-//                nativeIntroVideoCompleted();
-//                return false;
-//            });
-//
-//            try {
-//                mMediaPlayer.setDisplay(mView.getHolder());
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//                try {
-//                    mMediaPlayer.release();
-//                } catch (Exception ignored) {
-//                }
-//                mMediaPlayer = null;
-//            }
-//
-//            mMediaPlayer.setDataSource(fd, aFd.getStartOffset(), aFd.getLength());
-//            aFd.close();
-//            Log.d("TAG", "open(): prepared: " + path);
-//            return true;
-//        } catch (IOException e) {
-//            Log.d("TAG", "Failed to open " + path);
-//            return false;
-//        }
-    }
-
-    public boolean videoPlay() {
-        Log.i("TAG", "play()");
-        if (this.mMediaPlayer == null) {
-            return false;
-        }
-        try {
-            mMediaPlayer.start();
-            return true;
-        } catch (Exception e2) {
-            e2.printStackTrace();
-            return false;
-        }
-    }
-
-    public boolean videoStop() {
-        Log.i("TAG", "stop()");
-        if (this.mMediaPlayer == null) {
-            return false;
-        }
-        try {
-            mMediaPlayer.stop();
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
-    public boolean videoClose() {
-        Log.i("TAG", "close()");
-        if (mMediaPlayer != null) {
-            videoStop();
-            try {
-                mMediaPlayer.reset();
-            } catch (Exception ignored) {
-            }
-            try {
-                mMediaPlayer.release();
-            } catch (Exception ignored) {
-            }
-        }
-        return true;
-    }
 
     static final int HAPITIC_THUMP = 0;
     static final int HAPITIC_EXPLOSION = 1;
@@ -1284,12 +1537,8 @@ public class EnhanceActivity extends MainActivity {
                     composition.amplitudes = new int[]{0, 255, 0, 255, 0, 255, 0, 255, 0, 128, 0, 128, 0, 128, 0, 128};
                     break;
                 case HAPITIC_SLOT_MACHINE:
-                    composition.timings = new long[]
-                            {150, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50,
-                                    200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50};
-                    composition.amplitudes = new int[]
-                            {255, 0, 255, 0, 255, 0, 255, 0, 128, 0, 128, 0, 128, 0, 128, 0, 64,
-                                    0, 64, 0, 64, 0, 64, 0, 32, 0, 32, 0, 32, 0, 32};
+                    composition.timings = new long[]{150, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50, 200, 50};
+                    composition.amplitudes = new int[]{255, 0, 255, 0, 255, 0, 255, 0, 128, 0, 128, 0, 128, 0, 128, 0, 64, 0, 64, 0, 64, 0, 64, 0, 32, 0, 32, 0, 32, 0, 32};
                     break;
                 case HAPITIC_WHACK_HIT:
                     composition.timings = new long[]{50, 30, 20, 20, 20};
@@ -1301,14 +1550,8 @@ public class EnhanceActivity extends MainActivity {
                     break;
                 case HAPITIC_ICE_TRAP:
                 case HAPITIC_ZOMBIE_RISE_FROM_POOL:
-                    composition.timings = new long[]
-                            {200, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10,
-                                    40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10,
-                                    40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10};
-                    composition.amplitudes = new int[]
-                            {0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255,
-                                    0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128,
-                                    0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 32, 0, 32, 0, 32, 0, 32};
+                    composition.timings = new long[]{200, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10, 40, 10};
+                    composition.amplitudes = new int[]{0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 255, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 128, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 64, 0, 32, 0, 32, 0, 32, 0, 32};
                     break;
                 case HAPITIC_JUMP:
                     composition.timings = new long[]{200, 5, 5, 5, 5, 5, 5, 5, 5};
@@ -1462,10 +1705,8 @@ public class EnhanceActivity extends MainActivity {
                     height = (int) (width / mAspectRatio);
                 }
 
-                int newWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
-                        width, MeasureSpec.EXACTLY);
-                int newHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
-                        height, MeasureSpec.EXACTLY);
+                int newWidthMeasureSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
+                int newHeightMeasureSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
 
                 super.onMeasure(newWidthMeasureSpec, newHeightMeasureSpec);
             } else {

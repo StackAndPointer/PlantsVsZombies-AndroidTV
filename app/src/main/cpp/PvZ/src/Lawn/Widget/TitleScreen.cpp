@@ -19,6 +19,7 @@
 
 #include "PvZ/Lawn/Widget/TitleScreen.h"
 #include "Homura/Logger.h"
+#include "PvZ/Android/IntroVideo.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/LawnApp.h"
@@ -46,11 +47,13 @@ void TitleScreen::Update() {
         return;
     }
 
-    // TODO: 视频后端完成后恢复。
-    // if (!AGVideoIsPlaying()) {
-    //     MarkDirty();
-    // }
-    MarkDirty();
+    if (AGVideoConsumeCompleted()) {
+        VideoCompleted();
+    }
+
+    if (!mIsPlayingIntroVideo) {
+        MarkDirty();
+    }
 
     if (!mNeedRegister) {
         return;
@@ -59,18 +62,40 @@ void TitleScreen::Update() {
     if (mTitleState == WaitingForFirstDraw) {
         mApp->StartLoadingThread();
 
-        if (mNeedPlayLogo) {
-            SwitchState(PopcapLogo_OR_IntroVideo, 500);
+        // mNeedPlayLogo 只控制 Logo。
+        // needVideo 只控制视频。
+        const bool shouldPlayVideo = playVideo && !Sexy::GetEnvOption("LAWN_NO_INTRO_VIDEO", false);
 
-            mIsPlayingIntroVideo = false;
-
-            if (!Sexy::GetEnvOption("LAWN_NO_INTRO_VIDEO", false)) {
-                // TODO: 打开并播放 intro.mp4。
-            }
+        // Logo 和视频只要有一个需要显示，就进入该阶段。
+        if (mNeedPlayLogo || shouldPlayVideo) {
+            // 不播放 Logo、只播放视频时，不需要额外等待 Logo 的 500 帧。
+            SwitchState(PopcapLogo_OR_IntroVideo, mNeedPlayLogo ? 500 : 0);
 
             mIntroVideoAge = 0;
             mVideoCompleted = false;
+            mIsPlayingIntroVideo = false;
+            AGVideoResetCompleted();
+
+            // 视频播放不再位于 if (mNeedPlayLogo) 的控制之下。
+            if (shouldPlayVideo) {
+                constexpr const char *kIntroVideoPath = "movies/intro.mp4";
+
+                AGVideoEnable(true);
+                AGVideoShow(true);
+
+                const bool opened = AGVideoOpen(kIntroVideoPath) == 0;
+                const bool acceptedForPlayback = opened && AGVideoPlay();
+
+                mIsPlayingIntroVideo = acceptedForPlayback;
+
+                if (!acceptedForPlayback) {
+                    AGVideoClose();
+                    AGVideoShow(false);
+                    AGVideoEnable(false);
+                }
+            }
         } else {
+            // Logo 和视频都不需要，直接进入加载界面。
             SwitchState(Loading, 100);
         }
     }
@@ -102,7 +127,9 @@ void TitleScreen::Update() {
                 return;
             }
 
-            // TODO: 移除视频播放完成监听器，并关闭视频界面。
+            AGVideoClose();
+            AGVideoShow(false);
+            AGVideoEnable(false);
             mIsPlayingIntroVideo = false;
 
             if (mTitleAge <= 99) {
@@ -135,7 +162,7 @@ void TitleScreen::Update() {
         mMusicInitFinished = true;
     }
 
-    const float currentProgress = float(mApp->GetLoadingThreadProgress());
+    const auto currentProgress = float(mApp->GetLoadingThreadProgress());
 
     if (mNeedToInit && mTitleState == Loading) {
         mNeedToInit = false;
@@ -242,8 +269,6 @@ void TitleScreen::_constructor(LawnApp *theApp) {
     if (jumpLogo) {
         mNeedPlayLogo = false;
     }
-    //    bool option = Sexy::GetEnvOption("LAWN_NO_INTRO_VIDEO", false);
-    //    LOG_DEBUG("{}",option);
 }
 
 void TitleScreen::VideoCompleted() {

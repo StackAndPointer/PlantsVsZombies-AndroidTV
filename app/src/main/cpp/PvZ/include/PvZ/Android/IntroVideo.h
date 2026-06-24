@@ -20,18 +20,18 @@
 #ifndef PVZ_ANDROID_INTRO_VIDEO_H
 #define PVZ_ANDROID_INTRO_VIDEO_H
 
-#include "PvZ/Android/Native/BridgeApp.h"
-
-#include <jni.h>
-
 int AGVideoOpen(const char *videoPath);
-
 bool AGVideoIsPlaying();
-
 bool AGVideoShow(bool show);
-
 bool AGVideoPlay();
+bool AGVideoStop();
+bool AGVideoClose();
+int AGVideoEnable(bool enable);
 
-int AGVideoEnable(bool show);
+// Completion is produced by Java's MediaPlayer callback and consumed by the
+// native game thread.
+void AGVideoResetCompleted();
+bool AGVideoConsumeCompleted();
+
 
 #endif // PVZ_ANDROID_INTRO_VIDEO_H

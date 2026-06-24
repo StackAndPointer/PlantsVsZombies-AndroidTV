@@ -20,6 +20,7 @@
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "Homura/Logger.h"
 #include "PvZ/Android/IntroVideo.h"
+#include "PvZ/Android/Native/BridgeApp.h"
 #include "PvZ/Android/Native/NativeApp.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"

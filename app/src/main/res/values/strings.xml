@@ -91,6 +91,8 @@
     <string name="addon_ingame_positionautofix_info">After the player releases their finger, the cursor will return to the center of the grid.</string>
     <string name="addon_ingame_useopensl">OpenSL API</string>
     <string name="addon_ingame_useopensl_info">Replacing the default AudioTrack API used by the game with OpenSL ES for Android may reduce audio latency in the game.</string>
+    <string name="addon_ingame_playvideo">Play Intro Video</string>
+    <string name="addon_ingame_playvideo_info">Play the intro video when entering game.</string>
     <string name="addon_ingame_jumplogo">Skip Logo Animation</string>
     <string name="addon_ingame_jumplogo_info">Speed up the game entry process.</string>
     <string name="addon_adventure_name">Adventure Difficulty</string>
