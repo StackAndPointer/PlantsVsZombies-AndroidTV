@@ -1407,12 +1407,26 @@ public class SetActivity extends Activity {
             }
         }
 
-        if (requestCode == REQUEST_CODE_EXPORT_LOG && resultCode == Activity.RESULT_OK) {
-            final var cmd = new String[]{"logcat", "-d", "-s", "pvztv"};
-            try (var in = Runtime.getRuntime().exec(cmd).getInputStream();
-                 var out = getContentResolver().openOutputStream(data.getData());
+        if (requestCode == REQUEST_CODE_EXPORT_LOG && resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
+
+            String[] cmd = {"logcat", "-d", "-s", "pvztv"};
+
+            try (InputStream in = Runtime.getRuntime().exec(cmd).getInputStream();
+
+                 OutputStream out = getContentResolver().openOutputStream(data.getData())
             ) {
-                out.write(in.readAllBytes());
+                if (out == null) {
+                    throw new IOException();
+                }
+
+                byte[] buffer = new byte[8192];
+                int length;
+
+                while ((length = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, length);
+                }
+
+                out.flush();
             } catch (Exception e) {
                 Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
