@@ -22,6 +22,7 @@
 
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
+#include "PvZ/SexyAppFramework/Widget/StartButton.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 
 class TitleScreen : public Sexy::Widget, public Sexy::ButtonListener {
@@ -36,7 +37,7 @@ public:
 
     Sexy::Image *mPopcapLogo;    // 65
     Sexy::Image *mGuide;         // 66
-    Sexy::Widget *mStartButton;  // 67
+    StartButton *mStartButton;   // 67
     float mCurBarWidth;          // 68
     float mTotalBarWidth;        // 69
     float mBarVel;               // 70
@@ -66,6 +67,10 @@ public:
 
     ~TitleScreen() = delete;
 
+    void Draw(Sexy::Graphics *graphics);
+    void Update();
+    void SwitchState(TitleState state, int duration);
+
 protected:
     friend void InitHookFunction();
 
@@ -79,11 +84,5 @@ inline void (*old_TitleScreen_Update)(TitleScreen *titleScreen);
 
 inline void (*old_TitleScreen_TitleScreen)(TitleScreen *titleScreen, LawnApp *);
 
-
-void TitleScreen_Draw(TitleScreen *titleScreen, Sexy::Graphics *graphics);
-
-void TitleScreen_Update(TitleScreen *titleScreen);
-
-void TitleScreen_SwitchState(TitleScreen *titleScreen, TitleScreen::TitleState state, int duration);
 
 #endif // PVZ_LAWN_WIDGET_TITLE_SCREEN_H

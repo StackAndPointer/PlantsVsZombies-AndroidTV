@@ -23,8 +23,8 @@
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
 
-void TitleScreen_Draw(TitleScreen *titleScreen, Sexy::Graphics *graphics) {
-    old_TitleScreen_Draw(titleScreen, graphics);
+void TitleScreen::Draw(Sexy::Graphics *graphics) {
+    old_TitleScreen_Draw(this, graphics);
     // LOGD("%d",Sexy::IMAGE_ESRB_RATING);
     // if (Sexy::IMAGE_ESRB_RATING)
     // DrawImage(graphics,Sexy::IMAGE_ESRB_RATING,0,0);
@@ -33,23 +33,22 @@ void TitleScreen_Draw(TitleScreen *titleScreen, Sexy::Graphics *graphics) {
     // q[1] = 1;
 }
 
-void TitleScreen_Update(TitleScreen *titleScreen) {
-    old_TitleScreen_Update(titleScreen);
+void TitleScreen::Update() {
+    old_TitleScreen_Update(this);
     // LOGD("Update");
     // int *q = nullptr;
     // q[1] = 1;
 }
 
-void TitleScreen_SwitchState(TitleScreen *titleScreen, TitleScreen::TitleState state, int duration) {
-    if (state == TitleScreen::PopcapLogo_OR_IntroVideo && jumpLogo) {
-        state = TitleScreen::Loading;
-        duration = 0;
-    }
-    titleScreen->mTitleState = state;
-    titleScreen->mTitleStateDuration = duration;
-    titleScreen->mTitleStateCounter = duration;
+void TitleScreen::SwitchState(TitleState state, int duration) {
+    mTitleState = state;
+    mTitleStateDuration = duration;
+    mTitleStateCounter = duration;
 }
 
 void TitleScreen::_constructor(LawnApp *theApp) {
     old_TitleScreen_TitleScreen(this, theApp);
+    if (jumpLogo) {
+        mNeedPlayLogo = false;
+    }
 }

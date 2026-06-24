@@ -2437,7 +2437,7 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
         // LOGD("mStoreButtonRect:%d %d %d %d",mStoreButtonRect[0],mStoreButtonRect[1],mStoreButtonRect[2],mStoreButtonRect[3]);
         if (mViewLawnButtonRect.Contains(x, y)) {
             mApp->PlaySample(Sexy::SOUND_TAP);
-            gSeedChooserTouchState = SeedChooserTouchState::ViewLawnButton;
+            gSeedChooserTouchState = SeedChooserTouchState::VIEW_LAWN_BUTTON;
             gSeedChooserTouchOwner = this;
             // GameButtonDown(seedChooserScreen, 8, 0, 0);
             return;
@@ -2449,7 +2449,7 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
         // LOGD("mStoreButtonRect:%d %d %d %d",mStoreButtonRect[0],mStoreButtonRect[1],mStoreButtonRect[2],mStoreButtonRect[3]);
         if (mStoreButtonRect.Contains(x, y)) {
             mApp->PlaySample(Sexy::SOUND_TAP);
-            gSeedChooserTouchState = SeedChooserTouchState::StoreButton;
+            gSeedChooserTouchState = SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_STORE_BUTTON;
             gSeedChooserTouchOwner = this;
             // GameButtonDown(seedChooserScreen, 8, 0, 0);
             return;
@@ -2460,7 +2460,7 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
         Sexy::Rect mStartButtonRect = {mStartButton->mX, mStartButton->mY, mStartButton->mWidth, 50};
         if (mStartButtonRect.Contains(x, y)) {
             mApp->PlaySample(Sexy::SOUND_TAP);
-            gSeedChooserTouchState = SeedChooserTouchState::StartButton;
+            gSeedChooserTouchState = SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_START_BUTTON;
             gSeedChooserTouchOwner = this;
 
             // SeedChooserScreen_OnStartButton(seedChooserScreen);
@@ -2472,7 +2472,7 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
         Sexy::Rect mAlmanacButtonRect = {mAlmanacButton->mX, mAlmanacButton->mY, mAlmanacButton->mWidth, 50};
         if (mAlmanacButtonRect.Contains(x, y)) {
             mApp->PlaySample(Sexy::SOUND_TAP);
-            gSeedChooserTouchState = SeedChooserTouchState::AlmanacButton;
+            gSeedChooserTouchState = SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_ALMANAC_BUTTON;
             gSeedChooserTouchOwner = this;
 
             // GameButtonDown(seedChooserScreen, 9, 0, 0);
@@ -2546,7 +2546,7 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
         GetSeedPositionInChooser(aSeedType, mCursorPositionX2, mCursorPositionY2);
         mSeedIndex2 = aSeedType;
     }
-    gSeedChooserTouchState = SeedChooserTouchState::SeedChooser;
+    gSeedChooserTouchState = SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_SEED_CHOOSER;
     gSeedChooserTouchOwner = this;
 }
 
@@ -2565,7 +2565,7 @@ void SeedChooserScreen::MouseDrag(int x, int y) {
         return;
     }
 
-    if (gSeedChooserTouchState == SeedChooserTouchState::SeedChooser) {
+    if (gSeedChooserTouchState == SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_SEED_CHOOSER) {
         SeedType aSeedType = SeedHitTest(x, y);
         // 该函数探测不到模仿者位置
         if (aSeedType == SeedType::SEED_NONE) {
@@ -2660,10 +2660,10 @@ void SeedChooserScreen::MouseUp(int x, int y) {
     }
 
     switch (gSeedChooserTouchState) {
-        case SeedChooserTouchState::ViewLawnButton:
+        case SeedChooserTouchState::VIEW_LAWN_BUTTON:
             ButtonDepress(SeedChooserScreen_ViewLawn);
             break;
-        case SeedChooserTouchState::SeedChooser:
+        case SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_SEED_CHOOSER:
             if (mApp->IsVSMode()) {
                 GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mPlayerIndex, 0);
             } else if (!mIsZombieChooser && m1PChoosingSeeds && mApp->IsCoopMode()) {
@@ -2672,13 +2672,13 @@ void SeedChooserScreen::MouseUp(int x, int y) {
                 GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 1, 0);
             }
             break;
-        case SeedChooserTouchState::StoreButton:
+        case SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_STORE_BUTTON:
             ButtonDepress(SeedChooserScreen_Store);
             break;
-        case SeedChooserTouchState::StartButton:
+        case SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_START_BUTTON:
             ButtonDepress(SeedChooserScreen_Start);
             break;
-        case SeedChooserTouchState::AlmanacButton:
+        case SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_ALMANAC_BUTTON:
             ButtonDepress(SeedChooserScreen_Almanac);
             break;
         default:

@@ -685,9 +685,9 @@ void InitHookFunction() {
 
 
     homura::HookFunc(TitleScreen_TitleScreenAddr, &TitleScreen::_constructor, &old_TitleScreen_TitleScreen);
-    homura::HookFunc(TitleScreen_DrawAddr, &TitleScreen_Draw, &old_TitleScreen_Draw);
-    homura::HookFunc(TitleScreen_UpdateAddr, &TitleScreen_Update, &old_TitleScreen_Update);
-    homura::HookFunc(TitleScreen_SwitchStateAddr, &TitleScreen_SwitchState, nullptr);
+    homura::HookFunc(TitleScreen_DrawAddr, &TitleScreen::Draw, &old_TitleScreen_Draw);
+    homura::HookFunc(TitleScreen_UpdateAddr, &TitleScreen::Update, &old_TitleScreen_Update);
+    homura::HookFunc(TitleScreen_SwitchStateAddr, &TitleScreen::SwitchState, nullptr);
 }
 
 void InitVTableHookFunction() {

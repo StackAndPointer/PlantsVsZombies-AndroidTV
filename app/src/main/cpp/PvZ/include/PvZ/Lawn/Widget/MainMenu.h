@@ -29,32 +29,34 @@
 #include "PvZ/TodLib/Common/TodFoley.h"
 #include "ZombatarWidget.h"
 
-enum MainMenuButtonId {
-    START_ADVENTURE_BUTTON = 0,
-    ADVENTURE_BUTTON = 1,
-    MORE_WAYS_BUTTON = 2,
-    HOUSE_BUTTON = 3,
-    ACHIEVEMENTS_BUTTON = 4,
-    HELP_AND_OPTIONS_BUTTON = 5,
-    UNLOCK_BUTTON = 6,
-    RETURN_TO_ARCADE_BUTTON = 7,
-    MORE_BUTTON = 8,
-    BACK_STONE_BUTTON = 9,
-    VS_BUTTON = 10,
-    VS_COOP_BUTTON = 11,
-    MINI_GAMES_BUTTON = 12,
-    SURVIVAL_BUTTON = 13,
-    PUZZLE_BUTTON = 14,
-    BACK_POT_BUTTON = 15,
-    STORE_BUTTON = 16,
-    ZEN_BUTTON = 17,
-    ALMANAC_BUTTON = 18,
-    MAIL_BUTTON = 19,
-    HELP_BAR = 20,
-    ACHIEVEMENTS_BACK_BUTTON = 21
-};
 
 class MainMenu : public Sexy::MenuWidget {
+public:
+    enum MainMenuButtonId {
+        START_ADVENTURE_BUTTON = 0,
+        ADVENTURE_BUTTON = 1,
+        MORE_WAYS_BUTTON = 2,
+        HOUSE_BUTTON = 3,
+        ACHIEVEMENTS_BUTTON = 4,
+        HELP_AND_OPTIONS_BUTTON = 5,
+        UNLOCK_BUTTON = 6,
+        RETURN_TO_ARCADE_BUTTON = 7,
+        MORE_BUTTON = 8,
+        BACK_STONE_BUTTON = 9,
+        VS_BUTTON = 10,
+        VS_COOP_BUTTON = 11,
+        MINI_GAMES_BUTTON = 12,
+        SURVIVAL_BUTTON = 13,
+        PUZZLE_BUTTON = 14,
+        BACK_POT_BUTTON = 15,
+        STORE_BUTTON = 16,
+        ZEN_BUTTON = 17,
+        ALMANAC_BUTTON = 18,
+        MAIL_BUTTON = 19,
+        HELP_BAR = 20,
+        ACHIEVEMENTS_BACK_BUTTON = 21
+    };
+
     enum MainMenuScene {
         MENUSCENE_MORE_WAYS,
         MENUSCENE_MAIN,
@@ -149,7 +151,7 @@ protected:
 
 inline void (*old_MainMenu_Update)(MainMenu *instance);
 
-inline void (*old_MainMenu_ButtonDepress)(MainMenu *mainMenu, MainMenuButtonId a2);
+inline void (*old_MainMenu_ButtonDepress)(MainMenu *mainMenu, MainMenu::MainMenuButtonId a2);
 
 inline void (*old_MainMenu_KeyDown)(MainMenu *mainMenu, Sexy::KeyCode keyCode);
 

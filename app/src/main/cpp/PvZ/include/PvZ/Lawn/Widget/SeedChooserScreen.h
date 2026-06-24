@@ -41,11 +41,11 @@ class MTRand;
 }
 
 enum SeedChooserTouchState {
-    ViewLawnButton,
-    SeedChooser,
-    StoreButton,
-    StartButton,
-    AlmanacButton,
+    VIEW_LAWN_BUTTON,
+    SEEDCHOOSER_TOUCHSTATE_SEED_CHOOSER,
+    SEEDCHOOSER_TOUCHSTATE_STORE_BUTTON,
+    SEEDCHOOSER_TOUCHSTATE_START_BUTTON,
+    SEEDCHOOSER_TOUCHSTATE_ALMANAC_BUTTON,
     SEEDCHOOSER_TOUCHSTATE_NONE,
 };
 

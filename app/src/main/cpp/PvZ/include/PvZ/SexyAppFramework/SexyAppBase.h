@@ -37,7 +37,6 @@ void InitHookFunction();
 namespace Sexy {
 
 class Dialog;
-class Dialog;
 
 class SexyAppBase {
 public:
