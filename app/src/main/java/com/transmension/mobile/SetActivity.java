@@ -104,7 +104,12 @@ import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
 public class SetActivity extends Activity {
-    private static final int REQUEST_CODE_IMPORT_EXTERNAL_PAK = 22;
+    private static final int REQUEST_CODE_IMPORT_SAVEDATA = 0;
+    private static final int REQUEST_CODE_EXPORT_SAVEDATA = 1;
+    private static final int REQUEST_CODE_IMPORT_PAK = 2;
+    private static final int REQUEST_CODE_IMPORT_LEVEL_CONFIG = 3;
+    private static final int REQUEST_CODE_EXPORT_LOG = 4;
+
     private static final String EXTERNAL_PAK_DIR = "imported_paks";
     private static final String EXTERNAL_PAK_PREFIX = "external_pak:";
     private SharedPreferences dataSharedPreferences;
@@ -695,7 +700,7 @@ public class SetActivity extends Activity {
             //筛选，只显示可以“打开”的结果，如文件(而不是联系人或时区列表)
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("application/zip");
-            startActivityForResult(intent, 99);
+            startActivityForResult(intent, REQUEST_CODE_IMPORT_SAVEDATA);
         });
         final Button buttonImportFromBackup = new Button(this);
         buttonImportFromBackup.setText(R.string.addon_userdata_importfrombackup);
@@ -713,7 +718,7 @@ public class SetActivity extends Activity {
             intent.setType("application/zip");
             // 文件名称
             intent.putExtra(Intent.EXTRA_TITLE, getString(R.string.addon_userdata_export_filename));
-            startActivityForResult(intent, 66);
+            startActivityForResult(intent, REQUEST_CODE_EXPORT_SAVEDATA);
         });
         final CheckBox useExternalPath = new CheckBox(this);
         useExternalPath.setText(R.string.addon_userdata_useExternalPath);
@@ -1132,20 +1137,9 @@ public class SetActivity extends Activity {
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
                 intent.setType("application/zip");
-                startActivityForResult(intent, REQUEST_CODE_IMPORT_EXTERNAL_PAK);
+                startActivityForResult(intent, REQUEST_CODE_IMPORT_PAK);
             });
             appearanceLayout.addView(importPak);
-
-//            Button importPak = new Button(this);
-//            importPak.setText(R.string.addon_appearance_importpak);
-//            importPak.setOnClickListener(view -> {
-//                //通过系统的文件浏览器选择一个文件
-//                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-//                //筛选，只显示可以“打开”的结果，如文件(而不是联系人或时区列表)
-//                intent.addCategory(Intent.CATEGORY_OPENABLE);
-//                intent.setType("application/zip");
-//                startActivityForResult(intent, 22);
-//            });
         }
 
         String adventureName = getString(R.string.addon_adventure_name);
@@ -1247,7 +1241,7 @@ public class SetActivity extends Activity {
             //筛选，只显示可以“打开”的结果，如文件(而不是联系人或时区列表)
             intent.addCategory(Intent.CATEGORY_OPENABLE);
             intent.setType("text/xml");
-            startActivityForResult(intent, 33);
+            startActivityForResult(intent, REQUEST_CODE_IMPORT_LEVEL_CONFIG);
         });
         adventurePicker.addView(radioButton);
 
@@ -1328,7 +1322,7 @@ public class SetActivity extends Activity {
                     .addCategory(Intent.CATEGORY_OPENABLE)
                     .setType("text/plain")
                     .putExtra(Intent.EXTRA_TITLE, "log.txt");
-            startActivityForResult(intent, 3);
+            startActivityForResult(intent, REQUEST_CODE_EXPORT_LOG);
         });
 
         final Button buttonOpenGame = new Button(this);
@@ -1386,7 +1380,7 @@ public class SetActivity extends Activity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == REQUEST_CODE_IMPORT_EXTERNAL_PAK && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_CODE_IMPORT_PAK && resultCode == Activity.RESULT_OK) {
             Uri uri = data.getData();
             if (uri != null) {
                 if (importExternalPak(uri)) {
@@ -1398,7 +1392,7 @@ public class SetActivity extends Activity {
             }
         }
 
-        if (requestCode == 3 && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_CODE_EXPORT_LOG && resultCode == Activity.RESULT_OK) {
             final var cmd = new String[]{"logcat", "-d", "-s", "pvztv"};
             try (var in = Runtime.getRuntime().exec(cmd).getInputStream();
                  var out = getContentResolver().openOutputStream(data.getData());
@@ -1409,7 +1403,7 @@ public class SetActivity extends Activity {
             }
         }
 
-        if (requestCode == 33 && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_CODE_IMPORT_LEVEL_CONFIG && resultCode == Activity.RESULT_OK) {
             Uri uri = data.getData();
             if (uri != null) {
                 try {
@@ -1440,7 +1434,7 @@ public class SetActivity extends Activity {
             }
         }
 
-        if (requestCode == 66 && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_CODE_EXPORT_SAVEDATA && resultCode == Activity.RESULT_OK) {
             Uri uri = data.getData();
             if (uri != null) {
                 try {
@@ -1461,7 +1455,7 @@ public class SetActivity extends Activity {
             }
         }
 
-        if (requestCode == 99 && resultCode == Activity.RESULT_OK) {
+        if (requestCode == REQUEST_CODE_IMPORT_SAVEDATA && resultCode == Activity.RESULT_OK) {
             Uri uri = data.getData();
             if (uri != null) {
                 try {
