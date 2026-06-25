@@ -66,6 +66,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <ctime>
 
 #include <algorithm>
 #include <numbers>
@@ -79,6 +80,8 @@ IdMap serverPlantIDMap;
 IdMap serverZombieIDMap;
 IdMap serverCoinIDMap;
 IdMap serverGridItemIDMap;
+constexpr uintptr_t kBoardButtonListenerVtableOffset = 0x1FC;
+constexpr uintptr_t kBoardButtonListenerVTableOffset2 = 0x228;
 
 // 新增：远端暂停同步保护
 bool gPauseSyncFromRemote = false;
@@ -86,7 +89,207 @@ bool gPauseSyncFromRemote = false;
 } // namespace
 
 void Board::_constructor(LawnApp *theApp) {
-    old_Board_Board(this, theApp);
+    Sexy::Widget::_constructor();
+    vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
+    mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTable) + kBoardButtonListenerVtableOffset);
+    mButtonListenerVTable = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(vTable) + kBoardButtonListenerVTableOffset2);
+    auto &syncBlocks = mSyncBlockInfos.Construct();
+
+    auto InitPlantRbTree = [](PlantRbTree &tree) {
+        std::memset(&tree, 0, sizeof(tree));
+
+        tree.mHeaderColor = 0;
+        tree.mRoot = nullptr;
+        tree.mLeftmost = &tree.mHeaderColor;
+        tree.mRightmost = &tree.mHeaderColor;
+        tree.mNodeCount = 0;
+    };
+
+    InitPlantRbTree(mFlowerPotTree);
+    InitPlantRbTree(mTangleKelpTree);
+    InitPlantRbTree(mPumpkinTree);
+    mUnknownStringIntMap.mObjectStart = 0;
+    mUnknownStringIntMap.mHeaderColor = 0;
+    mUnknownStringIntMap.mHeaderRoot = nullptr;
+    mUnknownStringIntMap.mHeaderLeftmost = &mUnknownStringIntMap.mHeaderColor;
+    mUnknownStringIntMap.mHeaderRightmost = &mUnknownStringIntMap.mHeaderColor;
+    mUnknownStringIntMap.mNodeCount = 0;
+
+    constexpr std::uintptr_t kBoardSyncStart = 0x259;
+    constexpr std::uintptr_t kBoardSyncEnd = 0x58D2;
+    constexpr std::uint32_t kBoardSyncSize = kBoardSyncEnd - kBoardSyncStart; // 0x5679
+    auto *boardBytes = reinterpret_cast<std::uint8_t *>(this);
+    void *syncStart = boardBytes + kBoardSyncStart;
+    syncBlocks.push_back({syncStart, kBoardSyncSize});
+    std::memset(syncStart, 0, kBoardSyncSize);
+
+    mStringSecondPlayer.Construct();
+
+    mApp = theApp;
+    mApp->mBoard = this;
+    unknownBool = false;
+
+    mZombies.DataArrayInitialize(1024U, "zombies");
+    mZombies.mNextKey = 0xDF6D;
+    mPlants.DataArrayInitialize(1024U, "plants");
+    mPlants.mNextKey = 0xDC61;
+    mProjectiles.DataArrayInitialize(1024U, "projectiles");
+    mProjectiles.mNextKey = 0xD26F;
+    mCoins.DataArrayInitialize(1024U, "coins");
+    mCoins.mNextKey = 0xDF69;
+    mLawnMowers.DataArrayInitialize(32U, "lawnmowers");
+    mLawnMowers.mNextKey = 0xD761;
+    mGridItems.DataArrayInitialize(128U, "griditems");
+    mGridItems.mNextKey = 0xD269;
+
+    mApp->mEffectSystem->EffectSystemFreeAll();
+    mBoardRandSeed = mApp->mAppRandSeed;
+    if (mApp->IsSurvivalMode()) {
+        mBoardRandSeed = Sexy::Rand();
+    }
+    mCoinBankFadeCount = 0;
+    mLevel = 0;
+
+    for (int playerIndex = 0; playerIndex < 2; ++playerIndex) {
+        int secondaryPlayerIndex = -1;
+        if (playerIndex == 0) {
+            secondaryPlayerIndex = mApp->mPlayerInfo->GetId();
+        } else {
+            secondaryPlayerIndex = mApp->mSecondPlayerGamepadIndex;
+            if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || mApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
+                secondaryPlayerIndex = -1;
+            }
+        }
+
+        if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {
+            mGamepadControls[playerIndex] = new ZenGardenControls(this, playerIndex, secondaryPlayerIndex);
+        } else if (mApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
+            mGamepadControls[playerIndex] = new TreeOfWisdomControls(this, playerIndex, secondaryPlayerIndex);
+        } else {
+            mGamepadControls[playerIndex] = new GamepadControls_(this, playerIndex, secondaryPlayerIndex);
+        }
+
+        auto snap = mGamepadControls[playerIndex]->GetSnapToGridPos();
+        mGamepadControls[playerIndex]->mCursorPositionX = snap.mX;
+        mGamepadControls[playerIndex]->mCursorPositionY = snap.mY;
+        mGamepadControls[playerIndex]->mGridCenterPositionX = snap.mX;
+        mGamepadControls[playerIndex]->mGridCenterPositionY = snap.mY;
+
+        mCursorObject[playerIndex] = new CursorObject();
+        mCursorPreview[playerIndex] = new CursorPreview(playerIndex);
+    }
+
+    mSunMoney2 = 0;
+    mSunMoney1 = 0;
+    mDeathMoney = 0;
+    mSeedBank[0] = new SeedBank(false);
+    mSeedBank[1] = nullptr;
+    if (mApp->mGameMode >= GameMode::GAMEMODE_MULTI_PLAYER && mApp->mGameMode <= GameMode::GAMEMODE_MP_VS) {
+        mSeedBank[1] = new SeedBank(true);
+    }
+    if (mApp->IsCoopMode()) {
+        mSeedBank[1] = new SeedBank(false);
+    }
+
+    mCutScene = new CutScene();
+    mSpecialGraveStoneX = -1;
+    mSpecialGraveStoneY = -1;
+    for (int i = 0; i < MAX_GRID_SIZE_X; ++i) {
+        for (int j = 0; j < MAX_GRID_SIZE_Y; ++j) {
+            mGridSquareType[i][j] = GridSquareType::GRIDSQUARE_GRASS;
+            mGridCelLook[i][j] = Sexy::Rand(20);
+            mGridCelOffset[i][j][0] = Sexy::Rand(10) - 5;
+            mGridCelOffset[i][j][1] = Sexy::Rand(10) - 5;
+        }
+        for (int j = 0; j < MAX_GRID_SIZE_Y + 1; ++j) {
+            mGridCelFog[i][j] = 0;
+        }
+    }
+
+    mSunCountDown = 0;
+    mShakeCounter = 0;
+    mShakeAmountX = 0;
+    mShakeAmountY = 0;
+    mPaused = false;
+    mBoardFadeOutCounter = -1;
+    mLevelAwardSpawned = false;
+    mFlagRaiseCounter = 0;
+    mIceTrapCounter = 0;
+    mLevelComplete = false;
+    mNextSurvivalStageCounter = 0;
+    mScoreNextMowerCounter = 0;
+    mProgressMeterWidth = 0;
+    mPoolSparklyParticleID = ParticleSystemID::PARTICLESYSTEMID_NULL;
+    mFogBlownCountDown = 0;
+    mFogOffset = 0.0f;
+    mOffsetMoved = 0;
+    std::memset(mCoverLayerAnimIDs, 0, sizeof(mCoverLayerAnimIDs));
+    mFwooshCountDown = 0;
+    mTimeStopCounter = 0;
+    mCobCannonCursorDelayCounter = 0;
+    mCobCannonMouseX = 0;
+    mCobCannonMouseY = 0;
+    mDroppedFirstCoin = false;
+    mBonusLawnMowersRemaining = 0;
+    mEnableGraveStones = false;
+    mHelpIndex = AdviceType::ADVICE_NONE;
+    mEffectCounter = 0;
+    mDrawCount = 0;
+    mRiseFromGraveCounter = 0;
+    mFinalWaveSoundCounter = 0;
+    mTriggeredLawnMowers = 0;
+    mPlayTimeActiveLevel = 0;
+    mPlayTimeInactiveLevel = 0;
+    mMaxSunPlants = 0;
+    mStartDrawTime = 0;
+    mIntervalDrawTime = 0;
+    mIntervalDrawCountStart = 0;
+    mPreloadTime = 0;
+    mGameID = static_cast<int>(std::time(nullptr));
+    mMinFPS = 1000.0f;
+    mGravesCleared = 0;
+    mPlantsEaten = 0;
+    mPlantsShoveled = 0;
+    mCoinsCollected = 0;
+    mDiamondsCollected = 0;
+    mPottedPlantsCollected = 0;
+    mChocolateCollected = 0;
+    std::memset(mFwooshID, 0, sizeof(mFwooshID));
+    mPrevMouseX = -1;
+    mPrevMouseY = -1;
+    mFinalBossKilled = false;
+    mMustacheMode = mApp->mMustacheMode;
+    mSuperMowerMode = mApp->mSuperMowerMode;
+    mFutureMode = mApp->mFutureMode;
+    mPinataMode = mApp->mPinataMode;
+    mDanceMode = mApp->mDanceMode;
+    mDaisyMode = mApp->mDaisyMode;
+    mSukhbirMode = mApp->mSukhbirMode;
+    mShowShovel = false;
+    mShowButter = false;
+    mShowHammer = false;
+    mToolTip = new ToolTipWidget();
+    mDebugFont = Sexy::FONT_BRIANNETOD12;
+    mAdvice = new CustomMessageWidget(mApp);
+    mBackground = BackgroundType::BACKGROUND_1_DAY;
+    mMainCounter = 0;
+    mTutorialState = TutorialState::TUTORIAL_OFF;
+    mTutorialParticleID = nullptr;
+    mTutorialTimer = -1;
+    mChallenge = new Challenge();
+    mClip = false;
+    mDebugTextMode = DebugTextMode::DEBUG_TEXT_NONE;
+    mUnknown214 = 0;
+    mUnknown58E8 = true;
+    mUnknown58E9 = false;
+    std::memset(&mUnknownStringSet, 0, sizeof(mUnknownStringSet));
+    mUnknownStringSet.mHeaderColor = 0;
+    mUnknownStringSet.mRoot = nullptr;
+    mUnknownStringSet.mLeftmost = &mUnknownStringSet.mHeaderColor;
+    mUnknownStringSet.mRightmost = &mUnknownStringSet.mHeaderColor;
+    mUnknownStringSet.mNodeCount = 0;
+    mUnknown5904 = 0;
+
     pvzstl::string str = (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || theApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) ? "[MAIN_MENU_BUTTON]" : "[MENU_BUTTON]";
     mBoardMenuButton = MakeButton(1000, this, this, str);
     mBoardMenuButton->Resize(705, -3, 120, 80);
@@ -113,9 +316,6 @@ void Board::_constructor(LawnApp *theApp) {
             mBoardStoreButton->mDisabled = true;
         }
     }
-    delete mAdvice;
-    mAdvice = new CustomMessageWidget(mApp);
-
     if (theApp->IsVSMode()) {
         mShovelWidget = new ShovelRedirectWidget(this);
         mShovelWidget->Resize(gTouchVSShovelRect.mX, gTouchVSShovelRect.mY, gTouchVSShovelRect.mWidth, gTouchVSShovelRect.mHeight);
@@ -159,6 +359,66 @@ void Board::RemovedFromManager(WidgetManager *theWidgetManager) {
 
 
     old_Board_RemovedFromManager(this, theWidgetManager);
+}
+
+Projectile *Board::AddProjectile(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
+    Projectile *aProjectile = mProjectiles.DataArrayAlloc();
+    aProjectile->ProjectileInitialize(theX, theY, theRenderOrder, theRow, theProjectileType);
+    mPeaShooterUsed = true;
+    return aProjectile;
+}
+
+bool Board::IterateProjectiles(Projectile *&theProjectile) {
+    if (theProjectile == reinterpret_cast<Projectile *>(-1)) {
+        return false;
+    }
+
+    while (mProjectiles.IterateNext(theProjectile)) {
+        if (!theProjectile->mDead) {
+            return true;
+        }
+    }
+
+    theProjectile = reinterpret_cast<Projectile *>(-1);
+    return false;
+}
+
+void Board::ProcessDeleteQueue() {
+    for (Plant *aPlant = nullptr; mPlants.IterateNext(aPlant);) {
+        if (aPlant->mDead) {
+            mPlants.DataArrayFree(aPlant);
+        }
+    }
+
+    for (Zombie *aZombie = nullptr; mZombies.IterateNext(aZombie);) {
+        if (aZombie->mDead) {
+            mZombies.DataArrayFree(aZombie);
+        }
+    }
+
+    for (Projectile *aProjectile = nullptr; mProjectiles.IterateNext(aProjectile);) {
+        if (aProjectile->mDead) {
+            mProjectiles.DataArrayFree(aProjectile);
+        }
+    }
+
+    for (Coin *aCoin = nullptr; mCoins.IterateNext(aCoin);) {
+        if (aCoin->mDead) {
+            mCoins.DataArrayFree(aCoin);
+        }
+    }
+
+    for (LawnMower *aMower = nullptr; mLawnMowers.IterateNext(aMower);) {
+        if (aMower->mDead) {
+            mLawnMowers.DataArrayFree(aMower);
+        }
+    }
+
+    for (GridItem *aGridItem = nullptr; mGridItems.IterateNext(aGridItem);) {
+        if (aGridItem->mDead) {
+            mGridItems.DataArrayFree(aGridItem);
+        }
+    }
 }
 
 void Board::InitLevel() {
@@ -837,6 +1097,15 @@ bool Board::KeyDown(KeyCode theKey) {
     }
 
     return old_Board_KeyDown(this, theKey);
+}
+
+void Board::GameButtonUp(GamepadButton theButton, int thePlayerIndex, unsigned int theFlags) {
+    // 作弊菜单已由修改器实现，故移除实现呼出 DoCheatCodeDialog 的部分
+    for (GamepadControls *controls : mGamepadControls) {
+        if (controls != nullptr && controls->mPlayerIndex1 == thePlayerIndex) {
+            controls->OnButtonUp(theButton, thePlayerIndex, theFlags);
+        }
+    }
 }
 
 Coin *Board::AddCoin(int theX, int theY, CoinType theCoinType, CoinMotion theCoinMotion) {

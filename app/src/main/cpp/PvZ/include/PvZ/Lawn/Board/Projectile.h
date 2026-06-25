@@ -52,7 +52,6 @@ public:
     float mAccZ;                    // 22
     float mShadowY;                 // 23
     bool mDead;                     // 96
-                                    // short mNewProjectileLastX; // 在对齐空隙新增成员，98 ~ 99
     int mAnimTicksPerFrame;         // 25
     ProjectileMotion mMotionType;   // 26
     ProjectileType mProjectileType; // 27
@@ -61,7 +60,6 @@ public:
     float mRotation;                // 30
     float mRotationSpeed;           // 31
     bool mOnHighGround;             // 128
-                                    // short mNewProjectileLastY; // 在对齐空隙新增成员，130 ~ 131
     int mDamageRangeFlags;          // 33
     int mHitTorchwoodGridX;         // 34
     AttachmentID mAttachmentID;     // 35
@@ -69,7 +67,15 @@ public:
     int mCobTargetRow;              // 37
     ZombieID mTargetZombieID;       // 38
     int mLastPortalX;               // 39
-    // 大小40个整数
+    int mPierceHitCount = 0;
+    ZombieID mPiercedZombieID[3];
+
+    Projectile() {
+        _constructor();
+    }
+    ~Projectile() {
+        _deconstructor();
+    }
 
     void Die() {
         reinterpret_cast<void (*)(Projectile *)>(Projectile_DieAddr)(this);
@@ -102,6 +108,16 @@ public:
     bool IsGridItemHitBySplash(GridItem *theGridItem);
     void Draw(Sexy::Graphics *g);
     void DrawShadow(Sexy::Graphics *g);
+
+protected:
+    friend void InitHookFunction();
+
+    void _constructor() {
+        reinterpret_cast<void (*)(Projectile *)>(Projectile_ProjectileCtorAddr)(this);
+    }
+    void _deconstructor() {
+        reinterpret_cast<void (*)(Projectile *)>(Projectile_ProjectileDtorAddr)(this);
+    }
 };
 
 /***************************************************************************************************************/

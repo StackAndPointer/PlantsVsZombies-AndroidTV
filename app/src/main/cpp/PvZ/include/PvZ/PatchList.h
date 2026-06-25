@@ -57,14 +57,6 @@ inline void ApplyPatches() {
     whackAZombieNormalSpeed.Modify();
     repairShopA.Modify();
     repairShopB.Modify();
-
-    // 解锁僵尸方隐藏卡片(同时解锁绘制和点选)
-    // homura::Patcher::CreateWithStr(libGameMain, 0x2B63AE, "5B").Modify();
-    // homura::Patcher::CreateWithStr(libGameMain, 0x14FC7E, "1E").Modify();
-    // homura::Patcher::CreateWithStr(libGameMain, 0x14D376, "FF").Modify(); // 让僵尸选卡栏的第四行左对齐
-
-    // 解锁植物方紫卡(仅解锁绘制，点选需要在Mouse相关函数处理)
-    // homura::Patcher::CreateWithStr(libGameMain, 0x150576, "30").Modify();
 }
 
 #endif // PVZ_PATCHLIST_H

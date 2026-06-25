@@ -20,6 +20,8 @@
 #include "PvZ/Lawn/Board/CutScene.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
+#include "PvZ/Lawn/Board/Coin.h"
+#include "PvZ/Lawn/Board/Projectile.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/LawnApp.h"
@@ -27,6 +29,7 @@
 #include "PvZ/Lawn/Widget/SeedChooserScreen.h"
 #include "PvZ/Lawn/Widget/WaitForSecondPlayerDialog.h"
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
+#include "PvZ/TodLib/Effect/Reanimator.h"
 
 using namespace Sexy;
 
@@ -200,6 +203,40 @@ void CutScene::PlaceLawnItems() {
 void CutScene::LoadUpsellChallengeScreen() {
     ClearUpsellBoard();
     mUpsellChallengeScreen = new ChallengeScreen(mApp, ChallengePage::CHALLENGE_PAGE_CHALLENGE);
+}
+
+void CutScene::ClearUpsellBoard() {
+    for (int i = 0; i < MAX_GRID_SIZE_Y; i++) {
+        mBoard->mIceTimer[i] = 0;
+        mBoard->mIceMinX[i] = BOARD_WIDTH;
+    }
+
+    mBoard->mZombies.DataArrayFreeAll();
+    mBoard->mPlants.DataArrayFreeAll();
+    mBoard->mCoins.DataArrayFreeAll();
+    mBoard->mProjectiles.DataArrayFreeAll();
+    mBoard->mGridItems.DataArrayFreeAll();
+    mBoard->mLawnMowers.DataArrayFreeAll();
+
+    mBoard->RemoveAllPlants();
+    mBoard->RemoveAllZombies();
+    mBoard->RemoveAllGridItems();
+    mBoard->RemoveAllMowers();
+
+    TodParticleSystem *aParticle = nullptr;
+    while (mBoard->IterateParticles(aParticle)) {
+        aParticle->ParticleSystemDie();
+    }
+    Reanimation *aReanim = nullptr;
+    while (mBoard->IterateReanimations(aReanim)) {
+        aReanim->ReanimationDie();
+    }
+    mBoard->mPoolSparklyParticleID = ParticleSystemID::PARTICLESYSTEMID_NULL;
+
+    if (mUpsellChallengeScreen) {
+        delete mUpsellChallengeScreen;
+        mUpsellChallengeScreen = nullptr;
+    }
 }
 
 namespace {

@@ -53,6 +53,9 @@ public:
     void EffectSystemInitialize() {
         reinterpret_cast<void (*)(EffectSystem *)>(EffectSystem_EffectSystemInitializeAddr)(this);
     }
+    void EffectSystemFreeAll() {
+        reinterpret_cast<void (*)(EffectSystem *)>(EffectSystem_EffectSystemFreeAllAddr)(this);
+    }
 
     void Update() {
         reinterpret_cast<void (*)(EffectSystem *)>(EffectSystem_UpdateAddr)(this);

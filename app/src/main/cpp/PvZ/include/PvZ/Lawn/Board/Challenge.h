@@ -119,7 +119,9 @@ public:
     ReanimationID mReanimHeavyWeaponID2;                    // 78
     ReanimationID mReanimHeavyWeaponID3;                    // 79
                                                             // 大小80个整数
-    Challenge() = delete;
+    Challenge() {
+        _constructor();
+    };
     ~Challenge() = delete;
 
     bool MouseDown(int x, int y, int theClickCount, HitResult *theHitResult, int thePlayerIndex) {

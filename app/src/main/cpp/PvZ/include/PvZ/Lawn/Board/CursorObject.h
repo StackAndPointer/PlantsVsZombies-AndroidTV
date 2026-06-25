@@ -41,6 +41,10 @@ public:
     ReanimationID mReanimCursorID; // 22
     // 大小23个整数
 
+    CursorObject() {
+        reinterpret_cast<void (*)(CursorObject *)>(CursorObject_CursorObjectAddr)(this);
+    }
+
     void Draw(Sexy::Graphics *g) {
         reinterpret_cast<void (*)(CursorObject *, Sexy::Graphics *)>(CursorObject_DrawAddr)(this, g);
     }
@@ -54,10 +58,14 @@ public:
 
 class CursorPreview : public GameObject {
 public:
-    int mGridX;      // 13
-    int mGridY;      // 14
-    int playerIndex; // 15
+    int mGridX;       // 13
+    int mGridY;       // 14
+    int mPlayerIndex; // 15
     // 大小16个整数
+
+    CursorPreview(int thePlayerIndex) {
+        reinterpret_cast<void (*)(CursorPreview *, int)>(CursorPreview_CursorPreviewAddr)(this, thePlayerIndex);
+    }
 
     void Update() {
         reinterpret_cast<void (*)(CursorPreview *)>(CursorPreview_UpdateAddr)(this);

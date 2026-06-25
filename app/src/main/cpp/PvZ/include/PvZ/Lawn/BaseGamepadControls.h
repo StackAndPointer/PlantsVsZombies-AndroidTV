@@ -23,6 +23,11 @@
 #include "Homura/TypeUtils.h"
 #include "PvZ/Lawn/Board/GameObject.h"
 
+struct SnapToGridPosition {
+    float mX;
+    float mY;
+};
+
 class SeedBank;
 
 class BaseGamepadControls {
@@ -89,6 +94,10 @@ public:
     void UpdateStates(float dt) {
         reinterpret_cast<void (*)(BaseGamepadControls *, float)>(BaseGamepadControls_UpdateStatesAddr)(this, dt);
     }
+    SnapToGridPosition GetSnapToGridPos() {
+        return reinterpret_cast<SnapToGridPosition (*)(BaseGamepadControls *)>(BaseGamepadControls_GetSnapToGridPosAddr)(this);
+    }
+
     void GetGamepadVelocity(float *horizontal, float *vertical);
 
 protected:

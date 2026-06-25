@@ -113,7 +113,7 @@ void InitHookFunction() {
     homura::HookFunc(Board_DrawAddr, &Board::Draw, &old_Board_Draw);
     homura::HookFunc(Board_MouseDownWithPlantAddr, &Board::MouseDownWithPlant, &old_Board_MouseDownWithPlant);
     homura::HookFunc(Board_UpdateAddr, &Board::Update, &old_Board_Update);
-    homura::HookFunc(Board_BoardAddr, &Board::_constructor, &old_Board_Board);
+    homura::HookFunc(Board_BoardAddr, &Board::_constructor, nullptr);
     homura::HookFunc(Board__destructorAddr, &Board::_destructor, &old_Board__destructor);
     homura::HookFunc(Board_InitLevelAddr, &Board::InitLevel, &old_Board_InitLevel);
     homura::HookFunc(Board_StartLevelAddr, &Board::StartLevel, &old_Board_StartLevel);
@@ -129,6 +129,7 @@ void InitHookFunction() {
     homura::HookFunc(Board_ZombiesWonAddr, &Board::ZombiesWon, &old_BoardZombiesWon);
     homura::HookFunc(Board_KeyDownAddr, &Board::KeyDown, &old_Board_KeyDown);
     homura::HookFunc(Board_KeyUpAddr, &Board::KeyUp, &old_Board_KeyUp);
+    homura::HookFunc(Board_GameButtonUpAddr, &Board::GameButtonUp, nullptr);
     homura::HookFunc(Board_UpdateSunSpawningAddr, &Board::UpdateSunSpawning, nullptr);
     homura::HookFunc(Board_UpdateZombieSpawningAddr, &Board::UpdateZombieSpawning, &old_Board_UpdateZombieSpawning);
     homura::HookFunc(Board_PickBackgroundAddr, &Board::PickBackground, &old_Board_PickBackground);
@@ -170,7 +171,9 @@ void InitHookFunction() {
     homura::HookFunc(Board_ShakeBoardAddr, &Board::ShakeBoard, &old_Board_ShakeBoard);
     homura::HookFunc(Board_DrawZenButtonsAddr, &Board::DrawZenButtons, &old_Board_DrawZenButtons);
     homura::HookFunc(Board_DrawGameObjectsAddr, &Board::DrawGameObjects, &old_Board_DrawGameObjects);
-    // homura::HookFunc(Board_AddProjectileAddr, &Board::AddProjectile, &old_Board_AddProjectile);
+    homura::HookFunc(Board_AddProjectileAddr, &Board::AddProjectile, nullptr);
+    homura::HookFunc(Board_IterateProjectilesAddr, &Board::IterateProjectiles, nullptr);
+    homura::HookFunc(Board_ProcessDeleteQueueAddr, &Board::ProcessDeleteQueue, nullptr);
     // homura::HookFunc(Board_PixelToGridXAddr, &Board::PixelToGridX, &old_Board_PixelToGridX);
     // homura::HookFunc(Board_PixelToGridYAddr, &Board::PixelToGridY, &old_Board_PixelToGridY);
     homura::HookFunc(Board_GetNumSeedsInBankAddr, &Board::GetNumSeedsInBank, &old_Board_GetNumSeedsInBank);
@@ -577,6 +580,7 @@ void InitHookFunction() {
     homura::HookFunc(CutScene_AddFlowerPotsAddr, &CutScene::AddFlowerPots, &old_CutScene_AddFlowerPots);
     homura::HookFunc(CutScene_LoadUpsellChallengeScreenAddr, &CutScene::LoadUpsellChallengeScreen, nullptr);
     homura::HookFunc(CutScene_EndSeedChooserAddr, &CutScene::EndSeedChooser, nullptr);
+    homura::HookFunc(CutScene_ClearUpsellBoardAddr, &CutScene::ClearUpsellBoard, nullptr);
 
 
     homura::HookFunc(NewOptionsDialog_ButtonDepressAddr, &NewOptionsDialog::ButtonDepress, &old_NewOptionsDialog_ButtonDepress);

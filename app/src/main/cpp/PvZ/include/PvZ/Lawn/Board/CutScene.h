@@ -58,6 +58,12 @@ public:
     int unk[9]; // 21 ~ 29
     // 大小30个整数
 
+    CutScene() {
+        reinterpret_cast<void (*)(CutScene *)>(CutScene_CutSceneAddr)(this);
+    }
+
+    // 澶у皬30涓暣鏁?
+
     bool IsSurvivalRepick() {
         return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsSurvivalRepickAddr)(this);
     }
@@ -79,9 +85,7 @@ public:
     int FindAndPlaceZombie(int theZombieType, bool theZombieGrid[5][5]) {
         return reinterpret_cast<int (*)(CutScene *, int, bool[5][5])>(CutScene_FindAndPlaceZombieAddr)(this, theZombieType, theZombieGrid);
     }
-    void ClearUpsellBoard() {
-        reinterpret_cast<void (*)(CutScene *)>(CutScene_ClearUpsellBoardAddr)(this);
-    }
+    void ClearUpsellBoard();
     void CancelIntro() {
         reinterpret_cast<void (*)(CutScene *)>(CutScene_CancelIntroAddr)(this);
     }

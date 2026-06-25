@@ -112,7 +112,37 @@ struct BungeeDropGrid {
 };
 
 struct PlantRbTree {
-    int unk[6];
+    std::uint32_t mCompareOrPadding; // +0x00
+    std::int32_t mHeaderColor;       // +0x04
+    void *mRoot;                     // +0x08
+    void *mLeftmost;                 // +0x0C
+    void *mRightmost;                // +0x10
+    std::uint32_t mNodeCount;        // +0x14
+};
+
+struct SyncBlockInfo {
+    void *mPtr;
+    uint32_t mSize;
+};
+
+using SyncBlockInfoVector = std::vector<SyncBlockInfo>;
+
+struct StringIntMap {
+    int mObjectStart;
+    int mHeaderColor;
+    void *mHeaderRoot;
+    void *mHeaderLeftmost;
+    void *mHeaderRightmost;
+    int mNodeCount;
+};
+
+struct LegacyStringSetLayout {
+    std::uint32_t mImplStorage; // +0x00
+    std::int32_t mHeaderColor;  // +0x04
+    void *mRoot;                // +0x08
+    void *mLeftmost;            // +0x0C
+    void *mRightmost;           // +0x10
+    std::uint32_t mNodeCount;   // +0x14
 };
 
 enum TouchState {
@@ -136,7 +166,8 @@ enum TouchState {
 
 class Board : public Sexy::Widget, public Sexy::ButtonListener {
 public:
-    int unknownMembers1[4];                                           // 65 ~ 68
+    void *mButtonListenerVTable;                                      // 65
+    homura::Storage<SyncBlockInfoVector> mSyncBlockInfos;             // 66 ~ 68
     LawnApp *mApp;                                                    // 69
     DataArray<Zombie> mZombies;                                       // 70 ~ 76
     DataArray<Plant> mPlants;                                         // 77 ~ 83
@@ -149,7 +180,8 @@ public:
     PlantRbTree mPumpkinTree;                                         // 124 ~ 129
     CustomMessageWidget *mAdvice;                                     // 130
     SeedBank *mSeedBank[2];                                           // 131 ~ 132
-    int unknownMembers3[7];                                           // 133 ~ 139
+    int mUnknown214;                                                  // 133
+    StringIntMap mUnknownStringIntMap;                                // 134 ~ 139
     GamepadControls *mGamepadControls[2];                             // 140 ~ 141
     CursorObject *mCursorObject[2];                                   // 142 ~ 143
     CursorPreview *mCursorPreview[2];                                 // 144 ~ 145
@@ -269,16 +301,18 @@ public:
     int mUnkIntSecondPlayer1;                                         // 5686
     bool mUnkBoolSecondPlayer;                                        // 22748
     int mUnkIntSecondPlayer2;                                         // 5688
-    int *mStringSecondPlayer;                                         // 5689
-    int unknownMembers[8];                                            // 5690 ~ 5697
-    GameButton *mBoardMenuButton = nullptr;                           // 新增成员
-    GameButton *mBoardStoreButton = nullptr;                          // 新增成员
+    homura::Storage<pvzstl::string> mStringSecondPlayer;              // 5689
+    bool mUnknown58E8;                                                // 0x58E8
+    bool mUnknown58E9;                                                // 0x58E9
+    std::uint8_t mPadding58EA[2];
+    LegacyStringSetLayout mUnknownStringSet; // 0x58EC
+    int mUnknown5904;                        // 0x5904
+    GameButton *mBoardMenuButton = nullptr;  // 新增成员
+    GameButton *mBoardStoreButton = nullptr; // 新增成员
     ShovelRedirectWidget *mShovelWidget = nullptr;
     ReplayControlsWidget *mReplayControlsWidget = nullptr;
 
-    Projectile *AddProjectile(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
-        return reinterpret_cast<Projectile *(*)(Board *, int, int, int, int, ProjectileType)>(Board_AddProjectileAddr)(this, theX, theY, theRenderOrder, theRow, theProjectileType);
-    }
+    Projectile *AddProjectile(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType);
     int PixelToGridX(int theX, int theY) {
         return reinterpret_cast<int (*)(Board *, int, int)>(Board_PixelToGridXAddr)(this, theX, theY);
     }
@@ -303,9 +337,7 @@ public:
     bool IterateZombies(Zombie *&theZombie) {
         return reinterpret_cast<bool (*)(Board *, Zombie *&)>(Board_IterateZombiesAddr)(this, theZombie);
     }
-    bool IterateProjectiles(Projectile *&theProjectile) {
-        return reinterpret_cast<bool (*)(Board *, Projectile *&)>(Board_IterateProjectilesAddr)(this, theProjectile);
-    }
+    bool IterateProjectiles(Projectile *&theProjectile);
     bool IterateCoins(Coin *&theCoin) {
         return reinterpret_cast<bool (*)(Board *, Coin *&)>(Board_IterateCoinsAddr)(this, theCoin);
     }
@@ -314,6 +346,9 @@ public:
     }
     bool IterateParticles(TodParticleSystem *&theParticle) {
         return reinterpret_cast<bool (*)(Board *, TodParticleSystem *&)>(Board_IterateParticlesAddr)(this, theParticle);
+    }
+    bool IterateReanimations(Reanimation *&theReanimation) {
+        return reinterpret_cast<bool (*)(Board *, Reanimation *&)>(Board_IterateReanimationsAddr)(this, theReanimation);
     }
     bool IterateGridItems(GridItem *&theGridItem) {
         return reinterpret_cast<bool (*)(Board *, GridItem *&)>(Board_IterateGridItemsAddr)(this, theGridItem);
@@ -631,6 +666,7 @@ public:
     GridItem *AddAPole_Origin(int theX, int theY, int theGridY);
     [[nodiscard]] ZombieType PickGraveRisingZombieTypeMP(int theMoundLevel) const;
     static bool IsZombieTypeSpawnedOnly(ZombieType theZombieType);
+    void ProcessDeleteQueue();
 
     void MouseMove(int x, int y);
     void MouseDown(int x, int y, int theClickCount);
@@ -645,6 +681,7 @@ public:
     void ButtonDepress(int theId);
     bool KeyDown(Sexy::KeyCode theKey);
     bool KeyUp(Sexy::KeyCode theKey);
+    void GameButtonUp(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theFlags);
 
     void processClientEvent(const BaseEvent *event);
     void processServerEvent(const BaseEvent *event);
@@ -791,8 +828,6 @@ inline void (*old_Board_RemovedFromManager)(Board *, Sexy::WidgetManager *);
 inline void (*old_Board_InitLevel)(Board *board);
 
 inline void (*old_Board_ButtonDepress)(Board *board, int id);
-
-inline void (*old_Board_Board)(Board *board, LawnApp *mApp);
 
 inline void (*old_Board__destructor)(Board *board);
 

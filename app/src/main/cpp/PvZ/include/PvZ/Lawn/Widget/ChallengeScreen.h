@@ -78,7 +78,9 @@ public:
         _constructor(theApp, thePage);
     }
 
-    ~ChallengeScreen() = delete;
+    ~ChallengeScreen() {
+        _destructor();
+    };
 
     void SetUnlockChallengeIndex(ChallengePage thePage, bool theIsIZombie = false) {
         reinterpret_cast<void (*)(ChallengeScreen *, ChallengePage, bool)>(ChallengeScreen_SetUnlockChallengeIndexAddr)(this, thePage, theIsIZombie);

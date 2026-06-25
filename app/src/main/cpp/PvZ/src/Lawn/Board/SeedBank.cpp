@@ -32,10 +32,6 @@
 
 using namespace Sexy;
 
-void SeedBank::_constructor(bool thePlayerIndex) {
-    old_SeedBank_SeedBank(this, thePlayerIndex);
-}
-
 void SeedBank::Draw(Sexy::Graphics *g) {
     // 在对战模式取消0.9倍缩放
     if (mApp->mGameMode != GameMode::GAMEMODE_MP_VS) {

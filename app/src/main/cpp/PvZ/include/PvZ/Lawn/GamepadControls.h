@@ -100,15 +100,38 @@ protected:
     void _constructor(Board *theBoard, int thePlayerIndex1, int thePlayerIndex2);
 };
 
+class GamepadControls_ : public GamepadControls {
+public:
+    GamepadControls_(Board *theBoard, int thePlayerIndex1, int thePlayerIndex2) {
+        _constructor(theBoard, thePlayerIndex1, thePlayerIndex2);
+    }
+    ~GamepadControls_() = delete;
+};
+
 class ZenGardenControls : public GamepadControls {
 public:
     GameObjectType mObjectType; // 66
     // 大小67个整数
 
-    ZenGardenControls() = delete;
+    ZenGardenControls(Board *theBoard, int thePlayerIndex1, int thePlayerIndex2) {
+        reinterpret_cast<void (*)(ZenGardenControls *, Board *, int, int)>(ZenGardenControls_ZenGardenControlsAddr)(this, theBoard, thePlayerIndex1, thePlayerIndex2);
+    }
     ~ZenGardenControls() = delete;
 
     void Update(float a2);
+};
+
+class TreeOfWisdomControls : public GamepadControls {
+public:
+    int mUnknown264; // 66
+    int mUnknown268; // 67
+    int mUnknown272; // 68
+    // 大小69个整数
+
+    TreeOfWisdomControls(Board *theBoard, int thePlayerIndex1, int thePlayerIndex2) {
+        reinterpret_cast<void (*)(TreeOfWisdomControls *, Board *, int, int)>(TreeOfWisdomControls_TreeOfWisdomControlsAddr)(this, theBoard, thePlayerIndex1, thePlayerIndex2);
+    }
+    ~TreeOfWisdomControls() = delete;
 };
 
 /***************************************************************************************************************/

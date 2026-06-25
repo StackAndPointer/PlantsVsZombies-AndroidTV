@@ -80,7 +80,9 @@ public:
 protected:
     friend void InitHookFunction();
 
-    void _constructor(bool thePlayerIndex);
+    void _constructor(bool thePlayerIndex) {
+        reinterpret_cast<void (*)(SeedBank *, bool)>(SeedBank_SeedBankAddr)(this, thePlayerIndex);
+    }
     void _destructor() {
         reinterpret_cast<void (*)(SeedBank *)>(SeedBank_DeleteAddr)(this);
     }
