@@ -24,22 +24,38 @@
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
 
+#include <vector>
+
 class LawnApp;
 class Board;
 
+struct SyncBlockInfo {
+    void *mAddress;
+    size_t mSize;
+};
+
+
+struct GameObjectVTable {
+    void *destructor;
+    void *deletingDestructor;
+    void *BeginDraw;
+    void *EndDraw;
+    void *MakeParentGraphicsFrame;
+};
+
 class GameObject {
 public:
-    void **vTable;      // 0
-    int placeHolder[3]; // 1 ~ 3
-    LawnApp *mApp;      // 4
-    Board *mBoard;      // 5
-    int mX;             // 6
-    int mY;             // 7
-    int mWidth;         // 8
-    int mHeight;        // 9
-    bool mVisible;      // 40
-    int mRow;           // 11
-    int mRenderOrder;   // 12
+    GameObjectVTable *vTable;               // 0
+    std::vector<SyncBlockInfo> mSyncBlocks; // 0x04，大小 12 字节
+    LawnApp *mApp;                          // 4
+    Board *mBoard;                          // 5
+    int mX;                                 // 6
+    int mY;                                 // 7
+    int mWidth;                             // 8
+    int mHeight;                            // 9
+    bool mVisible;                          // 40
+    int mRow;                               // 11
+    int mRenderOrder;                       // 12
     // 大小13个整数
 
     bool BeginDraw(Sexy::Graphics *g) {
