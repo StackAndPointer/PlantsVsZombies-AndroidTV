@@ -992,8 +992,8 @@ public class SetActivity extends Activity {
 
         final CheckBox jumpLogo = new CheckBox(this);
         jumpLogo.setText(R.string.addon_ingame_jumplogo);
-        jumpLogo.setChecked(sharedPreferences.getBoolean("jumpLogo", false));
-        jumpLogo.setOnCheckedChangeListener((compoundButton, bool) -> sharedPreferences.edit().putBoolean("jumpLogo", bool).apply());
+        jumpLogo.setChecked(!sharedPreferences.getBoolean("jumpLogo", false));
+        jumpLogo.setOnCheckedChangeListener((compoundButton, bool) -> sharedPreferences.edit().putBoolean("jumpLogo", !bool).apply());
         jumpLogo.setLayoutParams(matchWrapParams);
         jumpLogo.setOnLongClickListener(v -> {
             new AlertDialog.Builder(SetActivity.this)
