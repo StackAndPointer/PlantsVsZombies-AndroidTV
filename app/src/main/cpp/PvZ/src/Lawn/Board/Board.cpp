@@ -1306,7 +1306,7 @@ void Board::DrawFog(Sexy::Graphics *g) {
                 auto aPhaseY = static_cast<float>(6.0 * std::numbers::pi * y / (MAX_GRID_SIZE_Y + 1));
                 float aMotion = 13 + 4 * sin(aTime / 900 + aPhaseY) + 8 * sin(aTime / 500 + aPhaseX);
 
-                int aColorVariant = 255 - aCelLook * 1.5 - aMotion * 1.5;
+                int aColorVariant = 255 - aCelLook * 1.5f - aMotion * 1.5f;
                 int aLightnessVariant = 255 - aCelLook - aMotion;
                 if (!mApp->Is3DAccelerated()) {
                     aPosX += 10;
