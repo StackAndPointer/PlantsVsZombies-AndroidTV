@@ -20,12 +20,11 @@
 #ifndef PVZ_NETPLAY_H
 #define PVZ_NETPLAY_H
 
-#include <netinet/in.h>
-
 #include <cstddef>
 #include <cstdint>
 
 #include <concepts>
+#include <netinet/in.h>
 #include <string>
 #include <unordered_map>
 #include <utility>

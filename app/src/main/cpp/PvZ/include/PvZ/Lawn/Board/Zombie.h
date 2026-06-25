@@ -20,10 +20,11 @@
 #ifndef PVZ_LAWN_BOARD_ZOMBIE_H
 #define PVZ_LAWN_BOARD_ZOMBIE_H
 
-#include "GameObject.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/Common/GameConstants.h"
 #include "PvZ/Symbols.h"
+
+#include "GameObject.h"
 
 inline constexpr int MAX_ZOMBIE_FOLLOWERS = 4;
 inline constexpr int NUM_BOBSLED_FOLLOWERS = 3;

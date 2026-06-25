@@ -20,11 +20,11 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_GRAPHICS_FONT_H
 #define PVZ_SEXYAPPFRAMEWORK_GRAPHICS_FONT_H
 
+#include "Homura/MemberUtils.h"
+
 #include "../Misc/Common.h"
 #include "../Misc/Rect.h"
-
 #include "Color.h"
-#include "Homura/MemberUtils.h"
 
 namespace Sexy {
 

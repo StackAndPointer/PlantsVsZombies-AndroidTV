@@ -17,8 +17,6 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cmath>
-
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
@@ -33,6 +31,8 @@
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/SexyAppFramework/Misc/SexyMatrix.h"
 #include "PvZ/Symbols.h"
+
+#include <cmath>
 
 using namespace Sexy;
 

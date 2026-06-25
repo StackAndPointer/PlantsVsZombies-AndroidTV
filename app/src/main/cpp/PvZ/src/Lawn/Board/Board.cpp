@@ -62,12 +62,12 @@
 #include "PvZ/TodLib/Effect/Reanimator.h"
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
-#include <algorithm>
+#include <unistd.h>
+
 #include <cmath>
 #include <cstring>
 
-#include <unistd.h>
-
+#include <algorithm>
 #include <numbers>
 #include <unordered_map>
 
@@ -1945,7 +1945,11 @@ void Board::processServerEvent(const BaseEvent *event) {
             uint16_t clientZombieID = 0;
             if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
-                aZombie->DieNoLoot_Origin();
+                if (!aZombie->mDead) {
+                    aZombie->DieNoLoot_Origin();
+                } else {
+                    LOG_WARN("mDead:{}", (int)aZombie->mZombieType);
+                }
                 serverZombieIDMap.erase(serverZombieID);
             }
         } break;

@@ -20,8 +20,9 @@
 #ifndef PVZ_LAWN_WIDGET_IMITATER_DIALOG_H
 #define PVZ_LAWN_WIDGET_IMITATER_DIALOG_H
 
-#include "LawnDialog.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
+
+#include "LawnDialog.h"
 
 class ImitaterDialog : public LawnDialog {
 public:

@@ -25,7 +25,6 @@
 #include "PvZ/SexyAppFramework/Misc/Rect.h"
 #include "PvZ/Symbols.h"
 
-
 namespace Sexy {
 
 class Graphics;

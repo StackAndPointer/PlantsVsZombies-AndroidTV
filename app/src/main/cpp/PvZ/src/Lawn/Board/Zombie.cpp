@@ -38,7 +38,6 @@
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
 #include <cmath>
-
 #include <cstring>
 
 #include <numbers>
@@ -3827,6 +3826,11 @@ void Zombie::DieWithLoot() {
 }
 
 void Zombie::DieNoLoot() {
+    if (mDead) {
+        LOG_WARN("mDead:{}", (int)mZombieType);
+        return;
+    }
+
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
         if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return;

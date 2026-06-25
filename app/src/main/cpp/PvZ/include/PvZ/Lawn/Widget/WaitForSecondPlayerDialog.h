@@ -20,13 +20,13 @@
 #ifndef PVZ_LAWN_WIDGET_WAIT_FOR_SECOND_PLAYER_DIALOG_H
 #define PVZ_LAWN_WIDGET_WAIT_FOR_SECOND_PLAYER_DIALOG_H
 
-#include <cstdint>
-
 #include "PvZ/Lawn/Widget/LawnDialog.h"
 #include "PvZ/Lawn/Widget/ReplayManageWidget.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/SexyAppFramework/Misc/GamepadButtons.h"
 #include "PvZ/Symbols.h"
+
+#include <cstdint>
 
 enum class UIMode {
     MODE1_INIT = 1,  // 初始

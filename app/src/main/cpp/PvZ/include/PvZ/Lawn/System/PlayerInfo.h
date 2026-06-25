@@ -20,9 +20,10 @@
 #ifndef PVZ_LAWN_SYSTEM_PLAYER_INFO_H
 #define PVZ_LAWN_SYSTEM_PLAYER_INFO_H
 
-#include "../Common/ConstEnums.h"
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"
 #include "PvZ/Lawn/Widget/LeaderboardsWidget.h"
+
+#include "../Common/ConstEnums.h"
 
 class PottedPlant {
 public:

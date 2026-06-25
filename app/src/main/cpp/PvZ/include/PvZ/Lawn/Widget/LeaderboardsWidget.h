@@ -20,10 +20,11 @@
 #ifndef PVZ_LAWN_WIDGET_LEADERBOARDS_WIDGET_H
 #define PVZ_LAWN_WIDGET_LEADERBOARDS_WIDGET_H
 
-#include "GameButton.h"
-#include "HouseChooserDialog.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
+
+#include "GameButton.h"
+#include "HouseChooserDialog.h"
 
 class Reanimation;
 class TrashBin;

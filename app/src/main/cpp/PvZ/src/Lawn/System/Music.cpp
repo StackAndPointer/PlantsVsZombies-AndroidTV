@@ -17,8 +17,6 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cmath>
-
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
@@ -29,6 +27,8 @@
 #include "PvZ/SexyAppFramework/Sound/AudiereMusicInterface.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodCommon.h"
+
+#include <cmath>
 
 #define HIWORD(a) ((a) >> 16)
 #define LOWORD(a) ((a) & 0xFFFF)

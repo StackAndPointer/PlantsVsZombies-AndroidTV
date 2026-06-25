@@ -22,7 +22,6 @@
 
 #include "../Misc/Common.h"
 #include "../Misc/KeyCodes.h"
-
 #include "WidgetContainer.h"
 
 namespace Sexy {

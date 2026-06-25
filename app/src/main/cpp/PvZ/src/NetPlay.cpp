@@ -27,14 +27,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
+#include <cstring>
+
 #include <algorithm>
 #include <chrono>
-#include <cstring>
+#include <ranges>
 #include <sstream>
 #include <string_view>
 #include <thread>
-
-#include <ranges>
 #include <vector>
 
 static std::vector<std::byte> sendBuffer;

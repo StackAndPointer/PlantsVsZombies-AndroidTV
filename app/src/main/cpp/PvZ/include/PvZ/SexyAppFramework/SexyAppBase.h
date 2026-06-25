@@ -20,17 +20,17 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_SEXY_APP_BASE_H
 #define PVZ_SEXYAPPFRAMEWORK_SEXY_APP_BASE_H
 
-#include "Graphics/Color.h"
-#include "Graphics/MemoryImage.h"
-#include "Misc/Common.h"
-#include "Misc/Rect.h"
 #include "PvZ/MagicNumbers.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
 #include "PvZ/Symbols.h"
+
+#include "Graphics/Color.h"
+#include "Graphics/MemoryImage.h"
+#include "Misc/Common.h"
+#include "Misc/Rect.h"
 #include "Sound/AudiereSoundManager.h"
 #include "Widget/ButtonListener.h"
-
 
 void InitHookFunction();
 

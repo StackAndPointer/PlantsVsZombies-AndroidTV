@@ -5,7 +5,6 @@
  */
 
 #include "PvZ/Lawn/Widget/ReplayControlsWidget.h"
-
 #include "Homura/MemberUtils.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
@@ -18,8 +17,9 @@
 #include "PvZ/ReplaySystem.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 
-#include <algorithm>
 #include <cstring>
+
+#include <algorithm>
 #include <mutex>
 
 using namespace Sexy;

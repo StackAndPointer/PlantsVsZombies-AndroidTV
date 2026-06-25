@@ -20,9 +20,9 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_WIDGET_EDIT_WIDGET_H
 #define PVZ_SEXYAPPFRAMEWORK_WIDGET_EDIT_WIDGET_H
 
-#include "Widget.h"
-
 #include "PvZ/STL/string.h"
+
+#include "Widget.h"
 
 namespace Sexy {
 

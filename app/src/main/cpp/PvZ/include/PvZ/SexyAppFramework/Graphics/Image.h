@@ -23,7 +23,6 @@
 #include "../Misc/Common.h"
 #include "../Misc/Point.h"
 #include "../Misc/Rect.h"
-
 #include "Color.h"
 
 class LawnApp;

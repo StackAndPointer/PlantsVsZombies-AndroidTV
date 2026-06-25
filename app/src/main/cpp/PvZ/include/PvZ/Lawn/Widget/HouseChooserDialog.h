@@ -20,10 +20,11 @@
 #ifndef PVZ_LAWN_WIDGET_HOUSE_CHOOSER_DIALOG_H
 #define PVZ_LAWN_WIDGET_HOUSE_CHOOSER_DIALOG_H
 
-#include "LawnDialog.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
+
+#include "LawnDialog.h"
 
 enum HouseType {
     BLUEPRINT_INVALID = -1,

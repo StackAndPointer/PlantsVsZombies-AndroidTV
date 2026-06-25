@@ -18,12 +18,12 @@
  */
 
 #include "PvZ/Lawn/Board/ShovelRedirectWidget.h"
-
 #include "Homura/MemberUtils.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Symbols.h"
 
 #include <cstring>
+
 #include <mutex>
 
 ShovelRedirectWidget::ShovelRedirectWidget(Board *board) {

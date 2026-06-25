@@ -20,9 +20,8 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_WIDGET_GAME_BUTTON_H
 #define PVZ_SEXYAPPFRAMEWORK_WIDGET_GAME_BUTTON_H
 
-#include "PvZ/Symbols.h"
-
 #include "PvZ/SexyAppFramework/Widget/DialogButton.h"
+#include "PvZ/Symbols.h"
 
 class GameButton : public Sexy::DialogButton {
 public:

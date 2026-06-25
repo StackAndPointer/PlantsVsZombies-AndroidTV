@@ -21,8 +21,10 @@
 #include "Homura/Logger.h"
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
-#include <PvZ/Lawn/LawnApp.h>
+
 #include <cmath>
+
+#include <PvZ/Lawn/LawnApp.h>
 #include <vector>
 
 using namespace Sexy;

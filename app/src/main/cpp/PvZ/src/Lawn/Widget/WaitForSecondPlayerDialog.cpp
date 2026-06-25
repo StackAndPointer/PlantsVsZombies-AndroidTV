@@ -32,13 +32,14 @@
 
 #include <arpa/inet.h>
 #include <fcntl.h>
+#include <sys/endian.h>
+#include <sys/socket.h>
+#include <unistd.h>
+
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <sys/endian.h>
-#include <sys/socket.h>
-#include <unistd.h>
 #include <vector>
 
 using namespace Sexy;

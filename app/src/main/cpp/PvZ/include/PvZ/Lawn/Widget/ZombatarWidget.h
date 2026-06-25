@@ -20,8 +20,9 @@
 #ifndef PVZ_LAWN_WIDGET_ZOMBATAR_WIDGET_H
 #define PVZ_LAWN_WIDGET_ZOMBATAR_WIDGET_H
 
-#include "GameButton.h"
 #include "PvZ/SexyAppFramework/Widget/MenuWidget.h"
+
+#include "GameButton.h"
 
 class Zombie;
 class Reanimation;

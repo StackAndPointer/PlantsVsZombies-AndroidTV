@@ -23,9 +23,10 @@
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 // #include "../../SexyAppFramework/PerfTimer.h"
-#include "GameButton.h"
 #include "PvZ/SexyAppFramework/Misc/PerfTimer.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
+
+#include "GameButton.h"
 
 class CreditScreen : public Sexy::Widget, public Sexy::ButtonListener {
 public:

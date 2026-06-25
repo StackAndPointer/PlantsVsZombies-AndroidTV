@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/Lawn/Board/Projectile.h"
+#include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/GridItem.h"
@@ -29,8 +30,6 @@
 #include "PvZ/TodLib/Common/TodCommon.h"
 #include "PvZ/TodLib/Effect/Attachment.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
-
-#include "Homura/Logger.h"
 
 using namespace Sexy;
 

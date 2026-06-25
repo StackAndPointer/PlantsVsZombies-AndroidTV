@@ -20,9 +20,10 @@
 #ifndef PVZ_LAWN_BOARD_PLANT_H
 #define PVZ_LAWN_BOARD_PLANT_H
 
-#include "GameObject.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Symbols.h"
+
+#include "GameObject.h"
 
 inline constexpr int MAX_MAGNET_ITEMS = 5;
 

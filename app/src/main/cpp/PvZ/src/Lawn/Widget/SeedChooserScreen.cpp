@@ -38,8 +38,10 @@
 #include "PvZ/SexyAppFramework/Misc/MTRand.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
-#include <climits>
+
 #include <unistd.h>
+
+#include <climits>
 
 using namespace Sexy;
 

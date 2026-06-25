@@ -24,9 +24,11 @@
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 
-#include <algorithm>
-#include <cmath>
 #include <sys/time.h>
+
+#include <cmath>
+
+#include <algorithm>
 
 using namespace Sexy;
 

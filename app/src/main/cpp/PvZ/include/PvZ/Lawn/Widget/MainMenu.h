@@ -20,15 +20,15 @@
 #ifndef PVZ_LAWN_WIDGET_MAIN_MENU_H
 #define PVZ_LAWN_WIDGET_MAIN_MENU_H
 
-#include "LeaderboardsWidget.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 #include "PvZ/SexyAppFramework/Widget/MenuWidget.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodFoley.h"
-#include "ZombatarWidget.h"
 
+#include "LeaderboardsWidget.h"
+#include "ZombatarWidget.h"
 
 class MainMenu : public Sexy::MenuWidget {
 public:

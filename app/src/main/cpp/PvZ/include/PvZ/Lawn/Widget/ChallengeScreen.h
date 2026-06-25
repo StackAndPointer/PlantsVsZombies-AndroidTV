@@ -20,13 +20,14 @@
 #ifndef PVZ_LAWN_WIDGET_CHALLENGE_SCREEN_H
 #define PVZ_LAWN_WIDGET_CHALLENGE_SCREEN_H
 
-#include "HelpBarWidget.h"
 #include "PvZ/Lawn/Board/ToolTipWidget.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/SexyAppFramework/Misc/Curve1DUtil.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 #include "PvZ/SexyAppFramework/Widget/Dialog.h"
 #include "PvZ/Symbols.h"
+
+#include "HelpBarWidget.h"
 #include "WaitForSecondPlayerDialog.h"
 
 inline constexpr int NUM_CHALLENGE_MODES(int(GameMode::NUM_GAME_MODES - 1));

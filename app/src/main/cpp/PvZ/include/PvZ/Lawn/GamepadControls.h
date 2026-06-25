@@ -20,10 +20,11 @@
 #ifndef PVZ_LAWN_GAMEPAD_CONTROLS_H
 #define PVZ_LAWN_GAMEPAD_CONTROLS_H
 
-#include "BaseGamepadControls.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/SexyAppFramework/Misc/GamepadButtons.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
+
+#include "BaseGamepadControls.h"
 
 class Zombie;
 class Plant;

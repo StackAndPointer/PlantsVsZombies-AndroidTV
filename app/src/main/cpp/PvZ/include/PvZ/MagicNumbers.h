@@ -24,6 +24,8 @@
  * @file 此文件主要记录 v1.1.1 和 v1.1.5 中不同的内容.
  */
 
+#include <cstdint>
+
 #if PVZ_VERSION == 111
 inline constexpr int SexyAppBasePartSize = 32;
 inline constexpr int LAWNAPP_PLAYSAMPLE_OFFSET = 680;

@@ -33,8 +33,9 @@
 #include "PvZ/TodLib/Effect/Reanimator.h"
 #include "PvZ/TodLib/Effect/TodParticle.h"
 
-#include <algorithm>
 #include <cstdio>
+
+#include <algorithm>
 #include <numbers>
 
 using namespace Sexy;

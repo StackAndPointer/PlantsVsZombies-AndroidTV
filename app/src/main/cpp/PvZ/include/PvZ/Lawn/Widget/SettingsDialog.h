@@ -20,10 +20,11 @@
 #ifndef PVZ_LAWN_WIDGET_SETTINGS_DIALOG_H
 #define PVZ_LAWN_WIDGET_SETTINGS_DIALOG_H
 
-#include "LawnDialog.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/SexyAppFramework/Widget/CheckboxListener.h"
 #include "PvZ/SexyAppFramework/Widget/SliderListener.h"
+
+#include "LawnDialog.h"
 
 namespace Sexy {
 class Checkbox;

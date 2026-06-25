@@ -20,9 +20,8 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_MISC_PROFILE_MGR_H
 #define PVZ_SEXYAPPFRAMEWORK_MISC_PROFILE_MGR_H
 
-#include "PvZ/Symbols.h"
-
 #include "PvZ/Lawn/System/PlayerInfo.h"
+#include "PvZ/Symbols.h"
 
 namespace Sexy {
 

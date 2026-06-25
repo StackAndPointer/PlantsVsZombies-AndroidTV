@@ -20,6 +20,8 @@
 #ifndef PVZ_ANDROID_NATIVE_NATIVE_APP_H
 #define PVZ_ANDROID_NATIVE_NATIVE_APP_H
 
+#include "PvZ/Symbols.h"
+
 #include <jni.h>
 
 namespace Native {

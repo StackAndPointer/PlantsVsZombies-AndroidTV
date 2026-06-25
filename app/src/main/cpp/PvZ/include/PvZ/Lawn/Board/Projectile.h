@@ -20,9 +20,10 @@
 #ifndef PVZ_LAWN_BOARD_PROJECTILE_H
 #define PVZ_LAWN_BOARD_PROJECTILE_H
 
-#include "GameObject.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Symbols.h"
+
+#include "GameObject.h"
 
 class Plant;
 class Zombie;

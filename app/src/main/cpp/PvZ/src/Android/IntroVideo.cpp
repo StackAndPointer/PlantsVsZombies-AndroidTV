@@ -18,13 +18,12 @@
  */
 
 #include "PvZ/Android/IntroVideo.h"
-
-#include <atomic>
-
 #include "Homura/Logger.h"
 #include "PvZ/Android/Native/AudioOutput.h"
 #include "PvZ/Android/Native/BridgeApp.h"
 #include "PvZ/Android/Native/NativeApp.h"
+
+#include <atomic>
 
 namespace {
 

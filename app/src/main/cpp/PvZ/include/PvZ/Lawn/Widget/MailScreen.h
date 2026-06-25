@@ -20,10 +20,11 @@
 #ifndef PVZ_LAWN_WIDGET_MAIL_SCREEN_H
 #define PVZ_LAWN_WIDGET_MAIL_SCREEN_H
 
-#include "LawnDialog.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/System/Mailbox.h"
 #include "PvZ/Symbols.h"
+
+#include "LawnDialog.h"
 
 class MailScreen : public LawnDialog {
 public:

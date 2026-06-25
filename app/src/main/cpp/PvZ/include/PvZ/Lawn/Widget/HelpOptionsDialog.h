@@ -20,8 +20,9 @@
 #ifndef PVZ_LAWN_WIDGET_HELP_OPTIONS_DIALOG_H
 #define PVZ_LAWN_WIDGET_HELP_OPTIONS_DIALOG_H
 
-#include "LawnDialog.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
+
+#include "LawnDialog.h"
 
 class HelpOptionsDialog : public LawnDialog {
 public:

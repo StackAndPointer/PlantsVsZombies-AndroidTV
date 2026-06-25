@@ -20,11 +20,11 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_GRAPHICS_GRAPHICS_H
 #define PVZ_SEXYAPPFRAMEWORK_GRAPHICS_GRAPHICS_H
 
+#include "PvZ/Symbols.h"
+
 #include "../Misc/Common.h"
 #include "../Misc/Rect.h"
 #include "../Misc/TriVertex.h"
-#include "PvZ/Symbols.h"
-
 #include "Color.h"
 #include "Image.h"
 
