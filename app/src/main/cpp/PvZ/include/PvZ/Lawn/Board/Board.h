@@ -120,11 +120,6 @@ struct PlantRbTree {
     std::uint32_t mNodeCount;        // +0x14
 };
 
-struct SyncBlockInfo {
-    void *mPtr;
-    uint32_t mSize;
-};
-
 using SyncBlockInfoVector = std::vector<SyncBlockInfo>;
 
 struct StringIntMap {
