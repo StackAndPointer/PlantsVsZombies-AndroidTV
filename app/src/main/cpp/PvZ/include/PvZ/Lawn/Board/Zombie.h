@@ -195,7 +195,7 @@ public:
     int mLastPortalX;                                 // 89
     bool mBloated;                                    // 360
     int mUnk91;                                       // 91
-    int mUnk92;                                       // 92
+    bool mWalnutDeath;                                // 92
     int mUnk93;                                       // 93
     int mUnk94;                                       // 94
     int mUnk95;                                       // 95
@@ -328,6 +328,9 @@ public:
     }
     bool SetupDrawZombieWon(Sexy::Graphics *g) {
         return reinterpret_cast<bool (*)(Zombie *, Sexy::Graphics *)>(Zombie_SetupDrawZombieWonAddr)(this, g);
+    }
+    void BossDie() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_BossDieAddr)(this);
     }
 
 

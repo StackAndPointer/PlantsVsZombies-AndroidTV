@@ -2746,7 +2746,7 @@ void Zombie::PlayDeathAnim(unsigned int theDamageFlags) {
     } else if (mZombieType == ZombieType::ZOMBIE_BOSS) {
         aDeathAnimRate = 18.0f;
 
-        reinterpret_cast<void (*)(Zombie *)>(Zombie_BossDieAddr)(this);
+        BossDie();
         Reanimation *aHeadReanim = mApp->ReanimationGet(mSpecialHeadReanimID);
         aHeadReanim->PlayReanim("anim_death", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, aDeathAnimRate);
     } else {
@@ -2759,7 +2759,7 @@ void Zombie::PlayDeathAnim(unsigned int theDamageFlags) {
     if (mInPool && aBodyReanim->TrackExists("anim_waterdeath")) {
         aDeathTrackName = "anim_waterdeath";
         ReanimIgnoreClipRect("Zombie_duckytube", false);
-    } else if (mIsEating && aBodyReanim->TrackExists("anim_superlongdeath")) {
+    } else if (mWalnutDeath && aBodyReanim->TrackExists("anim_superlongdeath")) {
         aDeathAnimRate = 14.0f;
         aDeathTrackName = "anim_walnutdeath";
     } else if (aDeathAnimHit == 99 && aBodyReanim->TrackExists("anim_superlongdeath") && aCanDoSuperLongDeath && mChilledCounter == 0 && mBoard->CountZombiesOnScreen() <= 5) {
