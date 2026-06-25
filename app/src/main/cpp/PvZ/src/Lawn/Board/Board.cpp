@@ -2512,10 +2512,19 @@ void Board::processServerEvent(const BaseEvent *event) {
             if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
 
-                old_Zombie_SquishAllInSquare(aZombie,
-                                             int(eventZombieSquishAllInSquare->data2.u8x4.u8_1),
-                                             int(eventZombieSquishAllInSquare->data2.u8x4.u8_2),
-                                             static_cast<ZombieAttackType>(eventZombieSquishAllInSquare->data2.u8x4.u8_3));
+                Plant *aPlant = nullptr;
+                while (IteratePlants(aPlant)) {
+                    if (aPlant->mRow == eventZombieSquishAllInSquare->data2.u8x4.u8_2 && aPlant->mPlantCol == eventZombieSquishAllInSquare->data2.u8x4.u8_1) {
+                        if (eventZombieSquishAllInSquare->data2.u8x4.u8_3 == ZombieAttackType::ATTACKTYPE_DRIVE_OVER && aPlant->IsSpiky()) {
+                            continue;
+                        }
+
+                        if (aPlant->mSeedType != SeedType::SEED_SPIKEROCK) {
+                            mPlantsEaten++;
+                            aPlant->Squish();
+                        }
+                    }
+                }
             }
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_TAKE_DAMAGE: {

@@ -1201,7 +1201,19 @@ void Zombie::SquishAllInSquare(int theX, int theY, ZombieAttackType theAttackTyp
         netplay::PutEvent(event);
     }
 
-    old_Zombie_SquishAllInSquare(this, theX, theY, theAttackType);
+    Plant *aPlant = nullptr;
+    while (mBoard->IteratePlants(aPlant)) {
+        if (aPlant->mRow == theY && aPlant->mPlantCol == theX) {
+            if (theAttackType == ZombieAttackType::ATTACKTYPE_DRIVE_OVER && aPlant->IsSpiky()) {
+                continue;
+            }
+
+            if (aPlant->mSeedType != SeedType::SEED_SPIKEROCK) {
+                mBoard->mPlantsEaten++;
+                aPlant->Squish();
+            }
+        }
+    }
 }
 
 void Zombie::UpdateZombieJackInTheBox() {
