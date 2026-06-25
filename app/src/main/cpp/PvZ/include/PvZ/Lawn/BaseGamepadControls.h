@@ -20,6 +20,7 @@
 #ifndef PVZ_LAWN_BASE_GAMEPAD_CONTROLS_H
 #define PVZ_LAWN_BASE_GAMEPAD_CONTROLS_H
 
+#include "Homura/MemberUtils.h"
 #include "Homura/TypeUtils.h"
 #include "PvZ/Lawn/Board/GameObject.h"
 
@@ -95,7 +96,8 @@ public:
         reinterpret_cast<void (*)(BaseGamepadControls *, float)>(BaseGamepadControls_UpdateStatesAddr)(this, dt);
     }
     SnapToGridPosition GetSnapToGridPos() {
-        return reinterpret_cast<SnapToGridPosition (*)(BaseGamepadControls *)>(BaseGamepadControls_GetSnapToGridPosAddr)(this);
+        //        return reinterpret_cast<SnapToGridPosition (*)(BaseGamepadControls *)>(BaseGamepadControls_GetSnapToGridPosAddr)(this);
+        return homura::CallVirtualFunc<BaseGamepadControls, 14, SnapToGridPosition>(this);
     }
 
     void GetGamepadVelocity(float *horizontal, float *vertical);

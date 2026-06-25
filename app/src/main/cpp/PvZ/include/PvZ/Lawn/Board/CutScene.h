@@ -62,8 +62,6 @@ public:
         reinterpret_cast<void (*)(CutScene *)>(CutScene_CutSceneAddr)(this);
     }
 
-    // 澶у皬30涓暣鏁?
-
     bool IsSurvivalRepick() {
         return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsSurvivalRepickAddr)(this);
     }
