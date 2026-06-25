@@ -1310,7 +1310,7 @@ void LawnApp::ShowVSResultsScreen() {
     mWidgetManager->AddWidget(mVSResultsMenu);
     mWidgetManager->BringToFront(mVSResultsMenu);
     mWidgetManager->SetFocus(mVSResultsMenu);
-    if (gIsServerModeNetplay && !mVSResultsMenu->mIsReplaySession) {
+    if (gIsServerModeNetplay && !mVSResultsMenu->mIsReplaySession && !gIsServerModeSpectator) {
         mVSResultsMenu->mCheckboxController = new VSResultsCheckboxController();
         mVSResultsMenu->mCheckboxController->InitCheckboxWidget(mVSResultsMenu);
     }
