@@ -83,25 +83,6 @@ IdMap serverGridItemIDMap;
 // 新增：远端暂停同步保护
 bool gPauseSyncFromRemote = false;
 
-void SafeLaunchThreepeaterForRemote(Plant *plant) {
-    if (plant == nullptr || plant->mApp == nullptr) {
-        return;
-    }
-
-    Reanimation *headReanim1 = plant->mApp->ReanimationTryToGet(plant->mHeadReanimID);
-    Reanimation *headReanim2 = plant->mApp->ReanimationTryToGet(plant->mHeadReanimID2);
-    Reanimation *headReanim3 = plant->mApp->ReanimationTryToGet(plant->mHeadReanimID3);
-    if (headReanim1 == nullptr || headReanim2 == nullptr || headReanim3 == nullptr) {
-        LOG_WARN("[NETPLAY] skip remote threepeater launch: missing head reanim plantId={} head1={} head2={} head3={}",
-                 plant->mBoard ? plant->mBoard->mPlants.DataArrayGetID(plant) : -1,
-                 static_cast<void *>(headReanim1),
-                 static_cast<void *>(headReanim2),
-                 static_cast<void *>(headReanim3));
-        return;
-    }
-
-    plant->LaunchThreepeater();
-}
 } // namespace
 
 void Board::_constructor(LawnApp *theApp) {
@@ -1870,7 +1851,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             if (homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
                 Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
                 if (aPlant->mSeedType == SEED_THREEPEATER) {
-                    SafeLaunchThreepeaterForRemote(aPlant);
+                    aPlant->LaunchThreepeater();
                 } else if (aPlant->mSeedType == SEED_STARFRUIT) {
                     aPlant->LaunchStarFruit();
                 }
@@ -5749,19 +5730,19 @@ void Board::UpdateButtons() {
     }
 
     if (mBoardMenuButton != nullptr) {
-        if (mApp->IsVSMode()) {
-            const bool spectatorReadOnly = gIsServerModeSpectator;
-            mBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
-            mBoardMenuButton->mDisabled = spectatorReadOnly;
+        //        if (mApp->IsVSMode()) {
+        //            const bool spectatorReadOnly = gIsServerModeSpectator;
+        //            mBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
+        //            mBoardMenuButton->mDisabled = spectatorReadOnly;
+        //        } else {
+        if (mApp->mGameScene == GameScenes::SCENE_PLAYING) {
+            mBoardMenuButton->mBtnNoDraw = false;
+            mBoardMenuButton->mDisabled = false;
         } else {
-            if (mApp->mGameScene == GameScenes::SCENE_PLAYING) {
-                mBoardMenuButton->mBtnNoDraw = false;
-                mBoardMenuButton->mDisabled = false;
-            } else {
-                mBoardMenuButton->mBtnNoDraw = true;
-                mBoardMenuButton->mDisabled = true;
-            }
+            mBoardMenuButton->mBtnNoDraw = true;
+            mBoardMenuButton->mDisabled = true;
         }
+        //        }
 
         if (mBoardFadeOutCounter > 0) {
             mBoardMenuButton->mBtnNoDraw = true;
@@ -5772,10 +5753,10 @@ void Board::UpdateButtons() {
 
 
 void Board::ButtonDepress(int theId) {
-    if (gIsServerModeSpectator && theId == 1000) {
-        // Spectator cannot open pause/options menu.
-        return;
-    }
+    //    if (gIsServerModeSpectator && theId == 1000) {
+    //        // Spectator cannot open pause/options menu.
+    //        return;
+    //    }
 
     if (theId == 1000) {
         LawnApp *lawnApp = gLawnApp;
@@ -5794,9 +5775,9 @@ void Board::ButtonDepress(int theId) {
         if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND) {
             Board *mBoard = lawnApp->mBoard;
             mBoard->mChallenge->mChallengeState = ChallengeState::STATECHALLENGE_LAST_STAND_ONSLAUGHT;
-            mBoardStoreButton->mBtnNoDraw = true;
-            mBoardStoreButton->mDisabled = true;
-            mBoardStoreButton->Resize(0, 0, 0, 0);
+            mBoard->mBoardStoreButton->mBtnNoDraw = true;
+            mBoard->mBoardStoreButton->mDisabled = true;
+            mBoard->mBoardStoreButton->Resize(0, 0, 0, 0);
             mBoard->mZombieCountDown = 9;
             mBoard->mZombieCountDownStart = mBoard->mZombieCountDown;
         } else if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {
@@ -5804,8 +5785,8 @@ void Board::ButtonDepress(int theId) {
         } else if (lawnApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
             lawnApp->mBoard->mChallenge->TreeOfWisdomOpenStore();
         }
+        return;
     }
-    old_Board_ButtonDepress(this, theId);
 }
 
 Image *GetIconByAchievementId(AchievementType theAchievementId) {
