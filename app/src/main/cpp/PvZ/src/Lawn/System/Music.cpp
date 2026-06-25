@@ -17,11 +17,11 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include "PvZ/Lawn/System/Music.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/LawnApp.h"
-#include "PvZ/Lawn/System/Music.h"
 #include "PvZ/Lawn/System/PlayerInfo.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/SexyAppFramework/Sound/AudiereMusicInterface.h"
