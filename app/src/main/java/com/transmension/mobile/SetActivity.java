@@ -978,7 +978,7 @@ public class SetActivity extends Activity {
 
         final CheckBox playVideo = new CheckBox(this);
         playVideo.setText(R.string.addon_ingame_playvideo);
-        playVideo.setChecked(sharedPreferences.getBoolean("playVideo", true));
+        playVideo.setChecked(sharedPreferences.getBoolean("playVideo", false));
         playVideo.setOnCheckedChangeListener((compoundButton, bool) -> sharedPreferences.edit().putBoolean("playVideo", bool).apply());
         playVideo.setLayoutParams(matchWrapParams);
         playVideo.setOnLongClickListener(v -> {

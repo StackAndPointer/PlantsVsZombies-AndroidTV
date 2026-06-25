@@ -962,7 +962,7 @@ public class EnhanceActivity extends MainActivity {
 
         if (sharedPreferences.getBoolean("jumpLogo", false)) nativeJumpLogo();
 
-        if (sharedPreferences.getBoolean("playVideo", true)) nativePlayVideo();
+        if (sharedPreferences.getBoolean("playVideo", false)) nativePlayVideo();
 
         if (sharedPreferences.getBoolean("heavyWeaponAccel", false)) nativeHeavyWeaponAccel();
 

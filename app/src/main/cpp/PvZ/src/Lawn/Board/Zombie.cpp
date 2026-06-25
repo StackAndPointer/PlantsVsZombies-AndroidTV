@@ -2501,9 +2501,7 @@ void Zombie::UpdateZombieSquashHead() {
 
     if (mZombiePhase == ZombiePhase::PHASE_SQUASH_DONE_FALLING && mPhaseCounter == 0) {
         Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
-        if (aHeadReanim) {
-            aHeadReanim->ReanimationDie();
-        }
+        aHeadReanim->ReanimationDie();
         mSpecialHeadReanimID = ReanimationID::REANIMATIONID_NULL;
 
         TakeDamage(1800, 9U);
