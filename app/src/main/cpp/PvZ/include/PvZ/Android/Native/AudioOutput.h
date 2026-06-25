@@ -22,7 +22,7 @@
 
 #include <jni.h>
 
-void AudioWrite(const void *data, int dataSize);
+int AudioWrite(const void *data, int dataSize);
 
 namespace Native {
 
