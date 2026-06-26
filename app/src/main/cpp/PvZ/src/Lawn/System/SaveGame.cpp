@@ -35,7 +35,7 @@ bool LawnSaveGame_Original(Board *theBoard, const pvzstl::string &theFilePath) {
     aHeader.mBuildDate = SAVE_FILE_DATE;
 
     aContext.SyncBytes(&aHeader, sizeof(aHeader));
-    SyncBoard(aContext, theBoard);
+    SyncBoard(&aContext, theBoard);
     theBoard->mApp->mUnkBoolA76 = false; // 用于从暂停菜单返回主界面
     return gLawnApp->WriteBufferToFile(theFilePath, &aContext.mBuffer);
 }
@@ -102,22 +102,30 @@ bool LawnSaveGame(Board *theBoard, const pvzstl::string &theFilePath) {
     return LawnSaveGame_Original(theBoard, theFilePath);
 }
 
-bool LawnLoadGame_Original(Board *theBoard, const pvzstl::string &theFilePath) {
-    SaveGameContext aContext{};
-    aContext.mFailed = false;
-    aContext.mReading = true;
-    if (!gLawnApp->ReadBufferFromFile(theFilePath, &aContext.mBuffer, false)) {
-        return false;
-    }
+bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext) {
 
     SaveFileHeader aHeader{};
-    aContext.SyncBytes(&aHeader, sizeof(aHeader));
-    if (aHeader.mMagicNumber != SAVE_FILE_MAGIC_NUMBER || aHeader.mBuildVersion != SAVE_FILE_VERSION || aHeader.mBuildDate != SAVE_FILE_DATE) {
+    theContext->SyncBytes(&aHeader, sizeof(aHeader));
+
+    // 检查存档魔数和版本范围。
+    if (aHeader.mMagicNumber != SAVE_FILE_MAGIC_NUMBER || aHeader.mBuildVersion > SAVE_FILE_VERSION) {
+        //        gLawnApp->HandleCorruptedGameFile();
         return false;
     }
-
-    SyncBoard(aContext, theBoard);
-    if (aContext.mFailed) {
+    // 魔数正确，但不是当前支持的版本。
+    if (aHeader.mBuildVersion != SAVE_FILE_VERSION) {
+        //        gLawnApp->HandleOldGameFile();
+        return false;
+    }
+    SyncBoard(theContext, theBoard);
+    if (gLawnApp->IsAdventureMode()) {
+        if (gLawnApp->mPlayerInfo->mLevel != theBoard->mLevel) {
+            const int highestLevel = theBoard->mLevel > gLawnApp->mPlayerInfo->mLevel ? theBoard->mLevel : gLawnApp->mPlayerInfo->mLevel;
+            gLawnApp->mPlayerInfo->mLevel = theBoard->mLevel;
+        }
+    }
+    if (theContext->mFailed) {
+        //        gLawnApp->HandleCorruptedGameFile();
         return false;
     }
 
@@ -132,11 +140,11 @@ void FixBoardAfterLoad(Board *theBoard) {
     theBoard->FixReanimErrorAfterLoad();
 }
 
-bool LawnLoadGame(Board *theBoard, const pvzstl::string &theFilePath) {
+bool LawnLoadGame(Board *theBoard, SaveGameContext *theContext) {
     // 结盟模式读档，将SeedBank2的4个种子从SeedBank1里面取出。因为原版读档逻辑难以改动，只好出此下策，凑合着读吧。
     if (theBoard->mApp->IsCoopMode()) {
         if (theBoard->mApp->mGameMode == GameMode::GAMEMODE_TWO_PLAYER_COOP_BOWLING || theBoard->mApp->mGameMode == GameMode::GAMEMODE_TWO_PLAYER_COOP_BOSS) {
-            bool result = LawnLoadGame_Original(theBoard, theFilePath);
+            bool result = LawnLoadGame_Original(theBoard, theContext);
             int theSeedNum = 6;
             SeedBank *seedBank1 = theBoard->mSeedBank[0];
             SeedBank *seedBank2 = theBoard->mSeedBank[1];
@@ -159,7 +167,7 @@ bool LawnLoadGame(Board *theBoard, const pvzstl::string &theFilePath) {
             }
             return result;
         } else {
-            bool result = LawnLoadGame_Original(theBoard, theFilePath);
+            bool result = LawnLoadGame_Original(theBoard, theContext);
             int theSeedNum = 4;
             SeedBank *seedBank1 = theBoard->mSeedBank[0];
             SeedBank *seedBank2 = theBoard->mSeedBank[1];
@@ -189,7 +197,7 @@ bool LawnLoadGame(Board *theBoard, const pvzstl::string &theFilePath) {
     }
 
 
-    return LawnLoadGame_Original(theBoard, theFilePath);
+    return LawnLoadGame_Original(theBoard, theContext);
 }
 
 

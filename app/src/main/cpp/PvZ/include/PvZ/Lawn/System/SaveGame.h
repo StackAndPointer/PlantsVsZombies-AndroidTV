@@ -51,16 +51,16 @@ public:
 
     void SyncReanimationDef(ReanimatorDefinition *&theDefinition);
 };
-inline void SyncBoard(SaveGameContext &theContext, Board *theBoard) {
-    reinterpret_cast<void (*)(SaveGameContext &, Board *)>(SyncBoardAddr)(theContext, theBoard);
+inline void SyncBoard(SaveGameContext *theContext, Board *theBoard) {
+    reinterpret_cast<void (*)(SaveGameContext *, Board *)>(SyncBoardAddr)(theContext, theBoard);
 }
 
 
 bool LawnSaveGame_Original(Board *theBoard, const pvzstl::string &theFilePath);
-bool LawnLoadGame_Original(Board *theBoard, const pvzstl::string &theFilePath);
+bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext);
 void FixBoardAfterLoad(Board *board);
 bool LawnSaveGame(Board *theBoard, const pvzstl::string &theFilePath);
-bool LawnLoadGame(Board *theBoard, const pvzstl::string &theFilePath);
+bool LawnLoadGame(Board *theBoard, SaveGameContext *theContext);
 
 
 inline void (*old_FixBoardAfterLoad)(Board *board);
