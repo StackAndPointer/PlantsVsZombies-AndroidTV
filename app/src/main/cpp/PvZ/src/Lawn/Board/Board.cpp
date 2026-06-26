@@ -444,8 +444,6 @@ void Board::SetGrids() {
     }
 }
 
-
-
 namespace {
 const char *GetServerModeTransportSuffix() {
     if (!gIsServerModeNetplay) {
@@ -1393,7 +1391,6 @@ bool Board::StageHas6Rows() const {
     // 关系到第六路可否操控（比如种植植物）。
     return mBackground == BackgroundType::BACKGROUND_3_POOL || mBackground == BackgroundType::BACKGROUND_4_FOG;
 }
-
 
 void Board::UpdateFwoosh() {
     if (requestPause && (!IsOnlineServerModeActive() || gIsReplayMode)) {
@@ -6408,8 +6405,6 @@ bool GetCircleRectOverlap(int theCircleX, int theCircleY, int theRadius, const R
 int Board::MakeRenderOrder(RenderLayer theRenderLayer, int theRow, int theLayerOffset) {
     return theRow * (int)RenderLayer::RENDER_LAYER_ROW_OFFSET + theRenderLayer + theLayerOffset;
 }
-
-
 
 void Board::FixReanimErrorAfterLoad() {
     // 修复读档后的各种问题
