@@ -25,6 +25,7 @@
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
 #include "PvZ/Symbols.h"
 
+#include "Buffer.h"
 #include "Graphics/Color.h"
 #include "Graphics/MemoryImage.h"
 #include "Misc/Common.h"
@@ -456,6 +457,12 @@ public:
     double GetLoadingThreadProgress() {
         return reinterpret_cast<double (*)(SexyAppBase *)>(Sexy_SexyAppBase_GetLoadingThreadProgressAddr)(this);
     }
+    bool WriteBufferToFile(const pvzstl::string &theFileName, Sexy::Buffer *theBuffer) {
+        return reinterpret_cast<bool (*)(SexyAppBase *, const pvzstl::string &, Sexy::Buffer *)>(Sexy_SexyAppBase_WriteBufferToFileAddr)(this, theFileName, theBuffer);
+    }
+    bool ReadBufferFromFile(const pvzstl::string &theFileName, Buffer *theBuffer, bool dontWriteToDemo = false) {
+        return reinterpret_cast<bool (*)(SexyAppBase *, const pvzstl::string &, Buffer *, bool)>(Sexy_SexyAppBase_ReadBufferFromFileAddr)(this, theFileName, theBuffer, dontWriteToDemo);
+    } // UNICODE
 
     bool UpdateApp();
     bool EraseFile(const pvzstl::string &theFileName);

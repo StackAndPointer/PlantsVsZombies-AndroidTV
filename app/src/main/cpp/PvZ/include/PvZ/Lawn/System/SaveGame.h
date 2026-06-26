@@ -20,19 +20,49 @@
 #ifndef PVZ_LAWN_SYSTEM_SAVE_GAME_H
 #define PVZ_LAWN_SYSTEM_SAVE_GAME_H
 
+#include "PvZ/STL/string.h"
+#include "PvZ/SexyAppFramework//Buffer.h"
 #include "PvZ/Symbols.h"
+
+class Board;
+
+#define SAVE_FILE_MAGIC_NUMBER 0xFEEDDEAD
+#define SAVE_FILE_VERSION 8
+#define SAVE_FILE_DATE 0
+
+struct SaveFileHeader {
+    unsigned int mMagicNumber;
+    unsigned int mBuildVersion;
+    unsigned int mBuildDate;
+};
 
 class SaveGameContext {
 public:
-    unsigned char mBuffer[28]; // unknown type
+    Sexy::Buffer mBuffer;
     bool mFailed;
     bool mReading;
 
     void SyncInt(int &theInt) {
         reinterpret_cast<void (*)(SaveGameContext *, int &)>(SaveGameContext_SyncIntAddr)(this, theInt);
     }
+    void SyncBytes(void *theDest, int theReadSize) {
+        reinterpret_cast<void (*)(SaveGameContext *, void *, int)>(SaveGameContext_SyncBytesAddr)(this, theDest, theReadSize);
+    }
 
     void SyncReanimationDef(ReanimatorDefinition *&theDefinition);
 };
+inline void SyncBoard(SaveGameContext &theContext, Board *theBoard) {
+    reinterpret_cast<void (*)(SaveGameContext &, Board *)>(SyncBoardAddr)(theContext, theBoard);
+}
+
+
+bool LawnSaveGame_Original(Board *theBoard, const pvzstl::string &theFilePath);
+bool LawnLoadGame_Original(Board *theBoard, const pvzstl::string &theFilePath);
+void FixBoardAfterLoad(Board *board);
+bool LawnSaveGame(Board *theBoard, const pvzstl::string &theFilePath);
+bool LawnLoadGame(Board *theBoard, const pvzstl::string &theFilePath);
+
+
+inline void (*old_FixBoardAfterLoad)(Board *board);
 
 #endif // PVZ_LAWN_SYSTEM_SAVE_GAME_H

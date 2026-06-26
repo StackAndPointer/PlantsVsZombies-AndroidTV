@@ -1141,6 +1141,8 @@ bool LoadGameMain() {
     Sexy_SexyAppBase_AddDialogAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase9AddDialogEPNS_6DialogE");
     Sexy_SexyAppBase_GetDialogCountAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase14GetDialogCountEv");
     Sexy_SexyAppBase_DoParseCmdLineAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase14DoParseCmdLineEv");
+    Sexy_SexyAppBase_ReadBufferFromFileAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase18ReadBufferFromFileERKSsPNS_6BufferEb");
+    Sexy_SexyAppBase_WriteBufferToFileAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase17WriteBufferToFileERKSsPKNS_6BufferE");
     Sexy_SexyAppBase_GetLoadingThreadProgressAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase24GetLoadingThreadProgressEv");
     Sexy_SexyAppBase_StartLoadingThreadAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase18StartLoadingThreadEv");
     Sexy_SexyAppBase_LoadResourceManifestAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase20LoadResourceManifestEv");
@@ -1360,6 +1362,7 @@ bool LoadGameMain() {
     MakeNewButtonAddr = libGameMain.GetSymbol("_Z13MakeNewButtoniPN4Sexy14ButtonListenerEPNS_6WidgetERKSsPNS_4FontEPNS_5ImageES9_S9_");
     MakeNewCheckboxAddr = libGameMain.GetSymbol("_Z15MakeNewCheckboxiPN4Sexy16CheckboxListenerEPNS_6WidgetEb");
     SaveGameContext_SyncIntAddr = libGameMain.GetSymbol("_ZN15SaveGameContext7SyncIntERi");
+    SaveGameContext_SyncBytesAddr = libGameMain.GetSymbol("_ZN15SaveGameContext9SyncBytesEPvi");
     SaveGameContext_SyncReanimationDefAddr = libGameMain.GetSymbol("_ZN15SaveGameContext18SyncReanimationDefERP20ReanimatorDefinition");
     EffectSystem_EffectSystemInitializeAddr = libGameMain.GetSymbol("_ZN12EffectSystem22EffectSystemInitializeEv");
     EffectSystem_EffectSystemFreeAllAddr = libGameMain.GetSymbol("_ZN12EffectSystem19EffectSystemFreeAllEv");

@@ -694,10 +694,8 @@ protected:
 
 int GetRectOverlap(const Sexy::Rect &rect1, const Sexy::Rect &rect2);
 bool GetCircleRectOverlap(int theCircleX, int theCircleY, int theRadius, const Sexy::Rect &theRect);
-void FixBoardAfterLoad(Board *board);
 void SyncReanimation(Board *a1, Reanimation *a2, int *theSaveGameContext);
-bool LawnSaveGame(Board *theBoard, const pvzstl::string &theFilePath);
-bool LawnLoadGame(Board *theBoard, SaveGameContext *theFilePath);
+
 const char *GetNameByAchievementId(AchievementType theAchievementId);
 Sexy::Image *GetIconByAchievementId(AchievementType theAchievementId);
 /***************************************************************************************************************/
@@ -753,12 +751,6 @@ inline BackgroundType gVSBackground; // 对战模式战场
 // 下 1
 // 左 2
 // 右 3
-
-inline void (*old_FixBoardAfterLoad)(Board *board);
-
-inline bool (*old_LawnSaveGame)(Board *a1, const pvzstl::string &a2);
-
-inline bool (*old_LawnLoadGame)(Board *a1, SaveGameContext *a2);
 
 inline void (*old_Board_UpdateGame)(Board *board);
 

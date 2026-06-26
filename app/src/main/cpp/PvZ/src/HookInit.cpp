@@ -193,8 +193,8 @@ void InitHookFunction() {
 
 
     homura::HookFunc(FixBoardAfterLoadAddr, &FixBoardAfterLoad, &old_FixBoardAfterLoad);
-    homura::HookFunc(LawnSaveGameAddr, &LawnSaveGame, &old_LawnSaveGame);
-    homura::HookFunc(LawnLoadGameAddr, &LawnLoadGame, &old_LawnLoadGame);
+    homura::HookFunc(LawnSaveGameAddr, &LawnSaveGame, nullptr);
+    homura::HookFunc(LawnLoadGameAddr, &LawnLoadGame, nullptr);
 
     homura::HookFunc(Challenge_UpdateAddr, &Challenge::Update, &old_Challenge_Update);
     homura::HookFunc(Challenge_IsMPSuddenDeathAddr, &Challenge::IsMPSuddenDeath, nullptr);
