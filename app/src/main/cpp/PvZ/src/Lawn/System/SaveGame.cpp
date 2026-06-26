@@ -36,6 +36,7 @@ bool LawnSaveGame_Original(Board *theBoard, const pvzstl::string &theFilePath) {
 
     aContext.SyncBytes(&aHeader, sizeof(aHeader));
     SyncBoard(aContext, theBoard);
+    theBoard->mApp->mUnkBoolA76 = false; // 用于从暂停菜单返回主界面
     return gLawnApp->WriteBufferToFile(theFilePath, &aContext.mBuffer);
 }
 
