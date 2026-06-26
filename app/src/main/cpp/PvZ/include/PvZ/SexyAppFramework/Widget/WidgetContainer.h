@@ -43,8 +43,19 @@ struct WidgetListHead {
     int mReserved[2];
 };
 
-static_assert(sizeof(WidgetListNode) == 12);
-static_assert(sizeof(WidgetListHead) == 20);
+struct RbTreeHeader32 {
+    unsigned int color; // +0x00
+    void *parent;       // +0x04，root
+    void *left;         // +0x08，leftmost
+    void *right;        // +0x0C，rightmost
+};
+
+struct WidgetUserDataMap32 {
+    unsigned int comparatorOrPadding; // +0x00
+    RbTreeHeader32 header;            // +0x04
+    unsigned int nodeCount;           // +0x14
+};
+
 
 class WidgetContainer {
 public:
@@ -56,7 +67,7 @@ public:
     int *mUpdateIterator;          // 9
     int mLastWMUpdateCount;        // 10
     int mUpdateCnt;                // 11
-    int unkMember;                 // 12
+    bool mDirty;                   // 12
     int mX;                        // 13
     int mY;                        // 14
     int mWidth;                    // 15
@@ -66,7 +77,7 @@ public:
     FlagsMod mWidgetFlagsMod;      // 18 ~ 19
     int mPriority;                 // 20
     int mZOrder;                   // 21
-    int unk[6];                    // 22 ~ 27
+    WidgetUserDataMap32 mUserData; // 22 ~ 27
     int mWidgetId;                 // 28
     // 大小未知，目前认为是29个整数。反正Widget是64个整数，足够了。
 

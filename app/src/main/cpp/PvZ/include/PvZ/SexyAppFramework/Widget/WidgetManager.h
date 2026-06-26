@@ -28,11 +28,51 @@ namespace Sexy {
 
 class Widget;
 
+struct DeferredOverlayVector {
+    void *mStart;        // +0x00
+    void *mFinish;       // +0x04
+    void *mEndOfStorage; // +0x08
+};
+
+struct KeyDownMapLayout {
+    unsigned int mComparatorOrPadding; // +0x00
+    RbTreeHeader32 mHeader;            // +0x04
+    unsigned int mNodeCount;           // +0x14
+};
+
 class WidgetManager : public WidgetContainer {
 public:
-    char unkMem[44];
+    Graphics *mCurG;     // +0x00
+    SexyAppBase *mApp;   // +0x04
+    MemoryImage *mImage; // +0x08
+    MemoryImage *mTransientImage;
+    bool mLastHadTransients;
+    Widget *mPopupCommandWidget;
+    DeferredOverlayVector mDeferredOverlayWidgets;
+    int mMinDeferredOverlayPriority;
+    bool mHasFocus;
     Widget *mFocusWidget; // 40
+    Widget *mLastDownWidget;
+    Widget *mOverWidget;
+    Widget *mBaseModalWidget;
+    FlagsMod mLostFocusFlagsMod;
+    FlagsMod mBelowModalFlagsMod;
+    FlagsMod mDefaultBelowModalFlagsMod;
+    int mPreModalInfoList[2]; // std::list<PreModalInfo> mPreModalInfoList;
+    Rect mMouseDestRect;
+    Rect mMouseSourceRect;
+    bool mMouseIn;
+    int mLastMouseX;
+    int mLastMouseY;
+    int mDownButtons;
+    int mActualDownButtons;
+    int mLastInputUpdateCnt;
+    KeyDownMapLayout mKeyDown;
+    int mLastDownButtonId;
+    int mWidgetFlags;
+    char unkMem6[60]; // 推测和AxisMove有关
 
+    // 大小89个整数
     void SetFocus(Widget *aWidget) {
         reinterpret_cast<void (*)(WidgetManager *, Widget *)>(Sexy_WidgetManager_SetFocusAddr)(this, aWidget);
     }
