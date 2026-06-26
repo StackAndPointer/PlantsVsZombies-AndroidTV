@@ -96,8 +96,8 @@ public:
         reinterpret_cast<void (*)(BaseGamepadControls *, float)>(BaseGamepadControls_UpdateStatesAddr)(this, dt);
     }
     SnapToGridPosition GetSnapToGridPos() {
-        //        return reinterpret_cast<SnapToGridPosition (*)(BaseGamepadControls *)>(BaseGamepadControls_GetSnapToGridPosAddr)(this);
-        return homura::CallVirtualFunc<BaseGamepadControls, 14, SnapToGridPosition>(this);
+        return reinterpret_cast<SnapToGridPosition (*)(BaseGamepadControls *)>(BaseGamepadControls_GetSnapToGridPosAddr)(this);
+        //        return homura::CallVirtualFunc<BaseGamepadControls, 14, SnapToGridPosition>(this);
     }
 
     void GetGamepadVelocity(float *horizontal, float *vertical);
