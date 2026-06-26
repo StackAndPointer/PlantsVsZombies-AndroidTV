@@ -300,6 +300,12 @@ public:
     bool IsTrialStageLocked() {
         return reinterpret_cast<bool (*)(LawnApp *)>(LawnApp_IsTrialStageLockedAddr)(this);
     }
+    void HandleCorruptedGameFile() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_HandleCorruptedGameFileAddr)(this);
+    }
+    void HandleOldGameFile() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_HandleOldGameFileFileAddr)(this);
+    }
 
     LawnApp() {
         _constructor();

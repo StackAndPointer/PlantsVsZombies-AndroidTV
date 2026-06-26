@@ -109,12 +109,12 @@ bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext) {
 
     // 检查存档魔数和版本范围。
     if (aHeader.mMagicNumber != SAVE_FILE_MAGIC_NUMBER || aHeader.mBuildVersion > SAVE_FILE_VERSION) {
-        //        gLawnApp->HandleCorruptedGameFile();
+        gLawnApp->HandleCorruptedGameFile();
         return false;
     }
     // 魔数正确，但不是当前支持的版本。
     if (aHeader.mBuildVersion != SAVE_FILE_VERSION) {
-        //        gLawnApp->HandleOldGameFile();
+        gLawnApp->HandleOldGameFile();
         return false;
     }
     SyncBoard(theContext, theBoard);
@@ -125,7 +125,7 @@ bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext) {
         }
     }
     if (theContext->mFailed) {
-        //        gLawnApp->HandleCorruptedGameFile();
+        gLawnApp->HandleCorruptedGameFile();
         return false;
     }
 

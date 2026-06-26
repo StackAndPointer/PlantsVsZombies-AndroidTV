@@ -370,6 +370,8 @@ bool LoadGameMain() {
     LawnApp_KillVSSetupScreenAddr = libGameMain.GetSymbol("_ZN7LawnApp17KillVSSetupScreenEv");
     LawnApp_HasBeatenChallengeAddr = libGameMain.GetSymbol("_ZN7LawnApp18HasBeatenChallengeE8GameMode");
     LawnApp_IsTrialStageLockedAddr = libGameMain.GetSymbol("_ZN7LawnApp18IsTrialStageLockedEv");
+    LawnApp_HandleCorruptedGameFileAddr = libGameMain.GetSymbol("_ZN7LawnApp23HandleCorruptedGameFileEv");
+    LawnApp_HandleOldGameFileFileAddr = libGameMain.GetSymbol("_ZN7LawnApp17HandleOldGameFileEv");
 
 
     ChallengeScreen_UpdateAddr = libGameMain.GetSymbol("_ZN15ChallengeScreen6UpdateEv");
