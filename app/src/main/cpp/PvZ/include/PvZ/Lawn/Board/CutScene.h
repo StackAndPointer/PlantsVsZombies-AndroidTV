@@ -61,6 +61,9 @@ public:
     CutScene() {
         reinterpret_cast<void (*)(CutScene *)>(CutScene_CutSceneAddr)(this);
     }
+    ~CutScene() {
+        _destructor();
+    };
 
     bool IsSurvivalRepick() {
         return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsSurvivalRepickAddr)(this);
@@ -83,7 +86,6 @@ public:
     int FindAndPlaceZombie(int theZombieType, bool theZombieGrid[5][5]) {
         return reinterpret_cast<int (*)(CutScene *, int, bool[5][5])>(CutScene_FindAndPlaceZombieAddr)(this, theZombieType, theZombieGrid);
     }
-    void ClearUpsellBoard();
     void CancelIntro() {
         reinterpret_cast<void (*)(CutScene *)>(CutScene_CancelIntroAddr)(this);
     }
@@ -104,6 +106,11 @@ public:
     void AddFlowerPots();
     void LoadUpsellChallengeScreen();
     void EndSeedChooser();
+    void ClearUpsellBoard();
+
+    void _destructor() {
+        reinterpret_cast<void (*)(CutScene *)>(CutScene__destructorAddr)(this);
+    }
 };
 
 

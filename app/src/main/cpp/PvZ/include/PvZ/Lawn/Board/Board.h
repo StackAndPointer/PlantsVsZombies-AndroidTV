@@ -131,7 +131,7 @@ struct StringIntMap {
     int mNodeCount;
 };
 
-struct LegacyStringSetLayout {
+struct StringSetLayout {
     std::uint32_t mImplStorage; // +0x00
     std::int32_t mHeaderColor;  // +0x04
     void *mRoot;                // +0x08
@@ -300,7 +300,7 @@ public:
     bool mUnknown58E8;                                                // 0x58E8
     bool mUnknown58E9;                                                // 0x58E9
     std::uint8_t mPadding58EA[2];
-    LegacyStringSetLayout mUnknownStringSet; // 0x58EC
+    StringSetLayout mUnknownStringSet;       // 0x58EC
     int mUnknown5904;                        // 0x5904
     GameButton *mBoardMenuButton = nullptr;  // 新增成员
     GameButton *mBoardStoreButton = nullptr; // 新增成员
@@ -815,8 +815,6 @@ inline void (*old_Board_RemovedFromManager)(Board *, Sexy::WidgetManager *);
 inline void (*old_Board_InitLevel)(Board *board);
 
 inline void (*old_Board_ButtonDepress)(Board *board, int id);
-
-inline void (*old_Board__destructor)(Board *board);
 
 inline void (*old_Board_MouseUp)(Board *board, int a2, int a3, int a4);
 

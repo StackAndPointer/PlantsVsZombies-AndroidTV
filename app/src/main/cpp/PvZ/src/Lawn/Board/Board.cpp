@@ -328,11 +328,110 @@ void Board::_constructor(LawnApp *theApp) {
 }
 
 void Board::_destructor() {
+    using StringSetEraseFn = void (*)(StringSetLayout *theTree, void *theRoot);
+    using StringIntMapEraseFn = void (*)(StringIntMap *theTree, void *theRoot);
+    using PlantTreeEraseFn = void (*)(PlantRbTree *theTree, void *theRoot);
+    auto StringSetErase = reinterpret_cast<StringSetEraseFn>(StringSet_M_eraseAddr);
+    auto StringIntMapErase = reinterpret_cast<StringIntMapEraseFn>(StringIntMap_M_eraseAddr);
+    auto PlantTreeErase = reinterpret_cast<PlantTreeEraseFn>(PlantPtrSet_M_eraseAddr);
+
+    vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
+    mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTable) + kBoardButtonListenerVtableOffset);
+    mButtonListenerVTable = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(vTable) + kBoardButtonListenerVTableOffset2);
+
     delete mReplayControlsWidget;
     delete mBoardStoreButton;
     delete mBoardMenuButton;
     delete mShovelWidget;
-    old_Board__destructor(this);
+
+    delete mAdvice;
+    delete mSeedBank[0];
+    delete mSeedBank[1];
+
+    mZombies.DataArrayDispose();
+    mPlants.DataArrayDispose();
+    mProjectiles.DataArrayDispose();
+    mCoins.DataArrayDispose();
+    mLawnMowers.DataArrayDispose();
+    mGridItems.DataArrayDispose();
+
+    delete mToolTip;
+    delete mCutScene;
+    delete mChallenge;
+
+    for (int aPlayerIndex = 0; aPlayerIndex < 2; ++aPlayerIndex) {
+        GamepadControls *aControls = mGamepadControls[aPlayerIndex];
+        if (aControls != nullptr) {
+            homura::CallVirtualFunc<GamepadControls, 17, void>(aControls); // delete GamepadControls/ZenGardenControls/TreeOfWisdomControls
+        }
+
+        delete mCursorObject[aPlayerIndex];
+        delete mCursorPreview[aPlayerIndex];
+    }
+
+    // RemoveAllWidgets
+    homura::CallVirtualFunc<Board, 11, void, bool, bool, WidgetManager *>(this, false, false, nullptr);
+
+    std::memset(mCoverLayerAnimIDs, 0, sizeof(mCoverLayerAnimIDs));
+
+    struct LegacyRbTreeNodeBase {
+        std::int32_t mColor;
+        LegacyRbTreeNodeBase *mParent;
+        LegacyRbTreeNodeBase *mLeft;
+        LegacyRbTreeNodeBase *mRight;
+    };
+
+    auto RbTreeIncrement = [](LegacyRbTreeNodeBase *theNode) -> LegacyRbTreeNodeBase * {
+        if (theNode->mRight != nullptr) {
+            theNode = theNode->mRight;
+
+            while (theNode->mLeft != nullptr) {
+                theNode = theNode->mLeft;
+            }
+        } else {
+            LegacyRbTreeNodeBase *aParent = theNode->mParent;
+
+            while (theNode == aParent->mRight) {
+                theNode = aParent;
+                aParent = aParent->mParent;
+            }
+
+            if (theNode->mRight != aParent) {
+                theNode = aParent;
+            }
+        }
+
+        return theNode;
+    };
+
+    auto *aNode = reinterpret_cast<LegacyRbTreeNodeBase *>(mUnknownStringSet.mLeftmost);
+
+    auto *aHeader = reinterpret_cast<LegacyRbTreeNodeBase *>(&mUnknownStringSet.mHeaderColor);
+
+    while (aNode != aHeader) {
+        auto &aResourceName = *reinterpret_cast<pvzstl::string *>(reinterpret_cast<std::uint8_t *>(aNode) + 0x10);
+
+        TodDeleteResources(aResourceName);
+
+        aNode = RbTreeIncrement(aNode);
+    }
+
+    StringSetErase(&mUnknownStringSet, mUnknownStringSet.mRoot);
+
+    mStringSecondPlayer.Destruct();
+
+    StringIntMapErase(&mUnknownStringIntMap, mUnknownStringIntMap.mHeaderRoot);
+
+    PlantTreeErase(&mPumpkinTree, mPumpkinTree.mRoot);
+    PlantTreeErase(&mFlowerPotTree, mFlowerPotTree.mRoot);
+    PlantTreeErase(&mTangleKelpTree, mTangleKelpTree.mRoot);
+
+    mSyncBlockInfos.Destruct();
+
+    mButtonListenerVTable = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(vTableForSyncObjectAddr) + 8);
+    mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
+
+    Sexy::Widget::_destructor();
 }
 
 void Board::AddedToManager(WidgetManager *theWidgetManager) {

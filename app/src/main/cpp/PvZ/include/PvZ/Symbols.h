@@ -227,6 +227,7 @@ inline void *LawnLoadGameAddr;
 
 inline void *CutScene_UpdateAddr;
 inline void *CutScene_CutSceneAddr;
+inline void *CutScene__destructorAddr;
 inline void *CutScene_ShowShovelAddr;
 inline void *CutScene_IsSurvivalRepickAddr;
 inline void *CutScene_ShouldRunUpsellBoardAddr;
@@ -406,8 +407,11 @@ inline void *GamepadControls_UpdateStatesAddr;
 inline void *GamepadControls_InvalidatePreviewReanimAddr;
 inline void *GamepadControls_DrawPreviewAddr;
 inline void *GamepadControls_UpdatePreviewReanimAddr;
+inline void *GamepadControls___destructorAddr;
 inline void *TreeOfWisdomControls_TreeOfWisdomControlsAddr;
+inline void *TreeOfWisdomControls__destructorAddr;
 inline void *ZenGardenControls_ZenGardenControlsAddr;
+inline void *ZenGardenControls__destructorAddr;
 
 
 inline void *Zombie_UpdateAddr;
@@ -994,6 +998,7 @@ inline void *SoundSystemFindInstanceAddr;
 inline void *TodStringListLoadAddr;
 inline void *TodReplaceStringAddr;
 inline void *TodReplaceNumberStringAddr;
+inline void *TodDeleteResourcesAddr;
 inline void *Sexy_AudiereSoundManager_LoadSoundAddr;
 inline void *ReanimatorLoadDefinitionsAddr;
 inline void *DefinitionGetCompiledFilePathFromXMLFilePathAddr;
@@ -1062,8 +1067,10 @@ inline void *ConfirmBackToMainDialog_RemovedFromManagerAddr;
 inline void *ConfirmBackToMainDialog_ConfirmBackToMainDialogAddr;
 inline void *CursorObject_DrawAddr;
 inline void *CursorObject_CursorObjectAddr;
+inline void *CursorObject__destructorAddr;
 inline void *CursorObject_UpdateAddr;
 inline void *CursorPreview_CursorPreviewAddr;
+inline void *CursorPreview__destructorAddr;
 inline void *CursorPreview_UpdateAddr;
 inline void *HelpOptionsDialog_ButtonDepressAddr;
 inline void *HelpOptionsDialog_HelpOptionsDialogAddr;
@@ -1269,6 +1276,7 @@ inline void *Sexy_ResourceManager_GetSoundThrowAddr;
 
 
 inline void *ToolTipWidget__constructorAddr;
+inline void *ToolTipWidget__destructorAddr;
 inline void *ToolTipWidget_SetWarningTextAddr;
 inline void *ToolTipWidget_SetTitleAddr;
 inline void *ToolTipWidget_SetLabelAddr;
@@ -2167,6 +2175,8 @@ extern ReanimatorDefinition *&gReanimatorDefArray;
 extern char *&ReanimTrackId_anim_head1;
 
 inline void *vTableForWidgetAddr;
+inline void *vTableForSyncObjectAddr;
+inline void *vTableForSexyButtonListenerAddr;
 inline void *vTableForCursorObjectAddr;
 inline void *vTableForBoardAddr;
 inline void *vTableForStoreScreenAddr;
@@ -2196,6 +2206,9 @@ inline void *vTableForCreditScreenAddr;
 inline void *vTableForMainMenuAddr;
 inline void *vTableForWaitForSecondPlayerDialogAddr;
 inline void *vTableForSexy_SexyAppBaseAddr;
+inline void *StringIntMap_M_eraseAddr;
+inline void *StringSet_M_eraseAddr;
+inline void *PlantPtrSet_M_eraseAddr;
 
 
 inline void *Native_AudioOutput_setupAddr;

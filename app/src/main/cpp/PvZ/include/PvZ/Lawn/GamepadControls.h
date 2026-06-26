@@ -98,6 +98,9 @@ protected:
     friend void InitHookFunction();
 
     void _constructor(Board *theBoard, int thePlayerIndex1, int thePlayerIndex2);
+    void _destructor() {
+        reinterpret_cast<void (*)(GamepadControls *)>(GamepadControls___destructorAddr)(this);
+    }
 };
 
 class GamepadControls_ : public GamepadControls {
@@ -105,7 +108,9 @@ public:
     GamepadControls_(Board *theBoard, int thePlayerIndex1, int thePlayerIndex2) {
         _constructor(theBoard, thePlayerIndex1, thePlayerIndex2);
     }
-    ~GamepadControls_() = delete;
+    ~GamepadControls_() {
+        _destructor();
+    };
 };
 
 class ZenGardenControls : public GamepadControls {
@@ -116,9 +121,16 @@ public:
     ZenGardenControls(Board *theBoard, int thePlayerIndex1, int thePlayerIndex2) {
         reinterpret_cast<void (*)(ZenGardenControls *, Board *, int, int)>(ZenGardenControls_ZenGardenControlsAddr)(this, theBoard, thePlayerIndex1, thePlayerIndex2);
     }
-    ~ZenGardenControls() = delete;
+    ~ZenGardenControls() {
+        _destructor();
+    };
 
     void Update(float a2);
+
+protected:
+    void _destructor() {
+        reinterpret_cast<void (*)(ZenGardenControls *)>(ZenGardenControls__destructorAddr)(this);
+    }
 };
 
 class TreeOfWisdomControls : public GamepadControls {
@@ -131,7 +143,14 @@ public:
     TreeOfWisdomControls(Board *theBoard, int thePlayerIndex1, int thePlayerIndex2) {
         reinterpret_cast<void (*)(TreeOfWisdomControls *, Board *, int, int)>(TreeOfWisdomControls_TreeOfWisdomControlsAddr)(this, theBoard, thePlayerIndex1, thePlayerIndex2);
     }
-    ~TreeOfWisdomControls() = delete;
+    ~TreeOfWisdomControls() {
+        _destructor();
+    };
+
+protected:
+    void _destructor() {
+        reinterpret_cast<void (*)(TreeOfWisdomControls *)>(TreeOfWisdomControls__destructorAddr)(this);
+    }
 };
 
 /***************************************************************************************************************/

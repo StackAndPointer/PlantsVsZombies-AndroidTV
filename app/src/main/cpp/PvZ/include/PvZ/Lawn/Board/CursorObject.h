@@ -44,6 +44,9 @@ public:
     CursorObject() {
         reinterpret_cast<void (*)(CursorObject *)>(CursorObject_CursorObjectAddr)(this);
     }
+    ~CursorObject() {
+        _destructor();
+    };
 
     void Draw(Sexy::Graphics *g) {
         reinterpret_cast<void (*)(CursorObject *, Sexy::Graphics *)>(CursorObject_DrawAddr)(this, g);
@@ -54,6 +57,11 @@ public:
 
     bool BeginDraw(Sexy::Graphics *g);
     void EndDraw(Sexy::Graphics *g);
+
+protected:
+    void _destructor() {
+        reinterpret_cast<void (*)(CursorObject *)>(CursorObject__destructorAddr)(this);
+    }
 };
 
 class CursorPreview : public GameObject {
@@ -66,9 +74,16 @@ public:
     CursorPreview(int thePlayerIndex) {
         reinterpret_cast<void (*)(CursorPreview *, int)>(CursorPreview_CursorPreviewAddr)(this, thePlayerIndex);
     }
+    ~CursorPreview() {
+        _destructor();
+    };
 
     void Update() {
         reinterpret_cast<void (*)(CursorPreview *)>(CursorPreview_UpdateAddr)(this);
+    }
+
+    void _destructor() {
+        reinterpret_cast<void (*)(CursorPreview *)>(CursorPreview__destructorAddr)(this);
     }
 };
 

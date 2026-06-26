@@ -211,6 +211,10 @@ inline pvzstl::string TodReplaceNumberString(const pvzstl::string &theText, cons
     return reinterpret_cast<pvzstl::string (*)(const pvzstl::string &, const char *, int)>(TodReplaceNumberStringAddr)(theText, theStringToFind, theNumber);
 }
 
+inline void TodDeleteResources(const pvzstl::string &theText) {
+    reinterpret_cast<void (*)(const pvzstl::string &)>(TodDeleteResourcesAddr)(theText);
+}
+
 inline TodAllocator *FindGlobalAllocator(int theSize) {
     return reinterpret_cast<TodAllocator *(*)(int)>(FindGlobalAllocatorAddr)(theSize);
 }

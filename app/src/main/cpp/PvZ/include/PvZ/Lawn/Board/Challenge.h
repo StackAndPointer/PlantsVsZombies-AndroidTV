@@ -122,7 +122,9 @@ public:
     Challenge() {
         _constructor();
     };
-    ~Challenge() = delete;
+    ~Challenge() {
+        _destructor();
+    };
 
     bool MouseDown(int x, int y, int theClickCount, HitResult *theHitResult, int thePlayerIndex) {
         return reinterpret_cast<bool (*)(Challenge *, int, int, int, HitResult *, int)>(Challenge_MouseDownAddr)(this, x, y, theClickCount, theHitResult, thePlayerIndex);

@@ -114,7 +114,7 @@ void InitHookFunction() {
     homura::HookFunc(Board_MouseDownWithPlantAddr, &Board::MouseDownWithPlant, &old_Board_MouseDownWithPlant);
     homura::HookFunc(Board_UpdateAddr, &Board::Update, &old_Board_Update);
     homura::HookFunc(Board_BoardAddr, &Board::_constructor, nullptr);
-    homura::HookFunc(Board__destructorAddr, &Board::_destructor, &old_Board__destructor);
+    homura::HookFunc(Board__destructorAddr, &Board::_destructor, nullptr);
     homura::HookFunc(Board_InitLevelAddr, &Board::InitLevel, &old_Board_InitLevel);
     homura::HookFunc(Board_StartLevelAddr, &Board::StartLevel, &old_Board_StartLevel);
     homura::HookFunc(Board_RemovedFromManagerAddr, &Board::RemovedFromManager, &old_Board_RemovedFromManager);

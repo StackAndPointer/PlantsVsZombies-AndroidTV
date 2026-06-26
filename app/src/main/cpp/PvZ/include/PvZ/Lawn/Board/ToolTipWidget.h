@@ -50,7 +50,7 @@ public:
     ToolTipWidget() {
         _constructor();
     };
-    ~ToolTipWidget() = delete;
+    ~ToolTipWidget() = default;
 
     void SetWarningText(const pvzstl::string &theWarningText) {
         reinterpret_cast<void (*)(ToolTipWidget *, const pvzstl::string &)>(ToolTipWidget_SetWarningTextAddr)(this, theWarningText);
@@ -72,14 +72,13 @@ public:
     }
 
     void Draw(Sexy::Graphics *g);
-
     void CalculateSize();
 
 protected:
     void _constructor() {
         reinterpret_cast<void (*)(ToolTipWidget *)>(ToolTipWidget__constructorAddr)(this);
     }
-}; // size = 18
+};
 
 
 inline void (*old_ToolTipWidget_Draw)(ToolTipWidget *, Sexy::Graphics *);
