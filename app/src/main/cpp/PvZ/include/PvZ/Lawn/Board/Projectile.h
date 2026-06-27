@@ -25,6 +25,8 @@
 
 #include "GameObject.h"
 
+inline constexpr int MAX_PIERCE_HIT_ZOMBIES = 3;
+
 class Plant;
 class Zombie;
 class GridItem;
@@ -68,13 +70,13 @@ public:
     ZombieID mTargetZombieID;       // 38
     int mLastPortalX;               // 39
     int mPierceHitCount = 0;
-    ZombieID mPiercedZombieID[3];
+    ZombieID mHitZombieIDs[MAX_PIERCE_HIT_ZOMBIES];
 
     Projectile() {
         _constructor();
     }
     ~Projectile() {
-        _deconstructor();
+        _destructor();
     }
 
     void Die() {
@@ -115,7 +117,7 @@ protected:
     void _constructor() {
         reinterpret_cast<void (*)(Projectile *)>(Projectile_ProjectileCtorAddr)(this);
     }
-    void _deconstructor() {
+    void _destructor() {
         reinterpret_cast<void (*)(Projectile *)>(Projectile_ProjectileDtorAddr)(this);
     }
 };

@@ -25,6 +25,7 @@
 #include "PvZ/Lawn/Board/Plant.h"
 #include "PvZ/Lawn/Board/Zombie.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 #include "PvZ/Misc.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodCommon.h"
@@ -32,6 +33,22 @@
 #include "PvZ/TodLib/Effect/Reanimator.h"
 
 using namespace Sexy;
+
+namespace {
+bool IsBalancePatchPiercingSpike(const Projectile *theProjectile) {
+    return theProjectile->mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode && theProjectile->mProjectileType == ProjectileType::PROJECTILE_SPIKE;
+}
+
+bool HasHitZombie(const Projectile *theProjectile, Zombie *theZombie) {
+    ZombieID aZombieID = theProjectile->mBoard->ZombieGetID(theZombie);
+    for (int i = 0; i < theProjectile->mPierceHitCount; ++i) {
+        if (theProjectile->mHitZombieIDs[i] == aZombieID) {
+            return true;
+        }
+    }
+    return false;
+}
+} // namespace
 
 ProjectileDefinition gProjectileDefinition[] = {
     {ProjectileType::PROJECTILE_PEA, 0, 20},
@@ -55,8 +72,6 @@ ProjectileDefinition gExtendedProjectileDefinition[] = {
 };
 
 void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
-    // projectile->mNewProjectileLastX = theX;
-    // projectile->mNewProjectileLastY = theY;
     if (!isOnlyTouchFireWood) {
         // 僵尸子弹与加农炮子弹NULL
         if (theProjectileType == ProjectileType::PROJECTILE_COBBIG || theProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
@@ -84,6 +99,10 @@ void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, in
     }
 
     old_Projectile_ProjectileInitialize(this, theX, theY, theRenderOrder, theRow, theProjectileType);
+
+    for (ZombieID &aZombieID : mHitZombieIDs) {
+        aZombieID = ZombieID::ZOMBIEID_NULL;
+    }
 }
 
 Plant *Projectile::FindCollisionTargetPlant() {
@@ -158,6 +177,9 @@ Zombie *Projectile::FindCollisionTarget() {
 
             Rect aZombieRect = aZombie->GetZombieRect();
             if (GetRectOverlap(aProjectileRect, aZombieRect) > 0) {
+                if (IsBalancePatchPiercingSpike(this) && HasHitZombie(this, aZombie)) {
+                    continue;
+                }
                 if (aBestZombie == nullptr || aZombie->mX < aMinX) {
                     aBestZombie = aZombie;
                     aMinX = aZombie->mX;
@@ -433,6 +455,11 @@ void Projectile::PlayImpactSound(Zombie *theZombie) {
 }
 
 void Projectile::DoImpact(Zombie *theZombie) {
+    bool aIsPiercingSpike = theZombie != nullptr && IsBalancePatchPiercingSpike(this) && !theZombie->IsFlying();
+    if (aIsPiercingSpike && HasHitZombie(this, theZombie)) {
+        return;
+    }
+
     PlayImpactSound(theZombie);
 
     if (IsSplashDamage(theZombie)) {
@@ -443,11 +470,26 @@ void Projectile::DoImpact(Zombie *theZombie) {
         DoSplashDamage(theZombie, nullptr);
     } else if (theZombie) {
         unsigned int aDamageFlags = GetDamageFlags(theZombie);
-        theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
-        if (mApp->IsVSMode()) {
-            if (theZombie->IsFlying() && mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
+        if (mApp->IsVSMode() && mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
+            if (theZombie->IsFlying()) {
                 theZombie->TakeDamage(theZombie->mFlyingHealth, aDamageFlags);
+                Die();
+                return;
             }
+
+            if (VSSetupAddonWidget::msBalancePatchMode) {
+                theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
+                mHitZombieIDs[mPierceHitCount] = mBoard->ZombieGetID(theZombie);
+                ++mPierceHitCount;
+                if (mPierceHitCount >= MAX_PIERCE_HIT_ZOMBIES) {
+                    Die();
+                }
+            } else {
+                theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
+            }
+            return;
+        } else {
+            theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
         }
     }
 

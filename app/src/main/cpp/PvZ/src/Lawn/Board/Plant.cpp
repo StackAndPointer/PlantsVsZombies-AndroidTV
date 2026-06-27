@@ -1577,6 +1577,7 @@ static int GetVSCostBalanced(SeedType theSeedType) {
             aCost = 150;
             break;
         case SeedType::SEED_DOOMSHROOM:  // 125 -> 175
+        case SeedType::SEED_CACTUS:      // 100 -> 175
         case SeedType::SEED_ZOMBIE_POGO: // 225 -> 175
         case SeedType::SEED_ZOMBIE_FLAG: // 300 -> 175
             aCost = 175;
@@ -1649,6 +1650,7 @@ static int GetVSRefreshTimeBalanced(SeedType theSeedType) {
         case SeedType::SEED_SNOWPEA:                // 7.5 -> 15
         case SeedType::SEED_REPEATER:               // 7.5 -> 15
         case SeedType::SEED_PUFFSHROOM:             // 7.5 -> 15
+        case SeedType::SEED_CACTUS:                 // 7.5 -> 15
         case SeedType::SEED_SPLITPEA:               // 7.5 -> 15
         case SeedType::SEED_KERNELPULT:             // 7.5 -> 15
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX: // 30 -> 15
