@@ -5987,19 +5987,18 @@ void Board::UpdateButtons() {
     }
 
     if (mBoardMenuButton != nullptr) {
-        //        if (mApp->IsVSMode()) {
-        //            const bool spectatorReadOnly = gIsServerModeSpectator;
-        //            mBoardMenuButton->mBtnNoDraw = spectatorReadOnly;
-        //            mBoardMenuButton->mDisabled = spectatorReadOnly;
-        //        } else {
-        if (mApp->mGameScene == GameScenes::SCENE_PLAYING) {
+        if (mApp->IsVSMode()) {
             mBoardMenuButton->mBtnNoDraw = false;
             mBoardMenuButton->mDisabled = false;
         } else {
-            mBoardMenuButton->mBtnNoDraw = true;
-            mBoardMenuButton->mDisabled = true;
+            if (mApp->mGameScene == GameScenes::SCENE_PLAYING) {
+                mBoardMenuButton->mBtnNoDraw = false;
+                mBoardMenuButton->mDisabled = false;
+            } else {
+                mBoardMenuButton->mBtnNoDraw = true;
+                mBoardMenuButton->mDisabled = true;
+            }
         }
-        //        }
 
         if (mBoardFadeOutCounter > 0) {
             mBoardMenuButton->mBtnNoDraw = true;
