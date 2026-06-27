@@ -1081,7 +1081,7 @@ void SeedChooserScreen::ClickedSeedInChooser(ChosenSeed &theChosenSeed, int theP
     selectedSeed.mSeedType = selectedSeedType;
 
     if (mApp->IsVSMode()) {
-        const uint8_t cursorFlags = (mIsZombieChooser && mPageIndex == 1) ? kCursorPageOneEventFlag : 0;
+        const uint8_t cursorFlags = (mPageIndex == 1) ? kCursorPageOneEventFlag : 0;
         if (gTcpConnected) {
             // 客户端始终上报点击事件：即使选卡失败，也用于同步光标位置。
             U8x3_Event event = {{mBanningPhase ? EventType::EVENT_CLIENT_SEEDCHOOSER_BAN_SEED : EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED},
@@ -1905,7 +1905,7 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
                     int y = (aPlayerIndex == 0) ? mCursorPositionY1 : mCursorPositionY2;
                     SeedType aSeedType = SeedHitTest(x, y);
                     if (aSeedType != SeedType::SEED_NONE) {
-                        const uint8_t cursorFlags = kCursorMoveOnlyEventFlag | ((mIsZombieChooser && mPageIndex == 1) ? kCursorPageOneEventFlag : 0);
+                        const uint8_t cursorFlags = kCursorMoveOnlyEventFlag | ((mPageIndex == 1) ? kCursorPageOneEventFlag : 0);
                         if (gTcpConnected) {
                             U8x3_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED}, {uint8_t(aSeedType), uint8_t(mIsZombieChooser), cursorFlags}};
                             netplay::PutEvent(event);
@@ -2055,10 +2055,10 @@ void SeedChooserScreen::ButtonDepress(int theId) {
 
     if (mApp->IsVSMode()) {
         if (gTcpConnected) {
-            U8_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_BUTTON_DEPRESS}, uint8_t(theId)};
+            U8U8_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_BUTTON_DEPRESS}, uint8_t(theId), uint8_t(mIsZombieChooser)};
             netplay::PutEvent(event);
         } else if (gTcpClientSocket >= 0) {
-            U8_Event event = {{EventType::EVENT_SERVER_SEEDCHOOSER_BUTTON_DEPRESS}, uint8_t(theId)};
+            U8U8_Event event = {{EventType::EVENT_SERVER_SEEDCHOOSER_BUTTON_DEPRESS}, uint8_t(theId), uint8_t(mIsZombieChooser)};
             netplay::PutEvent(event);
         }
     }
@@ -2637,7 +2637,7 @@ void SeedChooserScreen::MouseDrag(int x, int y) {
             }
 
             // data3 flags: bit0 = moveOnly(sync cursor without picking), bit1 = sender page index for zombie chooser
-            const uint8_t cursorFlags = kCursorMoveOnlyEventFlag | ((mIsZombieChooser && mPageIndex == 1) ? kCursorPageOneEventFlag : 0);
+            const uint8_t cursorFlags = kCursorMoveOnlyEventFlag | ((mPageIndex == 1) ? kCursorPageOneEventFlag : 0);
             if (gTcpConnected) {
                 U8x3_Event event = {{EventType::EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED}, {uint8_t(hoverSeedType), uint8_t(mIsZombieChooser), cursorFlags}};
                 netplay::PutEvent(event);

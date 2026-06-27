@@ -714,8 +714,11 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
             gMetricsHostSendNameAllowed = eventState->data;
         } break;
         case EVENT_CLIENT_SEEDCHOOSER_BUTTON_DEPRESS: {
-            auto *eventBtnDepress = static_cast<const U8_Event *>(event);
-            mApp->mZombieChooserScreen->ButtonDepress_Origin(eventBtnDepress->data);
+            auto *eventBtnDepress = static_cast<const U8U8_Event *>(event);
+            SeedChooserScreen *seedChooser = eventBtnDepress->data2 != 0 ? mApp->mZombieChooserScreen : mApp->mSeedChooserScreen;
+            if (seedChooser != nullptr) {
+                seedChooser->ButtonDepress_Origin(eventBtnDepress->data1);
+            }
         } break;
         case EVENT_CLIENT_SEEDCHOOSER_SELECT_SEED:
         case EVENT_CLIENT_SEEDCHOOSER_BAN_SEED: {
@@ -746,12 +749,23 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 if ((syncedPageIndex == 0 && seedIndex >= 25) || (syncedPageIndex == 1 && seedIndex < 25)) {
                     break;
                 }
-                seedChooser->SetPageIndex(syncedPageIndex);
+            } else {
+                if ((syncedPageIndex == 0 && seedIndex >= NUM_SEEDS_IN_CHOOSER) || (syncedPageIndex == 1 && seedIndex < NUM_SEEDS_IN_CHOOSER)) {
+                    break;
+                }
             }
+
+            seedChooser->SetPageIndex(syncedPageIndex);
+
             int cursorSeedIndex = seedIndex;
-            if (seedChooser->mIsZombieChooser && syncedPageIndex == 1 && cursorSeedIndex >= 25) {
-                cursorSeedIndex -= 25;
+            if (syncedPageIndex == 1) {
+                cursorSeedIndex -= isZombieChooser ? 25 : NUM_SEEDS_IN_CHOOSER;
             }
+
+            if (cursorSeedIndex < 0 || cursorSeedIndex >= seedChooser->GetCurrentPageSeedCount()) {
+                break;
+            }
+
             VSSide targetSide = isZombieChooser ? VSSide::VS_SIDE_ZOMBIE : VSSide::VS_SIDE_PLANT;
             if (mSides[0] != targetSide && mSides[1] != targetSide) {
                 break;
@@ -857,8 +871,11 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             ButtonDepress_Origin(theId);
         } break;
         case EVENT_SERVER_SEEDCHOOSER_BUTTON_DEPRESS: {
-            auto *eventBtnDepress = static_cast<const U8_Event *>(event);
-            mApp->mZombieChooserScreen->ButtonDepress_Origin(eventBtnDepress->data);
+            auto *eventBtnDepress = static_cast<const U8U8_Event *>(event);
+            SeedChooserScreen *seedChooser = eventBtnDepress->data2 != 0 ? mApp->mZombieChooserScreen : mApp->mSeedChooserScreen;
+            if (seedChooser != nullptr) {
+                seedChooser->ButtonDepress_Origin(eventBtnDepress->data1);
+            }
         } break;
         case EVENT_VSSETUPMENU_ENTER_STATE: {
             [[maybe_unused]] int aState = static_cast<const U8_Event *>(event)->data;
@@ -894,12 +911,23 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
                 if ((syncedPageIndex == 0 && seedIndex >= 25) || (syncedPageIndex == 1 && seedIndex < 25)) {
                     break;
                 }
-                seedChooser->SetPageIndex(syncedPageIndex);
+            } else {
+                if ((syncedPageIndex == 0 && seedIndex >= NUM_SEEDS_IN_CHOOSER) || (syncedPageIndex == 1 && seedIndex < NUM_SEEDS_IN_CHOOSER)) {
+                    break;
+                }
             }
+
+            seedChooser->SetPageIndex(syncedPageIndex);
+
             int cursorSeedIndex = seedIndex;
-            if (seedChooser->mIsZombieChooser && syncedPageIndex == 1 && cursorSeedIndex >= 25) {
-                cursorSeedIndex -= 25;
+            if (syncedPageIndex == 1) {
+                cursorSeedIndex -= isZombieChooser ? 25 : NUM_SEEDS_IN_CHOOSER;
             }
+
+            if (cursorSeedIndex < 0 || cursorSeedIndex >= seedChooser->GetCurrentPageSeedCount()) {
+                break;
+            }
+
             VSSide targetSide = isZombieChooser ? VSSide::VS_SIDE_ZOMBIE : VSSide::VS_SIDE_PLANT;
             if (mSides[0] != targetSide && mSides[1] != targetSide) {
                 break;
