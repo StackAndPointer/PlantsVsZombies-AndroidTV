@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (C) 2023-2026  PvZ TV Touch Team
  *
  * This file is part of PlantsVsZombies-AndroidTV.
@@ -94,6 +94,15 @@ bool IsExtendedSeedsModeEnabled(SeedChooserScreen *screen) {
     }
 
     return vsSetup->mAddonWidget->mExtendedSeedsMode;
+}
+
+int GetZombieFirstPageSeedCount(const SeedChooserScreen *screen) {
+    const SeedType lastSeedType = screen->mShowExtendedSeeds ? SeedType::SEED_ZOMBIE_BALLOON : SeedType::SEED_ZOMBIE_GARGANTUAR;
+    return int(lastSeedType) - int(SeedType::SEED_ZOMBIE_GRAVESTONE) + 1;
+}
+
+SeedType GetZombieFirstPageLastSeedType(const SeedChooserScreen *screen) {
+    return screen->mShowExtendedSeeds ? SeedType::SEED_ZOMBIE_BALLOON : SeedType::SEED_ZOMBIE_GARGANTUAR;
 }
 
 inline void NormalizeLocalPoint(SeedChooserScreen *screen, int &x, int &y) {
@@ -526,7 +535,6 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
 }
 
 void SeedChooserScreen::_destructor() {
-
     delete mMainMenuButton;
     delete mPageButton;
 
@@ -974,10 +982,11 @@ int SeedChooserScreen::GetSeedStorageCount() const {
 
 int SeedChooserScreen::GetCurrentPageSeedCount() const {
     if (mIsZombieChooser) {
+        const int zombieFirstPageSeedCount = GetZombieFirstPageSeedCount(this);
         if (mPageIndex == 0) {
-            return 25;
+            return zombieFirstPageSeedCount;
         }
-        return GetSeedStorageCount() - 25;
+        return GetSeedStorageCount() - zombieFirstPageSeedCount;
     }
 
     if (mPageIndex == 0) {
@@ -1001,8 +1010,7 @@ int SeedChooserScreen::GetPageSeedStorageIndex(int theSeedIndex) const {
     }
 
     if (mIsZombieChooser) {
-        constexpr int kZombieFirstPageCount = 25;
-        return kZombieFirstPageCount + theSeedIndex;
+        return GetZombieFirstPageSeedCount(this) + theSeedIndex;
     }
 
     return NUM_SEEDS_IN_CHOOSER + theSeedIndex;
@@ -2137,8 +2145,9 @@ void SeedChooserScreen::GetSeedPositionInChooser(int theIndex, int &x, int &y) {
     }
     if (mPageIndex == 1) {
         if (mIsZombieChooser) {
-            if (theIndex >= SEED_ZOMBIE_BALLOON && theIndex < NUM_ZOMBIE_SEEDS_IN_CHOOSER) {
-                theIndex -= SEED_ZOMBIE_BALLOON;
+            const int zombieFirstPageSeedCount = GetZombieFirstPageSeedCount(this);
+            if (theIndex >= zombieFirstPageSeedCount && theIndex < GetSeedStorageCount()) {
+                theIndex -= zombieFirstPageSeedCount;
             }
         } else {
             if (theIndex >= SEED_ICEBERG_LETTUCE && theIndex < NUM_SEEDS_IN_CHOOSER_EXTENDED) {
@@ -2282,9 +2291,6 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
         int aSeedX = 0, aSeedY = 0;
         SeedType aZombieSeedType = GetZombieIndexBySeedType(aSeedType);
         GetSeedPositionInChooser(aZombieSeedType, aSeedX, aSeedY);
-        if (mSeedsInFlight <= 0 && mIsZombieChooser && mPageIndex == 1) {
-            aToolTip->mY = aSeedY - 4 * (SEED_PACKET_HEIGHT + 3);
-        }
 
         if (mIsZombieChooser) {
             if (mChosenSeedsExtended[aSeedType - SEED_ZOMBIE_GRAVESTONE].mSeedState == ChosenSeedState::SEED_IN_BANK && mChosenSeedsExtended[aSeedType - SEED_ZOMBIE_GRAVESTONE].mCrazyDavePicked) {
@@ -2380,11 +2386,11 @@ void SeedChooserScreen::MouseMove(int x, int y) {
     }
 
     if (mIsZombieChooser) {
-        if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
+        if ((mPageIndex == 0 && aSeedType > GetZombieFirstPageLastSeedType(this)) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
             return;
         }
         if (mPageIndex == 1) {
-            aSeedType = SeedType(aSeedType - 25);
+            aSeedType = SeedType(aSeedType - GetZombieFirstPageSeedCount(this));
         }
 
         SeedType aZombieSeedType = GetZombieIndexBySeedType(aSeedType);
@@ -2518,11 +2524,11 @@ void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
     }
 
     if (mIsZombieChooser) {
-        if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
+        if ((mPageIndex == 0 && aSeedType > GetZombieFirstPageLastSeedType(this)) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
             return;
         }
         if (mPageIndex == 1) {
-            aSeedType = SeedType(aSeedType - 25);
+            aSeedType = SeedType(aSeedType - GetZombieFirstPageSeedCount(this));
         }
 
         SeedType aZombieSeedType = GetZombieIndexBySeedType(aSeedType);
@@ -2577,11 +2583,11 @@ void SeedChooserScreen::MouseDrag(int x, int y) {
             return;
         }
         if (mIsZombieChooser) {
-            if ((mPageIndex == 0 && aSeedType > SeedType::SEED_ZOMBIE_BALLOON) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
+            if ((mPageIndex == 0 && aSeedType > GetZombieFirstPageLastSeedType(this)) || (mPageIndex == 1 && aSeedType >= SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER)) {
                 return;
             }
             if (mPageIndex == 1) {
-                aSeedType = SeedType(aSeedType - 25);
+                aSeedType = SeedType(aSeedType - GetZombieFirstPageSeedCount(this));
             }
 
             SeedType aZombieSeedType = GetZombieIndexBySeedType(aSeedType);
@@ -2808,10 +2814,12 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
     } else {
         if (mShowExtendedSeeds) {
             if (mPageIndex == 0) {
-                aNumSeeds = 25;
+                aNumSeeds = GetZombieFirstPageSeedCount(this);
             } else if (mPageIndex == 1) {
                 aNumSeeds = NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE;
             }
+        } else {
+            aNumSeeds = GetCurrentPageSeedCount();
         }
     }
 
@@ -2904,11 +2912,11 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
             aChosenSeed.mY = aPosY;
         } else {
             if (mIsZombieChooser) {
-                if (mPageIndex == 0 && aDisplaySeedType > SeedType::SEED_ZOMBIE_BALLOON) {
+                if (mPageIndex == 0 && aDisplaySeedType > GetZombieFirstPageLastSeedType(this)) {
                     continue;
                 }
                 if (mPageIndex == 1) {
-                    if (aDisplaySeedType <= SeedType::SEED_ZOMBIE_BALLOON) {
+                    if (aDisplaySeedType <= GetZombieFirstPageLastSeedType(this)) {
                         continue;
                     }
                 }
@@ -2980,7 +2988,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
         int x = 0;
         int y = 0;
         GetSeedPositionInChooser(thePageSeedIndex, x, y);
-        const int aPageOffset = (mPageIndex == 1) ? (mIsZombieChooser ? 25 : 49) : 0;
+        const int aPageOffset = (mPageIndex == 1) ? (mIsZombieChooser ? GetZombieFirstPageSeedCount(this) : 49) : 0;
         const int aChosenSeedIndex = thePageSeedIndex + aPageOffset;
         ChosenSeed &aChosenSeed = mChosenSeedsExtended[aChosenSeedIndex];
         const SeedType aDisplaySeedType = mIsZombieChooser ? GetZombieSeedType(aChosenSeedIndex) : GetPlantSeedType(aChosenSeedIndex);
@@ -3137,8 +3145,7 @@ void SeedChooserScreen::SetPageIndex(int thePageIndex) {
     mPageIndex = thePageIndex == 0 ? 0 : 1;
     // 翻至第一页时光标移动回第一张卡，翻至第二页时光标移动至最后一张卡
     int x = 0, y = 0;
-    int aSeedIndex = mPageIndex ? (NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE - 26) : 0;
-    aSeedIndex = 0;
+    int aSeedIndex = (mPageIndex == 1) ? GetCurrentPageSeedCount() - 1 : 0;
     GetSeedPositionInChooser(aSeedIndex, x, y);
     mCursorPositionX1 = mCursorPositionX2 = x;
     mCursorPositionY1 = mCursorPositionY2 = y;
@@ -3163,10 +3170,10 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
             int x = aBannedSeed.mX;
             int y = aBannedSeed.mY;
             if (mIsZombieChooser) {
-                if (mPageIndex == 0 && aBannedSeed.mSeedType > SeedType::SEED_ZOMBIE_BALLOON) {
+                if (mPageIndex == 0 && aBannedSeed.mSeedType > GetZombieFirstPageLastSeedType(this)) {
                     continue;
                 } else if (mPageIndex == 1) {
-                    if (aBannedSeed.mSeedType <= SeedType::SEED_ZOMBIE_BALLOON) {
+                    if (aBannedSeed.mSeedType <= GetZombieFirstPageLastSeedType(this)) {
                         continue;
                     }
                     y = aBannedSeed.mY - 5 * (SEED_PACKET_HEIGHT + 3);
