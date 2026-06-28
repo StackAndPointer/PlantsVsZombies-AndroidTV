@@ -25,7 +25,7 @@
 
 #include "GameObject.h"
 
-inline constexpr int MAX_PIERCE_HIT_ZOMBIES = 3;
+inline constexpr int MAX_PIERCE_HIT_COUNT = 3;
 
 class Plant;
 class Zombie;
@@ -70,7 +70,8 @@ public:
     ZombieID mTargetZombieID;       // 38
     int mLastPortalX;               // 39
     int mPierceHitCount = 0;
-    ZombieID mHitZombieIDs[MAX_PIERCE_HIT_ZOMBIES];
+    ZombieID mHitZombieIDs[MAX_PIERCE_HIT_COUNT];
+    GridItemID mHitGridItemIDs[MAX_PIERCE_HIT_COUNT];
 
     Projectile() {
         _constructor();
@@ -82,11 +83,8 @@ public:
     void Die() {
         reinterpret_cast<void (*)(Projectile *)>(Projectile_DieAddr)(this);
     }
-    void DoImpactGridItem(GridItem *theGridItem) {
-        return reinterpret_cast<void (*)(Projectile *, GridItem *)>(Projectile_DoImpactGridItemAddr)(this, theGridItem);
-    }
-    void DoSplashDamage(Zombie *theZombie, GridItem *theGridItem);
 
+    void DoSplashDamage(Zombie *theZombie, GridItem *theGridItem);
     void ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType);
     void ConvertToFireball(int theGridX);
     void ConvertToZombieFireball();
@@ -95,6 +93,7 @@ public:
     void UpdateNormalMotion();
     void UpdateLobMotion();
     void DoImpact(Zombie *theZombie);
+    void DoImpactGridItem(GridItem *theGridItem);
     void CheckForCollision();
     Zombie *FindCollisionMindControlledTarget();
     GridItem *FindCollisionTargetGridItem();

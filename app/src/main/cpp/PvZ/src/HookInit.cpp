@@ -402,6 +402,7 @@ void InitHookFunction() {
     homura::HookFunc(Projectile_UpdateAddr, &Projectile::Update, &old_Projectile_Update);
     homura::HookFunc(Projectile_UpdateNormalMotionAddr, &Projectile::UpdateNormalMotion, &old_Projectile_UpdateNormalMotion);
     homura::HookFunc(Projectile_DoImpactAddr, &Projectile::DoImpact, nullptr);
+    homura::HookFunc(Projectile_DoImpactGridItemAddr, &Projectile::DoImpactGridItem, nullptr);
     homura::HookFunc(Projectile_DoSplashDamageAddr, &Projectile::DoSplashDamage, &old_Projectile_DoSplashDamage);
     homura::HookFunc(Projectile_CheckForCollisionAddr, &Projectile::CheckForCollision, nullptr);
     homura::HookFunc(Projectile_GetProjectileDefAddr, &Projectile::GetProjectileDef, nullptr);

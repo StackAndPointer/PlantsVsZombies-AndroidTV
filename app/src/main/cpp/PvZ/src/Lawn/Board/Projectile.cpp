@@ -35,6 +35,8 @@
 using namespace Sexy;
 
 namespace {
+constexpr int SPIKE_PIERCE_DAMAGE[MAX_PIERCE_HIT_COUNT] = {30, 20, 10};
+
 bool IsBalancePatchPiercingSpike(const Projectile *theProjectile) {
     return theProjectile->mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode && theProjectile->mProjectileType == ProjectileType::PROJECTILE_SPIKE;
 }
@@ -43,6 +45,16 @@ bool HasHitZombie(const Projectile *theProjectile, Zombie *theZombie) {
     ZombieID aZombieID = theProjectile->mBoard->ZombieGetID(theZombie);
     for (int i = 0; i < theProjectile->mPierceHitCount; ++i) {
         if (theProjectile->mHitZombieIDs[i] == aZombieID) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool HasHitGridItem(const Projectile *theProjectile, GridItem *theGridItem) {
+    GridItemID aGridItemID = theProjectile->mBoard->GridItemGetID(theGridItem);
+    for (int i = 0; i < theProjectile->mPierceHitCount; ++i) {
+        if (theProjectile->mHitGridItemIDs[i] == aGridItemID) {
             return true;
         }
     }
@@ -101,8 +113,12 @@ void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, in
 
     old_Projectile_ProjectileInitialize(this, theX, theY, theRenderOrder, theRow, theProjectileType);
 
+    mPierceHitCount = 0;
     for (ZombieID &aZombieID : mHitZombieIDs) {
         aZombieID = ZombieID::ZOMBIEID_NULL;
+    }
+    for (GridItemID &aGridItemID : mHitGridItemIDs) {
+        aGridItemID = GridItemID::GRIDITEMID_NULL;
     }
 }
 
@@ -502,10 +518,22 @@ void Projectile::DoImpact(Zombie *theZombie) {
             }
 
             if (VSSetupAddonWidget::msBalancePatchMode) {
-                theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
-                mHitZombieIDs[mPierceHitCount] = mBoard->ZombieGetID(theZombie);
-                ++mPierceHitCount;
-                if (mPierceHitCount >= MAX_PIERCE_HIT_ZOMBIES) {
+                int aHitIndex = mPierceHitCount;
+                int aDamage = SPIKE_PIERCE_DAMAGE[aHitIndex];
+                if (theZombie->mShieldType == ShieldType::SHIELDTYPE_DOOR || theZombie->mShieldType == ShieldType::SHIELDTYPE_LADDER || theZombie->mShieldType == ShieldType::SHIELDTYPE_TRASHCAN
+                    || theZombie->mZombieType == ZombieType::ZOMBIE_ZAMBONI) {
+                    aDamage = 0;
+                    for (int i = aHitIndex; i < MAX_PIERCE_HIT_COUNT; ++i) {
+                        aDamage += SPIKE_PIERCE_DAMAGE[i];
+                    }
+                    mPierceHitCount = MAX_PIERCE_HIT_COUNT;
+                } else {
+                    ++mPierceHitCount;
+                }
+
+                theZombie->TakeDamage(aDamage, aDamageFlags);
+                mHitZombieIDs[aHitIndex] = mBoard->ZombieGetID(theZombie);
+                if (mPierceHitCount >= MAX_PIERCE_HIT_COUNT) {
                     Die();
                 }
             } else {
@@ -598,6 +626,98 @@ void Projectile::DoImpact(Zombie *theZombie) {
     }
 }
 
+void Projectile::DoImpactGridItem(GridItem *theGridItem) {
+    bool aIsPiercingSpike = theGridItem != nullptr && IsBalancePatchPiercingSpike(this);
+    if (aIsPiercingSpike && HasHitGridItem(this, theGridItem)) {
+        return;
+    }
+
+    PlayImpactSound(nullptr);
+
+    if (IsSplashDamage(nullptr)) {
+        DoSplashDamage(nullptr, theGridItem);
+    } else if (theGridItem) {
+        if (aIsPiercingSpike) {
+            int aHitIndex = mPierceHitCount;
+            int aDamage = SPIKE_PIERCE_DAMAGE[aHitIndex];
+            if (theGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || theGridItem->mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND) {
+                aDamage = 0;
+                for (int i = aHitIndex; i < MAX_PIERCE_HIT_COUNT; ++i) {
+                    aDamage += SPIKE_PIERCE_DAMAGE[i];
+                }
+                mPierceHitCount = MAX_PIERCE_HIT_COUNT;
+            } else {
+                ++mPierceHitCount;
+            }
+
+            theGridItem->TakeDamage(aDamage, 0U);
+            mHitGridItemIDs[aHitIndex] = mBoard->GridItemGetID(theGridItem);
+            if (mPierceHitCount >= MAX_PIERCE_HIT_COUNT) {
+                Die();
+            }
+            return;
+        }
+        theGridItem->TakeDamage(GetProjectileDef().mDamage, 0U);
+    }
+
+    float aLastPosX = mPosX - mVelX;
+    float aLastPosY = mPosY + mPosZ - mVelY - mVelZ;
+    ParticleEffect aEffect = ParticleEffect::PARTICLE_NONE;
+    float aSplatPosX = mPosX + 12.0f;
+    float aSplatPosY = mPosY + 12.0f;
+    if (mProjectileType == ProjectileType::PROJECTILE_MELON) {
+        mApp->AddTodParticle(aLastPosX + 30.0f, aLastPosY + 30.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_MELONSPLASH);
+        Die();
+        return;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_WINTERMELON) {
+        mApp->AddTodParticle(aLastPosX + 30.0f, aLastPosY + 30.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_WINTERMELON);
+        Die();
+        return;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_COBBIG) {
+        int aRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_GROUND, mCobTargetRow, 2);
+        mApp->AddTodParticle(mPosX + 80.0f, mPosY + 40.0f, aRenderOrder, ParticleEffect::PARTICLE_BLASTMARK);
+        mApp->AddTodParticle(mPosX + 80.0f, mPosY + 40.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_POPCORNSPLASH);
+        mApp->PlaySample(Sexy::SOUND_DOOMSHROOM);
+        mBoard->ShakeBoard(3, -4);
+        Die();
+        return;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_PEA) {
+        aSplatPosX -= 15.0f;
+        aEffect = ParticleEffect::PARTICLE_PEA_SPLAT;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_SNOWPEA) {
+        aSplatPosX -= 15.0f;
+        aEffect = ParticleEffect::PARTICLE_SNOWPEA_SPLAT;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_FIREBALL) {
+        if (IsSplashDamage(nullptr)) {
+            Reanimation *aFireReanim = mApp->AddReanimation(mPosX + 38.0f, mPosY - 20.0f, mRenderOrder + 1, ReanimationType::REANIM_JALAPENO_FIRE);
+            aFireReanim->mAnimTime = 0.25f;
+            aFireReanim->mAnimRate = 24.0f;
+            aFireReanim->OverrideScale(0.7f, 0.4f);
+        }
+        Die();
+        return;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_STAR) {
+        aEffect = ParticleEffect::PARTICLE_STAR_SPLAT;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_PUFF) {
+        aSplatPosX -= 20.0f;
+        aEffect = ParticleEffect::PARTICLE_PUFF_SPLAT;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_CABBAGE) {
+        aSplatPosX = aLastPosX - 38.0f;
+        aSplatPosY = aLastPosY + 23.0f;
+        aEffect = ParticleEffect::PARTICLE_CABBAGE_SPLAT;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_BUTTER) {
+        aSplatPosX = aLastPosX - 20.0f;
+        aSplatPosY = aLastPosY + 63.0f;
+        aEffect = ParticleEffect::PARTICLE_BUTTER_SPLAT;
+    } else {
+        Die();
+        return;
+    }
+
+    mApp->AddTodParticle(aSplatPosX, aSplatPosY, mRenderOrder + 1, aEffect);
+    Die();
+}
+
 Zombie *Projectile::FindCollisionMindControlledTarget() {
     // 豌豆僵尸的子弹专用的寻敌函数，寻找被魅惑的僵尸。
     Zombie *aZombie = nullptr;
@@ -641,6 +761,9 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
 
             Rect aGraveRect = Rect(x, y, aCelWidth, aCelHeight);
             if (GetRectOverlap(aProjectileRect, aGraveRect) > 12) {
+                if (IsBalancePatchPiercingSpike(this) && HasHitGridItem(this, aGridItem)) {
+                    continue;
+                }
                 if (!aBestGridItem || aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
                     aBestGridItem = aGridItem;
                 } else if (aGridItem->mGridX < aBestGridItem->mGridX) {
