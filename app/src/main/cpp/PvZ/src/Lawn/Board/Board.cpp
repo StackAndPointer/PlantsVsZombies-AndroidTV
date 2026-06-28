@@ -3669,7 +3669,7 @@ void Board::Draw(Sexy::Graphics *g) {
     old_Board_Draw(this, g);
 
     if (mApp->IsVSMode()) {
-        if (mChallenge != nullptr && mChallenge->mSuddenDeathCounter >= 0) {
+        if (mChallenge->mSuddenDeathCounter >= 0) {
             constexpr int kSuddenDeathSeconds = 300;
             constexpr int kSuddenDeathTicksPerSecond = 100;
             int aRemainSeconds = std::max(0, kSuddenDeathSeconds - mChallenge->mSuddenDeathCounter / kSuddenDeathTicksPerSecond);
