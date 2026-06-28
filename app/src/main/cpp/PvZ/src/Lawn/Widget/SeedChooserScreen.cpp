@@ -3167,8 +3167,10 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
 
     for (auto &aBannedSeed : mBannedSeed) {
         if (aBannedSeed.mSeedState == BannedSeedState::SEED_BANNED) {
-            int x = aBannedSeed.mX;
-            int y = aBannedSeed.mY;
+            const int seedPacketIndex = GetSeedPacketIndex(aBannedSeed.mSeedType);
+            if (seedPacketIndex < 0 || seedPacketIndex >= GetSeedStorageCount()) {
+                continue;
+            }
             if (mIsZombieChooser) {
                 if (mPageIndex == 0 && aBannedSeed.mSeedType > GetZombieFirstPageLastSeedType(this)) {
                     continue;
@@ -3182,6 +3184,9 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
                     continue;
                 }
             }
+            int x = 0;
+            int y = 0;
+            GetSeedPositionInChooser(seedPacketIndex, x, y);
             g->DrawImage(IMAGE_MP_TARGETS_X, x + 5, y + 5);
         }
     }
