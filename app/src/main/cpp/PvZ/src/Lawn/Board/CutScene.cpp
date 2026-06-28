@@ -240,7 +240,7 @@ void CutScene::ClearUpsellBoard() {
 }
 
 namespace {
-int TimeSeedChoserSlideOnEnd = 4250;
+int TimeSeedChooserSlideOnEnd = 4250;
 int TimePanLeftEnd = 6000;
 } // namespace
 
@@ -253,7 +253,7 @@ void CutScene::EndSeedChooser() {
         mApp->mZombieChooserScreen->mMouseVisible = false;
     }
     mSeedChoosing = false;
-    mCutsceneTime = TimeSeedChoserSlideOnEnd + mCrazyDaveTime + 10;
+    mCutsceneTime = TimeSeedChooserSlideOnEnd + mCrazyDaveTime + 10;
     if (IsNonScrollingCutscene()) {
         mCutsceneTime = mCrazyDaveTime + TimePanLeftEnd;
     }
