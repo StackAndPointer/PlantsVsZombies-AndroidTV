@@ -90,6 +90,7 @@ ZombieDefinition gExtendedZombieDefs[] = {
     {ZOMBIE_BACKUP_JACKSON, REANIM_BACKUP_JACKSON, 1, 18, 1, 0, "BACKUP_JACKSON"},
     {ZOMBIE_GIGA_POLEVAULTER, REANIM_GIGA_POLEVAULTER, 2, 6, 5, 2000, "GIGA_POLE_VAULTING_ZOMBIE"},
     {ZOMBIE_SUNDAY_EDITION, REANIM_SUNDAY_EDITION, 2, 11, 1, 1000, "SUNDAY_EDITION_ZOMBIE"},
+    {ZOMBIE_EXPLOER, REANIM_EXPLOER, 2, 6, 5, 2000, "EXPLOER_ZOMBIE"},
 };
 
 ZombieDefinition &GetZombieDefinition(ZombieType theZombieType) {
@@ -276,6 +277,13 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             AttachShield();
             break;
 
+        case ZombieType::ZOMBIE_EXPLOER:
+            mZombieAttackRect = Rect(-10, 0, 50, 115);
+            mHasObject = true;
+            mBodyHealth = 500;
+            mVariant = false;
+            break;
+
         default:
             break;
     }
@@ -452,6 +460,9 @@ void Zombie::UpdateActions() {
     }
     if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
         UpdateSundayEdition();
+    }
+    if (mZombieType == ZombieType::ZOMBIE_EXPLOER) {
+        UpdateZombieExploer();
     }
 }
 
@@ -1916,6 +1927,117 @@ void Zombie::UpdateSundayEdition() {
     }
 }
 
+void Zombie::UpdateZombieExploer() {
+    Rect aAttackRect = GetZombieAttackRect();
+    Projectile *aProjectile = nullptr;
+    while (mBoard->IterateProjectiles(aProjectile)) {
+        Rect aProjectileRect = aProjectile->GetProjectileRect();
+        if (aProjectile->mRow == mRow && GetRectOverlap(aAttackRect, aProjectileRect) >= 10) {
+            if (mMindControlled) {
+                int aGridX = mBoard->PixelToGridX(mX, mY);
+                if (mHasObject) {
+                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_PEA) {
+                        aProjectile->ConvertToFireball(aGridX);
+                    } else if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_SNOWPEA) {
+                        aProjectile->ConvertToPea(aGridX);
+                    }
+                } else {
+                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_FIREBALL) {
+                        ExplorerTorchConvert(true);
+                    }
+                }
+            } else {
+                if (mHasObject) {
+                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
+                        aProjectile->ConvertToZombieFireball();
+                    }
+                } else {
+                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
+                        ExplorerTorchConvert(true);
+                    }
+                }
+            }
+        }
+    }
+
+    if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
+        if (mHasObject) {
+            if (aPlant->mSeedType == SeedType::SEED_CHERRYBOMB || (aPlant->mSeedType == SeedType::SEED_POTATOMINE && aPlant->mState == PlantState::STATE_POTATO_ARMED)
+                || aPlant->mSeedType == SeedType::SEED_ICESHROOM || aPlant->mSeedType == SeedType::SEED_DOOMSHROOM || aPlant->mSeedType == SeedType::SEED_SQUASH
+                || aPlant->mSeedType == SeedType::SEED_JALAPENO || aPlant->mSeedType == SeedType::SEED_BLOVER || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+                if (!aPlant->mIsAsleep) {
+                    return;
+                }
+            }
+
+            mApp->PlayFoley(FoleyType::FOLEY_EXPLOER_IGNITE);
+            int aRenderOrder = mBoard->MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, mRow, 1);
+            Reanimation *aOriReanim = mApp->ReanimationTryToGet(mBoard->mFwooshID[mRow][aPlant->mRow]);
+            if (aOriReanim) {
+                aOriReanim->ReanimationDie();
+            }
+
+            float aPosX = mBoard->GridToPixelX(aPlant->mPlantCol, aPlant->mRow) + 40.0f;
+            float aPosY = mBoard->GridToPixelY(aPlant->mPlantCol, aPlant->mRow);
+            Reanimation *aFwoosh = mApp->AddReanimation(aPosX, aPosY, aRenderOrder, ReanimationType::REANIM_JALAPENO_FIRE);
+            aFwoosh->SetFramesForLayer("anim_flame");
+            aFwoosh->mLoopType = ReanimLoopType::REANIM_LOOP_FULL_LAST_FRAME;
+            aFwoosh->mAnimRate *= RandRangeFloat(0.7f, 1.3f);
+
+            float aScale = RandRangeFloat(0.9f, 1.1f);
+            float aFlip = Rand(2) ? 1.0f : -1.0f;
+            aFwoosh->OverrideScale(aScale * aFlip, 1);
+
+            mBoard->mFwooshID[mRow][aPlant->mRow] = mApp->ReanimationGetID(aFwoosh);
+            mBoard->mFwooshCountDown = 100;
+            aPlant->Die();
+        } else {
+            if (aPlant->mSeedType == SeedType::SEED_TORCHWOOD) {
+                ExplorerTorchConvert(true);
+            }
+        }
+    }
+
+    if (Plant *aPlant = FindFriendPlantTarget()) {
+        if (!mHasObject && aPlant->mSeedType == SeedType::SEED_TORCHWOOD) {
+            ExplorerTorchConvert(true);
+        }
+    }
+
+    if (Zombie *aZombie = FindZombieTarget()) {
+        aZombie->TakeDamage(5, 0U);
+        if (aZombie->mBodyHealth < 5) {
+            mApp->PlayFoley(FoleyType::FOLEY_EXPLOER_IGNITE);
+            aZombie->ApplyBurn();
+        }
+    }
+
+    if (Zombie *aZombie = FindFriendZombieTarget()) {
+        if (!mHasObject && aZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && aZombie->mHasObject) {
+            ExplorerTorchConvert(true);
+        }
+    }
+}
+
+void Zombie::ExplorerTorchConvert(bool theBurn) {
+    if (theBurn) {
+        mApp->PlayFoley(FoleyType::FOLEY_EXPLOER_IGNITE);
+        mHasObject = true;
+        mZombieAttackRect = Rect(-10, 0, 50, 115);
+        if (Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID)) {
+            aBodyReanim->AssignRenderGroupToPrefix("Fire_flames", RENDER_GROUP_NORMAL);
+            aBodyReanim->AssignRenderGroupToPrefix("Fire_spark", RENDER_GROUP_NORMAL);
+        }
+    } else {
+        mHasObject = false;
+        mZombieAttackRect = Rect(20, 0, 50, 115);
+        if (Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID)) {
+            aBodyReanim->AssignRenderGroupToPrefix("Fire_flames", RENDER_GROUP_HIDDEN);
+            aBodyReanim->AssignRenderGroupToPrefix("Fire_spark", RENDER_GROUP_HIDDEN);
+        }
+    }
+}
+
 void Zombie::UpdateZombieGargantuar() {
     // 修复魅惑巨人不索敌敌方僵尸的BUG
     if (mZombiePhase == ZombiePhase::PHASE_GARGANTUAR_SMASHING) {
@@ -2262,14 +2384,18 @@ void Zombie::BurnRow(int theRow) {
     // 辣椒僵尸爆炸函数
     Zombie *aZombie = nullptr;
     while (mBoard->IterateZombies(aZombie)) {
-        if (aZombie->mMindControlled != mMindControlled && (aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || aZombie->mRow == theRow)) {
-            if (aZombie->mMindControlled) {
-                aZombie->TakeDamage(1800, 18U);
-            } else {
-                if (aZombie->EffectedByDamage(127)) {
-                    aZombie->RemoveColdEffects();
-                    aZombie->ApplyBurn();
+        if (aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || aZombie->mRow == theRow) {
+            if (aZombie->mMindControlled != mMindControlled) {
+                if (aZombie->mMindControlled) {
+                    aZombie->TakeDamage(1800, 18U);
+                } else {
+                    if (aZombie->EffectedByDamage(127)) {
+                        aZombie->RemoveColdEffects();
+                        aZombie->ApplyBurn();
+                    }
                 }
+            } else if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && !aZombie->mHasObject) {
+                aZombie->ExplorerTorchConvert(true);
             }
         }
     }
@@ -4927,6 +5053,25 @@ Plant *Zombie::FindPlantTarget(ZombieAttackType theAttackType) {
     return nullptr;
 }
 
+Plant *Zombie::FindFriendPlantTarget() {
+    if (!mMindControlled)
+        return nullptr;
+
+    Rect aAttackRect = GetZombieAttackRect();
+
+    Plant *aPlant = nullptr;
+    while (mBoard->IteratePlants(aPlant)) {
+        if (aPlant->mRow == mRow) {
+            Rect aPlantRect = aPlant->GetPlantRect();
+            if (GetRectOverlap(aAttackRect, aPlantRect) >= 20) {
+                return aPlant;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
 bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
     if (mApp->IsWallnutBowlingLevel() && theAttackType != ZombieAttackType::ATTACKTYPE_VAULT)
         return false;
@@ -5012,6 +5157,36 @@ Zombie *Zombie::FindZombieTarget() {
             && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_DIVING_SCREAMING && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_RISING
             && aZombie->mZombieHeight != ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED && !aZombie->IsDeadOrDying() && aZombie->mRow == mRow) {
             // 对战气球低空飞行时可被敌方僵尸索敌
+            if (aZombie->IsFlying() && (!mApp->IsVSMode() || aZombie->mAltitude >= FLYER_ALTITUDE)) {
+                continue;
+            }
+
+            if (aZombie->mZombieType == ZombieType::ZOMBIE_BOSS && aZombie->mZombiePhase != ZombiePhase::PHASE_BOSS_IDLE) {
+                continue;
+            }
+
+            Rect aZombieRect = aZombie->GetZombieRect();
+            int aOverlap = GetRectOverlap(aAttackRect, aZombieRect);
+            if (aOverlap >= 20 || (aOverlap > 0 && aZombie->mIsEating)) {
+                return aZombie;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+Zombie *Zombie::FindFriendZombieTarget() {
+    if (mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING)
+        return nullptr;
+
+    Rect aAttackRect = GetZombieAttackRect();
+
+    Zombie *aZombie = nullptr;
+    while (mBoard->IterateZombies(aZombie)) {
+        if (mMindControlled == aZombie->mMindControlled && aZombie->mZombiePhase != ZombiePhase::PHASE_DIGGER_TUNNELING && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_DIVING
+            && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_DIVING_SCREAMING && aZombie->mZombiePhase != ZombiePhase::PHASE_BUNGEE_RISING
+            && aZombie->mZombieHeight != ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED && !aZombie->IsDeadOrDying() && aZombie->mRow == mRow) {
             if (aZombie->IsFlying() && (!mApp->IsVSMode() || aZombie->mAltitude >= FLYER_ALTITUDE)) {
                 continue;
             }
@@ -5599,7 +5774,8 @@ void Zombie::PickRandomSpeed() {
     } else if (mZombieType == ZombieType::ZOMBIE_YETI) {
         mVelX = 0.4f;
     } else if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER || mZombieType == ZombieType::ZOMBIE_POGO || mZombieType == ZombieType::ZOMBIE_FLAG
-               || mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING || mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON) {
+               || mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING || mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON
+               || mZombieType == ZombieType::ZOMBIE_EXPLOER) {
         mVelX = 0.45f;
     } else if (mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT || mZombieType == ZombieType::ZOMBIE_FOOTBALL
                || mZombieType == ZombieType::ZOMBIE_SNORKEL || mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX) {
@@ -5787,6 +5963,10 @@ void Zombie::ApplyChill(bool theIsIceTrap) {
     mChilledCounter = std::max(aChillTime, mChilledCounter);
 
     UpdateAnimSpeed();
+
+    if (mZombieType == ZombieType::ZOMBIE_EXPLOER && mHasObject) {
+        ExplorerTorchConvert(false);
+    }
 }
 
 void Zombie::HitIceTrap() {

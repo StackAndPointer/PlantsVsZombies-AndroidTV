@@ -69,6 +69,7 @@ ProjectileDefinition gProjectileDefinition[] = {
 
 ProjectileDefinition gExtendedProjectileDefinition[] = {
     {ProjectileType::PROJECTILE_ZOMBIE_POLE, 0, 2400},
+    {ProjectileType::PROJECTILE_ZOMBIE_FIREBALL, 0, 40},
 };
 
 void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
@@ -113,7 +114,7 @@ Plant *Projectile::FindCollisionTargetPlant() {
         if (aPlant->mRow != mRow)
             continue;
 
-        if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
+        if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
             if (aPlant->mSeedType == SeedType::SEED_PUFFSHROOM || aPlant->mSeedType == SeedType::SEED_SUNSHROOM || aPlant->mSeedType == SeedType::SEED_POTATOMINE
                 || aPlant->mSeedType == SeedType::SEED_SPIKEWEED || aPlant->mSeedType == SeedType::SEED_SPIKEROCK || aPlant->mSeedType == SeedType::SEED_LILYPAD
                 || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) // 僵尸豌豆和杆子不能击中低矮植物
@@ -122,7 +123,8 @@ Plant *Projectile::FindCollisionTargetPlant() {
 
         Rect aPlantRect = aPlant->GetPlantRect();
         if (GetRectOverlap(aProjectileRect, aPlantRect) > 8) {
-            if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
+            if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE
+                || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
                 return mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_EATING_ORDER);
             } else {
                 return mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_CATAPULT_ORDER);
@@ -226,6 +228,24 @@ void Projectile::ConvertToFireball(int theGridX) {
 
     mProjectileType = ProjectileType::PROJECTILE_FIREBALL;
     mHitTorchwoodGridX = theGridX;
+    mApp->PlayFoley(FoleyType::FOLEY_FIREPEA);
+
+    float aOffsetX = -25.0f;
+    float aOffsetY = -25.0f;
+    Reanimation *aFirePeaReanim = mApp->AddReanimation(0.0f, 0.0f, 0, ReanimationType::REANIM_FIRE_PEA);
+    if (mMotionType == ProjectileMotion::MOTION_BACKWARDS) {
+        aFirePeaReanim->OverrideScale(-1.0f, 1.0f);
+        aOffsetX += 80.0f;
+    }
+
+    aFirePeaReanim->SetPosition(mPosX + aOffsetX, mPosY + aOffsetY);
+    aFirePeaReanim->mLoopType = ReanimLoopType::REANIM_LOOP;
+    aFirePeaReanim->mAnimRate = RandRangeFloat(50.0f, 80.0f);
+    AttachReanim(mAttachmentID, aFirePeaReanim, aOffsetX, aOffsetY);
+}
+
+void Projectile::ConvertToZombieFireball() {
+    mProjectileType = ProjectileType::PROJECTILE_ZOMBIE_FIREBALL;
     mApp->PlayFoley(FoleyType::FOLEY_FIREPEA);
 
     float aOffsetX = -25.0f;
@@ -465,6 +485,10 @@ void Projectile::DoImpact(Zombie *theZombie) {
     if (IsSplashDamage(theZombie)) {
         if (theZombie && mProjectileType == ProjectileType::PROJECTILE_FIREBALL) {
             theZombie->RemoveColdEffects();
+
+            if (theZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && !theZombie->mHasObject) {
+                theZombie->ExplorerTorchConvert(true);
+            }
         }
 
         DoSplashDamage(theZombie, nullptr);
@@ -720,6 +744,31 @@ void Projectile::CheckForCollision() {
             DoImpact(aZombie);
         }
         return;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
+        Plant *aPlant = FindCollisionTargetPlant();
+        if (aPlant) {
+            const ProjectileDefinition &aProjectileDef = GetProjectileDef();
+            aPlant->mPlantHealth -= aProjectileDef.mDamage;
+            aPlant->mEatenFlashCountdown = std::max(aPlant->mEatenFlashCountdown, 25);
+
+            mApp->PlayFoley(FoleyType::FOLEY_IGNITE);
+            Reanimation *aFireReanim = mApp->AddReanimation(mPosX - 38.0f, mPosY - 20.0f, mRenderOrder + 1, ReanimationType::REANIM_JALAPENO_FIRE);
+            aFireReanim->mAnimTime = 0.25f;
+            aFireReanim->mAnimRate = 24.0f;
+            aFireReanim->OverrideScale(0.7f, 0.4f);
+            Die();
+            return;
+        }
+        Zombie *aZombie = FindCollisionMindControlledTarget();
+        if (aZombie) {
+            if (aZombie->mOnHighGround && CantHitHighGround()) {
+                return;
+            }
+
+            mProjectileType = ProjectileType::PROJECTILE_FIREBALL;
+            DoImpact(aZombie);
+        }
+        return;
     }
 
     // if ((mDamageRangeFlags & 1) == 0) { //TV的原版代码中存在这个，但是我这么写会导致仙人掌打不到气球。因此注释
@@ -851,6 +900,8 @@ void Projectile::Draw(Graphics *g) {
     float aScaleY = 1.0f;
     if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
         aImage = addonImages.IMAGE_PROJECTILEPOLE;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
+        aImage = nullptr;
     }
 
     bool aMirror = false;
@@ -946,6 +997,7 @@ void Projectile::DrawShadow(Graphics *g) {
             break;
 
         case ProjectileType::PROJECTILE_FIREBALL:
+        case ProjectileType::PROJECTILE_ZOMBIE_FIREBALL:
             aScale = 1.4f;
             break;
         default:

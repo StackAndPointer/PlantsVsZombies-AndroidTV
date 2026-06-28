@@ -371,6 +371,8 @@ public:
     Plant *FindGigaPolevaulterTarget();
     void UpdateGigaPolevaulter();
     void UpdateSundayEdition();
+    void UpdateZombieExploer();
+    void ExplorerTorchConvert(bool theBurn);
     void UpdateZombieGargantuar();
     void ZombieImpThrown(Zombie *theThrowerZombie, float theOffsetDistance);
     void ZombieImpKicked(float theKickingDistance);
@@ -409,8 +411,10 @@ public:
     void DropArm(unsigned int theDamageFlags);
     Sexy::Rect GetZombieAttackRect();
     Plant *FindPlantTarget(ZombieAttackType theAttackType);
+    Plant *FindFriendPlantTarget();
     bool CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType);
     Zombie *FindZombieTarget();
+    Zombie *FindFriendZombieTarget();
     Zombie *FindZombieGigaFootball();
     void TakeDamage(int theDamage, unsigned int theDamageFlags);
     void TakeDamage_Origin(int theDamage, unsigned int theDamageFlags);

@@ -419,6 +419,7 @@ inline void *Zombie_ApplyButterAddr;
 inline void *Zombie_DieNoLootAddr;
 inline void *Zombie_StopZombieSoundAddr;
 inline void *Zombie_ApplyBurnAddr;
+inline void *Zombie_ApplyChillAddr;
 inline void *Zombie_DrawAddr;
 inline void *Zombie_DrawShadowAddr;
 inline void *Zombie_SetupDrawZombieWonAddr;

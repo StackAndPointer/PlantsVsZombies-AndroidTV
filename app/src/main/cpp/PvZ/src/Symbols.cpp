@@ -417,6 +417,7 @@ bool LoadGameMain() {
     Zombie_DieNoLootAddr = libGameMain.GetSymbol("_ZN6Zombie9DieNoLootEv");
     Zombie_StopZombieSoundAddr = libGameMain.GetSymbol("_ZN6Zombie15StopZombieSoundEv");
     Zombie_ApplyBurnAddr = libGameMain.GetSymbol("_ZN6Zombie9ApplyBurnEv");
+    Zombie_ApplyChillAddr = libGameMain.GetSymbol("_ZN6Zombie10ApplyChillEb");
     Zombie_DrawAddr = libGameMain.GetSymbol("_ZN6Zombie4DrawEPN4Sexy8GraphicsE");
     Zombie_DrawShadowAddr = libGameMain.GetSymbol("_ZN6Zombie10DrawShadowEPN4Sexy8GraphicsE");
     Zombie_SetupDrawZombieWonAddr = libGameMain.GetSymbol("_ZN6Zombie18SetupDrawZombieWonEPN4Sexy8GraphicsE");

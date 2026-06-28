@@ -492,6 +492,7 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_PlayDeathAnimAddr, &Zombie::PlayDeathAnim, nullptr);
     homura::HookFunc(Zombie_DropLootAddr, &Zombie::DropLoot, &old_Zombie_DropLoot);
     homura::HookFunc(Zombie_ApplyBurnAddr, &Zombie::ApplyBurn, &old_Zombie_ApplyBurn);
+    homura::HookFunc(Zombie_ApplyChillAddr, &Zombie::ApplyChill, nullptr);
     homura::HookFunc(Zombie_CheckIfPreyCaughtAddr, &Zombie::CheckIfPreyCaught, nullptr);
     homura::HookFunc(Zombie_CanTargetPlantAddr, &Zombie::CanTargetPlant, nullptr);
     homura::HookFunc(Zombie_HitIceTrapAddr, &Zombie::HitIceTrap, nullptr);
