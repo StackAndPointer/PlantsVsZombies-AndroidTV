@@ -44,12 +44,6 @@
 
 using namespace Sexy;
 
-namespace {
-constexpr int MP_SUDDEN_DEATH_SECONDS = 300;
-constexpr int MP_SUDDEN_DEATH_TICKS_PER_SECOND = 100;
-constexpr int MP_SUDDEN_DEATH_START_COUNTER = MP_SUDDEN_DEATH_SECONDS * MP_SUDDEN_DEATH_TICKS_PER_SECOND;
-} // namespace
-
 SeedType gArtChallengeWallnut[MAX_GRID_SIZE_Y][MAX_GRID_SIZE_X] = {
     {SEED_NONE, SEED_NONE, SEED_NONE, SEED_NONE, SEED_WALLNUT, SEED_WALLNUT, SEED_WALLNUT, SEED_NONE, SEED_NONE},
     {SEED_NONE, SEED_NONE, SEED_NONE, SEED_WALLNUT, SEED_NONE, SEED_NONE, SEED_NONE, SEED_WALLNUT, SEED_NONE},
@@ -92,6 +86,13 @@ void Challenge::_constructor() {
     old_Challenge_Challenge(this);
 
     if (mApp->IsVSMode()) {
+        ReanimatorEnsureDefinitionLoaded(REANIM_APPLE_CLOCK, true);
+        Reanimation *aClockReanim = mApp->AddReanimation(335, 580, 0, REANIM_APPLE_CLOCK);
+        aClockReanim->mAnimRate = 0;
+        aClockReanim->mIsAttachment = true;
+        mReanimChallenge = mApp->ReanimationGetID(aClockReanim);
+        aClockReanim->OverrideScale(0.4f, 0.4f);
+
         mSuddenDeathCounter = -1;
         mPauseStartTick = -1;
         Zombie::msDeadFollowers.clear();
@@ -370,6 +371,15 @@ void Challenge::Update() {
     }
 
     if (mApp->IsVSMode()) {
+        Reanimation *aClockReanim = mApp->ReanimationGet(mReanimChallenge);
+        if (mSuddenDeathCounter == 1) {
+            aClockReanim->PlayReanim("anim_timer", REANIM_PLAY_ONCE_AND_HOLD, 0, 1.2f);
+        }
+        if (mSuddenDeathCounter == MP_SUDDEN_DEATH_START_COUNTER) {
+            aClockReanim->PlayReanim("anim_ring", REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
+            TriggerVibration(VibrationEffect::VIVRATION_ZOMBIE_RISE_FROM_GRAVE);
+        }
+
         UpdateVSAddPlants();
         if (gOpeningEncounter) {
             gOpeningEncounter->Update();
@@ -1069,4 +1079,23 @@ void Challenge::UpdateMPGraveStones() {
 bool Challenge::ISMPSeedSuddenDeathDisabled(int thePlayerIndex, SeedType theSeedType) {
     SeedType *aDisableList = (thePlayerIndex == 1) ? mSuddenDeathDisableSeeds2 : mSuddenDeathDisableSeeds1;
     return aDisableList[0] == theSeedType || aDisableList[1] == theSeedType || aDisableList[2] == theSeedType;
+}
+
+void Challenge::DrawBackdrop(Sexy::Graphics *g) {
+    old_Challenge_DrawBackdrop(this, g);
+
+    if (mApp->IsVSMode()) {
+        DrawVSClock(g);
+    }
+}
+
+void Challenge::DrawVSClock(Graphics *g) {
+    //    if (mApp->mGameScene == SCENE_ZOMBIES_WON || mApp->mGameScene == SCENE_PLANTS_WON) {
+    //        return;
+    //    }
+
+    Graphics gBoardParent = Graphics(*g);
+    gBoardParent.mTransX -= mBoard->mX;
+    gBoardParent.mTransY -= mBoard->mY;
+    mApp->ReanimationGet(mReanimChallenge)->Draw(&gBoardParent);
 }

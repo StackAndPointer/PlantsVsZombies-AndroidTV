@@ -225,6 +225,7 @@ void InitHookFunction() {
     homura::HookFunc(Challenge_UpdateMPGraveStonesAddr, &Challenge::UpdateMPGraveStones, nullptr);
     homura::HookFunc(Challenge_IsMPResourceProducerAddr, &Challenge::IsMPResourceProducer, nullptr);
     homura::HookFunc(Challenge_ISMPSeedSuddenDeathDisabledAddr, &Challenge::ISMPSeedSuddenDeathDisabled, nullptr);
+    homura::HookFunc(Challenge_DrawBackdropAddr, &Challenge::DrawBackdrop, &old_Challenge_DrawBackdrop);
 
 
     homura::HookFunc(ChallengeScreen_AddedToManagerAddr, &ChallengeScreen::AddedToManager, &old_ChallengeScreen_AddedToManager);

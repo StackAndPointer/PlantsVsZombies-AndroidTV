@@ -212,7 +212,10 @@ public:
     void GetCurrentTransform(int theTrackIndex, ReanimatorTransform *theTransformCurrent) {
         reinterpret_cast<void (*)(Reanimation *, int, ReanimatorTransform *)>(Reanimation_GetCurrentTransformAddr)(this, theTrackIndex, theTransformCurrent);
     }
-    void PlayReanim(const char *theTrackName, ReanimLoopType theLoopType, int theBlendTime, float theAnimRate) {
+    void PlayReanim(const char *theTrackName,
+                    ReanimLoopType theLoopType,
+                    int theBlendTime,
+                    float theAnimRate) { // 倍率 = abs(theAnimRate)/mFps, 若动画为12帧, 即 theAnimRate 6 = *0.5倍速, 12 = *1, 以此类推. 0为不改变当前速率
         reinterpret_cast<void (*)(Reanimation *, const char *, ReanimLoopType, int, float)>(Reanimation_PlayReanimAddr)(this, theTrackName, theLoopType, theBlendTime, theAnimRate);
     }
     void SetAnimRate(float theAnimRate) {

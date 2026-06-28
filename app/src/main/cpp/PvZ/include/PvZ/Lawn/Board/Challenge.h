@@ -39,6 +39,10 @@ inline constexpr int MAX_SQUIRRELS = 7;
 inline constexpr int MAX_SCARY_POTS = 54;
 inline constexpr int STORM_FLASH_TIME = 150;
 
+inline constexpr int MP_SUDDEN_DEATH_SECONDS = 300;
+inline constexpr int MP_SUDDEN_DEATH_TICKS_PER_SECOND = 100;
+inline constexpr int MP_SUDDEN_DEATH_START_COUNTER = MP_SUDDEN_DEATH_SECONDS * MP_SUDDEN_DEATH_TICKS_PER_SECOND;
+
 class LawnApp;
 class Board;
 class Plant;
@@ -243,6 +247,8 @@ public:
     void UpdateConveyorBelt(int thePlayerIndex);
     void UpdateMPGraveStones();
     bool ISMPSeedSuddenDeathDisabled(int thePlayerIndex, SeedType theSeedType);
+    void DrawBackdrop(Sexy::Graphics *g);
+    void DrawVSClock(Sexy::Graphics *g);
 
 protected:
     friend void InitHookFunction();
@@ -291,5 +297,6 @@ inline void (*old_Challenge_IZombieSquishBrain)(Challenge *, GridItem *theBrain)
 
 inline void (*old_Challenge_UpdateConveyorBelt)(Challenge *, int);
 
+inline void (*old_Challenge_DrawBackdrop)(Challenge *, Sexy::Graphics *);
 
 #endif // PVZ_LAWN_BOARD_CHALLENGE_H

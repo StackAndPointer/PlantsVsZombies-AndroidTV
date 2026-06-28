@@ -3670,9 +3670,7 @@ void Board::Draw(Sexy::Graphics *g) {
 
     if (mApp->IsVSMode()) {
         if (mChallenge->mSuddenDeathCounter >= 0) {
-            constexpr int kSuddenDeathSeconds = 300;
-            constexpr int kSuddenDeathTicksPerSecond = 100;
-            int aRemainSeconds = std::max(0, kSuddenDeathSeconds - mChallenge->mSuddenDeathCounter / kSuddenDeathTicksPerSecond);
+            int aRemainSeconds = std::max(0, MP_SUDDEN_DEATH_SECONDS - mChallenge->mSuddenDeathCounter / MP_SUDDEN_DEATH_TICKS_PER_SECOND);
             int aMinutes = aRemainSeconds / 60;
             int aSeconds = aRemainSeconds % 60;
             Color aSuddenDeathColor = aRemainSeconds <= 10 ? Color(255, 0, 0) : Color::White;
