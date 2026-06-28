@@ -194,7 +194,7 @@ void Challenge::Update() {
         return;
     }
 
-    if (aGameMode == GAMEMODE_MP_VS && mSuddenDeathCounter >= 0) {
+    if (aGameMode == GAMEMODE_MP_VS && mSuddenDeathCounter >= 0 && mApp->mGameScene == GameScenes::SCENE_PLAYING) {
         ++mSuddenDeathCounter;
     }
 
