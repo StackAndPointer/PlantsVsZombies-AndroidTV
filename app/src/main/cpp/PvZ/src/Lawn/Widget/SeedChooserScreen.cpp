@@ -3172,11 +3172,14 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
             if (mIsZombieChooser) {
                 if (mPageIndex == 0 && aBannedSeed.mSeedType > GetZombieFirstPageLastSeedType(this)) {
                     continue;
-                } else if (mPageIndex == 1) {
-                    if (aBannedSeed.mSeedType <= GetZombieFirstPageLastSeedType(this)) {
-                        continue;
-                    }
-                    y = aBannedSeed.mY - 5 * (SEED_PACKET_HEIGHT + 3);
+                } else if (mPageIndex == 1 && aBannedSeed.mSeedType <= GetZombieFirstPageLastSeedType(this)) {
+                    continue;
+                }
+            } else {
+                if (mPageIndex == 0 && aBannedSeed.mSeedType > NUM_SEEDS_IN_CHOOSER) {
+                    continue;
+                } else if (mPageIndex == 1 && aBannedSeed.mSeedType <= NUM_SEEDS_IN_CHOOSER) {
+                    continue;
                 }
             }
             g->DrawImage(IMAGE_MP_TARGETS_X, x + 5, y + 5);
