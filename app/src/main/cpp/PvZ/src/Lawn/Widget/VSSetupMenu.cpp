@@ -1017,7 +1017,7 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             auto *eventGlobalBp = static_cast<const VSSetupGlobalBpSyncEvent *>(event);
             VSSetupAddonWidget::msGlobalBpMode = VSSetupAddonWidget::GlobalBpMode(eventGlobalBp->mode);
             for (int playerIndex = 0; playerIndex < 2; ++playerIndex) {
-                for (int seedIndex = 0; seedIndex < NUM_ZOMBIE_SEEDS_IN_CHOOSER; ++seedIndex) {
+                for (int seedIndex = 0; seedIndex < VSSetupGlobalBpSyncEvent::kMaxSeedsPerPlayer; ++seedIndex) {
                     VSSetupAddonWidget::msGlobalBpSeeds[playerIndex][seedIndex] = SEED_NONE;
                 }
                 const int rawCount = int(eventGlobalBp->count[playerIndex]);
@@ -1092,7 +1092,7 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
             VSSetupGlobalBpSyncEvent globalBpEvent = {{EventType::EVENT_SERVER_VSSETUP_GLOBALBP_SYNC}, int8_t(VSSetupAddonWidget::msGlobalBpMode)};
             for (int playerIndex = 0; playerIndex < 2; ++playerIndex) {
                 int syncedSeedCount = 0;
-                for (int seedIndex = 0; seedIndex < NUM_ZOMBIE_SEEDS_IN_CHOOSER; ++seedIndex) {
+                for (int seedIndex = 0; seedIndex < VSSetupGlobalBpSyncEvent::kMaxSeedsPerPlayer; ++seedIndex) {
                     const SeedType seedType = VSSetupAddonWidget::msGlobalBpSeeds[playerIndex][seedIndex];
                     if (seedType == SEED_NONE) {
                         continue;

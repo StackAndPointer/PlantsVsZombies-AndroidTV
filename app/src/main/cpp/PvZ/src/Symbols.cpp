@@ -1275,7 +1275,6 @@ bool LoadGameMain() {
 
 
     ToolTipWidget__constructorAddr = libGameMain.GetSymbol("_ZN13ToolTipWidgetC2Ev");
-    ToolTipWidget__destructorAddr = libGameMain.GetSymbol("_ZN13ToolTipWidgetC2Ev");
     ToolTipWidget_SetWarningTextAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget14SetWarningTextERKSs");
     ToolTipWidget_SetTitleAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget8SetTitleERKSs");
     ToolTipWidget_SetLabelAddr = libGameMain.GetSymbol("_ZN13ToolTipWidget8SetLabelERKSs");

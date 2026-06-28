@@ -162,7 +162,7 @@ void SeedChooserScreen::ApplyGlobalBpBans() {
             continue;
         }
         const int bannedSeedIndex = int(selectedSeedType);
-        if (bannedSeedIndex < 0 || bannedSeedIndex >= NUM_ZOMBIE_SEED_TYPES) {
+        if (bannedSeedIndex < 0 || bannedSeedIndex >= NUM_SEEDS_IN_CHOOSER_EXTENDED) {
             continue;
         }
 
@@ -1228,7 +1228,7 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
 
     if (mApp->IsVSMode() && !mBanningPhase && VSSetupAddonWidget::msGlobalBpMode != VSSetupAddonWidget::GLOBALBP_CLOSED && aGlobalBpPlayerIndex >= 0 && aGlobalBpPlayerIndex <= 1) {
         SeedType *globalBpSeeds = VSSetupAddonWidget::msGlobalBpSeeds[aGlobalBpPlayerIndex];
-        for (int i = 0; i < NUM_ZOMBIE_SEEDS_IN_CHOOSER; ++i) {
+        for (int i = 0; i < VSSetupGlobalBpSyncEvent::kMaxSeedsPerPlayer; ++i) {
             if (globalBpSeeds[i] == theChosenSeed.mSeedType) {
                 break;
             }
@@ -3186,7 +3186,11 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
             }
             int x = 0;
             int y = 0;
-            GetSeedPositionInChooser(seedPacketIndex, x, y);
+            int drawSeedIndex = seedPacketIndex;
+            if (!mIsZombieChooser && mPageIndex == 1) {
+                drawSeedIndex -= NUM_SEEDS_IN_CHOOSER;
+            }
+            GetSeedPositionInChooser(drawSeedIndex, x, y);
             g->DrawImage(IMAGE_MP_TARGETS_X, x + 5, y + 5);
         }
     }

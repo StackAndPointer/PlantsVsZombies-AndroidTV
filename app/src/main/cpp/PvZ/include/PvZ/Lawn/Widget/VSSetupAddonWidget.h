@@ -59,7 +59,7 @@ public:
     static inline GlobalBpMode msGlobalBpMode = GlobalBpMode::GLOBALBP_CLOSED;
     static inline bool msGlobalBpSeedsInitialized = false;
     static inline int msGlobalBpWins[2] = {0, 0};
-    static inline SeedType msGlobalBpSeeds[2][NUM_ZOMBIE_SEEDS_IN_CHOOSER];
+    static inline SeedType msGlobalBpSeeds[2][VSSetupGlobalBpSyncEvent::kMaxSeedsPerPlayer];
 
     LawnApp *mApp = gLawnApp;
     Board *mBoard = mApp->mBoard;
