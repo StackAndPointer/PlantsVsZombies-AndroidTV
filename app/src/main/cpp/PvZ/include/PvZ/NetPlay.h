@@ -300,7 +300,7 @@ struct VSSetupGlobalBpSyncEvent : BaseEvent {
     static constexpr int kMaxSeedsPerPlayer = 30; // 额外卡槽模式每局消耗6张卡，BO5最多消耗30张
     int8_t mode;
     uint8_t count[2];
-    int8_t seeds[2][kMaxSeedsPerPlayer];
+    uint8_t seeds[2][kMaxSeedsPerPlayer];
 };
 
 struct U16UNI32_Event : BaseEvent {

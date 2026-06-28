@@ -1100,7 +1100,7 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
                     if (syncedSeedCount >= VSSetupGlobalBpSyncEvent::kMaxSeedsPerPlayer) {
                         break;
                     }
-                    globalBpEvent.seeds[playerIndex][syncedSeedCount++] = int8_t(seedType);
+                    globalBpEvent.seeds[playerIndex][syncedSeedCount++] = uint8_t(seedType);
                 }
                 globalBpEvent.count[playerIndex] = uint8_t(syncedSeedCount);
             }
