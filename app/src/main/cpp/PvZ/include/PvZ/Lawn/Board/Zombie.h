@@ -70,7 +70,6 @@ enum ZombieAttackType {
     ATTACKTYPE_VAULT,
     ATTACKTYPE_LADDER,
     ATTACKTYPE_POLE,
-    ATTACKTYPE_TORCH,
 };
 
 enum ZombieParts {
@@ -250,9 +249,6 @@ public:
     void DrawBungeeReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos) {
         reinterpret_cast<void (*)(Zombie *, Sexy::Graphics *, ZombieDrawPosition &)>(Zombie_DrawBungeeReanimAddr)(this, g, theDrawPos);
     }
-    void EatZombie(Zombie *theZombie) {
-        reinterpret_cast<void (*)(Zombie *, Zombie *)>(Zombie_EatZombieAddr)(this, theZombie);
-    }
     void RemoveIceTrap() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_RemoveIceTrapAddr)(this);
     }
@@ -319,8 +315,11 @@ public:
     void BungeeLiftTarget() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_BungeeLiftTargetAddr)(this);
     }
-    void Animate() {
-        reinterpret_cast<void (*)(Zombie *)>(Zombie_AnimateAddr)(this);
+    void AnimateChewEffect() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_AnimateChewEffectAddr)(this);
+    }
+    void AnimateChewSound() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_AnimateChewSoundAddr)(this);
     }
     Plant *FindCatapultTarget() {
         return reinterpret_cast<Plant *(*)(Zombie *)>(Zombie_FindCatapultTargetAddr)(this);
@@ -390,6 +389,7 @@ public:
     int GetDancerFrame();
     void RiseFromGrave(int theCol, int theRow);
     void EatPlant(Plant *thePlant);
+    void EatZombie(Zombie *theZombie);
     void DetachShield();
     void CheckForBoardEdge();
     void DrawBossPart(Sexy::Graphics *g, int theBossPart);
@@ -440,6 +440,7 @@ public:
     void UpdateZombiePogo();
     bool IsFlying() const;
     bool IsImpFlying() const;
+    void Animate();
     int GetBobsledPosition();
     void BobsledCrash();
     bool IsBobsledTeamWithSled();

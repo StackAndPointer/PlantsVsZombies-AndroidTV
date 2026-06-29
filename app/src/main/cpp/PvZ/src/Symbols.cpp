@@ -547,6 +547,8 @@ bool LoadGameMain() {
     Zombie_UpdateZombieBungeeAddr = libGameMain.GetSymbol("_ZN6Zombie18UpdateZombieBungeeEv");
     Zombie_BungeeStealTargetAddr = libGameMain.GetSymbol("_ZN6Zombie17BungeeStealTargetEv");
     Zombie_BungeeLiftTargetAddr = libGameMain.GetSymbol("_ZN6Zombie16BungeeLiftTargetEv");
+    Zombie_AnimateChewEffectAddr = libGameMain.GetSymbol("_ZN6Zombie17AnimateChewEffectEv");
+    Zombie_AnimateChewSoundAddr = libGameMain.GetSymbol("_ZN6Zombie16AnimateChewSoundEv");
     Zombie_AnimateAddr = libGameMain.GetSymbol("_ZN6Zombie7AnimateEv");
     Zombie_FindCatapultTargetAddr = libGameMain.GetSymbol("_ZN6Zombie18FindCatapultTargetEv");
     Zombie_ZombieCatapultFireAddr = libGameMain.GetSymbol("_ZN6Zombie18ZombieCatapultFireEP5Plant");

@@ -269,9 +269,9 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
 
         case ZombieType::ZOMBIE_SUNDAY_EDITION:
             mZombieAttackRect = Rect(20, 0, 50, 115);
-            mZombiePhase = ZombiePhase::PHASE_NEWSPAPER_READING;
+            mZombiePhase = ZombiePhase::PHASE_SUNDAY_EDITION_READING;
             mShieldType = ShieldType::SHIELDTYPE_SUNDAY_EDITION;
-            mShieldHealth = 370;
+            mShieldHealth = 300;
             mBodyHealth = 500;
             mVariant = false;
             AttachShield();
@@ -1928,6 +1928,10 @@ void Zombie::UpdateSundayEdition() {
 }
 
 void Zombie::UpdateZombieExploer() {
+    if (!mHasHead || IsDeadOrDying()) {
+        return;
+    }
+
     Rect aAttackRect = GetZombieAttackRect();
     Projectile *aProjectile = nullptr;
     while (mBoard->IterateProjectiles(aProjectile)) {
@@ -3544,6 +3548,20 @@ void Zombie::EatPlant(Plant *thePlant) {
     }
 }
 
+void Zombie::EatZombie(Zombie *theZombie) {
+    theZombie->TakeDamage(DAMAGE_PER_EAT, 9U);
+    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+        theZombie->TakeDamage(DAMAGE_PER_EAT, 9U);
+        if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
+            theZombie->TakeDamage(DAMAGE_PER_EAT * 2, 9U);
+        }
+    }
+    StartEating();
+    if (theZombie->mBodyHealth <= 0) {
+        mApp->PlaySample(SOUND_GULP);
+    }
+}
+
 void Zombie::DetachShield() {
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
     if (aBodyReanim) {
@@ -4556,6 +4574,8 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
                 ReanimShowPrefix("anim_glasses", RENDER_GROUP_HIDDEN);
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_GIGA_ZOMBIEPOLEVAULTERHEAD);
                 DropPole();
+            } else if (mZombieType == ZombieType::ZOMBIE_EXPLOER) {
+                ExplorerTorchConvert(false);
             }
         }
         return;
@@ -4784,6 +4804,14 @@ void Zombie::DropShield(unsigned int theDamageFlags) {
             TodParticleSystem *aParticle = mApp->AddTodParticle(aPosX, aPosY, mRenderOrder + 1, ParticleEffect::PARTICLE_ZOMBIE_DOOR);
             OverrideParticleScale(aParticle);
         }
+    } else if (mShieldType == ShieldType::SHIELDTYPE_TRASHCAN) {
+        DetachShield();
+        if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_LEAVE_BODY)) {
+            float aPosX, aPosY;
+            GetTrackPosition("anim_screendoor", aPosX, aPosY);
+            TodParticleSystem *aParticle = mApp->AddTodParticle(aPosX, aPosY, mRenderOrder + 1, ParticleEffect::PARTICLE_ZOMBIE_TRASH_CAN);
+            OverrideParticleScale(aParticle);
+        }
     } else if (mShieldType == ShieldType::SHIELDTYPE_NEWSPAPER || mShieldType == ShieldType::SHIELDTYPE_SUNDAY_EDITION) {
         StopEating();
         if (mYuckyFace) {
@@ -4948,7 +4976,8 @@ void Zombie::DropArm(unsigned int theDamageFlags) {
             return;
         }
         if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_INTO_POOL || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_INTO_POOL
-            || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP || mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_READING) {
+            || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP || mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_READING
+            || mZombiePhase == ZombiePhase::PHASE_SUNDAY_EDITION_READING) {
             return;
         }
         if (!mHasArm) {
@@ -5366,7 +5395,7 @@ int Zombie::TakeShieldDamage(int theDamage, unsigned int theDamageFlags) {
 
     if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_CAUSE_FLASH) && !TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_HITS_SHIELD_AND_BODY)) {
         mShieldRecoilCounter = 12;
-        if (mShieldType == ShieldType::SHIELDTYPE_DOOR || mShieldType == ShieldType::SHIELDTYPE_LADDER) {
+        if (mShieldType == ShieldType::SHIELDTYPE_DOOR || mShieldType == ShieldType::SHIELDTYPE_LADDER || mShieldType == ShieldType::SHIELDTYPE_TRASHCAN) {
             mApp->PlayFoley(FoleyType::FOLEY_SHIELD_HIT);
         }
     }
@@ -5779,7 +5808,7 @@ void Zombie::PickRandomSpeed() {
         mVelX = 0.9f;
     } else if (mZombiePhase == ZombiePhase::PHASE_YETI_RUNNING) {
         mVelX = 0.8f;
-    } else if (mZombieType == ZombieType::ZOMBIE_YETI || mZombieType == ZombieType::ZOMBIE_EXPLOER) {
+    } else if (mZombieType == ZombieType::ZOMBIE_YETI || mZombieType == ZombieType::ZOMBIE_EXPLOER || mZombiePhase == ZombiePhase::PHASE_SUNDAY_EDITION_READING) {
         mVelX = 0.4f;
     } else if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER || mZombieType == ZombieType::ZOMBIE_POGO || mZombieType == ZombieType::ZOMBIE_FLAG
                || mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING || mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON) {
@@ -6176,7 +6205,8 @@ void Zombie::UpdateAnimSpeed() {
 
     if (mIsEating) {
         if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_BALLOON || mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_DIGGER
-            || mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX || mZombieType == ZombieType::ZOMBIE_SNORKEL || mZombieType == ZombieType::ZOMBIE_YETI) {
+            || mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX || mZombieType == ZombieType::ZOMBIE_SNORKEL || mZombieType == ZombieType::ZOMBIE_YETI
+            || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
             ApplyAnimRate(20.0f);
         } else {
             ApplyAnimRate(36.0f);
@@ -6528,6 +6558,70 @@ void Zombie::UpdateYuckyFace() {
         return;
     }
     return old_Zombie_UpdateYuckyFace(this);
+}
+
+void Zombie::Animate() {
+    mPrevFrame = mFrame;
+    if (mZombiePhase == ZombiePhase::PHASE_JACK_IN_THE_BOX_POPPING || mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MADDENING || mZombiePhase == ZombiePhase::PHASE_DIGGER_RISING
+        || mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING_PAUSE_WITHOUT_AXE || mZombiePhase == ZombiePhase::PHASE_DIGGER_RISE_WITHOUT_AXE || mZombiePhase == ZombiePhase::PHASE_DIGGER_STUNNED
+        || IsImmobilizied()) {
+        return;
+    }
+
+    mAnimCounter++;
+    if (mYuckyFace) {
+        UpdateYuckyFace();
+    }
+
+    if (mIsEating && mHasHead) {
+        int aFrameLength = 6;
+        if (mChilledCounter > 0) {
+            aFrameLength = 12;
+        }
+        if (mAnimCounter >= mAnimFrames * aFrameLength) {
+            mAnimCounter = aFrameLength;
+        }
+        mFrame = mAnimCounter / aFrameLength;
+
+        Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+        if (aBodyReanim) {
+            float aLeftHandTime = 0.14f;
+            float aRightHandTime = 0.68f;
+            if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
+                aLeftHandTime = 0.38f;
+                aRightHandTime = 0.8f;
+            } else if (mZombieType == ZombieType::ZOMBIE_NEWSPAPER || mZombieType == ZombieType::ZOMBIE_LADDER || mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+                aLeftHandTime = 0.42f;
+                aRightHandTime = 0.42f;
+            } else if (mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX) {
+                aLeftHandTime = 0.53f;
+                aRightHandTime = 0.53f;
+            } else if (mZombieType == ZombieType::ZOMBIE_BOBSLED) {
+                aLeftHandTime = 0.33f;
+                aRightHandTime = 0.83f;
+            } else if (mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
+                aLeftHandTime = 0.33f;
+                aRightHandTime = 0.79f;
+            }
+
+            if (aBodyReanim->ShouldTriggerTimedEvent(aLeftHandTime) || aBodyReanim->ShouldTriggerTimedEvent(aRightHandTime)) {
+                AnimateChewSound();
+                AnimateChewEffect();
+            }
+        } else {
+            if (mAnimCounter == 4 * aFrameLength) {
+                AnimateChewSound();
+            }
+            if (mAnimCounter == 7 * aFrameLength && !mMindControlled) {
+                AnimateChewEffect();
+            }
+        }
+    } else {
+        if (mAnimCounter >= mAnimFrames * mAnimTicksPerFrame) {
+            mAnimCounter = 0;
+        }
+        mFrame = mAnimCounter / mAnimTicksPerFrame;
+    }
 }
 
 void Zombie::UpdateZombiePool() {

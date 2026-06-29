@@ -447,6 +447,7 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_GetDancerFrameAddr, &Zombie::GetDancerFrame, nullptr);
     homura::HookFunc(Zombie_RiseFromGraveAddr, &Zombie::RiseFromGrave, &old_Zombie_RiseFromGrave);
     homura::HookFunc(Zombie_EatPlantAddr, &Zombie::EatPlant, nullptr);
+    homura::HookFunc(Zombie_EatZombieAddr, &Zombie::EatZombie, nullptr);
     homura::HookFunc(Zombie_StartEatingAddr, &Zombie::StartEating, nullptr);
     homura::HookFunc(Zombie_DetachShieldAddr, &Zombie::DetachShield, &old_Zombie_DetachShield);
     homura::HookFunc(Zombie_CheckForBoardEdgeAddr, &Zombie::CheckForBoardEdge, nullptr);
@@ -488,6 +489,7 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_BungeeDropZombieAddr, &Zombie::BungeeDropZombie, nullptr);
     homura::HookFunc(Zombie_PickRandomSpeedAddr, &Zombie::PickRandomSpeed, nullptr);
     homura::HookFunc(Zombie_UpdateAnimSpeedAddr, &Zombie::UpdateAnimSpeed, nullptr);
+    homura::HookFunc(Zombie_AnimateAddr, &Zombie::Animate, nullptr);
     homura::HookFunc(Zombie_UpdateZombieWalkingAddr, &Zombie::UpdateZombieWalking, nullptr);
     homura::HookFunc(Zombie_UpdateDamageStatesAddr, &Zombie::UpdateDamageStates, nullptr);
     homura::HookFunc(Zombie_PlayDeathAnimAddr, &Zombie::PlayDeathAnim, nullptr);

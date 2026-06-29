@@ -548,6 +548,8 @@ inline void *Zombie_UpdateZombieWalkingIntoHouseAddr;
 inline void *Zombie_UpdateZombieBungeeAddr;
 inline void *Zombie_BungeeStealTargetAddr;
 inline void *Zombie_BungeeLiftTargetAddr;
+inline void *Zombie_AnimateChewEffectAddr;
+inline void *Zombie_AnimateChewSoundAddr;
 inline void *Zombie_AnimateAddr;
 inline void *Zombie_FindCatapultTargetAddr;
 inline void *Zombie_ZombieCatapultFireAddr;
