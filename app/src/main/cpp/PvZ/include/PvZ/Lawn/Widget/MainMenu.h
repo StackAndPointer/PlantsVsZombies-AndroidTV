@@ -71,7 +71,7 @@ public:
     int unkMem1;                          // 74
     int mMenuScene;                       // 75
     int mTargetMenuScene;                 // 76
-    char *MPlayingTrackName;              // 77
+    char *mPlayingTrackName;              // 77
     int mTransitionCounter;               // 78
     ReanimationID mSkyReanimID;           // 79 ,PSV 68
     ReanimationID mSky2ReanimID;          // 80 ,PSV 69
@@ -95,8 +95,14 @@ public:
     bool unkBool3;                        // 371
     bool unkBool4;                        // 372
     bool unkBool5;                        // 373
-    int unkMems3[5];                      // 94 ~ 98
+    bool mCrowTalking;                    // 374
+    Sexy::Widget *mLastFocusedChild;      // 94
+    int mFocusedChildCounter;             // 95
+    int unkMem96;                         // 96
+    int mUnseenMailCounter;               // 97
+    int mButterflyAnimCounter;            // 98
     bool mRetainWidgetsOnExit;            // 396
+    bool mCreateUserDialogOpened;         // 397
     float mXUnkFloat1;                    // 100
     float mYUnkFloat2;                    // 101
     float mFadeCounterFloat;              // 102

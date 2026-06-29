@@ -431,9 +431,9 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     }
 
     UpdateImitaterButton();
-    unkF = 0.0f;
+    mCursorBobPhase = 0.0f;
     mDimCounter = 0;
-    unkBool = false;
+    mOpeningDialog = false;
     mSeedChooserAge = 0;
 
     if (!repickSeeds.empty()) {
@@ -597,7 +597,7 @@ void SeedChooserScreen::Update() {
     }
 
     mDimCounter = CanPickNow() ? 0 : (mDimCounter + 1);
-    unkF = (unkF + 0.01f <= 6.2832f) ? (unkF + 0.01f) : 0.0f;
+    mCursorBobPhase = (mCursorBobPhase + 0.01f <= 6.2832f) ? (mCursorBobPhase + 0.01f) : 0.0f;
 
     mToolTip1->Update();
     mToolTip2->Update();
@@ -1420,9 +1420,9 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
 
     auto confirmQuit = [&]() {
         Sexy::Dialog *confirmQuitDialog = mApp->ConfirmQuit();
-        unkBool = true;
+        mOpeningDialog = true;
         int result = confirmQuitDialog->WaitForResult(true);
-        unkBool = false;
+        mOpeningDialog = false;
         if (result == 1000) {
             mApp->PostLeaveLevel();
             mApp->SetBoardResult(BOARDRESULT_QUIT);
@@ -1936,9 +1936,9 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
 
             if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
                 Sexy::Dialog *confirmQuitDialog = mApp->ConfirmQuit();
-                unkBool = true;
+                mOpeningDialog = true;
                 int result = confirmQuitDialog->WaitForResult(true);
-                unkBool = false;
+                mOpeningDialog = false;
                 if (result == 1000) {
                     mApp->PostLeaveLevel();
                     mApp->SetBoardResult(BOARDRESULT_QUIT);
@@ -1957,9 +1957,9 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
 
             if (!hasSelectableBankSeed || mSeedsInBank == 0) {
                 Sexy::Dialog *confirmQuitDialog = mApp->ConfirmQuit();
-                unkBool = true;
+                mOpeningDialog = true;
                 int result = confirmQuitDialog->WaitForResult(true);
-                unkBool = false;
+                mOpeningDialog = false;
                 if (result == 1000) {
                     mApp->PostLeaveLevel();
                     mApp->SetBoardResult(BOARDRESULT_QUIT);
@@ -3030,7 +3030,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
                 aTextImage = aPlayerIndex ? Sexy::IMAGE_CURSOR_P1_TEXT : Sexy::IMAGE_CURSOR_P2_TEXT;
             }
 
-            float aBounce = sinf(unkF * 5.0f) * 2.0f;
+            float aBounce = sinf(mCursorBobPhase * 5.0f) * 2.0f;
 
             // 联机光标上绘制双方玩家昵称
             char *firstPlayerName = mBoard->mApp->mPlayerInfo->mName;
