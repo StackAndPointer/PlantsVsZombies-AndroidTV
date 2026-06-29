@@ -5771,11 +5771,10 @@ void Zombie::PickRandomSpeed() {
         mVelX = 0.9f;
     } else if (mZombiePhase == ZombiePhase::PHASE_YETI_RUNNING) {
         mVelX = 0.8f;
-    } else if (mZombieType == ZombieType::ZOMBIE_YETI) {
+    } else if (mZombieType == ZombieType::ZOMBIE_YETI || mZombieType == ZombieType::ZOMBIE_EXPLOER) {
         mVelX = 0.4f;
     } else if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER || mZombieType == ZombieType::ZOMBIE_POGO || mZombieType == ZombieType::ZOMBIE_FLAG
-               || mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING || mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON
-               || mZombieType == ZombieType::ZOMBIE_EXPLOER) {
+               || mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING || mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON) {
         mVelX = 0.45f;
     } else if (mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT || mZombieType == ZombieType::ZOMBIE_FOOTBALL
                || mZombieType == ZombieType::ZOMBIE_SNORKEL || mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX) {

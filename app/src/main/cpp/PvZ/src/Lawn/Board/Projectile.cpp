@@ -35,7 +35,7 @@
 using namespace Sexy;
 
 namespace {
-constexpr int SPIKE_PIERCE_DAMAGE[MAX_PIERCE_HIT_COUNT] = {30, 20, 10};
+constexpr int SPIKE_PIERCE_DAMAGE[MAX_PIERCE_HIT_COUNT] = {30, 15, 10};
 
 bool IsBalancePatchPiercingSpike(const Projectile *theProjectile) {
     return theProjectile->mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode && theProjectile->mProjectileType == ProjectileType::PROJECTILE_SPIKE;
@@ -639,18 +639,8 @@ void Projectile::DoImpactGridItem(GridItem *theGridItem) {
     } else if (theGridItem) {
         if (aIsPiercingSpike) {
             int aHitIndex = mPierceHitCount;
-            int aDamage = SPIKE_PIERCE_DAMAGE[aHitIndex];
-            if (theGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || theGridItem->mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND) {
-                aDamage = 0;
-                for (int i = aHitIndex; i < MAX_PIERCE_HIT_COUNT; ++i) {
-                    aDamage += SPIKE_PIERCE_DAMAGE[i];
-                }
-                mPierceHitCount = MAX_PIERCE_HIT_COUNT;
-            } else {
-                ++mPierceHitCount;
-            }
-
-            theGridItem->TakeDamage(aDamage, 0U);
+            ++mPierceHitCount;
+            theGridItem->TakeDamage(SPIKE_PIERCE_DAMAGE[aHitIndex], 0U);
             mHitGridItemIDs[aHitIndex] = mBoard->GridItemGetID(theGridItem);
             if (mPierceHitCount >= MAX_PIERCE_HIT_COUNT) {
                 Die();

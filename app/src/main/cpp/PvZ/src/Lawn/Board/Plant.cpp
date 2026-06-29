@@ -1441,7 +1441,6 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_BOBSLED:
         case SeedType::SEED_ZOMBIE_BALLOON:
         case SeedType::SEED_ZOMBIE_MOUND:
-        case SeedType::SEED_ZOMBIE_EXPLOER:
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
@@ -1450,6 +1449,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX:
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
+        case SeedType::SEED_ZOMBIE_EXPLOER:
             return 100;
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_ZOMBIE_BUNGEE:
@@ -1837,6 +1837,7 @@ int Plant::GetRefreshTime(SeedType theSeedType, SeedType theImitaterType) {
                 case SeedType::SEED_JALAPENO:
                 case SeedType::SEED_DOOMSHROOM:
                 case SeedType::SEED_ICESHROOM:
+                case SeedType::SEED_ICEBERG_LETTUCE:
                     if (Challenge::msVSShuffleMode || VSSetupAddonWidget::msBalancePatchMode) {
                         return aRefreshTime / 2;
                     }
