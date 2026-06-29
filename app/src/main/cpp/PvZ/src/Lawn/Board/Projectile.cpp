@@ -216,7 +216,7 @@ Rect Projectile::GetProjectileRect() {
         return Rect(mX + mWidth / 2 - 115, mY + mHeight / 2 - 115, 230, 230);
     } else if (mProjectileType == ProjectileType::PROJECTILE_MELON || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON) {
         return Rect(mX + 20, mY, 60, mHeight);
-    } else if (mProjectileType == ProjectileType::PROJECTILE_FIREBALL) {
+    } else if (mProjectileType == ProjectileType::PROJECTILE_FIREBALL || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
         return Rect(mX, mY, mWidth - 10, mHeight);
     } else if (mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
         return Rect(mX - 25, mY, mWidth + 25, mHeight);
@@ -470,6 +470,10 @@ void Projectile::PlayImpactSound(Zombie *theZombie) {
         mApp->PlayFoley(FoleyType::FOLEY_IGNITE);
         aPlayHelmSound = false;
         aPlaySplatSound = false;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
+        mApp->PlayFoley(FoleyType::FOLEY_IGNITE);
+        aPlayHelmSound = false;
+        aPlaySplatSound = false;
     } else if (mProjectileType == ProjectileType::PROJECTILE_MELON || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON) {
         mApp->PlayFoley(FoleyType::FOLEY_MELONIMPACT);
         aPlaySplatSound = false;
@@ -560,7 +564,7 @@ void Projectile::DoImpact(Zombie *theZombie) {
         mApp->AddTodParticle(mPosX + 80.0f, mPosY + 40.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_POPCORNSPLASH);
         mApp->PlaySample(Sexy::SOUND_DOOMSHROOM);
         mBoard->ShakeBoard(3, -4);
-    } else if (mProjectileType == ProjectileType::PROJECTILE_PEA) {
+    } else if (mProjectileType == ProjectileType::PROJECTILE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
         aSplatPosX -= 15.0f;
         aEffect = ParticleEffect::PARTICLE_PEA_SPLAT;
     } else if (mProjectileType == ProjectileType::PROJECTILE_SNOWPEA) {
@@ -572,6 +576,16 @@ void Projectile::DoImpact(Zombie *theZombie) {
             aFireReanim->mAnimTime = 0.25f;
             aFireReanim->mAnimRate = 24.0f;
             aFireReanim->OverrideScale(0.7f, 0.4f);
+        }
+    } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
+        if (theZombie) {
+            Reanimation *aFireReanim = mApp->AddReanimation(mPosX + 38.0f, mPosY - 20.0f, mRenderOrder + 1, ReanimationType::REANIM_JALAPENO_FIRE);
+            aFireReanim->mAnimTime = 0.25f;
+            aFireReanim->mAnimRate = 24.0f;
+            aFireReanim->OverrideScale(0.7f, 0.4f);
+            if (theZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && !theZombie->mHasObject) {
+                theZombie->ExplorerTorchConvert(true);
+            }
         }
     } else if (mProjectileType == ProjectileType::PROJECTILE_STAR) {
         aEffect = ParticleEffect::PARTICLE_STAR_SPLAT;
@@ -851,9 +865,6 @@ void Projectile::CheckForCollision() {
             if (aZombie->mOnHighGround && CantHitHighGround()) {
                 return;
             }
-            if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
-                mProjectileType = ProjectileType::PROJECTILE_PEA; // 将子弹类型修改为普通豌豆，从而修复子弹打到魅惑僵尸身上没有击中特效。
-            }
             DoImpact(aZombie);
         }
         return;
@@ -865,7 +876,7 @@ void Projectile::CheckForCollision() {
             aPlant->mEatenFlashCountdown = std::max(aPlant->mEatenFlashCountdown, 25);
 
             mApp->PlayFoley(FoleyType::FOLEY_IGNITE);
-            Reanimation *aFireReanim = mApp->AddReanimation(mPosX - 38.0f, mPosY - 20.0f, mRenderOrder + 1, ReanimationType::REANIM_JALAPENO_FIRE);
+            Reanimation *aFireReanim = mApp->AddReanimation(mPosX, mPosY, mRenderOrder + 1, ReanimationType::REANIM_JALAPENO_FIRE);
             aFireReanim->mAnimTime = 0.25f;
             aFireReanim->mAnimRate = 24.0f;
             aFireReanim->OverrideScale(0.7f, 0.4f);
@@ -877,8 +888,6 @@ void Projectile::CheckForCollision() {
             if (aZombie->mOnHighGround && CantHitHighGround()) {
                 return;
             }
-
-            mProjectileType = ProjectileType::PROJECTILE_FIREBALL;
             DoImpact(aZombie);
         }
         return;

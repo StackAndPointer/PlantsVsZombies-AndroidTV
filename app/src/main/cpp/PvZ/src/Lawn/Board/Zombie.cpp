@@ -2004,11 +2004,13 @@ void Zombie::UpdateZombieExploer() {
         }
     }
 
-    if (Zombie *aZombie = FindZombieTarget()) {
-        aZombie->TakeDamage(5, 0U);
-        if (aZombie->mBodyHealth < 5) {
-            mApp->PlayFoley(FoleyType::FOLEY_EXPLOER_IGNITE);
-            aZombie->ApplyBurn();
+    if (mHasObject) {
+        if (Zombie *aZombie = FindZombieTarget()) {
+            aZombie->TakeDamage(5, 0U);
+            if (aZombie->mBodyHealth < 5) {
+                mApp->PlayFoley(FoleyType::FOLEY_EXPLOER_IGNITE);
+                aZombie->ApplyBurn();
+            }
         }
     }
 
@@ -5084,6 +5086,12 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
 
     if (mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING) {
         return thePlant->mSeedType == SeedType::SEED_POTATOMINE && thePlant->mState == PlantState::STATE_NOTREADY;
+    }
+
+    if (mZombieType == ZombieType::ZOMBIE_EXPLOER && mHasObject) {
+        if (thePlant->mSeedType == SeedType::SEED_POTATOMINE || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+            return false;
+        }
     }
 
     if (thePlant->IsSpiky()) {

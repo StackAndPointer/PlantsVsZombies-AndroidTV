@@ -1219,9 +1219,6 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
             if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE && aZombie->mTargetCol != mPlantCol) {
                 continue;
             }
-            if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER) {
-                aAttackRect.mX += 30;
-            }
         }
 
         if (aZombie->EffectedByDamage(aDamageRangeFlags)) {

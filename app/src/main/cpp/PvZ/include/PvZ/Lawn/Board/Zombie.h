@@ -70,6 +70,7 @@ enum ZombieAttackType {
     ATTACKTYPE_VAULT,
     ATTACKTYPE_LADDER,
     ATTACKTYPE_POLE,
+    ATTACKTYPE_TORCH,
 };
 
 enum ZombieParts {
