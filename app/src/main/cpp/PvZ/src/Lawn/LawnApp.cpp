@@ -821,7 +821,7 @@ void LawnApp::Init() {
     //    DrRpcEngine::setDataEncryption(RpcEngine, isEncryptionEnabled);
     //    if ( !LawnSession::Init(unk13_2) )
     //        Sexy::SexyAppBase::DoExit(lawnApp, -1);
-    mSessionTaskType = SESSION_TASK_TYPE_Login;
+    mSessionTaskType = SESSION_TASK_TYPE_LOGIN;
     mLoginToServer = false;
     //    LawnApp::SrvLoginToServer(lawnApp);
     //    PerfTimer aPerfTimer;

@@ -1622,20 +1622,20 @@ enum HelpTextPage {
 };
 
 enum SessionTaskType {
-    SESSION_TASK_TYPE_None = 0,
-    SESSION_TASK_TYPE_Login = 1,
-    SESSION_TASK_TYPE_BuyTool = 5,
-    SESSION_TASK_TYPE_DebugAddMoney = 6,
-    SESSION_TASK_TYPE_QueryCoin = 7,
-    SESSION_TASK_TYPE_Recharge = 9, // 根据日志 Recharge succeed/failed
-    SESSION_TASK_TYPE_SetKeyValueData = 12,
-    SESSION_TASK_TYPE_QueryKeyValues = 13
+    SESSION_TASK_TYPE_NONE = 0,
+    SESSION_TASK_TYPE_LOGIN = 1,
+    SESSION_TASK_TYPE_BUYTOOL = 5,
+    SESSION_TASK_TYPE_DEBUGADDMONEY = 6,
+    SESSION_TASK_TYPE_QUERYCOIN = 7,
+    SESSION_TASK_TYPE_RECHARGE = 9, // 根据日志 Recharge succeed/failed
+    SESSION_TASK_TYPE_SETKEYVALUEDATA = 12,
+    SESSION_TASK_TYPE_QUERYKEYVALUES = 13
 };
 
 enum SaveGameOperation {
-    SAVE_GAME_OPERATION_None = 0,
-    SAVE_GAME_OPERATION_Load = 1,
-    SAVE_GAME_OPERATION_Save = 2,
+    SAVE_GAME_OPERATION_NONE = 0,
+    SAVE_GAME_OPERATION_LOAD = 1,
+    SAVE_GAME_OPERATION_SAVE = 2,
 };
 //////////////////////////////
 enum AttachmentID { ATTACHMENTID_NULL };
