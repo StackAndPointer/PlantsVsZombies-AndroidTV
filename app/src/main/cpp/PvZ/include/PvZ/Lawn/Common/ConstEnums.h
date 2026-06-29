@@ -1620,6 +1620,22 @@ enum HelpTextPage {
     HELP_TEXT_PAGE_HOUSE,
 };
 
+enum SessionTaskType {
+    SESSION_TASK_TYPE_None = 0,
+    SESSION_TASK_TYPE_Login = 1,
+    SESSION_TASK_TYPE_BuyTool = 5,
+    SESSION_TASK_TYPE_DebugAddMoney = 6,
+    SESSION_TASK_TYPE_QueryCoin = 7,
+    SESSION_TASK_TYPE_Recharge = 9, // 根据日志 Recharge succeed/failed
+    SESSION_TASK_TYPE_SetKeyValueData = 12,
+    SESSION_TASK_TYPE_QueryKeyValues = 13
+};
+
+enum SaveGameOperation {
+    SAVE_GAME_OPERATION_None = 0,
+    SAVE_GAME_OPERATION_Load = 1,
+    SAVE_GAME_OPERATION_Save = 2,
+};
 //////////////////////////////
 enum AttachmentID { ATTACHMENTID_NULL };
 enum CoinID { COINID_NULL };

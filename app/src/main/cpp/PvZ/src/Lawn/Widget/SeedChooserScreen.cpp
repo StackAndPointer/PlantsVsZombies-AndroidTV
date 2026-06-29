@@ -388,17 +388,22 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     }
 
     auto pickSeedsFromLevelConfig = [&]() {
-        int *seedConfigBegin = reinterpret_cast<int *>(mApp->unk8[18]);
-        int *seedConfigEnd = reinterpret_cast<int *>(mApp->unk8[19]);
-        for (int bankIndex = 0; seedConfigBegin != seedConfigEnd; ++seedConfigBegin) {
-            if ((mApp->unk8[17] > 0 && mApp->unk8[17] <= bankIndex) || mSeedBank1->mNumPackets <= bankIndex) {
-                continue;
+        Sexy::Level &level = mApp->mLevel;
+
+        int *seedConfigBegin = level.mSeedConfig.mBegin;
+        int *seedConfigEnd = level.mSeedConfig.mEnd;
+
+        int bankIndex = 0;
+
+        for (int *seedIt = seedConfigBegin; seedIt != seedConfigEnd; ++seedIt) {
+            if ((level.mSeedBankLimit > 0 && bankIndex >= level.mSeedBankLimit) || bankIndex >= mSeedBank1->mNumPackets) {
+                break;
             }
 
-            const int seedIndex = *seedConfigBegin;
-            if (seedIndex < 0 || seedIndex >= NUM_SEED_TYPES) {
+            const int seedIndex = *seedIt;
+
+            if (seedIndex < 0 || seedIndex >= NUM_SEED_TYPES)
                 continue;
-            }
 
             ChosenSeed &chosenSeed = mChosenSeedsExtended[seedIndex];
             chosenSeed.mX = mBoard->GetSeedPacketPositionX(bankIndex, 0, false);
@@ -416,7 +421,9 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     };
 
     if (mBoard->IsLevelDataLoaded()) {
-        if (((unsigned int)(mApp->unk8[19] - mApp->unk8[18]) >> 2) != 0) {
+        const Sexy::Level &level = mApp->mLevel;
+
+        if (level.mSeedConfig.mBegin != level.mSeedConfig.mEnd) {
             pickSeedsFromLevelConfig();
         }
     } else if (mApp->IsAdventureMode() && !mApp->IsFirstTimeAdventureMode()) {

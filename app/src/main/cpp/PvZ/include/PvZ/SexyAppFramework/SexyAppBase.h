@@ -22,6 +22,7 @@
 
 #include "PvZ/MagicNumbers.h"
 #include "PvZ/STL/string.h"
+#include "PvZ/SexyAppFramework/Thread.h"
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
 #include "PvZ/Symbols.h"
 
@@ -50,10 +51,6 @@ struct SexyOpaqueTree32 {
 struct SexyOpaqueList32 {
     unsigned int next;
     unsigned int prev; // 0x08
-};
-
-struct SexyOpaqueThread32 {
-    unsigned int words[2]; // observed 0x08
 };
 
 struct SexyOpaqueCritSect32 {
@@ -148,10 +145,10 @@ public:
 
     WidgetManager *mWidgetManager; // 0x294, dword 165
 
-    SexyOpaqueTree32 mDialogMap;       // 0x298
-    SexyOpaqueList32 mDialogList;      // 0x2B0
-    unsigned int mPrimaryThreadId;     // 0x2B8
-    SexyOpaqueThread32 mPrimaryThread; // 0x2BC, Android addition
+    SexyOpaqueTree32 mDialogMap;   // 0x298
+    SexyOpaqueList32 mDialogList;  // 0x2B0
+    unsigned int mPrimaryThreadId; // 0x2B8
+    Sexy::Thread mPrimaryThread;   // 0x2BC, Android addition
 
     bool unkAppState_2C4;          // 0x2C4, likely mSEHOccured from PC member order
     bool mShutDown;                // 0x2C5, confirmed by external xref
@@ -284,7 +281,7 @@ public:
     bool unkLoadingFlag_572; // 0x572
     bool unkLoadingFlag_573; // 0x573
 
-    SexyOpaqueThread32 mLoadingThread; // 0x574
+    Sexy::Thread mLoadingThread; // 0x574
 
     bool mCursorThreadRunning;     // 0x57C
     bool mSysCursor;               // 0x57D
@@ -412,7 +409,8 @@ public:
     bool unkBool2;      // 0x894
     bool mGamePad2IsOn; // 0x895
     bool pad_896[2];
-    int unkMem8[2]; // 0x898~0x89F
+    int *mProfileEventListener;
+    int *mGameCenterListenerVTable;
     // 115： 552 , 111： 553
 
     Dialog *GetDialog(Dialogs theDialogId) { // vTable + 4 * 103

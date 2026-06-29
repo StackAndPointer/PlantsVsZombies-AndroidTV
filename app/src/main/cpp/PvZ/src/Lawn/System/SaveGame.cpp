@@ -36,13 +36,13 @@ bool LawnSaveGame_Original(Board *theBoard, const pvzstl::string &theFilePath) {
 
     aContext.SyncBytes(&aHeader, sizeof(aHeader));
     SyncBoard(&aContext, theBoard);
-    theBoard->mApp->mUnkBoolA76 = false; // 用于从暂停菜单返回主界面
+    theBoard->mApp->mNeedGoBackToMain = false; // 用于从暂停菜单返回主界面
     return gLawnApp->WriteBufferToFile(theFilePath, &aContext.mBuffer);
 }
 
 bool LawnSaveGame(Board *theBoard, const pvzstl::string &theFilePath) {
     if (disableSaveUserdata) {
-        theBoard->mApp->mUnkBoolA76 = false; // 用于从暂停菜单返回主界面
+        theBoard->mApp->mNeedGoBackToMain = false; // 用于从暂停菜单返回主界面
         return true;
     }
 
@@ -121,7 +121,7 @@ bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext) {
     if (gLawnApp->IsAdventureMode()) {
         if (gLawnApp->mPlayerInfo->mLevel != theBoard->mLevel) {
             const int highestLevel = theBoard->mLevel > gLawnApp->mPlayerInfo->mLevel ? theBoard->mLevel : gLawnApp->mPlayerInfo->mLevel;
-            gLawnApp->mPlayerInfo->mLevel = theBoard->mLevel;
+            gLawnApp->mPlayerInfo->mLevel = highestLevel;
         }
     }
     if (theContext->mFailed) {

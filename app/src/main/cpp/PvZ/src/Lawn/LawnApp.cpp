@@ -805,7 +805,7 @@ void LawnApp::Init() {
     mBoardResult = BOARDRESULT_NONE;
     mKilledYetiAndRestarted = false;
     unk9_2[0] = Sexy::GetTickCount() / 1000;
-    unk9_1[1] = 0;
+    mPendingRechargeAmount = 0;
     pvzstl::string strings[5];
     getGameInfo(strings, this);
     mGameInfoStrings[0] = strings[0];
@@ -821,8 +821,8 @@ void LawnApp::Init() {
     //    DrRpcEngine::setDataEncryption(RpcEngine, isEncryptionEnabled);
     //    if ( !LawnSession::Init(unk13_2) )
     //        Sexy::SexyAppBase::DoExit(lawnApp, -1);
-    unk13_1[13] = 1;
-    unkBool3[0] = false;
+    mSessionTaskType = SESSION_TASK_TYPE_Login;
+    mLoginToServer = false;
     //    LawnApp::SrvLoginToServer(lawnApp);
     //    PerfTimer aPerfTimer;
     //    Sexy::PerfTimer::PerfTimer(aPerfTimer);

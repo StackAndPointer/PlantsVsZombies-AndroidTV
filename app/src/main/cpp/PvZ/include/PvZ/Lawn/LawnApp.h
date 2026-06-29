@@ -20,13 +20,16 @@
 #ifndef PVZ_LAWN_LAWN_APP_H
 #define PVZ_LAWN_LAWN_APP_H
 
+#include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/System/Mailbox.h"
 #include "PvZ/Lawn/System/TypingCheck.h"
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"
 #include "PvZ/SexyAppFramework/GamepadApp.h"
+#include "PvZ/SexyAppFramework/Level.h"
 #include "PvZ/SexyAppFramework/Misc/ProfileMgr.h"
 #include "PvZ/SexyAppFramework/SexyAppBase.h"
+#include "PvZ/SexyAppFramework/Thread.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodFoley.h"
 #include "PvZ/TodLib/Effect/EffectSystem.h"
@@ -53,103 +56,157 @@ class VSSetupMenu;
 class VSResultsMenu;
 class HelpBarWidget;
 class HelpTextScreen;
+class SaveGameContext;
+
+struct ListNodeBase {
+    ListNodeBase *next;
+    ListNodeBase *prev;
+};
+
+struct LawnSession {
+    void **vtable;
+    bool mShutdownRequested; // +0x04
+    bool mTaskDone;
+    void *mCurrentTask; // +0x08
+    Sexy::Thread mThread;
+};
+
+struct QueryCoinState {
+    bool mPending;
+    unsigned int mLastRequestTime;
+    int mRequestCount;
+    int mUserId;
+};
+
+struct QueryCoin {
+    void **mVtable;
+    QueryCoinState mState;
+};
 
 class LawnApp : public Sexy::GamepadApp {
 public:
     static Sexy::Rect &FULLSCREEN_RECT;
 
-    Board *mBoard;                           // 552
-    TitleScreen *mTitleScreen;               // 553
-    MainMenu *mGameSelector;                 // 554
-    int unk1[2];                             // 555 ~ 556
-    HelpTextScreen *mHelpTextScreen;         // 557
-    int unkUnk;                              // 558
-    VSSetupMenu *mVSSetupMenu;               // 559
-    VSResultsMenu *mVSResultsMenu;           // 560
-    SeedChooserScreen *mSeedChooserScreen;   // 561
-    SeedChooserScreen *mZombieChooserScreen; // 562
-    int *mAwardScreen;                       // 563
-    CreditScreen *mCreditScreen;             // 564
-    ChallengeScreen *mChallengeScreen;       // 565
-    TodFoley *mSoundSystem;                  // 566
-    int *unk3[7];                            // 567 ~ 573
-    bool mRegisterResourcesLoaded;           // 2296
-    bool mTodCheatKeys;                      // 2297
-    bool mNewIs3DAccelerated;                // 2298，在对齐间隙插入新成员
-    GameMode mGameMode;                      // 575
-    GameScenes mGameScene;                   // 576
-    bool mLoadingZombiesThreadCompleted;     // 2308
-    bool mFirstTimeGameSelector;             // 2309
-    int mGamesPlayed;                        // 578
-    int mMaxExecutions;                      // 579
-    int mMaxPlays;                           // 580
-    int mMaxTime;                            // 581
-    bool mEasyPlantingCheat;                 // 2328
-    PoolEffect *mPoolEffect;                 // 583
-    ZenGarden *mZenGarden;                   // 584
-    EffectSystem *mEffectSystem;             // 585
-    ReanimatorCache *mReanimatorCache;       // 586
-    LawnPlayerInfo *mPlayerInfo;             // 587
-    DefaultPlayerInfo *mPlayer2Info;         // 588 , 游戏内没有初始化，但有一些判定
-    int *mLastLevelStats;                    // 589
-    bool mCloseRequest;                      // 2360
-    int mAppCounter;                         // 591
-    Music2 *mMusic;                          // 592
-    int mCrazyDaveReanimID;                  // 593
-    CrazyDaveState mCrazyDaveState;          // 594
-    int mCrazyDaveBlinkCounter;              // 595
-    int mCrazyDaveBlinkReanimID;             // 596
-    int mCrazyDaveMessageIndex;              // 597
-    int *mCrazyDaveMessageText;              // 598
-    int mAppRandSeed;                        // 599;
-    int unk7;                                // 600
-    Sexy::DefaultProfileMgr *mProfileMgr;    // 601
-    int unk8[35];                            // 602 ~ 636
-    Sexy::Image *mQRCodeImage;               // 637
-    int unk8_1[7];                           // 638 ~ 644
-    int mInitialSunMoney;                    // 645     // 这个数据能给玩家加初始阳光
-    bool mIsFullVersion;                     // 2584
-    int unk9_1[3];                           // 647 ~ 649
-    int mVsInitialPlantMode;                 // 650
-    int unk9_2[3];                           // 651 ~ 653
-    BoardResult mBoardResult;                // 654
-    bool mKilledYetiAndRestarted;            // 2620
-    TypingCheck *mKonamiCheck;               // 656
-    TypingCheck *mMustacheCheck;             // 657
-    TypingCheck *mMoustacheCheck;            // 658
-    TypingCheck *mSuperMowerCheck;           // 659
-    TypingCheck *mSuperMowerCheck2;          // 660
-    TypingCheck *mFutureCheck;               // 661
-    TypingCheck *mPinataCheck;               // 662
-    TypingCheck *mDanceCheck;                // 663
-    TypingCheck *mDaisyCheck;                // 664
-    TypingCheck *mSukhbirCheck;              // 665
-    bool mMustacheMode;                      // 2664
-    bool mSuperMowerMode;                    // 2665
-    bool mFutureMode;                        // 2666
-    bool mPinataMode;                        // 2667
-    bool mDanceMode;                         // 2668
-    bool mDaisyMode;                         // 2669
-    bool mSukhbirMode;                       // 2670
-    int unk10;                               // 668
-    bool mMuteSoundsForCutscene;             // 2676
-    bool unkBool2;                           // 2677
-    bool mUnkBoolA76;                        // 2678
-    int unk11;                               // 670
-    int mSecondPlayerGamepadIndex;           // 671
-    int unk12[3];                            // 672 ~ 674
-    Mailbox *mMailBox;                       // 675
-    int unk13_1[14];                         // 676 ~ 689
-    bool unkBool3[4];                        // 690
-    int unk13_2[6];                          // 691 ~ 696
-    pvzstl::string mGameInfoStrings[5];      // 697 ~ 701
-    HelpBarWidget *mHelpBarWidget;           // 702
-    int unk14;                               // 703
-    int *mLogComposer;                       // 704
-    int *MLogManager;                        // 705
-    int mLaunchTime;                         // 706
-    DaveHelp *mDaveHelp;                     // 707
-    MaskHelpWidget *mMaskHelpWidget;         // 708
+    Board *mBoard;                                 // 552
+    TitleScreen *mTitleScreen;                     // 553
+    MainMenu *mGameSelector;                       // 554
+    int unk555[2];                                 // 555 ~ 556, Board::DrawOverlay
+    HelpTextScreen *mHelpTextScreen;               // 557
+    int unkUnk;                                    // 558
+    VSSetupMenu *mVSSetupMenu;                     // 559
+    VSResultsMenu *mVSResultsMenu;                 // 560
+    SeedChooserScreen *mSeedChooserScreen;         // 561
+    SeedChooserScreen *mZombieChooserScreen;       // 562
+    int *mAwardScreen;                             // 563
+    CreditScreen *mCreditScreen;                   // 564
+    ChallengeScreen *mChallengeScreen;             // 565
+    TodFoley *mSoundSystem;                        // 566
+    ListNodeBase mControlButtonList;               // 567 ~ 568
+    ListNodeBase mCreatedImageList;                // 569 ~ 570
+    homura::Storage<pvzstl::string> mReferId;      // 571
+    homura::Storage<pvzstl::string> mRegisterLink; // 572
+    homura::Storage<pvzstl::string> mMod;          // 573
+    bool mRegisterResourcesLoaded;                 // 2296
+    bool mTodCheatKeys;                            // 2297
+    bool mNewIs3DAccelerated;                      // 2298，在对齐间隙插入新成员
+    GameMode mGameMode;                            // 575
+    GameScenes mGameScene;                         // 576
+    bool mLoadingZombiesThreadCompleted;           // 2308
+    bool mFirstTimeGameSelector;                   // 2309
+    int mGamesPlayed;                              // 578
+    int mMaxExecutions;                            // 579
+    int mMaxPlays;                                 // 580
+    int mMaxTime;                                  // 581
+    bool mEasyPlantingCheat;                       // 2328
+    PoolEffect *mPoolEffect;                       // 583
+    ZenGarden *mZenGarden;                         // 584
+    EffectSystem *mEffectSystem;                   // 585
+    ReanimatorCache *mReanimatorCache;             // 586
+    LawnPlayerInfo *mPlayerInfo;                   // 587
+    DefaultPlayerInfo *mPlayer2Info;               // 588 , 游戏内没有初始化，但有一些判定
+    int *mLastLevelStats;                          // 589
+    bool mCloseRequest;                            // 2360
+    int mAppCounter;                               // 591
+    Music2 *mMusic;                                // 592
+    int mCrazyDaveReanimID;                        // 593
+    CrazyDaveState mCrazyDaveState;                // 594
+    int mCrazyDaveBlinkCounter;                    // 595
+    int mCrazyDaveBlinkReanimID;                   // 596
+    int mCrazyDaveMessageIndex;                    // 597
+    int *mCrazyDaveMessageText;                    // 598
+    int mAppRandSeed;                              // 599;
+    bool mUnknownDrawFlag;                         // 600
+    Sexy::DefaultProfileMgr *mProfileMgr;          // 601
+    bool mSkipProfileSaving;                       // 602 * 4
+    Sexy::Level mLevel;                            // 603 ~ 636
+    Sexy::Image *mQRCodeImage;                     // 637
+    Sexy::Image *mQRCodeImageBackground;           // 638
+    StringIntMap mKeyValueData;                    // 639 ~ 644
+    int mInitialSunMoney;                          // 645     // 这个数据能给玩家加初始阳光
+    bool mIsFullVersion;                           // 2584
+    int mPendingBuyToolId;                         // 647
+    int mPendingRechargeAmount;                    // 648
+    TrialType mTrialType;                          // 649
+    int mVsInitialPlantMode;                       // 650
+    int unk9_2[3];                                 // 651 ~ 653
+    BoardResult mBoardResult;                      // 654
+    bool mKilledYetiAndRestarted;                  // 2620
+    TypingCheck *mKonamiCheck;                     // 656
+    TypingCheck *mMustacheCheck;                   // 657
+    TypingCheck *mMoustacheCheck;                  // 658
+    TypingCheck *mSuperMowerCheck;                 // 659
+    TypingCheck *mSuperMowerCheck2;                // 660
+    TypingCheck *mFutureCheck;                     // 661
+    TypingCheck *mPinataCheck;                     // 662
+    TypingCheck *mDanceCheck;                      // 663
+    TypingCheck *mDaisyCheck;                      // 664
+    TypingCheck *mSukhbirCheck;                    // 665
+    bool mMustacheMode;                            // 2664
+    bool mSuperMowerMode;                          // 2665
+    bool mFutureMode;                              // 2666
+    bool mPinataMode;                              // 2667
+    bool mDanceMode;                               // 2668
+    bool mDaisyMode;                               // 2669
+    bool mSukhbirMode;                             // 2670
+    int unk668;                                    // 668
+    bool mMuteSoundsForCutscene;                   // 2676
+    bool mNeedLoadGame;                            // 2677
+    bool mNeedGoBackToMain;                        // 2678
+    SaveGameOperation mSaveGameOperation;          // 670
+    int mSecondPlayerGamepadIndex;                 // 671
+    int unk672;                                    // 672
+    int mCurrentTestDialogId;                      // 673
+    int mCurrentTestDaveMessage;                   // 674
+    Mailbox *mMailBox;                             // 675
+    int unk676;                                    // 676
+    bool mMailboxRefreshed;                        // 677
+    ReanimationID mSavingDingusReanimationID;      // 678
+    float mSavingDingusCurrentY;                   // 679
+    float mSavingDingusAnimationStartY;            // 680
+    float mSavingDingusAnimationEndY;              // 681
+    float mSavingDingusAnimationTime;              // 682
+    homura::Storage<pvzstl::string> mDingusText;   // 683
+    int mSavingDingusShowCount;                    // 684
+    bool mProfileSaveInProgress;                   // 685[0]
+    bool mProfileOperationPending1;                // 685[1]
+    bool mProfileOperationPending2;                // 685[2]
+    int mP2JoinPromptTimer;                        // 686
+    bool unk687;
+    SaveGameContext *mSaveGame;         // 688
+    SessionTaskType mSessionTaskType;   // 689
+    bool mLoginToServer;                // 690
+    LawnSession mSession;               // 691 ~ 695
+    int *mLawnSessionTask;              // 696
+    pvzstl::string mGameInfoStrings[5]; // 697 ~ 701
+    HelpBarWidget *mHelpBarWidget;      // 702
+    int unk14;                          // 703
+    int *mLogComposer;                  // 704
+    int *MLogManager;                   // 705
+    int mLaunchTime;                    // 706
+    DaveHelp *mDaveHelp;                // 707
+    MaskHelpWidget *mMaskHelpWidget;    // 708
+    QueryCoinState mQueryCoinState;     // 709 ~ 713
+    bool mCanDoBuyMoneyDialog;          // 714
 
     Reanimation *ReanimationGet(ReanimationID theReanimationID) {
         return reinterpret_cast<Reanimation *(*)(LawnApp *, ReanimationID)>(LawnApp_ReanimationGetAddr)(this, theReanimationID);

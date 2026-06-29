@@ -3205,11 +3205,6 @@ void Board::Update() {
 
     if (mReplayControlsWidget != nullptr) {
         mReplayControlsWidget->SetVisible(gIsReplayMode && replay::IsPlaybackActive());
-        const int replayControlsY = ReplayControlsWidget::kInitialY;
-        if (mReplayControlsWidget->mX != ReplayControlsWidget::kX || mReplayControlsWidget->mY != replayControlsY || mReplayControlsWidget->mWidth != ReplayControlsWidget::kWidth
-            || mReplayControlsWidget->mHeight != ReplayControlsWidget::kHeight) {
-            mReplayControlsWidget->Resize(ReplayControlsWidget::kX, replayControlsY, ReplayControlsWidget::kWidth, ReplayControlsWidget::kHeight);
-        }
     }
 
     if (clearAllPlant) {
