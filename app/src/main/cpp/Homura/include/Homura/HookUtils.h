@@ -57,7 +57,7 @@ void HookFunc(void *symbol, T *newFunc, std::type_identity_t<T **> oldFuncAddr) 
  * @param [out] oldFuncAddr 一个函数指针的地址, 用于保留旧函数. (可传入 nullptr 字面量, 代表不保留)
  */
 template <typename T>
-    requires std::is_member_function_pointer_v<T>
+    requires(std::is_member_function_pointer_v<T> && std::is_same_v<T, std::remove_cv_t<T>>)
 void HookFunc(void *symbol, T newFunc, ExtractMemFuncPtrType<T> *oldFuncAddr) {
     details::HookFuncImpl(symbol, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
 }
@@ -89,7 +89,7 @@ bool HookVirtualFunc(void *vTableSymbol, std::size_t index, T *newFunc, std::typ
  * @return 是否成功替换.
  */
 template <typename T>
-    requires std::is_member_function_pointer_v<T>
+    requires(std::is_member_function_pointer_v<T> && std::is_same_v<T, std::remove_cv_t<T>>)
 bool HookVirtualFunc(void *vTableSymbol, std::size_t index, T newFunc, ExtractMemFuncPtrType<T> *oldFuncAddr) {
     return details::HookVirtualFuncImpl(vTableSymbol, index, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
 }

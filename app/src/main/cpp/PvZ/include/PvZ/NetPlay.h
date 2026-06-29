@@ -459,9 +459,7 @@ namespace details {
 } // namespace details
 
 template <typename T>
-    requires(!std::is_const_v<std::remove_reference_t<T>> &&    //
-             !std::is_volatile_v<std::remove_reference_t<T>> && //
-             std::derived_from<std::remove_reference_t<T>, BaseEvent>)
+    requires(std::is_same_v<std::remove_reference_t<T>, std::remove_cvref_t<T>> && std::derived_from<std::remove_reference_t<T>, BaseEvent>)
 void PutEvent(T &&event) {
     static_assert(std::is_trivially_copyable_v<std::remove_reference_t<T>>, "Event must be trivially copyable");
     static_assert(std::in_range<decltype(BaseEvent::size)>(sizeof(T)), "'BaseEvent::size' is too small");
