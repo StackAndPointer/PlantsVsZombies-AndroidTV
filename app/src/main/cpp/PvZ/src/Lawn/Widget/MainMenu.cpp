@@ -654,8 +654,12 @@ void MainMenu::Draw(Sexy::Graphics *g) {
 }
 
 void MainMenu::DrawOverlay(Sexy::Graphics *g) {
-    // 在成就界面存在时，不显示冒险关卡数
+    // 在成就界面存在时，冒险关卡数绘制位置也上移
     if (gMainMenuAchievementsWidget != nullptr) {
+        float tmp = mCameraPositionY;
+        mCameraPositionY += float(mY + 60);
+        old_MainMenu_DrawOverlay(this, g);
+        mCameraPositionY = tmp;
         return;
     }
     old_MainMenu_DrawOverlay(this, g);
