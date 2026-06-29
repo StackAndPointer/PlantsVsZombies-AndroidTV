@@ -629,10 +629,10 @@ void MainMenu::Draw(Sexy::Graphics *g) {
             if (v16)
                 v17 = v15;
             aSexyTransform2D.Translate(v17 >> 2, 0.0);
-            int v18 = unkMems3[3];
+            int v18 = mUnseenMailCounter;
             if (v18 > 99)
                 v18 = 0;
-            unkMems3[3] = v18;
+            mUnseenMailCounter = v18;
             TodAnimateCurveFloat(0, 100, v18, 0.75, 0.8, TodCurves::CURVE_SIN_WAVE);
             Sexy::Rect v38 = {0, 0, mailAlertImage->mWidth, mailAlertImage->mHeight};
             g->DrawImageMatrix(mailAlertImage, aSexyTransform2D, v38, 0.0, 0.0, true);
