@@ -123,11 +123,11 @@ public:
     int mCursorPositionY2;                   // 945
     SeedChooserState mChooseState;           // 946
     int mViewLawnTime;                       // 947
-    bool unkBool;                            // 3792
+    bool mOpeningDialog;                     // 3792
     int mPlayerIndex;                        // 949
     int mSeedIndex1;                         // 950
     int mSeedIndex2;                         // 951
-    float unkF;                              // 952
+    float mCursorBobPhase;                   // 952
     bool mIsZombieChooser;                   // 3812
     SeedBank *mSeedBank1;                    // 954
     SeedBank *mSeedBank2;                    // 955
