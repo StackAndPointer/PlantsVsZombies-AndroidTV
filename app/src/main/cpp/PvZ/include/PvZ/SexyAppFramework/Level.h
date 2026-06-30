@@ -6,6 +6,7 @@
 #define PVZ_SEXYAPPFRAMEWORK_LEVEL_H
 
 #include "Homura/TypeUtils.h"
+#include "PvZ/STL/map.h"
 #include "PvZ/STL/string.h"
 
 struct LevelPlantInfo {
@@ -25,18 +26,9 @@ struct Vector32 {
 
 static_assert(sizeof(Vector32<int>) == 0x0C);
 
-struct Tree32 {
-    unsigned int mCompareOrPadding; // +0x00
-    unsigned int mHeaderColor;      // +0x04
-    unsigned int mRoot;             // +0x08
-    unsigned int mLeftmost;         // +0x0C
-    unsigned int mRightmost;        // +0x10
-    unsigned int mNodeCount;        // +0x14
-};
-
-static_assert(sizeof(Tree32) == 0x18);
-
 namespace Sexy {
+struct _Wave;
+
 class Level {
 public:
     int unk_00; // +0x00 = -1
@@ -67,7 +59,7 @@ public:
 
     Vector32<void> unkVector_60; // +0x60，元素类型未知
 
-    Tree32 mWaves; // +0x6C，std::map<int, Sexy::_Wave>
+    pvzstl::map<int, Sexy::_Wave> mWaves; // +0x6C
 
     homura::Storage<pvzstl::string> mStringStorage; // +0x84，旧版32位 std::string
 };

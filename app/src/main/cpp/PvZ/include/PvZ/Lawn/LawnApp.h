@@ -49,7 +49,6 @@ class PoolEffect;
 class ReanimatorCache;
 class Music2;
 class TodFoley;
-class DefaultPlayerInfo;
 class PottedPlant;
 class StoreScreen;
 class VSSetupMenu;
@@ -95,160 +94,160 @@ public:
         void (*ButtonMouseEnter)(Sexy::ButtonListener *self, int id);                                                                                                                 // 0x018
         void (*ButtonMouseLeave)(Sexy::ButtonListener *self, int id);                                                                                                                 // 0x01C
         void (*ButtonMouseMove)(Sexy::ButtonListener *self, int id, int x, int y);                                                                                                    // 0x020
-        void (*MakeWindow)(Sexy::SexyAppBase *self);                                                                                                                                  // 0x024
-        void (*InitCursors)(Sexy::SexyAppBase *self);                                                                                                                                 // 0x028
+        void (*MakeWindow)(SexyAppBase *self);                                                                                                                                        // 0x024
+        void (*InitCursors)(SexyAppBase *self);                                                                                                                                       // 0x028
         void (*EnforceCursor)(LawnApp *self);                                                                                                                                         // 0x02C
-        void (*ClearKeysDown)(Sexy::SexyAppBase *self);                                                                                                                               // 0x030
+        void (*ClearKeysDown)(SexyAppBase *self);                                                                                                                                     // 0x030
         void (*UpdateFrames)(LawnApp *self);                                                                                                                                          // 0x034
-        void (*ReInitImages)(Sexy::SexyAppBase *self);                                                                                                                                // 0x038
-        void (*DeleteNativeImageData)(Sexy::SexyAppBase *self);                                                                                                                       // 0x03C
-        void (*DeleteExtraImageData)(Sexy::SexyAppBase *self);                                                                                                                        // 0x040
-        void (*Delete3DImageData)(Sexy::SexyAppBase *self);                                                                                                                           // 0x044
+        void (*ReInitImages)(SexyAppBase *self);                                                                                                                                      // 0x038
+        void (*DeleteNativeImageData)(SexyAppBase *self);                                                                                                                             // 0x03C
+        void (*DeleteExtraImageData)(SexyAppBase *self);                                                                                                                              // 0x040
+        void (*Delete3DImageData)(SexyAppBase *self);                                                                                                                                 // 0x044
         void (*LoadingThreadCompleted)(LawnApp *self);                                                                                                                                // 0x048
-        void (*Evict3DImageData)(Sexy::SexyAppBase *self, unsigned int amount);                                                                                                       // 0x04C
-        void (*StartSensor)(Sexy::SexyAppBase *self, int sensorType);                                                                                                                 // 0x050
-        void (*StopSensor)(Sexy::SexyAppBase *self, int sensorType);                                                                                                                  // 0x054
-        void (*PauseApp)(Sexy::SexyAppBase *self);                                                                                                                                    // 0x058
-        void (*ResumeApp)(Sexy::SexyAppBase *self);                                                                                                                                   // 0x05C
-        int *(*CreateMusicInterface)(Sexy::SexyAppBase *self, void *context);                                                                                                         // 0x060
+        void (*Evict3DImageData)(SexyAppBase *self, unsigned int amount);                                                                                                             // 0x04C
+        void (*StartSensor)(SexyAppBase *self, int sensorType);                                                                                                                       // 0x050
+        void (*StopSensor)(SexyAppBase *self, int sensorType);                                                                                                                        // 0x054
+        void (*PauseApp)(SexyAppBase *self);                                                                                                                                          // 0x058
+        void (*ResumeApp)(SexyAppBase *self);                                                                                                                                         // 0x05C
+        int *(*CreateMusicInterface)(SexyAppBase *self, void *context);                                                                                                               // 0x060
         void (*InitHook)(LawnApp *self);                                                                                                                                              // 0x064
-        void (*ShutdownHook)(Sexy::SexyAppBase *self);                                                                                                                                // 0x068
-        void (*PreTerminate)(Sexy::SexyAppBase *self);                                                                                                                                // 0x06C
+        void (*ShutdownHook)(SexyAppBase *self);                                                                                                                                      // 0x068
+        void (*PreTerminate)(SexyAppBase *self);                                                                                                                                      // 0x06C
         void (*LoadingThreadProc)(LawnApp *self);                                                                                                                                     // 0x070
         void (*WriteToRegistry)(LawnApp *self);                                                                                                                                       // 0x074
         void (*ReadFromRegistry)(LawnApp *self);                                                                                                                                      // 0x078
         Sexy::Dialog *(*NewDialog)(LawnApp *self, int dialogId, bool modal, const pvzstl::string &header, const pvzstl::string &lines, const pvzstl::string &footer, int buttonMode); // 0x07C
         void (*PreDisplayHook)(LawnApp *self);                                                                                                                                        // 0x080
-        bool (*IsUIOrientationAllowed)(Sexy::SexyAppBase *self, int orientation);                                                                                                     // 0x084
-        void (*UIOrientationChanged)(Sexy::SexyAppBase *self, int orientation);                                                                                                       // 0x088
-        int (*GetUIOrientation)(Sexy::SexyAppBase *self);                                                                                                                             // 0x08C
-        void (*OnFullVersionChange)(Sexy::SexyAppBase *self);                                                                                                                         // 0x090
-        void (*LowMemoryWarning)(Sexy::SexyAppBase *self);                                                                                                                            // 0x094
-        void (*AppEnteredBackground)(Sexy::SexyCommonApp *self);                                                                                                                      // 0x098
-        void (*AppEnteredForeground)(Sexy::SexyCommonApp *self);                                                                                                                      // 0x09C
-        void (*BeginPopup)(Sexy::SexyAppBase *self);                                                                                                                                  // 0x0A0
-        void (*EndPopup)(Sexy::SexyAppBase *self);                                                                                                                                    // 0x0A4
-        int (*MsgBox)(Sexy::SexyAppBase *self, const pvzstl::string &text, const pvzstl::string &title, int flags);                                                                   // 0x0A8
-        int (*MsgBoxIntString)(Sexy::SexyAppBase *self, const std::basic_string<int> &text, const std::basic_string<int> &title, int flags);                                          // 0x0AC
-        void (*Popup)(Sexy::SexyAppBase *self, const pvzstl::string &text);                                                                                                           // 0x0B0
-        void (*PopupIntString)(Sexy::SexyAppBase *self, const std::basic_string<int> &text);                                                                                          // 0x0B4
-        void (*LogScreenSaverError)(Sexy::SexyAppBase *self, const pvzstl::string &error);                                                                                            // 0x0B8
+        bool (*IsUIOrientationAllowed)(SexyAppBase *self, int orientation);                                                                                                           // 0x084
+        void (*UIOrientationChanged)(SexyAppBase *self, int orientation);                                                                                                             // 0x088
+        int (*GetUIOrientation)(SexyAppBase *self);                                                                                                                                   // 0x08C
+        void (*OnFullVersionChange)(SexyAppBase *self);                                                                                                                               // 0x090
+        void (*LowMemoryWarning)(SexyAppBase *self);                                                                                                                                  // 0x094
+        void (*AppEnteredBackground)(SexyCommonApp *self);                                                                                                                            // 0x098
+        void (*AppEnteredForeground)(SexyCommonApp *self);                                                                                                                            // 0x09C
+        void (*BeginPopup)(SexyAppBase *self);                                                                                                                                        // 0x0A0
+        void (*EndPopup)(SexyAppBase *self);                                                                                                                                          // 0x0A4
+        int (*MsgBox)(SexyAppBase *self, const pvzstl::string &text, const pvzstl::string &title, int flags);                                                                         // 0x0A8
+        int (*MsgBoxIntString)(SexyAppBase *self, const std::basic_string<int> &text, const std::basic_string<int> &title, int flags);                                                // 0x0AC
+        void (*Popup)(SexyAppBase *self, const pvzstl::string &text);                                                                                                                 // 0x0B0
+        void (*PopupIntString)(SexyAppBase *self, const std::basic_string<int> &text);                                                                                                // 0x0B4
+        void (*LogScreenSaverError)(SexyAppBase *self, const pvzstl::string &error);                                                                                                  // 0x0B8
         void (*SafeDeleteWidget)(LawnApp *self, Sexy::Widget *widget);                                                                                                                // 0x0BC
         void (*URLOpenFailed)(LawnApp *self, const pvzstl::string &url);                                                                                                              // 0x0C0
         void (*URLOpenSucceeded)(LawnApp *self, const pvzstl::string &url);                                                                                                           // 0x0C4
         bool (*OpenURL)(LawnApp *self, const pvzstl::string &url, bool shutdownOnOpen);                                                                                               // 0x0C8
-        void (*OpenRegisterPageWithParameters)(Sexy::SexyAppBase *self, int parameters);                                                                                              // 0x0CC
-        void (*OpenRegisterPage)(Sexy::SexyAppBase *self);                                                                                                                            // 0x0D0
-        pvzstl::string (*GetProductVersion)(Sexy::SexyAppBase *self, const pvzstl::string &path);                                                                                     // 0x0D4
-        void (*SEHOccured)(Sexy::SexyAppBase *self);                                                                                                                                  // 0x0D8
-        pvzstl::string (*GetGameSEHInfo)(Sexy::SexyAppBase *self);                                                                                                                    // 0x0DC
-        void (*GetSEHWebParams)(Sexy::SexyAppBase *self, int *parameters);                                                                                                            // 0x0E0
+        void (*OpenRegisterPageWithParameters)(SexyAppBase *self, int parameters);                                                                                                    // 0x0CC
+        void (*OpenRegisterPage)(SexyAppBase *self);                                                                                                                                  // 0x0D0
+        pvzstl::string (*GetProductVersion)(SexyAppBase *self, const pvzstl::string &path);                                                                                           // 0x0D4
+        void (*SEHOccured)(SexyAppBase *self);                                                                                                                                        // 0x0D8
+        pvzstl::string (*GetGameSEHInfo)(SexyAppBase *self);                                                                                                                          // 0x0DC
+        void (*GetSEHWebParams)(SexyAppBase *self, int *parameters);                                                                                                                  // 0x0E0
         void (*Shutdown)(LawnApp *self);                                                                                                                                              // 0x0E4
-        void (*Quit)(Sexy::SexyAppBase *self);                                                                                                                                        // 0x0E8
-        pvzstl::string (*FormatHelpString)(Sexy::SexyAppBase *self);                                                                                                                  // 0x0EC
-        void (*AddParameterEntry)(Sexy::SexyAppBase *self, int *entry);                                                                                                               // 0x0F0
-        void (*AddParameterEntries)(Sexy::SexyAppBase *self, int *entries);                                                                                                           // 0x0F4
-        void (*DoParseCmdLine)(Sexy::SexyAppBase *self);                                                                                                                              // 0x0F8
-        void (*ParseCmdLineVector)(Sexy::SexyAppBase *self, const std::vector<pvzstl::string> &arguments);                                                                            // 0x0FC
-        void (*ParseCmdLineString)(Sexy::SexyAppBase *self, const pvzstl::string &commandLine);                                                                                       // 0x100
+        void (*Quit)(SexyAppBase *self);                                                                                                                                              // 0x0E8
+        pvzstl::string (*FormatHelpString)(SexyAppBase *self);                                                                                                                        // 0x0EC
+        void (*AddParameterEntry)(SexyAppBase *self, int *entry);                                                                                                                     // 0x0F0
+        void (*AddParameterEntries)(SexyAppBase *self, int *entries);                                                                                                                 // 0x0F4
+        void (*DoParseCmdLine)(SexyAppBase *self);                                                                                                                                    // 0x0F8
+        void (*ParseCmdLineVector)(SexyAppBase *self, const std::vector<pvzstl::string> &arguments);                                                                                  // 0x0FC
+        void (*ParseCmdLineString)(SexyAppBase *self, const pvzstl::string &commandLine);                                                                                             // 0x100
         void (*HandleCmdLineParam)(LawnApp *self, const pvzstl::string &name, const pvzstl::string &value);                                                                           // 0x104
-        void (*HandleNotifyGameMessage)(Sexy::SexyAppBase *self, int type, int parameter);                                                                                            // 0x108
-        void (*HandleGameAlreadyRunning)(Sexy::SexyAppBase *self);                                                                                                                    // 0x10C
-        void (*Startup)(Sexy::SexyAppBase *self);                                                                                                                                     // 0x110
+        void (*HandleNotifyGameMessage)(SexyAppBase *self, int type, int parameter);                                                                                                  // 0x108
+        void (*HandleGameAlreadyRunning)(SexyAppBase *self);                                                                                                                          // 0x10C
+        void (*Startup)(SexyAppBase *self);                                                                                                                                           // 0x110
         void (*Start)(LawnApp *self);                                                                                                                                                 // 0x114
-        void (*Terminate)(Sexy::SexyAppBase *self);                                                                                                                                   // 0x118
+        void (*Terminate)(SexyAppBase *self);                                                                                                                                         // 0x118
         void (*Init)(LawnApp *self);                                                                                                                                                  // 0x11C
-        void (*Cleanup)(Sexy::SexyCommonApp *self);                                                                                                                                   // 0x120
-        void (*PreDDInterfaceInitHook)(Sexy::SexyAppBase *self);                                                                                                                      // 0x124
-        void (*PostDDInterfaceInitHook)(Sexy::SexyAppBase *self);                                                                                                                     // 0x128
+        void (*Cleanup)(SexyCommonApp *self);                                                                                                                                         // 0x120
+        void (*PreDDInterfaceInitHook)(SexyAppBase *self);                                                                                                                            // 0x124
+        void (*PostDDInterfaceInitHook)(SexyAppBase *self);                                                                                                                           // 0x128
         bool (*ChangeDirHook)(LawnApp *self, const char *intendedPath);                                                                                                               // 0x12C
-        void (*PlaySample)(Sexy::SexyAppBase *self, int soundId);                                                                                                                     // 0x130
-        void (*PlaySampleWithPan)(Sexy::SexyAppBase *self, int soundId, int pan);                                                                                                     // 0x134
-        void (*PlaySampleSingle)(Sexy::SexyAppBase *self, int soundId);                                                                                                               // 0x138
-        void (*PlaySampleSingleWithPan)(Sexy::SexyAppBase *self, int soundId, int pan);                                                                                               // 0x13C
-        double (*GetMasterVolume)(Sexy::SexyAppBase *self);                                                                                                                           // 0x140
-        double (*GetMusicVolume)(Sexy::SexyAppBase *self);                                                                                                                            // 0x144
-        double (*GetSfxVolume)(Sexy::SexyAppBase *self);                                                                                                                              // 0x148
-        bool (*IsMuted)(Sexy::SexyAppBase *self);                                                                                                                                     // 0x14C
-        void (*SetMasterVolume)(Sexy::SexyAppBase *self, double volume);                                                                                                              // 0x150
-        void (*SetMusicVolume)(Sexy::SexyAppBase *self, double volume);                                                                                                               // 0x154
-        void (*SetSfxVolume)(Sexy::SexyAppBase *self, double volume);                                                                                                                 // 0x158
-        void (*Mute)(Sexy::SexyAppBase *self, bool autoMute);                                                                                                                         // 0x15C
-        void (*Unmute)(Sexy::SexyAppBase *self, bool autoMute);                                                                                                                       // 0x160
-        double (*GetLoadingThreadProgress)(Sexy::SexyAppBase *self);                                                                                                                  // 0x164
-        Sexy::Image *(*GetTexImage)(Sexy::SexyAppBase *self, const pvzstl::string &fileName, bool commitBits);                                                                        // 0x168
+        void (*PlaySample)(SexyAppBase *self, int soundId);                                                                                                                           // 0x130
+        void (*PlaySampleWithPan)(SexyAppBase *self, int soundId, int pan);                                                                                                           // 0x134
+        void (*PlaySampleSingle)(SexyAppBase *self, int soundId);                                                                                                                     // 0x138
+        void (*PlaySampleSingleWithPan)(SexyAppBase *self, int soundId, int pan);                                                                                                     // 0x13C
+        double (*GetMasterVolume)(SexyAppBase *self);                                                                                                                                 // 0x140
+        double (*GetMusicVolume)(SexyAppBase *self);                                                                                                                                  // 0x144
+        double (*GetSfxVolume)(SexyAppBase *self);                                                                                                                                    // 0x148
+        bool (*IsMuted)(SexyAppBase *self);                                                                                                                                           // 0x14C
+        void (*SetMasterVolume)(SexyAppBase *self, double volume);                                                                                                                    // 0x150
+        void (*SetMusicVolume)(SexyAppBase *self, double volume);                                                                                                                     // 0x154
+        void (*SetSfxVolume)(SexyAppBase *self, double volume);                                                                                                                       // 0x158
+        void (*Mute)(SexyAppBase *self, bool autoMute);                                                                                                                               // 0x15C
+        void (*Unmute)(SexyAppBase *self, bool autoMute);                                                                                                                             // 0x160
+        double (*GetLoadingThreadProgress)(SexyAppBase *self);                                                                                                                        // 0x164
+        Sexy::Image *(*GetTexImage)(SexyAppBase *self, const pvzstl::string &fileName, bool commitBits);                                                                              // 0x168
         Sexy::Image *(*GetImage)(Sexy::GamepadApp *self, const pvzstl::string &fileName, bool commitBits);                                                                            // 0x16C
         Sexy::Image *(*GetImageWithAttrs)(Sexy::GamepadApp *self, const pvzstl::string &fileName, const pvzstl::string &variant, const pvzstl::string &attributes, bool commitBits);  // 0x170
-        bool (*ReloadImage)(Sexy::SexyAppBase *self, Sexy::Image *image);                                                                                                             // 0x174
-        int *(*GetSharedImage)(Sexy::SexyAppBase *self, const pvzstl::string &fileName, const pvzstl::string &variant, bool *isNew, bool commitBits, bool allowTriReps);              // 0x178
+        bool (*ReloadImage)(SexyAppBase *self, Sexy::Image *image);                                                                                                                   // 0x174
+        int *(*GetSharedImage)(SexyAppBase *self, const pvzstl::string &fileName, const pvzstl::string &variant, bool *isNew, bool commitBits, bool allowTriReps);                    // 0x178
         int *(*GetSharedImageWithAttrs)(
-            Sexy::SexyAppBase *self, const pvzstl::string &fileName, const pvzstl::string &variant, const pvzstl::string &attributes, const pvzstl::string &alphaFile, bool *isNew); // 0x17C
-        Sexy::Image *(*GetImageForInput)(Sexy::SexyAppBase *self, const pvzstl::string &fileName, int width, int height, const pvzstl::string &variant);                             // 0x180
-        void (*RemoveImageForInput)(Sexy::SexyAppBase *self, const pvzstl::string &fileName);                                                                                        // 0x184
-        void (*SwitchScreenMode)(Sexy::SexyAppBase *self);                                                                                                                           // 0x188
-        void (*SwitchScreenModeWindowed)(Sexy::SexyAppBase *self, bool windowed);                                                                                                    // 0x18C
+            SexyAppBase *self, const pvzstl::string &fileName, const pvzstl::string &variant, const pvzstl::string &attributes, const pvzstl::string &alphaFile, bool *isNew);       // 0x17C
+        Sexy::Image *(*GetImageForInput)(SexyAppBase *self, const pvzstl::string &fileName, int width, int height, const pvzstl::string &variant);                                   // 0x180
+        void (*RemoveImageForInput)(SexyAppBase *self, const pvzstl::string &fileName);                                                                                              // 0x184
+        void (*SwitchScreenMode)(SexyAppBase *self);                                                                                                                                 // 0x188
+        void (*SwitchScreenModeWindowed)(SexyAppBase *self, bool windowed);                                                                                                          // 0x18C
         void (*SwitchScreenModeFull)(LawnApp *self, bool windowed, bool use3D, bool force);                                                                                          // 0x190
-        void (*SetAlphaDisabled)(Sexy::SexyAppBase *self, bool disabled);                                                                                                            // 0x194
+        void (*SetAlphaDisabled)(SexyAppBase *self, bool disabled);                                                                                                                  // 0x194
         Sexy::Dialog *(*DoDialog)(LawnApp *self, int dialogId, bool modal, const pvzstl::string &header, const pvzstl::string &lines, const pvzstl::string &footer, int buttonMode); // 0x198
-        Sexy::Dialog *(*GetDialog)(Sexy::SexyAppBase *self, int dialogId);                                                                                                           // 0x19C
-        void (*AddDialogWithId)(Sexy::SexyAppBase *self, int dialogId, Sexy::Dialog *dialog);                                                                                        // 0x1A0
-        void (*AddDialog)(Sexy::SexyAppBase *self, Sexy::Dialog *dialog);                                                                                                            // 0x1A4
-        bool (*KillDialogFull)(Sexy::SexyAppBase *self, int dialogId, bool removeWidget, bool deleteWidget);                                                                         // 0x1A8
+        Sexy::Dialog *(*GetDialog)(SexyAppBase *self, int dialogId);                                                                                                                 // 0x19C
+        void (*AddDialogWithId)(SexyAppBase *self, int dialogId, Sexy::Dialog *dialog);                                                                                              // 0x1A0
+        void (*AddDialog)(SexyAppBase *self, Sexy::Dialog *dialog);                                                                                                                  // 0x1A4
+        bool (*KillDialogFull)(SexyAppBase *self, int dialogId, bool removeWidget, bool deleteWidget);                                                                               // 0x1A8
         bool (*KillDialogById)(LawnApp *self, int dialogId);                                                                                                                         // 0x1AC
-        bool (*KillDialogByPointer)(Sexy::SexyAppBase *self, Sexy::Dialog *dialog);                                                                                                  // 0x1B0
-        int (*GetDialogCount)(Sexy::SexyAppBase *self);                                                                                                                              // 0x1B4
+        bool (*KillDialogByPointer)(SexyAppBase *self, Sexy::Dialog *dialog);                                                                                                        // 0x1B0
+        int (*GetDialogCount)(SexyAppBase *self);                                                                                                                                    // 0x1B4
         void (*ModalOpen)(LawnApp *self);                                                                                                                                            // 0x1B8
         void (*ModalClose)(LawnApp *self);                                                                                                                                           // 0x1BC
-        void (*DialogButtonPress)(Sexy::SexyAppBase *self, int dialogId, int buttonId);                                                                                              // 0x1C0
-        void (*DialogButtonDepress)(Sexy::SexyAppBase *self, int dialogId, int buttonId);                                                                                            // 0x1C4
+        void (*DialogButtonPress)(SexyAppBase *self, int dialogId, int buttonId);                                                                                                    // 0x1C0
+        void (*DialogButtonDepress)(SexyAppBase *self, int dialogId, int buttonId);                                                                                                  // 0x1C4
         void (*GotFocus)(LawnApp *self);                                                                                                                                             // 0x1C8
         void (*LostFocus)(LawnApp *self);                                                                                                                                            // 0x1CC
-        bool (*IsAltKeyUsed)(Sexy::SexyAppBase *self, int keyCode);                                                                                                                  // 0x1D0
-        bool (*KeyDown)(Sexy::SexyAppBase *self, int keyCode);                                                                                                                       // 0x1D4
-        bool (*DebugKeyDown)(Sexy::SexyAppBase *self, int keyCode);                                                                                                                  // 0x1D8
-        bool (*DebugKeyDownAsync)(Sexy::SexyAppBase *self, int keyCode, bool controlDown, bool altDown);                                                                             // 0x1DC
+        bool (*IsAltKeyUsed)(SexyAppBase *self, int keyCode);                                                                                                                        // 0x1D0
+        bool (*KeyDown)(SexyAppBase *self, int keyCode);                                                                                                                             // 0x1D4
+        bool (*DebugKeyDown)(SexyAppBase *self, int keyCode);                                                                                                                        // 0x1D8
+        bool (*DebugKeyDownAsync)(SexyAppBase *self, int keyCode, bool controlDown, bool altDown);                                                                                   // 0x1DC
         void (*CloseRequestAsync)(LawnApp *self);                                                                                                                                    // 0x1E0
-        void (*Done3dTesting)(Sexy::SexyAppBase *self);                                                                                                                              // 0x1E4
-        pvzstl::string (*NotifyCrashHook)(Sexy::SexyAppBase *self);                                                                                                                  // 0x1E8
-        bool (*CheckSignature)(Sexy::SexyAppBase *self, const Sexy::Buffer &buffer, const pvzstl::string &fileName);                                                                 // 0x1EC
+        void (*Done3dTesting)(SexyAppBase *self);                                                                                                                                    // 0x1E4
+        pvzstl::string (*NotifyCrashHook)(SexyAppBase *self);                                                                                                                        // 0x1E8
+        bool (*CheckSignature)(SexyAppBase *self, const Sexy::Buffer &buffer, const pvzstl::string &fileName);                                                                       // 0x1EC
         void (*PreDrawScreen)(LawnApp *self);                                                                                                                                        // 0x1F0
         bool (*DrawDirtyStuff)(LawnApp *self);                                                                                                                                       // 0x1F4
-        void (*Redraw)(Sexy::SexyAppBase *self, Sexy::TRect<int> *clipRect);                                                                                                         // 0x1F8
-        void (*InitPropertiesHook)(Sexy::SexyAppBase *self);                                                                                                                         // 0x1FC
+        void (*Redraw)(SexyAppBase *self, Sexy::TRect<int> *clipRect);                                                                                                               // 0x1F8
+        void (*InitPropertiesHook)(SexyAppBase *self);                                                                                                                               // 0x1FC
         bool (*UpdateAppStep)(LawnApp *self, bool *updated);                                                                                                                         // 0x200
         bool (*UpdateApp)(LawnApp *self);                                                                                                                                            // 0x204
-        void (*PopulateMessages)(Sexy::SexyAppBase *self);                                                                                                                           // 0x208
-        bool (*ProcessMessages)(Sexy::SexyAppBase *self, std::vector<Sexy::Event> &events);                                                                                          // 0x20C
+        void (*PopulateMessages)(SexyAppBase *self);                                                                                                                                 // 0x208
+        bool (*ProcessMessages)(SexyAppBase *self, std::vector<Sexy::Event> &events);                                                                                                // 0x20C
         bool (*ProcessMessage)(LawnApp *self, Sexy::Event &event);                                                                                                                   // 0x210
-        void (*CleanupHook)(Sexy::SexyAppBase *self);                                                                                                                                // 0x214
-        void (*DrawOneFrame)(Sexy::SexyAppBase *self);                                                                                                                               // 0x218
-        bool (*AppCanRestore)(Sexy::SexyAppBase *self);                                                                                                                              // 0x21C
-        void (*InputStatusChanged)(Sexy::SexyAppBase *self, int *status);                                                                                                            // 0x220
-        void (*InitPreLoadWidget)(Sexy::SexyAppBase *self);                                                                                                                          // 0x224
-        Sexy::Widget *(*CreatePreLoadWidget)(Sexy::SexyAppBase *self);                                                                                                               // 0x228
-        void (*FinishPreLoadWidget)(Sexy::SexyAppBase *self);                                                                                                                        // 0x22C
-        void (*PostPreLoad)(Sexy::SexyAppBase *self);                                                                                                                                // 0x230
-        void (*PreLoadResources)(Sexy::SexyAppBase *self);                                                                                                                           // 0x234
+        void (*CleanupHook)(SexyAppBase *self);                                                                                                                                      // 0x214
+        void (*DrawOneFrame)(SexyAppBase *self);                                                                                                                                     // 0x218
+        bool (*AppCanRestore)(SexyAppBase *self);                                                                                                                                    // 0x21C
+        void (*InputStatusChanged)(SexyAppBase *self, int *status);                                                                                                                  // 0x220
+        void (*InitPreLoadWidget)(SexyAppBase *self);                                                                                                                                // 0x224
+        Sexy::Widget *(*CreatePreLoadWidget)(SexyAppBase *self);                                                                                                                     // 0x228
+        void (*FinishPreLoadWidget)(SexyAppBase *self);                                                                                                                              // 0x22C
+        void (*PostPreLoad)(SexyAppBase *self);                                                                                                                                      // 0x230
+        void (*PreLoadResources)(SexyAppBase *self);                                                                                                                                 // 0x234
         void (*AuthFinished)(LawnApp *self, bool success);                                                                                                                           // 0x238
         void (*StartAuth)(LawnApp *self);                                                                                                                                            // 0x23C
-        void (*GetMemoryInfo)(Sexy::SexyAppBase *self, int &memoryInfo);                                                                                                             // 0x240
-        bool (*FrameNeedsSwapScreenImage)(Sexy::SexyAppBase *self);                                                                                                                  // 0x244
-        bool (*TakeScreenshot)(Sexy::SexyAppBase *self, Sexy::MemoryImage &image);                                                                                                   // 0x248
-        void (*DoAuthenticate)(Sexy::SexyCommonApp *self);                                                                                                                           // 0x24C
-        void (*DoGameTrialDialog)(Sexy::SexyCommonApp *self, int unk);                                                                                                               // 0x250
-        Sexy::Dialog *(*CreateGameTrialDialog)(Sexy::SexyCommonApp *self);                                                                                                           // 0x254
-        Sexy::Dialog *(*CreateGotoBuyResultDialog)(Sexy::SexyCommonApp *self, int result, pvzstl::string message);                                                                   // 0x258
-        Sexy::Dialog *(*CreateWaitResultDialog)(Sexy::SexyCommonApp *self);                                                                                                          // 0x25C
-        Sexy::Dialog *(*CreateWaitMessageDialog)(Sexy::SexyCommonApp *self);                                                                                                         // 0x260
-        Sexy::Dialog *(*CreateNetworkFaultDialog)(Sexy::SexyCommonApp *self);                                                                                                        // 0x264
-        void (*setOfferRes)(Sexy::SexyCommonApp *self, bool success);                                                                                                                // 0x268
-        void (*setOfferFullOpenRes)(Sexy::SexyCommonApp *self, bool success);                                                                                                        // 0x26C
+        void (*GetMemoryInfo)(SexyAppBase *self, int &memoryInfo);                                                                                                                   // 0x240
+        bool (*FrameNeedsSwapScreenImage)(SexyAppBase *self);                                                                                                                        // 0x244
+        bool (*TakeScreenshot)(SexyAppBase *self, Sexy::MemoryImage &image);                                                                                                         // 0x248
+        void (*DoAuthenticate)(SexyCommonApp *self);                                                                                                                                 // 0x24C
+        void (*DoGameTrialDialog)(SexyCommonApp *self, int unk);                                                                                                                     // 0x250
+        Sexy::Dialog *(*CreateGameTrialDialog)(SexyCommonApp *self);                                                                                                                 // 0x254
+        Sexy::Dialog *(*CreateGotoBuyResultDialog)(SexyCommonApp *self, int result, pvzstl::string message);                                                                         // 0x258
+        Sexy::Dialog *(*CreateWaitResultDialog)(SexyCommonApp *self);                                                                                                                // 0x25C
+        Sexy::Dialog *(*CreateWaitMessageDialog)(SexyCommonApp *self);                                                                                                               // 0x260
+        Sexy::Dialog *(*CreateNetworkFaultDialog)(SexyCommonApp *self);                                                                                                              // 0x264
+        void (*setOfferRes)(SexyCommonApp *self, bool success);                                                                                                                      // 0x268
+        void (*setOfferFullOpenRes)(SexyCommonApp *self, bool success);                                                                                                              // 0x26C
         void (*setPayItemsRes)(LawnApp *self, bool success, const char *itemId, int value, const char *message);                                                                     // 0x270
         void (*setQueryBalanceRes)(LawnApp *self, bool success, int balance);                                                                                                        // 0x274
-        void (*adBarClick)(Sexy::SexyCommonApp *self);                                                                                                                               // 0x278
-        void (*setLoginRes)(Sexy::SexyCommonApp *self, bool success, const char *userName);                                                                                          // 0x27C
-        void (*setFullVersion)(Sexy::SexyCommonApp *self, bool fullVersion);                                                                                                         // 0x280
-        void (*messageBoxRes)(Sexy::SexyCommonApp *self, int result);                                                                                                                // 0x284
+        void (*adBarClick)(SexyCommonApp *self);                                                                                                                                     // 0x278
+        void (*setLoginRes)(SexyCommonApp *self, bool success, const char *userName);                                                                                                // 0x27C
+        void (*setFullVersion)(SexyCommonApp *self, bool fullVersion);                                                                                                               // 0x280
+        void (*messageBoxRes)(SexyCommonApp *self, int result);                                                                                                                      // 0x284
         void (*setErrorCode)(LawnApp *self, pvzstl::string errorCode);                                                                                                               // 0x288
         void (*showRechargeBoard)(LawnApp *self, pvzstl::string message);                                                                                                            // 0x28C
         void (*DeviceAdded)(Sexy::GamepadApp *self, int *driver);                                                                                                                    // 0x290
@@ -306,7 +305,7 @@ public:
     EffectSystem *mEffectSystem;                   // 585
     ReanimatorCache *mReanimatorCache;             // 586
     LawnPlayerInfo *mPlayerInfo;                   // 587
-    DefaultPlayerInfo *mPlayer2Info;               // 588 , 游戏内没有初始化，但有一些判定
+    Sexy::DefaultPlayerInfo *mPlayer2Info;         // 588 , 游戏内没有初始化，但有一些判定
     int *mLastLevelStats;                          // 589
     bool mCloseRequest;                            // 2360
     int mAppCounter;                               // 591
@@ -566,6 +565,21 @@ public:
     void PostLeaveLevel() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_PostLeaveLevelAddr)(this);
     }
+    void PostEnterLevel() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_PostEnterLevelAddr)(this);
+    }
+    void KillDialog(Dialogs theId) {
+        reinterpret_cast<void (*)(LawnApp *, Dialogs)>(LawnApp_KillDialogAddr)(this, theId);
+    }
+    void CheckForGameEnd() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_CheckForGameEndAddr)(this);
+    }
+    void UpdateSavingDingus() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_UpdateSavingDingusAddr)(this);
+    }
+    void DoContinueDialog() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_DoContinueDialogAddr)(this);
+    }
     const LawnAppVTable *GetVTable() const {
         return (LawnAppVTable *)vTable;
     }
@@ -614,7 +628,6 @@ public:
     void LoadAddonSounds();
     Sexy::Image *GetImageByFileName(const char *theFileName);
     int GetSoundByFileName(const char *theFileName);
-    void KillDialog(Dialogs theId);
     static void Load(const char *theGroupName);
     void DoConvertImitaterImages();
     int GetSeedsAvailable(bool theIsZombieChooser);
@@ -634,6 +647,7 @@ public:
     void HandleTcpClientMessage(const std::byte *buf, size_t bufSize);
     void HandleTcpServerMessage(const std::byte *buf, size_t bufSize);
     void UpdateFrames();
+    void FinishLoadGame();
     void ShowSeedChooserScreen();
     void ShowZombieChooserScreen();
     void KillZombieChooserScreen();
@@ -652,6 +666,12 @@ protected:
     void _constructor();
 };
 
+
+inline bool gSlowMo;
+inline bool gFastMo;
+inline int gSlowMoCounter;
+inline bool gStep;
+inline bool gStepReady;
 /***************************************************************************************************************/
 inline bool disableShop;
 inline bool doCheatDialog;     // 菜单DoCheatDialog

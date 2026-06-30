@@ -20,6 +20,7 @@
 #ifndef PVZ_LAWN_SYSTEM_MUSIC_H
 #define PVZ_LAWN_SYSTEM_MUSIC_H
 
+#include "PvZ/Lawn/Board/GameObject.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Sound/MusicInterface.h"
 #include "PvZ/Symbols.h"
@@ -69,10 +70,33 @@ enum MusicDrumsState {
     MUSIC_DRUMS_FADING = 4,
 };
 
-class Music { // 加载XBOX版xm格式音乐时用。优：音质好、有鼓点。缺：鼓点BUG多，xm格式难以修改
+class Music : public SyncObject { // 加载XBOX版xm格式音乐时用。优：音质好、有鼓点。缺：鼓点BUG多，xm格式难以修改
 public:
-    void **vTable;                         // 0
-    int unkMems[3];                        // 1 ~ 3
+    struct MusicVTable {
+        void (*completeDestructor)(Music *self);                                              // 0x00
+        void (*deletingDestructor)(Music *self);                                              // 0x04
+        void (*MusicInit)(Music *self);                                                       // 0x08
+        void (*MusicDispose)(Music *self);                                                    // 0x0C
+        void (*MusicUpdate)(Music *self);                                                     // 0x10
+        void (*StopAllMusic)(Music *self);                                                    // 0x14
+        void (*StartGameMusic)(Music *self, bool startPaused);                                // 0x18
+        void (*LoadSong)(Music *self, MusicFile musicFile, const std::string &fileName);      // 0x1C
+        void (*MusicResync)(Music *self);                                                     // 0x20
+        void (*UpdateMusicBurst)(Music *self);                                                // 0x24
+        void (*StartBurst)(Music *self);                                                      // 0x28
+        void (*GameMusicPause)(Music *self, bool paused);                                     // 0x2C
+        void (*MusicResyncChannel)(Music *self, MusicFile musicFile1, MusicFile musicFile2);  // 0x30
+        void (*MusicTitleScreenInit)(Music *self);                                            // 0x34
+        void (*MakeSureMusicIsPlaying)(Music *self, MusicTune musicTune);                     // 0x38
+        void (*FadeOut)(Music *self, int fadeTime);                                           // 0x3C
+        void (*SetupMusicFileForTune)(Music *self, MusicFile musicFile, MusicTune musicTune); // 0x40
+        int (*GetMusicOrder)(Music *self, MusicFile musicFile);                               // 0x44
+        int (*GetNumLoadingTasks)(Music *self);                                               // 0x48
+        void (*MusicLoadCreditsSong)(Music *self);                                            // 0x4C
+        void (*PlayFromOffset)(Music *self, MusicFile musicFile, int offset, double volume);  // 0x50
+    };
+
+public:
     LawnApp *mApp;                         // 4
     Sexy::MusicInterface *mMusicInterface; // 5
     MusicTune mCurMusicTune;               // 6
@@ -113,7 +137,9 @@ public:
     void MakeSureMusicIsPlaying(MusicTune theMusicTune) {
         reinterpret_cast<void (*)(Music *, MusicTune)>(Music_MakeSureMusicIsPlayingAddr)(this, theMusicTune);
     }
-
+    const MusicVTable *GetVTable() const {
+        return (MusicVTable *)vTable;
+    }
     void PlayMusic(MusicTune theMusicTune, int theOffset, int theDrumsOffset);
     void MusicUpdate();
     void UpdateMusicBurst();
@@ -136,10 +162,38 @@ protected:
 
 class Music2 : public Music { // 加载TV版ogg格式音乐时用。无鼓点。
 public:
+    struct Music2VTable {
+        void (*completeDestructor)(Music2 *self);                                               // 0x00
+        void (*deletingDestructor)(Music2 *self);                                               // 0x04
+        void (*MusicInit)(Music2 *self);                                                        // 0x08
+        void (*MusicDispose)(Music2 *self);                                                     // 0x0C
+        void (*MusicUpdate)(Music2 *self);                                                      // 0x10
+        void (*StopAllMusic)(Music2 *self);                                                     // 0x14
+        void (*StartGameMusic)(Music2 *self, bool startPaused);                                 // 0x18
+        void (*LoadSongByFile)(Music *self, MusicFile musicFile, const std::string &fileName);  // 0x1C
+        void (*MusicResync)(Music2 *self);                                                      // 0x20
+        void (*UpdateMusicBurst)(Music2 *self);                                                 // 0x24
+        void (*StartBurst)(Music2 *self);                                                       // 0x28
+        void (*GameMusicPause)(Music2 *self, bool paused);                                      // 0x2C
+        void (*MusicResyncChannel)(Music2 *self, MusicFile musicFile1, MusicFile musicFile2);   // 0x30
+        void (*MusicTitleScreenInit)(Music2 *self);                                             // 0x34
+        void (*MakeSureMusicIsPlaying)(Music2 *self, MusicTune musicTune);                      // 0x38
+        void (*FadeOut)(Music2 *self, int fadeTime);                                            // 0x3C
+        void (*SetupMusicFileForTune)(Music *self, MusicFile musicFile, MusicTune musicTune);   // 0x40
+        int (*GetMusicOrder)(Music2 *self, MusicFile musicFile);                                // 0x44
+        int (*GetNumLoadingTasks)(Music2 *self);                                                // 0x48
+        void (*MusicLoadCreditsSong)(Music2 *self);                                             // 0x4C
+        void (*PlayFromOffset)(Music2 *self, MusicFile musicFile, int offset, double volume);   // 0x50
+        void (*LoadSongByTune)(Music2 *self, MusicTune musicTune, const std::string &fileName); // 0x54
+    };
+
+public:
     void MakeSureMusicIsPlaying(MusicTune theMusicTune) { // vTable[14]
         reinterpret_cast<void (*)(Music *, MusicTune)>(Music2_MakeSureMusicIsPlayingAddr)(this, theMusicTune);
     }
-
+    const Music2VTable *GetVTable() const {
+        return (Music2VTable *)vTable;
+    }
     void StopAllMusic();
     void StartGameMusic(bool theStart);
     void GameMusicPause(bool thePause);

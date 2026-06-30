@@ -21,7 +21,7 @@
 #define PVZ_LAWN_SYSTEM_SAVE_GAME_H
 
 #include "PvZ/STL/string.h"
-#include "PvZ/SexyAppFramework//Buffer.h"
+#include "PvZ/SexyAppFramework/Buffer.h"
 #include "PvZ/Symbols.h"
 
 class Board;
@@ -41,6 +41,8 @@ public:
     Sexy::Buffer mBuffer;
     bool mFailed;
     bool mReading;
+
+    ~SaveGameContext() = default;
 
     void SyncInt(int &theInt) {
         reinterpret_cast<void (*)(SaveGameContext *, int &)>(SaveGameContext_SyncIntAddr)(this, theInt);

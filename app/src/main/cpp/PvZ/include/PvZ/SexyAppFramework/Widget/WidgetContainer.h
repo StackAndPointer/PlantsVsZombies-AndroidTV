@@ -20,6 +20,7 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_WIDGET_WIDGET_CONTAINER_H
 #define PVZ_SEXYAPPFRAMEWORK_WIDGET_WIDGET_CONTAINER_H
 
+#include "PvZ/STL/map.h"
 #include "PvZ/SexyAppFramework/Misc/Common.h"
 #include "PvZ/SexyAppFramework/Misc/Flags.h"
 #include "PvZ/SexyAppFramework/Misc/Rect.h"
@@ -43,18 +44,7 @@ struct WidgetListHead {
     int mReserved[2];
 };
 
-struct RbTreeHeader32 {
-    unsigned int color; // +0x00
-    void *parent;       // +0x04，root
-    void *left;         // +0x08，leftmost
-    void *right;        // +0x0C，rightmost
-};
-
-struct WidgetUserDataMap32 {
-    unsigned int comparatorOrPadding; // +0x00
-    RbTreeHeader32 header;            // +0x04
-    unsigned int nodeCount;           // +0x14
-};
+using WidgetUserDataMap32 = pvzstl::map<int, void *>;
 
 
 class WidgetContainer {

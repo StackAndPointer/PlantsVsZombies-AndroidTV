@@ -94,7 +94,8 @@ void InitHookFunction() {
     homura::HookFunc(LawnApp_GetSeedsAvailableAddr, &LawnApp::GetSeedsAvailable, &old_LawnApp_GetSeedsAvailable);
     homura::HookFunc(LawnApp_ClearSecondPlayerAddr, &LawnApp::ClearSecondPlayer, &old_LawnApp_ClearSecondPlayer);
     homura::HookFunc(LawnApp_HasSeedTypeAddr, &LawnApp::HasSeedType, &old_LawnApp_HasSeedType);
-    homura::HookFunc(LawnApp_UpdateFramesAddr, &LawnApp::UpdateFrames, &old_LawnApp_UpdateFrames);
+    homura::HookFunc(LawnApp_UpdateFramesAddr, &LawnApp::UpdateFrames, nullptr);
+    homura::HookFunc(LawnApp_FinishLoadGameAddr, &LawnApp::FinishLoadGame, nullptr);
     homura::HookFunc(LawnApp_ShowSeedChooserScreenAddr, &LawnApp::ShowSeedChooserScreen, nullptr);
     homura::HookFunc(LawnApp_KillSeedChooserScreenAddr, &LawnApp::KillSeedChooserScreen, nullptr);
     homura::HookFunc(LawnApp_ShowZombieChooserScreenAddr, &LawnApp::ShowZombieChooserScreen, nullptr);

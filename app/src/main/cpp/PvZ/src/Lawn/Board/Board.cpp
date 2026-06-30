@@ -95,25 +95,10 @@ void Board::_constructor(LawnApp *theApp) {
     SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVTableOffset2);
     auto &syncBlocks = mSyncBlocks.Construct();
 
-    auto InitPlantRbTree = [](PlantRbTree &tree) {
-        std::memset(&tree, 0, sizeof(tree));
-
-        tree.mHeaderColor = 0;
-        tree.mRoot = nullptr;
-        tree.mLeftmost = &tree.mHeaderColor;
-        tree.mRightmost = &tree.mHeaderColor;
-        tree.mNodeCount = 0;
-    };
-
-    InitPlantRbTree(mFlowerPotTree);
-    InitPlantRbTree(mTangleKelpTree);
-    InitPlantRbTree(mPumpkinTree);
-    mUnknownStringIntMap.mObjectStart = 0;
-    mUnknownStringIntMap.mHeaderColor = 0;
-    mUnknownStringIntMap.mHeaderRoot = nullptr;
-    mUnknownStringIntMap.mHeaderLeftmost = &mUnknownStringIntMap.mHeaderColor;
-    mUnknownStringIntMap.mHeaderRightmost = &mUnknownStringIntMap.mHeaderColor;
-    mUnknownStringIntMap.mNodeCount = 0;
+    mFlowerPotTree.reset();
+    mTangleKelpTree.reset();
+    mPumpkinTree.reset();
+    mUnknownStringIntMap.reset();
 
     constexpr std::uintptr_t kBoardSyncStart = 0x259;
     constexpr std::uintptr_t kBoardSyncEnd = 0x58D2;
@@ -282,12 +267,7 @@ void Board::_constructor(LawnApp *theApp) {
     mUnknown214 = 0;
     mUnknown58E8 = true;
     mUnknown58E9 = false;
-    std::memset(&mUnknownStringSet, 0, sizeof(mUnknownStringSet));
-    mUnknownStringSet.mHeaderColor = 0;
-    mUnknownStringSet.mRoot = nullptr;
-    mUnknownStringSet.mLeftmost = &mUnknownStringSet.mHeaderColor;
-    mUnknownStringSet.mRightmost = &mUnknownStringSet.mHeaderColor;
-    mUnknownStringSet.mNodeCount = 0;
+    mUnknownStringSet.reset();
     mUnknown5904 = 0;
 
     pvzstl::string str = (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || theApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) ? "[MAIN_MENU_BUTTON]" : "[MENU_BUTTON]";
@@ -422,7 +402,7 @@ void Board::_destructor() {
 
     mStringSecondPlayer.Destruct();
 
-    StringIntMapErase(&mUnknownStringIntMap, mUnknownStringIntMap.mHeaderRoot);
+    StringIntMapErase(&mUnknownStringIntMap, mUnknownStringIntMap.mRoot);
 
     PlantTreeErase(&mPumpkinTree, mPumpkinTree.mRoot);
     PlantTreeErase(&mFlowerPotTree, mFlowerPotTree.mRoot);

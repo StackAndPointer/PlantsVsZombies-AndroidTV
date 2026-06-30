@@ -56,9 +56,11 @@ public:
     void EffectSystemFreeAll() {
         reinterpret_cast<void (*)(EffectSystem *)>(EffectSystem_EffectSystemFreeAllAddr)(this);
     }
-
     void Update() {
         reinterpret_cast<void (*)(EffectSystem *)>(EffectSystem_UpdateAddr)(this);
+    }
+    void ProcessDeleteQueue() {
+        reinterpret_cast<void (*)(EffectSystem *)>(EffectSystem_ProcessDeleteQueueAddr)(this);
     }
 };
 

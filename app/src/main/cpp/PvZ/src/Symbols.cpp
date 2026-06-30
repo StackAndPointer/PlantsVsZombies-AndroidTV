@@ -101,6 +101,7 @@ bool LoadGameMain() {
     Board_PixelToGridXKeepOnBoardAddr = libGameMain.GetSymbol("_ZN5Board23PixelToGridXKeepOnBoardEii");
     Board_PixelToGridYKeepOnBoardAddr = libGameMain.GetSymbol("_ZN5Board23PixelToGridYKeepOnBoardEii");
     Board_PixelToGridYAddr = libGameMain.GetSymbol("_ZN5Board12PixelToGridYEii");
+    Board_ResetFPSStatsAddr = libGameMain.GetSymbol("_ZN5Board13ResetFPSStatsEv");
     Board_AddSunMoneyAddr = libGameMain.GetSymbol("_ZN5Board11AddSunMoneyEii");
     Board_MouseDownWithPlantAddr = libGameMain.GetSymbol("_ZN5Board18MouseDownWithPlantEiiii");
     Board_CanPlantAtAddr = libGameMain.GetSymbol("_ZN5Board10CanPlantAtEii8SeedType");
@@ -152,6 +153,7 @@ bool LoadGameMain() {
     Board_DisplayAdviceAddr = libGameMain.GetSymbol("_ZN5Board13DisplayAdviceERKSs12MessageStyle10AdviceType");
     Board_UpdateLevelEndSequenceAddr = libGameMain.GetSymbol("_ZN5Board22UpdateLevelEndSequenceEv");
     Board_PauseAddr = libGameMain.GetSymbol("_ZN5Board5PauseEb");
+    Board_PostLoadGameAddr = libGameMain.GetSymbol("_ZN5Board12PostLoadGameEv");
     Board_AddSecondPlayerAddr = libGameMain.GetSymbol("_ZN5Board15AddSecondPlayerEi");
     Board_ZombieTryToGetAddr = libGameMain.GetSymbol("_ZN5Board14ZombieTryToGetE8ZombieID");
     Board_MakeRenderOrderAddr = libGameMain.GetSymbol("_ZN5Board15MakeRenderOrderE11RenderLayerii");
@@ -283,6 +285,11 @@ bool LoadGameMain() {
     LawnApp_DoBackToMainAddr = libGameMain.GetSymbol("_ZN7LawnApp12DoBackToMainEv");
     LawnApp_ConfirmQuitAddr = libGameMain.GetSymbol("_ZN7LawnApp11ConfirmQuitEv");
     LawnApp_PostLeaveLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp14PostLeaveLevelEv");
+    LawnApp_PostEnterLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp14PostEnterLevelEv");
+    LawnApp_KillDialogAddr = libGameMain.GetSymbol("_ZN7LawnApp10KillDialogEi");
+    LawnApp_CheckForGameEndAddr = libGameMain.GetSymbol("_ZN7LawnApp15CheckForGameEndEv");
+    LawnApp_UpdateSavingDingusAddr = libGameMain.GetSymbol("_ZN7LawnApp18UpdateSavingDingusEv");
+    LawnApp_DoContinueDialogAddr = libGameMain.GetSymbol("_ZN7LawnApp16DoContinueDialogEv");
     LawnApp_DoSettingsDialogAddr = libGameMain.GetSymbol("_ZN7LawnApp16DoSettingsDialogEb");
     LawnApp_IsScaryPotterLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp18IsScaryPotterLevelEv");
     LawnApp_IsWhackAZombieLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp19IsWhackAZombieLevelEv");
@@ -308,6 +315,7 @@ bool LoadGameMain() {
     LawnApp_LoadLevelConfigurationAddr = libGameMain.GetSymbol("_ZN7LawnApp22LoadLevelConfigurationEii");
     LawnApp_IsFirstTimeAdventureModeAddr = libGameMain.GetSymbol("_ZN7LawnApp24IsFirstTimeAdventureModeEv");
     LawnApp_UpdateFramesAddr = libGameMain.GetSymbol("_ZN7LawnApp12UpdateFramesEv");
+    LawnApp_FinishLoadGameAddr = libGameMain.GetSymbol("_ZN7LawnApp14FinishLoadGameEv");
     LawnApp_IsAdventureModeAddr = libGameMain.GetSymbol("_ZN7LawnApp15IsAdventureModeEv");
     LawnApp_IsWallnutBowlingLevelAddr = libGameMain.GetSymbol("_ZN7LawnApp21IsWallnutBowlingLevelEv");
     LawnApp_IsCoopModeAddr = libGameMain.GetSymbol("_ZN7LawnApp10IsCoopModeEv");
@@ -1021,6 +1029,7 @@ bool LoadGameMain() {
     Sexy_SexyCommonApp_getGameInfoAddr = libGameMain.GetSymbol("_ZN4Sexy13SexyCommonApp11getGameInfoEv");
     Sexy_GamepadApp_CheckGamepadAddr = libGameMain.GetSymbol("_ZN4Sexy10GamepadApp12CheckGamepadEv");
     Sexy_GamepadApp_HasGamepadAddr = libGameMain.GetSymbol("_ZN4Sexy10GamepadApp10HasGamepadEv");
+    Sexy_GamepadApp_UpdateFramesAddr = libGameMain.GetSymbol("_ZN4Sexy10GamepadApp12UpdateFramesEv");
     Sexy_GamepadApp_SwapGamepadIdAddr = libGameMain.GetSymbol("_ZN4Sexy10GamepadApp13SwapGamepadIdEii");
     Sexy_RandAddr = libGameMain.GetSymbol("_ZN4Sexy4RandEv");
     Sexy_RandIntAddr = libGameMain.GetSymbol("_ZN4Sexy4RandEi");
@@ -1356,6 +1365,8 @@ bool LoadGameMain() {
     MailScreen_KeyDownAddr = libGameMain.GetSymbol("_ZN10MailScreen7KeyDownEN4Sexy7KeyCodeE");
     Mailbox_GetNumUnseenMessagesAddr = libGameMain.GetSymbol("_ZN7Mailbox20GetNumUnseenMessagesEv");
     Mailbox_GetMessageByIndexAddr = libGameMain.GetSymbol("_ZN7Mailbox17GetMessageByIndexEib");
+    Mailbox_UpdateAddr = libGameMain.GetSymbol("_ZN7Mailbox6UpdateEv");
+    Mailbox_RefreshMessagesAddr = libGameMain.GetSymbol("_ZN7Mailbox15RefreshMessagesEv");
     GameObject_BeginDrawAddr = libGameMain.GetSymbol("_ZN10GameObject9BeginDrawEPN4Sexy8GraphicsE");
     GameObject_EndDrawAddr = libGameMain.GetSymbol("_ZN10GameObject7EndDrawEPN4Sexy8GraphicsE");
     GameObject_MakeParentGraphicsFrameAddr = libGameMain.GetSymbol("_ZN10GameObject23MakeParentGraphicsFrameEPN4Sexy8GraphicsE");
@@ -1380,6 +1391,7 @@ bool LoadGameMain() {
     EffectSystem_EffectSystemInitializeAddr = libGameMain.GetSymbol("_ZN12EffectSystem22EffectSystemInitializeEv");
     EffectSystem_EffectSystemFreeAllAddr = libGameMain.GetSymbol("_ZN12EffectSystem19EffectSystemFreeAllEv");
     EffectSystem_UpdateAddr = libGameMain.GetSymbol("_ZN12EffectSystem6UpdateEv");
+    EffectSystem_ProcessDeleteQueueAddr = libGameMain.GetSymbol("_ZN12EffectSystem18ProcessDeleteQueueEv");
 
     TodFoley_PlayFoleyAddr = libGameMain.GetSymbol("_ZN8TodFoley9PlayFoleyE9FoleyType");
 

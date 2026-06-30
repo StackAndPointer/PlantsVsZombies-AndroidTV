@@ -24,6 +24,9 @@
 #include "PvZ/Lawn/Widget/LeaderboardsWidget.h"
 
 #include "../Common/ConstEnums.h"
+class DataSync {
+    int unk[19];
+}; // 大小未知，至少19个int
 
 class PottedPlant {
 public:
@@ -61,6 +64,24 @@ public:
 
 namespace Sexy {
 class PlayerInfo {
+public:
+    struct PlayerInfoVTable {
+        void (*completeDestructor)(PlayerInfo *self);  // 0x00
+        void (*deletingDestructor)(PlayerInfo *self);  // 0x04
+        void (*UnknownPureVirtual0)(PlayerInfo *self); // 0x08
+        void (*UnknownPureVirtual1)(PlayerInfo *self); // 0x0C
+        void (*UnknownPureVirtual2)(PlayerInfo *self); // 0x10
+        void (*UnknownPureVirtual3)(PlayerInfo *self); // 0x14
+        void (*UnknownPureVirtual4)(PlayerInfo *self); // 0x18
+        void (*UnknownPureVirtual5)(PlayerInfo *self); // 0x1C
+        void (*UnknownPureVirtual6)(PlayerInfo *self); // 0x20
+        void (*UnknownPureVirtual7)(PlayerInfo *self); // 0x24
+        void (*UnknownPureVirtual8)(PlayerInfo *self); // 0x28
+        bool (*IsSaving)(PlayerInfo *self);            // 0x2C
+        bool (*IsLoaded)(PlayerInfo *self);            // 0x30
+        bool (*IsLoading)(PlayerInfo *self);           // 0x34
+    };
+
 public:
     void **vTable;                                              // 0
     int unk1;                                                   // 1
@@ -122,11 +143,31 @@ public:
     GameStats mGameStats;          // 477 ~ 514
     int unk6;                      // 515
     // 大小516个整数
-};
-} // namespace Sexy
 
-// 大小未知，故成员全部放在基类PlayerInfo
-class DefaultPlayerInfo : public Sexy::PlayerInfo {
+    const PlayerInfoVTable *GetVTable() const {
+        return (PlayerInfoVTable *)vTable;
+    }
+};
+
+class DefaultPlayerInfo : public PlayerInfo {
+public:
+    struct DefaultPlayerInfoVTable {
+        void (*completeDestructor)(DefaultPlayerInfo *self);                       // 0x00
+        void (*deletingDestructor)(DefaultPlayerInfo *self);                       // 0x04
+        int (*GetId)(DefaultPlayerInfo *self);                                     // 0x08
+        int (*GetProfileId)(DefaultPlayerInfo *self);                              // 0x0C
+        pvzstl::string (*GetName)(DefaultPlayerInfo *self);                        // 0x10
+        void (*Reset)(DefaultPlayerInfo *self);                                    // 0x14
+        void (*SyncSummary)(DefaultPlayerInfo *self, DataSync &sync);              // 0x18
+        void (*SyncDetails)(DefaultPlayerInfo *self, DataSync &sync, int version); // 0x1C
+        void (*DeleteUserFiles)(DefaultPlayerInfo *self);                          // 0x20
+        void (*LoadDetails)(DefaultPlayerInfo *self);                              // 0x24
+        void (*SaveDetails)(DefaultPlayerInfo *self);                              // 0x28
+        bool (*IsSaving)(PlayerInfo *self);                                        // 0x2C
+        bool (*IsLoaded)(PlayerInfo *self);                                        // 0x30
+        bool (*IsLoading)(PlayerInfo *self);                                       // 0x34
+    };
+
 public:
     void SaveDetails() {
         reinterpret_cast<void (*)(DefaultPlayerInfo *)>(Sexy_DefaultPlayerInfo_SaveDetailsAddr)(this);
@@ -134,9 +175,31 @@ public:
     int GetId() { // vTable + 2
         return reinterpret_cast<int (*)(DefaultPlayerInfo *)>(Sexy_DefaultPlayerInfo_GetIdAddr)(this);
     }
+    const DefaultPlayerInfoVTable *GetVTable() const {
+        return (DefaultPlayerInfoVTable *)vTable;
+    }
 };
+} // namespace Sexy
 
-class LawnPlayerInfo : public DefaultPlayerInfo {
+class LawnPlayerInfo : public Sexy::DefaultPlayerInfo {
+public:
+    struct LawnPlayerInfoVTable {
+        void (*completeDestructor)(LawnPlayerInfo *self);                       // 0x00
+        void (*deletingDestructor)(LawnPlayerInfo *self);                       // 0x04
+        int (*GetId)(Sexy::DefaultPlayerInfo *self);                            // 0x08
+        int (*GetProfileId)(Sexy::DefaultPlayerInfo *self);                     // 0x0C
+        pvzstl::string (*GetName)(Sexy::DefaultPlayerInfo *self);               // 0x10
+        void (*Reset)(LawnPlayerInfo *self);                                    // 0x14
+        void (*SyncSummary)(Sexy::DefaultPlayerInfo *self, DataSync &sync);     // 0x18
+        void (*SyncDetails)(LawnPlayerInfo *self, DataSync &sync, int version); // 0x1C
+        void (*DeleteUserFiles)(LawnPlayerInfo *self);                          // 0x20
+        void (*LoadDetails)(Sexy::DefaultPlayerInfo *self);                     // 0x24
+        void (*SaveDetails)(Sexy::DefaultPlayerInfo *self);                     // 0x28
+        bool (*IsSaving)(Sexy::PlayerInfo *self);                               // 0x2C
+        bool (*IsLoaded)(Sexy::PlayerInfo *self);                               // 0x30
+        bool (*IsLoading)(Sexy::PlayerInfo *self);                              // 0x34
+    };
+
 public:
     int GetLevel() {
         return reinterpret_cast<int (*)(LawnPlayerInfo *)>(LawnPlayerInfo_GetLevelAddr)(this);
@@ -147,7 +210,9 @@ public:
     void SetFlag(int theFlag, bool theHasFlag) {
         reinterpret_cast<void (*)(LawnPlayerInfo *, int, bool)>(LawnPlayerInfo_SetFlagAddr)(this, theFlag, theHasFlag);
     }
-    void GetName() {}
+    const LawnPlayerInfoVTable *GetVTable() const {
+        return (LawnPlayerInfoVTable *)vTable;
+    }
     void AddCoins(int theAmount);
 };
 

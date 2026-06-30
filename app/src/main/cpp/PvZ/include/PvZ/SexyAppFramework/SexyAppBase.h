@@ -21,6 +21,7 @@
 #define PVZ_SEXYAPPFRAMEWORK_SEXY_APP_BASE_H
 
 #include "PvZ/MagicNumbers.h"
+#include "PvZ/STL/map.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Thread.h"
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
@@ -35,18 +36,6 @@
 #include "Widget/ButtonListener.h"
 
 void InitHookFunction();
-
-// ARM32 libstdc++ std::_Rb_tree footprint used by the game.
-// mHeaderColor is embedded in the header/end sentinel; mRoot is the pointer
-// passed to _M_erase(), and mLeftmost is begin().
-struct SexyOpaqueTree32 {
-    unsigned int mCompareOrPadding; // +0x00
-    unsigned int mHeaderColor;      // +0x04, &mHeaderColor is end()
-    unsigned int mRoot;             // +0x08
-    unsigned int mLeftmost;         // +0x0C, begin()
-    unsigned int mRightmost;        // +0x10
-    unsigned int mNodeCount;        // +0x14
-};
 
 struct SexyOpaqueList32 {
     unsigned int next;
@@ -296,10 +285,10 @@ public:
 
     WidgetManager *mWidgetManager; // 0x294, dword 165
 
-    SexyOpaqueTree32 mDialogMap;   // 0x298
-    SexyOpaqueList32 mDialogList;  // 0x2B0
-    unsigned int mPrimaryThreadId; // 0x2B8
-    Sexy::Thread mPrimaryThread;   // 0x2BC, Android addition
+    pvzstl::map<int, Sexy::Dialog *> mDialogMap; // 0x298
+    SexyOpaqueList32 mDialogList;                // 0x2B0
+    unsigned int mPrimaryThreadId;               // 0x2B8
+    Sexy::Thread mPrimaryThread;                 // 0x2BC, Android addition
 
     bool unkAppState_2C4;          // 0x2C4, likely mSEHOccured from PC member order
     bool mShutDown;                // 0x2C5, confirmed by external xref
@@ -351,15 +340,15 @@ public:
     bool mMuteOnLostFocus;      // 0x3E1
     bool pad_3E2[2];
 
-    SexyOpaqueTree32 mMemoryImageSet;          // 0x3E4, std::set<MemoryImage*>
-    SexyOpaqueCritSect32 mMemoryImageCritSect; // 0x3FC, Android addition
-    SexyOpaqueTree32 mPIEffectSet;             // 0x400, std::set<PIEffect*>
-    SexyOpaqueTree32 mPopAnimSet;              // 0x418, std::set<PopAnim*>
-    SexyOpaqueTree32 mSharedImageMap;          // 0x430, map<pair<string,string>, SharedImage>
-    bool mCleanupSharedImages;                 // 0x448
+    pvzstl::set<Sexy::MemoryImage *> mMemoryImageSet;                               // 0x3E4
+    SexyOpaqueCritSect32 mMemoryImageCritSect;                                      // 0x3FC, Android addition
+    pvzstl::set<void *> mPIEffectSet;                                               // 0x400, std::set<PIEffect*>
+    pvzstl::set<void *> mPopAnimSet;                                                // 0x418, std::set<PopAnim*>
+    pvzstl::map<std::pair<pvzstl::string, pvzstl::string>, void *> mSharedImageMap; // 0x430, map<pair<string,string>, SharedImage>
+    bool mCleanupSharedImages;                                                      // 0x448
     bool pad_449[3];
-    SexyOpaqueTree32 mImageGroupMap;    // 0x44C, map<string, map<string, Image*>>
-    SexyOpaqueTree32 mImageIdStringMap; // 0x464, map<int, string>
+    pvzstl::map<pvzstl::string, pvzstl::map<pvzstl::string, Sexy::Image *>> mImageGroupMap; // 0x44C
+    pvzstl::map<int, pvzstl::string> mImageIdStringMap;                                     // 0x464
 
     int mNonDrawCount;      // 0x47C
     int mFrameTime;         // 0x480
@@ -513,12 +502,12 @@ public:
     int mScreenHeight;                     // 0x64C = 600
     bool unkDisplayFlags_650[4];           // 0x650
 
-    SexyOpaqueTree32 mStringProperties;       // 0x654, map<string, SexyString>
-    SexyOpaqueTree32 mBoolProperties;         // 0x66C, map<string, bool>
-    SexyOpaqueTree32 mIntProperties;          // 0x684, map<string, int>
-    SexyOpaqueTree32 mDoubleProperties;       // 0x69C, map<string, double>
-    SexyOpaqueTree32 mStringVectorProperties; // 0x6B4, map<string, vector<string>>
-    int *mResourceManager;                    // 0x6CC, unkMem5[48]
+    pvzstl::map<pvzstl::string, pvzstl::string> mStringProperties;           // 0x654, map<string, SexyString>
+    pvzstl::map<pvzstl::string, bool> mBoolProperties;                       // 0x66C
+    pvzstl::map<pvzstl::string, int> mIntProperties;                         // 0x684
+    pvzstl::map<pvzstl::string, double> mDoubleProperties;                   // 0x69C
+    pvzstl::map<pvzstl::string, SexyStringVector32> mStringVectorProperties; // 0x6B4, map<string, vector<string>>
+    int *mResourceManager;                                                   // 0x6CC, unkMem5[48]
 
     char mPopLoc[0x30];                            // 0x6D0, unkMem5[49]~[60]
     int *mAuthManager;                             // 0x700, unkMem5[61]

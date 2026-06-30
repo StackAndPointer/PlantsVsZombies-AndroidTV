@@ -41,11 +41,12 @@ enum VSSide {
 
 namespace Sexy {
 class ButtonWidget;
+class DefaultPlayerInfo;
 }
 
 class LawnApp;
 class Board;
-class DefaultPlayerInfo;
+
 
 class VSSetupMenu : public Sexy::MenuWidget {
 public:

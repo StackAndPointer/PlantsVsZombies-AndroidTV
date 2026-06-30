@@ -29,6 +29,9 @@ namespace Sexy {
 
 class GamepadApp : public SexyCommonApp {
 public:
+    void UpdateFrames() {
+        reinterpret_cast<void (*)(GamepadApp *)>(Sexy_GamepadApp_UpdateFramesAddr)(this);
+    }
     bool HasGamepad() {
         return reinterpret_cast<bool (*)(GamepadApp *)>(Sexy_GamepadApp_HasGamepadAddr)(this);
     }

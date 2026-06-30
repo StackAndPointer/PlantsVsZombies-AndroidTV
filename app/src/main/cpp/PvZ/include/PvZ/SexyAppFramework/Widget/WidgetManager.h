@@ -34,11 +34,7 @@ struct DeferredOverlayVector {
     void *mEndOfStorage; // +0x08
 };
 
-struct KeyDownMapLayout {
-    unsigned int mComparatorOrPadding; // +0x00
-    RbTreeHeader32 mHeader;            // +0x04
-    unsigned int mNodeCount;           // +0x14
-};
+using KeyDownMapLayout = pvzstl::map<int, bool>;
 
 class WidgetManager : public WidgetContainer {
 public:

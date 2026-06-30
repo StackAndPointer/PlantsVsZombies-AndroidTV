@@ -23,6 +23,7 @@
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"
 #include "PvZ/NetPlay.h"
+#include "PvZ/STL/map.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/TodLib/Common/DataArray.h"
@@ -111,34 +112,12 @@ struct BungeeDropGrid {
     int mGridArrayCount;
 };
 
-struct PlantRbTree {
-    std::uint32_t mCompareOrPadding; // +0x00
-    std::int32_t mHeaderColor;       // +0x04
-    void *mRoot;                     // +0x08
-    void *mLeftmost;                 // +0x0C
-    void *mRightmost;                // +0x10
-    std::uint32_t mNodeCount;        // +0x14
-};
+using PlantRbTree = pvzstl::set<Plant *>;
 
 using SyncBlockInfoVector = std::vector<SyncBlockInfo>;
 
-struct StringIntMap {
-    int mObjectStart;
-    int mHeaderColor;
-    void *mHeaderRoot;
-    void *mHeaderLeftmost;
-    void *mHeaderRightmost;
-    int mNodeCount;
-};
-
-struct StringSetLayout {
-    std::uint32_t mImplStorage; // +0x00
-    std::int32_t mHeaderColor;  // +0x04
-    void *mRoot;                // +0x08
-    void *mLeftmost;            // +0x0C
-    void *mRightmost;           // +0x10
-    std::uint32_t mNodeCount;   // +0x14
-};
+using StringIntMap = pvzstl::map<pvzstl::string, int>;
+using StringSetLayout = pvzstl::set<pvzstl::string>;
 
 enum TouchState {
     TOUCHSTATE_NONE = 0,
@@ -443,6 +422,9 @@ public:
     const BoardVTable *GetVTable() const {
         return (BoardVTable *)Widget::vTable;
     }
+    void ResetFPSStats() {
+        reinterpret_cast<void (*)(Board *)>(Board_ResetFPSStatsAddr)(this);
+    }
     GridItem *GetCraterAt(int theGridX, int theGridY);
     GridItem *GetGraveStoneAt(int theGridX, int theGridY);
     GridItem *GetLadderAt(int theGridX, int theGridY);
@@ -694,6 +676,9 @@ public:
     int GetNumWavesPerFlag() const;
     bool IsLevelDataLoaded();
     bool NeedSaveGame();
+    void PostLoadGame() {
+        reinterpret_cast<void (*)(Board *)>(Board_PostLoadGameAddr)(this);
+    }
     void UpdateFwoosh();
     void UpdateFog();
     void DrawFog(Sexy::Graphics *g);

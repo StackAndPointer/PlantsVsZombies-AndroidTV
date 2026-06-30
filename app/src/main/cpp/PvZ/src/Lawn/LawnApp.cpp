@@ -25,6 +25,7 @@
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/CutScene.h"
 #include "PvZ/Lawn/System/Music.h"
+#include "PvZ/Lawn/System/SaveGame.h"
 #include "PvZ/Lawn/System/TypingCheck.h"
 #include "PvZ/Lawn/Widget/ChallengeScreen.h"
 #include "PvZ/Lawn/Widget/ConfirmBackToMainDialog.h"
@@ -37,6 +38,7 @@
 #include "PvZ/Lawn/Widget/WaitForSecondPlayerDialog.h"
 #include "PvZ/ReplaySystem.h"
 #include "PvZ/STL/string.h"
+#include "PvZ/SexyAppFramework/Buffer.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonWidget.h"
 #include "PvZ/SexyAppFramework/Widget/Dialog.h"
 #include "PvZ/Symbols.h"
@@ -45,6 +47,7 @@
 
 #include <unistd.h>
 
+#include <cstdint>
 #include <algorithm>
 #include <limits>
 #include <ranges>
@@ -116,6 +119,21 @@ void SendPeriodicNetPing() {
 
     U16_Event eventPing = {{EVENT_PING}, gNetPingLatestSentTick};
     netplay::PutEvent(eventPing);
+}
+
+Sexy::Dialog *GetLastDialogInMap(pvzstl::map<int, Sexy::Dialog *> &theDialogMap) {
+    using NodeBase = pvzstl::detail::rb_tree_node_base;
+
+    auto *aNode = reinterpret_cast<NodeBase *>(theDialogMap.mLeftmost);
+    auto *aHeader = reinterpret_cast<NodeBase *>(&theDialogMap.mHeaderColor);
+    Sexy::Dialog *aLastDialog = nullptr;
+
+    while (aNode != aHeader) {
+        aLastDialog = *reinterpret_cast<Sexy::Dialog **>(reinterpret_cast<std::uint8_t *>(aNode) + 0x14);
+        aNode = pvzstl::detail::rb_tree_increment(aNode);
+    }
+
+    return aLastDialog;
 }
 } // namespace
 
@@ -383,7 +401,7 @@ int LawnApp::GamepadToPlayerIndex(unsigned int thePlayerIndex) const {
     }
 
     if (thePlayerIndex <= 3) {
-        if (mPlayerInfo && thePlayerIndex == (*((int (**)(DefaultPlayerInfo *))mPlayerInfo->vTable + 2))(mPlayerInfo))
+        if (mPlayerInfo && thePlayerIndex == mPlayerInfo->GetVTable()->GetId(mPlayerInfo))
             return 0;
 
         if (mSecondPlayerGamepadIndex != -1 && mSecondPlayerGamepadIndex == thePlayerIndex)
@@ -566,6 +584,33 @@ void LawnApp::HandleTcpServerMessage(const std::byte *buf, size_t bufSize) {
     }
 }
 
+void LawnApp::FinishLoadGame() {
+    PostEnterLevel();
+    MakeNewBoard();
+
+    const bool aLoaded = LawnLoadGame(mBoard, mSaveGame);
+    if (aLoaded) {
+        mBoard->PostLoadGame();
+        delete mSaveGame;
+        mSaveGame = nullptr;
+        return;
+    }
+
+    delete mSaveGame;
+    mSaveGame = nullptr;
+
+    NewGame();
+    if (GetDialogCount() == 0) {
+        return;
+    }
+
+    mBoard->Pause(true);
+
+    Sexy::Dialog *aDialog = GetLastDialogInMap(mDialogMap);
+    if (aDialog != nullptr) {
+        mWidgetManager->SetFocus(aDialog);
+    }
+}
 
 void LawnApp::UpdateFrames() {
     const bool replayPaused = replay::IsPlaybackPaused();
@@ -704,7 +749,122 @@ void LawnApp::UpdateFrames() {
         }
     }
 
-    return old_LawnApp_UpdateFrames(this);
+    // 下方为原版函数逻辑
+
+    if (!mActive || mMinimized) {
+        if (mBoard != nullptr) {
+            mBoard->ResetFPSStats();
+        }
+    }
+
+    //    UpdateSessionState(); // 连接渡维服务器用
+    //    UpdatePlayTimeStats(); // 本来就是空函数，故注释
+
+    int updateCount = 0;
+
+    if (gSlowMo) {
+        gSlowMoCounter++;
+        if (gSlowMoCounter > 3) {
+            gSlowMoCounter = 0;
+            updateCount = 1;
+        }
+    } else if (gFastMo) {
+        updateCount = 20;
+    } else if (gStep) {
+        if (gStepReady) {
+            gStepReady = false;
+            updateCount = 1;
+        }
+    } else {
+        updateCount = 1;
+    }
+
+    for (int i = 0; i < updateCount; ++i) {
+        ++mAppCounter;
+
+        if (mBoard != nullptr) {
+            mBoard->ProcessDeleteQueue();
+        }
+
+        GamepadApp::UpdateFrames();
+        mMusic->GetVTable()->MusicUpdate(mMusic);
+        if (mPlayerInfo != nullptr) {
+            const bool isLoaded = mPlayerInfo->GetVTable()->IsLoaded(mPlayerInfo);
+            if (isLoaded) {
+                mMailBox->Update();
+
+                if (!mMailboxRefreshed) {
+                    mMailBox->RefreshMessages();
+                    mMailboxRefreshed = true;
+                }
+            }
+        }
+
+        if (mLoadingThreadCompleted && mEffectSystem != nullptr) {
+            mEffectSystem->ProcessDeleteQueue();
+        }
+
+        CheckForGameEnd();
+        UpdateSavingDingus();
+    }
+
+    if (mNeedLoadGame) {
+        KillDialog(DIALOG_SAVING_FILE);
+        mNeedLoadGame = false;
+        FinishLoadGame();
+        if (GetDialog(DIALOG_HANDLE_OLDGAMEFILE) == nullptr && GetDialog(DIALOG_HANDLE_INVALID_LEVEL) == nullptr) {
+            mFirstTimeGameSelector = false;
+            DoContinueDialog();
+        }
+
+
+        delete mSaveGame;
+        mSaveGame = nullptr;
+    }
+
+    //    if (!mQueryCoinState.mPending)
+    //        return;
+    //
+    //    if (mQueryCoinState.mRequestCount > 20)
+    //    {
+    //        mQueryCoinState.mPending = false;
+    //        return;
+    //    }
+    //
+    //    const std::uint32_t tickCount = Sexy::GetTickCount();
+    //
+    //    // 使用有符号差值保持原伪代码行为，同时兼容 tickCount 回绕。
+    //    const std::int32_t elapsedTime =
+    //        static_cast<std::int32_t>(
+    //            tickCount - mQueryCoinState.mLastRequestTime);
+    //
+    //    if (elapsedTime <= 5000)
+    //        return;
+    //
+    //    mQueryCoinState.mLastRequestTime = tickCount;
+    //    ++mQueryCoinState.mRequestCount;
+    //
+    //    // IDA 给 getCurUser() 套用了错误原型。
+    //    // 从实际用途看，这里应当是无参数的静态获取函数。
+    //    LawnUser* currentUser = LawnUser::getCurUser();
+    //
+    //    // 伪代码：
+    //    // atoi(*reinterpret_cast<const char**>(
+    //    //     reinterpret_cast<char*>(currentUser) + 0x0C))
+    //    //
+    //    // 该位置很可能是旧版 libstdc++ ABI 下的 std::string 成员，
+    //    // 其第一个 DWORD 是字符缓冲区指针。
+    //    const char* currentUserIdText =
+    //        *reinterpret_cast<const char* const*>(
+    //            reinterpret_cast<const std::uint8_t*>(currentUser) + 0x0C);
+    //
+    //    if (std::atoi(currentUserIdText) != mQueryCoinState.mUserId)
+    //    {
+    //        mQueryCoinState.mPending = false;
+    //        return;
+    //    }
+    //
+    //    LawnApp::SrvQueryCoin(this);
 }
 
 void LawnApp::UpdateApp() {
@@ -746,10 +906,6 @@ bool LawnApp::CanShopLevel() {
     return old_LawnApp_CanShopLevel(this);
 }
 
-void LawnApp::KillDialog(Dialogs theId) {
-    (*(void (**)(LawnApp *, Dialogs))(*(uint32_t *)this + 428))(this, theId); // KillDialog(Dialogs::DIALOG_HELPOPTIONS)
-}
-
 void LawnApp::ShowCreditScreen(bool theIsFromMainMenu) {
     // 用于一周目之后点击"制作人员"按钮播放MV
     mSoundSystem->StopFoley(FoleyType::FOLEY_MENU_LEFT);
@@ -759,7 +915,7 @@ void LawnApp::ShowCreditScreen(bool theIsFromMainMenu) {
         theIsFromMainMenu = false;
         KillMainMenu();
         KillNewOptionsDialog();
-        KillDialog(Dialogs::DIALOG_HELPOPTIONS);
+        KillDialog(DIALOG_HELPOPTIONS);
     }
 
     old_LawnApp_ShowCreditScreen(this, theIsFromMainMenu);

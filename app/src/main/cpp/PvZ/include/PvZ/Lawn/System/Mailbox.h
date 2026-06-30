@@ -69,6 +69,13 @@ public:
     int GetMessageByIndex(int theIndex, bool theLoadImage) {
         return reinterpret_cast<int (*)(Mailbox *, int, bool)>(Mailbox_GetMessageByIndexAddr)(this, theIndex, theLoadImage);
     }
+    void Update() {
+        reinterpret_cast<void (*)(Mailbox *)>(Mailbox_UpdateAddr)(this); // 空函数
+    }
+    void RefreshMessages() {
+        reinterpret_cast<void (*)(Mailbox *)>(Mailbox_RefreshMessagesAddr)(this);
+    }
+
     int GetNumUnseenMessages();
 
 protected:
