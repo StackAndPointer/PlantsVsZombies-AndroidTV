@@ -42,8 +42,6 @@ namespace Sexy {
 //     void Draw(Graphics* g); // Is a new function in WP, not an overridden virtual function.
 // }
 
-
-
 class ScrollWidget : public Widget {
 public:
     enum ScrollMode {

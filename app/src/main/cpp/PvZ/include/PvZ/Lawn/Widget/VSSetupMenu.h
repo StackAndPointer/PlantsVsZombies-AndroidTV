@@ -42,7 +42,7 @@ enum VSSide {
 namespace Sexy {
 class ButtonWidget;
 class DefaultPlayerInfo;
-}
+} // namespace Sexy
 
 class LawnApp;
 class Board;
