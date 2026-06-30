@@ -721,8 +721,12 @@ void GamepadControls::UpdatePreviewReanim() {
                 zombieReanim->PlayReanim("anim_drive", ReanimLoopType::REANIM_LOOP, 0, 12.0);
             } else if (aZombieType == ZombieType::ZOMBIE_IMP || aZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
                 zombieReanim->PlayReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 12.0);
-            } else if (aZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL || aZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION || aZombieType == ZombieType::ZOMBIE_EXPLOER) {
+            } else if (aZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL || aZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
                 zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
+            } else if (aZombieType == ZombieType::ZOMBIE_EXPLOER) {
+                zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
+                zombieReanim->AssignRenderGroupToPrefix("Zombie_flaghand", RENDER_GROUP_NORMAL);
+                zombieReanim->AssignRenderGroupToPrefix("Zombie_innerarm_screendoor", RENDER_GROUP_NORMAL);
             } else if (aZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
                 zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
                 zombieReanim->HideTrackByPrefix("anim_pole1", true);
