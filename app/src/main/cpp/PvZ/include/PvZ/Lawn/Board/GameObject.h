@@ -34,34 +34,33 @@ struct SyncBlockInfo {
     size_t mSize;
 };
 
-struct GameObjectVTable {
-    void *destructor;
-    void *deletingDestructor;
-    void *BeginDraw;
-    void *EndDraw;
-    void *MakeParentGraphicsFrame;
+class SyncObject {
+
+public:
+    void **vTable;                                           // 0
+    homura::Storage<std::vector<SyncBlockInfo>> mSyncBlocks; // 0x04，大小 12 字节
 };
 
-class GameObject {
-
-    struct SyncBlockInfoVector {
-        SyncBlockInfo *begin;
-        SyncBlockInfo *end;
-        SyncBlockInfo *capacity;
+class GameObject : public SyncObject {
+public:
+    struct GameObjectVTable {                         // 写成普通函数而不写成成员函数，是因为sizeof(MemFunc) == 8，不匹配虚表的size
+        void (*completeDestructor)(GameObject *self); // D2：base object destructor
+        void (*deletingDestructor)(GameObject *self); // D0：deleting destructor
+        bool (*BeginDraw)(GameObject *self, Sexy::Graphics *graphics);
+        void (*EndDraw)(GameObject *self, Sexy::Graphics *graphics);
+        void (*MakeParentGraphicsFrame)(GameObject *self, Sexy::Graphics *graphics);
     };
 
 public:
-    GameObjectVTable *vTable;        // 0
-    SyncBlockInfoVector mSyncBlocks; // 0x04，大小 12 字节
-    LawnApp *mApp;                   // 4
-    Board *mBoard;                   // 5
-    int mX;                          // 6
-    int mY;                          // 7
-    int mWidth;                      // 8
-    int mHeight;                     // 9
-    bool mVisible;                   // 40
-    int mRow;                        // 11
-    int mRenderOrder;                // 12
+    LawnApp *mApp;    // 4
+    Board *mBoard;    // 5
+    int mX;           // 6
+    int mY;           // 7
+    int mWidth;       // 8
+    int mHeight;      // 9
+    bool mVisible;    // 40
+    int mRow;         // 11
+    int mRenderOrder; // 12
     // 大小13个整数
 
     bool BeginDraw(Sexy::Graphics *g) {
@@ -72,6 +71,9 @@ public:
     }
     void MakeParentGraphicsFrame(Sexy::Graphics *g) {
         reinterpret_cast<void (*)(GameObject *, Sexy::Graphics *)>(GameObject_MakeParentGraphicsFrameAddr)(this, g);
+    }
+    const GameObjectVTable *GetVTable() const {
+        return (GameObjectVTable *)vTable;
     }
 
 protected:

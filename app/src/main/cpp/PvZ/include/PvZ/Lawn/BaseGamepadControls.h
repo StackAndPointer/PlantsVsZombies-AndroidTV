@@ -23,6 +23,7 @@
 #include "Homura/MemberUtils.h"
 #include "Homura/TypeUtils.h"
 #include "PvZ/Lawn/Board/GameObject.h"
+#include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 
 struct SnapToGridPosition {
     float mX;
@@ -54,6 +55,26 @@ public:
         MOVEMENT_STATE_UNKNOWN_9 = 9,
         // 长按挖掘前的等待/提示状态
         MOVEMENT_STATE_DIG_INDICATOR_WAIT = 10,
+    };
+    struct BaseGamepadControlsVTable {
+        void (*OnButtonDown)(BaseGamepadControls *self, int button, int playerIndex, unsigned int flags); // 0x00
+        void (*UnknownPureVirtual1)(BaseGamepadControls *self);                                           // 0x04
+        void (*UnknownPureVirtual2)(BaseGamepadControls *self);                                           // 0x08
+        void (*OnKeyDown)(BaseGamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);          // 0x0C
+        void (*OnKeyUp)(BaseGamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);            // 0x10
+        void (*Update)(BaseGamepadControls *self, float deltaTime);                                       // 0x14
+        bool (*BeginDraw)(BaseGamepadControls *self, Sexy::Graphics *graphics);                           // 0x18
+        void (*Draw)(BaseGamepadControls *self, Sexy::Graphics *graphics);                                // 0x1C
+        void (*EndDraw)(BaseGamepadControls *self, Sexy::Graphics *graphics);                             // 0x20
+        void (*MakeParentGraphicsFrame)(BaseGamepadControls *self, Sexy::Graphics *graphics);             // 0x24
+        void (*EnterState)(BaseGamepadControls *self, MovementState state);                               // 0x28
+        void (*ExitState)(BaseGamepadControls *self, MovementState state);                                // 0x2C
+        void (*UpdateStates)(BaseGamepadControls *self, float deltaTime);                                 // 0x30
+        void (*GotoState)(BaseGamepadControls *self, MovementState state);                                // 0x34
+        SnapToGridPosition (*GetSnapToGridPos)(BaseGamepadControls *self);                                // 0x38
+        Sexy::Point (*GetSnapToGridXY)(BaseGamepadControls *self);                                        // 0x3C
+        void (*completeDestructor)(BaseGamepadControls *self);                                            // 0x40
+        void (*deletingDestructor)(BaseGamepadControls *self);                                            // 0x44
     };
 
 public:
@@ -99,7 +120,9 @@ public:
         return reinterpret_cast<SnapToGridPosition (*)(BaseGamepadControls *)>(BaseGamepadControls_GetSnapToGridPosAddr)(this);
         //        return homura::CallVirtualFunc<BaseGamepadControls, 14, SnapToGridPosition>(this);
     }
-
+    const BaseGamepadControlsVTable *GetVTable() const {
+        return (BaseGamepadControlsVTable *)mVtable;
+    }
     void GetGamepadVelocity(float *horizontal, float *vertical);
 
 protected:

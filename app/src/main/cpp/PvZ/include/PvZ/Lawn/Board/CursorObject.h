@@ -29,6 +29,20 @@ class Plant;
 
 class CursorObject : public GameObject {
 public:
+    struct CursorObjectVTable {
+        // 0x00 -> CursorObject::~CursorObject()
+        void (*completeDestructor)(CursorObject *self);
+        // 0x04 -> CursorObject::~CursorObject() + operator delete
+        void (*deletingDestructor)(CursorObject *self);
+        // 0x08 -> GameObject::BeginDraw(Graphics*)
+        bool (*BeginDraw)(GameObject *self, Sexy::Graphics *graphics);
+        // 0x0C -> GameObject::EndDraw(Graphics*)
+        void (*EndDraw)(GameObject *self, Sexy::Graphics *graphics);
+        // 0x10 -> GameObject::MakeParentGraphicsFrame(Graphics*)
+        void (*MakeParentGraphicsFrame)(GameObject *self, Sexy::Graphics *graphics);
+    };
+
+public:
     int mSelectedIndex;            // 13
     SeedType mType;                // 14
     SeedType mImitaterType;        // 15
@@ -54,9 +68,13 @@ public:
     void Update() {
         reinterpret_cast<void (*)(CursorObject *)>(CursorObject_UpdateAddr)(this);
     }
+    const CursorObjectVTable *GetVTable() const {
+        return (CursorObjectVTable *)vTable;
+    }
 
     bool BeginDraw(Sexy::Graphics *g);
     void EndDraw(Sexy::Graphics *g);
+
 
 protected:
     void _destructor() {
@@ -65,6 +83,20 @@ protected:
 };
 
 class CursorPreview : public GameObject {
+public:
+    struct CursorPreviewVTable {
+        // 0x00 -> CursorPreview::~CursorPreview()
+        void (*completeDestructor)(CursorPreview *self);
+        // 0x04 -> CursorPreview::~CursorPreview() + operator delete
+        void (*deletingDestructor)(CursorPreview *self);
+        // 0x08 -> GameObject::BeginDraw(Graphics*)
+        bool (*BeginDraw)(GameObject *self, Sexy::Graphics *graphics);
+        // 0x0C -> GameObject::EndDraw(Graphics*)
+        void (*EndDraw)(GameObject *self, Sexy::Graphics *graphics);
+        // 0x10 -> GameObject::MakeParentGraphicsFrame(Graphics*)
+        void (*MakeParentGraphicsFrame)(GameObject *self, Sexy::Graphics *graphics);
+    };
+
 public:
     int mGridX;       // 13
     int mGridY;       // 14
@@ -81,9 +113,11 @@ public:
     void Update() {
         reinterpret_cast<void (*)(CursorPreview *)>(CursorPreview_UpdateAddr)(this);
     }
-
     void _destructor() {
         reinterpret_cast<void (*)(CursorPreview *)>(CursorPreview__destructorAddr)(this);
+    }
+    const CursorPreviewVTable *GetVTable() const {
+        return (CursorPreviewVTable *)vTable;
     }
 };
 

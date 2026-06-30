@@ -90,10 +90,10 @@ bool gPauseSyncFromRemote = false;
 
 void Board::_constructor(LawnApp *theApp) {
     Sexy::Widget::_constructor();
-    vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
-    mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTable) + kBoardButtonListenerVtableOffset);
-    mButtonListenerVTable = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(vTable) + kBoardButtonListenerVTableOffset2);
-    auto &syncBlocks = mSyncBlockInfos.Construct();
+    Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
+    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVtableOffset);
+    SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVTableOffset2);
+    auto &syncBlocks = mSyncBlocks.Construct();
 
     auto InitPlantRbTree = [](PlantRbTree &tree) {
         std::memset(&tree, 0, sizeof(tree));
@@ -335,9 +335,9 @@ void Board::_destructor() {
     auto StringIntMapErase = reinterpret_cast<StringIntMapEraseFn>(StringIntMap_M_eraseAddr);
     auto PlantTreeErase = reinterpret_cast<PlantTreeEraseFn>(PlantPtrSet_M_eraseAddr);
 
-    vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
-    mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTable) + kBoardButtonListenerVtableOffset);
-    mButtonListenerVTable = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(vTable) + kBoardButtonListenerVTableOffset2);
+    Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
+    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVtableOffset);
+    SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVTableOffset2);
 
     delete mReplayControlsWidget;
     delete mBoardStoreButton;
@@ -362,15 +362,17 @@ void Board::_destructor() {
     for (int aPlayerIndex = 0; aPlayerIndex < 2; ++aPlayerIndex) {
         GamepadControls *aControls = mGamepadControls[aPlayerIndex];
         if (aControls != nullptr) {
-            homura::CallVirtualFunc<GamepadControls, 17, void>(aControls); // delete GamepadControls/ZenGardenControls/TreeOfWisdomControls
+            aControls->GetVTable()->deletingDestructor(aControls);
+            //            homura::CallVirtualFunc<GamepadControls, 17, void>(aControls); // delete GamepadControls/ZenGardenControls/TreeOfWisdomControls
         }
 
         delete mCursorObject[aPlayerIndex];
         delete mCursorPreview[aPlayerIndex];
     }
 
+    GetVTable()->RemoveAllWidgets(this, false, false, nullptr);
     // RemoveAllWidgets
-    homura::CallVirtualFunc<Board, 11, void, bool, bool, WidgetManager *>(this, false, false, nullptr);
+    //    homura::CallVirtualFunc<Board, 11, void, bool, bool, WidgetManager *>(this, false, false, nullptr);
 
     std::memset(mCoverLayerAnimIDs, 0, sizeof(mCoverLayerAnimIDs));
 
@@ -426,10 +428,10 @@ void Board::_destructor() {
     PlantTreeErase(&mFlowerPotTree, mFlowerPotTree.mRoot);
     PlantTreeErase(&mTangleKelpTree, mTangleKelpTree.mRoot);
 
-    mSyncBlockInfos.Destruct();
+    mSyncBlocks.Destruct();
 
-    mButtonListenerVTable = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(vTableForSyncObjectAddr) + 8);
-    mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
+    SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForSyncObjectAddr) + 8);
+    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
 
     Sexy::Widget::_destructor();
 }

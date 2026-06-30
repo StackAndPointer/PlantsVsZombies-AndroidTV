@@ -31,6 +31,28 @@ class Plant;
 
 class GamepadControls : public BaseGamepadControls {
 public:
+    struct GamepadControlsVTable {
+        void (*OnButtonDown)(GamepadControls *self, int button, int playerIndex, unsigned int flags); // 0x00
+        void (*OnButtonUp)(GamepadControls *self, int button, int playerIndex, unsigned int flags);   // 0x04
+        void (*OnGameAxisMove)(GamepadControls *self, int axis, int value, int playerIndex);          // 0x08
+        void (*OnKeyDown)(GamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);          // 0x0C
+        void (*OnKeyUp)(GamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);            // 0x10
+        void (*Update)(GamepadControls *self, float deltaTime);                                       // 0x14
+        bool (*BeginDraw)(GamepadControls *self, Sexy::Graphics *graphics);                           // 0x18
+        void (*Draw)(GamepadControls *self, Sexy::Graphics *graphics);                                // 0x1C
+        void (*EndDraw)(GamepadControls *self, Sexy::Graphics *graphics);                             // 0x20
+        void (*MakeParentGraphicsFrame)(GamepadControls *self, Sexy::Graphics *graphics);             // 0x24
+        void (*EnterState)(BaseGamepadControls *self, BaseGamepadControls::MovementState state);      // 0x28
+        void (*ExitState)(BaseGamepadControls *self, BaseGamepadControls::MovementState state);       // 0x2C
+        void (*UpdateStates)(GamepadControls *self, float deltaTime);                                 // 0x30
+        void (*GotoState)(BaseGamepadControls *self, BaseGamepadControls::MovementState state);       // 0x34
+        Sexy::FPoint (*GetSnapToGridPos)(BaseGamepadControls *self);                                  // 0x38
+        Sexy::Point (*GetSnapToGridXY)(BaseGamepadControls *self);                                    // 0x3C
+        void (*completeDestructor)(GamepadControls *self);                                            // 0x40
+        void (*deletingDestructor)(GamepadControls *self);                                            // 0x44
+    };
+
+public:
     float mCursorLabelLiftOffset;      // 43
     int *mSelectorParticle;            // 44
     int mSelectedSeedIndex;            // 45
@@ -71,6 +93,9 @@ public:
     }
     void UpdateSeedSelect(float dt) {
         reinterpret_cast<void *(*)(GamepadControls *, float dt)>(GamepadControls_UpdateSeedSelectAddr)(this, dt);
+    }
+    const GamepadControlsVTable *GetVTable() const {
+        return (GamepadControlsVTable *)mVtable;
     }
     // 确定 13 1096
     // 返回 27 1096

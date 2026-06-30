@@ -1188,6 +1188,7 @@ inline void *Sexy_WidgetContainer_AddedToManagerAddr;
 inline void *Sexy_WidgetContainer_RemovedFromManagerAddr;
 inline void *Sexy_WidgetContainer_BringToFrontAddr;
 inline void *Sexy_WidgetContainer_BringToBackAddr;
+inline void *Sexy_WidgetContainer_FindWidgetAddr;
 inline void *Sexy_WidgetManager_GetWidgetAtAddr;
 inline void *Sexy_WidgetManager_GetWidgetFlagsAddr;
 inline void *Sexy_WidgetManager_RehupMouseAddr;

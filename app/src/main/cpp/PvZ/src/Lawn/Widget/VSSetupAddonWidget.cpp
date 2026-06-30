@@ -473,7 +473,7 @@ bool NeedSeedInstantCoffee(LawnApp *theApp, const std::vector<SeedType> &thePlan
     } else {
         // 种子栏存在可用的蘑菇
         for (int i = 1; i < 6; ++i) {
-            SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
+            SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
             if (Plant::IsNocturnal(aSeedPacket.mPacketType) && aSeedPacket.mActive) {
                 return true;
             }
@@ -493,7 +493,7 @@ bool NeedSeedInstantCoffee(LawnApp *theApp, const std::vector<SeedType> &thePlan
 bool NeedSeedTallnut(LawnApp *theApp) {
     // 僵尸种子栏存在可用的蹦蹦僵尸
     for (int i = 1; i < 6; ++i) {
-        SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
+        SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
         if (aSeedPacket.mPacketType == SeedType::SEED_ZOMBIE_POGO && aSeedPacket.mActive) {
             return true;
         }
@@ -514,7 +514,7 @@ bool NeedSeedTallnut(LawnApp *theApp) {
 bool NeedSeedUmbrella(LawnApp *theApp) {
     // 僵尸种子栏存在可用的蹦极僵尸或投篮僵尸
     for (int i = 1; i < 6; ++i) {
-        SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
+        SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
         if ((aSeedPacket.mPacketType == SeedType::SEED_ZOMBIE_BUNGEE || aSeedPacket.mPacketType == SeedType::SEED_ZOMBIE_CATAPULT) && aSeedPacket.mActive) {
             return true;
         }
@@ -541,7 +541,7 @@ bool NeedSeedMagnetshroom(LawnApp *theApp) {
     // 僵尸种子栏存在2个以上可用的铁具类僵尸
     int aNumIronItemZombies = 0;
     for (int i = 1; i < 6; ++i) {
-        SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
+        SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
         ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(aSeedPacket.mPacketType);
         if (IsIronItemZombieType(aZombieType) && aSeedPacket.mActive) {
             ++aNumIronItemZombies;
@@ -570,7 +570,7 @@ bool NeedSeedMagnetshroom(LawnApp *theApp) {
 bool NeedSeedSplitPea(LawnApp *theApp) {
     // 僵尸种子栏存在可用的矿工僵尸
     for (int i = 1; i < 6; ++i) {
-        SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
+        SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
         if (aSeedPacket.mPacketType == SeedType::SEED_ZOMBIE_DIGGER && aSeedPacket.mActive) {
             return true;
         }
@@ -635,7 +635,7 @@ bool NeedSeedTorchwood(LawnApp *theApp, const std::vector<SeedType> &thePlantSee
         // 种子栏存在2株以上可用的豌豆类种子替换咬咬碑为火炬树桩
         int aNumPeasInBank = 0;
         for (int i = 1; i < 6; ++i) {
-            SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
+            SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
             if (IsPeaSeedType(aSeedPacket.mPacketType) && aSeedPacket.mActive) {
                 ++aNumPeasInBank;
             }
@@ -655,7 +655,7 @@ bool NeedSeedTorchwood(LawnApp *theApp, const std::vector<SeedType> &thePlantSee
 bool NeedSeedZombieImp(LawnApp *theApp) {
     // 种子栏存在可用的土豆雷
     for (int i = 1; i < 6; ++i) {
-        SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
+        SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
         if (aSeedPacket.mPacketType == SeedType::SEED_POTATOMINE && aSeedPacket.mActive) {
             return true;
         }
@@ -675,7 +675,7 @@ bool NeedSeedZombieScreenDoor(LawnApp *theApp) {
     bool hasStrongPea = false;
     // 种子栏存在可用的寒冰射手或双发射手且无投手或大喷菇
     for (int i = 1; i < 6; ++i) {
-        SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
+        SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
         if ((IsPultSeedType(aSeedPacket.mPacketType) || aSeedPacket.mPacketType == SeedType::SEED_FUMESHROOM) && aSeedPacket.mActive) {
             hasPultOrFume = true;
         }
@@ -705,7 +705,7 @@ bool NeedSeedZombieYeti(LawnApp *theApp) {
     bool hasPea = false;
     bool hasPult = false;
     for (int i = 1; i < 6; ++i) {
-        SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
+        SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];
         if ((IsPeaSeedType(aSeedPacket.mPacketType) || aSeedPacket.mPacketType == SeedType::SEED_SNOWPEA) && aSeedPacket.mActive) {
             hasPea = true;
         }
@@ -727,7 +727,7 @@ bool NeedSeedZombieGigaFootball(LawnApp *theApp, const std::vector<SeedType> &th
     } else {
         // 种子栏存在可用的粉丝小鬼僵尸
         for (int i = 1; i < 6; ++i) {
-            SeedPacket aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
+            SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
             if (aSeedPacket.mPacketType == SeedType::SEED_ZOMBIE_SUPER_FAN_IMP && aSeedPacket.mActive) {
                 return true;
             }

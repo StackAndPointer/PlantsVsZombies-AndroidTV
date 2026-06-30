@@ -159,10 +159,136 @@ enum TouchState {
     TOUCHSTATE_VALID_COBCONON_SECOND = 15,
 };
 
-class Board : public Sexy::Widget, public Sexy::ButtonListener {
+class Board : public Sexy::Widget, public Sexy::ButtonListener, public SyncObject {
+    struct BoardVTable {
+        void (*completeDestructor)(Board *self);                                                                                                                                            // 0x000
+        void (*deletingDestructor)(Board *self);                                                                                                                                            // 0x004
+        Sexy::Rect (*GetRect)(Sexy::WidgetContainer *self);                                                                                                                                 // 0x008
+        bool (*Intersects)(Sexy::WidgetContainer *self, Sexy::WidgetContainer *other);                                                                                                      // 0x00C
+        void (*SortWidgets)(Sexy::WidgetContainer *self);                                                                                                                                   // 0x010
+        void (*SortWidgetsWithWidget)(Sexy::WidgetContainer *self, Sexy::Widget *widget);                                                                                                   // 0x014
+        void (*AddWidget)(Sexy::WidgetContainer *self, Sexy::Widget *widget);                                                                                                               // 0x018
+        void (*RemoveWidget)(Sexy::WidgetContainer *self, Sexy::Widget *widget);                                                                                                            // 0x01C
+        bool (*HasWidget)(Sexy::WidgetContainer *self, Sexy::Widget *widget);                                                                                                               // 0x020
+        Sexy::Widget *(*FindWidget)(Sexy::WidgetContainer *self, int index);                                                                                                                // 0x024
+        void (*DisableWidget)(Sexy::WidgetContainer *self, Sexy::Widget *widget);                                                                                                           // 0x028
+        void (*RemoveAllWidgets)(Sexy::WidgetContainer *self, bool deleteWidgets, bool recursive, Sexy::WidgetManager *manager);                                                            // 0x02C
+        void (*SetFocusContainer)(Sexy::WidgetContainer *self, Sexy::Widget *widget);                                                                                                       // 0x030
+        bool (*IsBelow)(Sexy::WidgetContainer *self, Sexy::Widget *first, Sexy::Widget *second);                                                                                            // 0x034
+        void (*MarkAllDirty)(Sexy::WidgetContainer *self);                                                                                                                                  // 0x038
+        void (*BringToFront)(Sexy::WidgetContainer *self, Sexy::Widget *widget);                                                                                                            // 0x03C
+        void (*BringToBack)(Sexy::WidgetContainer *self, Sexy::Widget *widget);                                                                                                             // 0x040
+        void (*PutBehind)(Sexy::WidgetContainer *self, Sexy::Widget *first, Sexy::Widget *second);                                                                                          // 0x044
+        void (*PutInfront)(Sexy::WidgetContainer *self, Sexy::Widget *first, Sexy::Widget *second);                                                                                         // 0x048
+        Sexy::Point (*GetAbsPos)(const Sexy::WidgetContainer *self);                                                                                                                        // 0x04C
+        Sexy::Point (*GetAbsPosInManager)(const Sexy::WidgetContainer *self);                                                                                                               // 0x050
+        Sexy::Point (*GetAbsPosInScreen)(const Sexy::WidgetContainer *self);                                                                                                                // 0x054
+        Sexy::Point (*GetCenter)(const Sexy::WidgetContainer *self);                                                                                                                        // 0x058
+        Sexy::Point (*GetAbsCenter)(const Sexy::WidgetContainer *self);                                                                                                                     // 0x05C
+        Sexy::Point (*GetAbsCenterInScreen)(const Sexy::WidgetContainer *self);                                                                                                             // 0x060
+        void (*MarkDirty)(Sexy::WidgetContainer *self);                                                                                                                                     // 0x064
+        void (*MarkDirtyFull)(Sexy::WidgetContainer *self);                                                                                                                                 // 0x068
+        void (*MarkDirtyFullWithContainer)(Sexy::WidgetContainer *self, Sexy::WidgetContainer *container);                                                                                  // 0x06C
+        void (*MarkDirtyWithContainer)(Sexy::WidgetContainer *self, Sexy::WidgetContainer *container);                                                                                      // 0x070
+        void (*AddedToManager)(Sexy::WidgetContainer *self, Sexy::WidgetManager *manager);                                                                                                  // 0x074
+        void (*RemovedFromManager)(Board *self, Sexy::WidgetManager *manager);                                                                                                              // 0x078
+        void (*Update)(Board *self);                                                                                                                                                        // 0x07C
+        void (*UpdateAll)(Sexy::WidgetContainer *self, Sexy::ModalFlags *modalFlags);                                                                                                       // 0x080
+        void (*UpdateF)(Sexy::Widget *self, float deltaTime);                                                                                                                               // 0x084
+        void (*UpdateFAll)(Sexy::WidgetContainer *self, Sexy::ModalFlags *modalFlags, float deltaTime);                                                                                     // 0x088
+        void (*DrawPre)(Sexy::Widget *self, Sexy::Graphics *graphics);                                                                                                                      // 0x08C
+        void (*Draw)(Board *self, Sexy::Graphics *graphics);                                                                                                                                // 0x090
+        void (*DrawOther)(Sexy::Widget *self, Sexy::Graphics *graphics);                                                                                                                    // 0x094
+        void (*DrawAll)(Sexy::WidgetContainer *self, Sexy::ModalFlags *modalFlags, Sexy::Graphics *graphics);                                                                               // 0x098
+        void (*SysColorChangedAll)(Sexy::WidgetContainer *self);                                                                                                                            // 0x09C
+        void (*SysColorChanged)(Sexy::WidgetContainer *self);                                                                                                                               // 0x0A0
+        void (*OrderInManagerChanged)(Sexy::Widget *self);                                                                                                                                  // 0x0A4
+        void (*SetVisible)(Sexy::Widget *self, bool visible);                                                                                                                               // 0x0A8
+        void (*SetColors3)(Sexy::Widget *self, int (*colors)[3], int count);                                                                                                                // 0x0AC
+        void (*SetColors4)(Sexy::Widget *self, int (*colors)[4], int count);                                                                                                                // 0x0B0
+        void (*SetColor)(Sexy::Widget *self, int index, const Sexy::Color &color);                                                                                                          // 0x0B4
+        Sexy::Color (*GetColor)(Sexy::Widget *self, int index);                                                                                                                             // 0x0B8
+        Sexy::Color (*GetColorWithDefault)(Sexy::Widget *self, int index, const Sexy::Color &defaultColor);                                                                                 // 0x0BC
+        void (*SetDisabled)(Sexy::Widget *self, bool disabled);                                                                                                                             // 0x0C0
+        void (*ShowFinger)(Sexy::Widget *self, bool show);                                                                                                                                  // 0x0C4
+        void (*Resize)(Sexy::Widget *self, int x, int y, int width, int height);                                                                                                            // 0x0C8
+        void (*ResizeRect)(Sexy::Widget *self, const Sexy::TRect<int> &rect);                                                                                                               // 0x0CC
+        void (*Move)(Board *self, int x, int y);                                                                                                                                            // 0x0D0
+        bool (*WantsFocus)(Sexy::Widget *self);                                                                                                                                             // 0x0D4
+        void (*DrawOverlay)(Board *self, Sexy::Graphics *graphics);                                                                                                                         // 0x0D8
+        void (*DrawOverlayWithPriority)(Sexy::Widget *self, Sexy::Graphics *graphics, int priority);                                                                                        // 0x0DC
+        void (*SetDefaultFocus)(Sexy::Widget *self, Sexy::Widget *widget);                                                                                                                  // 0x0E0
+        void (*SetFocus)(Sexy::Widget *self, Sexy::Widget *widget, bool force);                                                                                                             // 0x0E4
+        void (*SetFocusLink)(Sexy::Widget *self, int direction, Sexy::Widget *widget);                                                                                                      // 0x0E8
+        void (*SetFocusLinks)(Sexy::Widget *self, Sexy::Widget *up, Sexy::Widget *down, Sexy::Widget *left, Sexy::Widget *right);                                                           // 0x0EC
+        void (*FocusDirectionHint)(Sexy::Widget *self, int direction);                                                                                                                      // 0x0F0
+        void (*GotFocus)(Board *self);                                                                                                                                                      // 0x0F4
+        void (*LostFocus)(Sexy::Widget *self);                                                                                                                                              // 0x0F8
+        bool (*HasWindowFocus)(Sexy::Widget *self);                                                                                                                                         // 0x0FC
+        void (*SetWindowFocus)(Sexy::Widget *self, bool focused);                                                                                                                           // 0x100
+        void (*GotWindowFocus)(Sexy::Widget *self);                                                                                                                                         // 0x104
+        void (*LostWindowFocus)(Sexy::Widget *self);                                                                                                                                        // 0x108
+        void (*KeyChar)(Board *self, char character);                                                                                                                                       // 0x10C
+        void (*KeyUnicode)(Sexy::Widget *self, int character);                                                                                                                              // 0x110
+        void (*KeyDownEvent)(Sexy::Widget *self, const Sexy::Event &event);                                                                                                                 // 0x114
+        void (*KeyUpEvent)(Sexy::Widget *self, const Sexy::Event &event);                                                                                                                   // 0x118
+        void (*KeyDown)(Board *self, Sexy::KeyCode keyCode);                                                                                                                                // 0x11C
+        void (*KeyUp)(Board *self, Sexy::KeyCode keyCode);                                                                                                                                  // 0x120
+        void (*MouseEnter)(Sexy::Widget *self);                                                                                                                                             // 0x124
+        void (*MouseLeave)(Sexy::Widget *self);                                                                                                                                             // 0x128
+        void (*MouseMove)(Board *self, int x, int y);                                                                                                                                       // 0x12C
+        void (*MouseDown3)(Board *self, int x, int y, int clickCount);                                                                                                                      // 0x130
+        void (*MouseDown4)(Sexy::Widget *self, int x, int y, int button, int clickCount);                                                                                                   // 0x134
+        void (*MouseUp2)(Sexy::Widget *self, int x, int y);                                                                                                                                 // 0x138
+        void (*MouseUp3)(Board *self, int x, int y, int clickCount);                                                                                                                        // 0x13C
+        void (*MouseUp4)(Sexy::Widget *self, int x, int y, int button, int clickCount);                                                                                                     // 0x140
+        void (*MouseDrag)(Board *self, int x, int y);                                                                                                                                       // 0x144
+        void (*MouseWheel)(Sexy::Widget *self, int delta);                                                                                                                                  // 0x148
+        void (*MouseWheelWithPosition)(Sexy::Widget *self, int x, int y);                                                                                                                   // 0x14C
+        void (*TouchEnter)(Sexy::Widget *self);                                                                                                                                             // 0x150
+        void (*TouchLeave)(Sexy::Widget *self);                                                                                                                                             // 0x154
+        void (*TouchDown3)(Sexy::Widget *self, int touchId, int x, int y);                                                                                                                  // 0x158
+        void (*TouchMove3)(Sexy::Widget *self, int touchId, int x, int y);                                                                                                                  // 0x15C
+        void (*TouchUp3)(Sexy::Widget *self, int touchId, int x, int y);                                                                                                                    // 0x160
+        void (*TouchCancel3)(Sexy::Widget *self, int touchId, int x, int y);                                                                                                                // 0x164
+        void (*TouchEvents)(Sexy::Widget *self, const std::vector<Sexy::Event> &events);                                                                                                    // 0x168
+        void (*TouchDownEvents)(Sexy::Widget *self, const std::vector<Sexy::Event> &events);                                                                                                // 0x16C
+        void (*TouchMoveEvents)(Sexy::Widget *self, const std::vector<Sexy::Event> &events);                                                                                                // 0x170
+        void (*TouchUpEvents)(Sexy::Widget *self, const std::vector<Sexy::Event> &events);                                                                                                  // 0x174
+        void (*TouchCancelEvents)(Sexy::Widget *self, const std::vector<Sexy::Event> &events);                                                                                              // 0x178
+        void (*TouchBeganVector)(Sexy::Widget *self, std::vector<Sexy::Touch> &touches);                                                                                                    // 0x17C
+        void (*TouchMovedVector)(Sexy::Widget *self, std::vector<Sexy::Touch> &touches);                                                                                                    // 0x180
+        void (*TouchEndedVector)(Sexy::Widget *self, std::vector<Sexy::Touch> &touches);                                                                                                    // 0x184
+        void (*TouchCanceledVector)(Sexy::Widget *self, std::vector<Sexy::Touch> &touches);                                                                                                 // 0x188
+        void (*TouchBegan)(Sexy::Widget *self, Sexy::Touch *touch);                                                                                                                         // 0x18C
+        void (*TouchMoved)(Sexy::Widget *self, Sexy::Touch *touch);                                                                                                                         // 0x190
+        void (*TouchEnded)(Sexy::Widget *self, Sexy::Touch *touch);                                                                                                                         // 0x194
+        void (*TouchCanceled)(Sexy::Widget *self, Sexy::Touch *touch);                                                                                                                      // 0x198
+        void (*TouchesCanceled)(Sexy::Widget *self);                                                                                                                                        // 0x19C
+        void (*AxisMoved)(Sexy::Widget *self, const Sexy::Event &event);                                                                                                                    // 0x1A0
+        void (*UserEvent)(Sexy::Widget *self, const Sexy::Event &event);                                                                                                                    // 0x1A4
+        bool (*IsPointVisible)(Sexy::Widget *self, int x, int y);                                                                                                                           // 0x1A8
+        bool (*IsOnScreen)(Sexy::Widget *self);                                                                                                                                             // 0x1AC
+        void (*WriteCenteredLine)(Sexy::Widget *self, Sexy::Graphics *graphics, int y, const std::string &text);                                                                            // 0x1B0
+        void (*WriteCenteredLineEx)(Sexy::Widget *self, Sexy::Graphics *graphics, int y, const std::string &text, Sexy::Color color1, Sexy::Color color2, const Sexy::TPoint<int> &offset); // 0x1B4
+        void (*WriteString)(Sexy::Widget *self, Sexy::Graphics *graphics, const std::string &text, int x, int y, int width, int justification, bool drawString, int offset, int length);    // 0x1B8
+        void (*WriteWordWrapped)(Sexy::Widget *self, Sexy::Graphics *graphics, const Sexy::TRect<int> &rect, const std::string &text, int lineSpacing, int justification);                  // 0x1BC
+        int (*GetWordWrappedHeight)(Sexy::Widget *self, Sexy::Graphics *graphics, int width, const std::string &text, int lineSpacing);                                                     // 0x1C0
+        int (*GetNumDigits)(Sexy::Widget *self, int number);                                                                                                                                // 0x1C4
+        void (*WriteNumberFromStrip)(Sexy::Widget *self, Sexy::Graphics *graphics, int number, int x, int y, Sexy::Image *image, int digitWidth);                                           // 0x1C8
+        bool (*Contains)(Sexy::Widget *self, int x, int y);                                                                                                                                 // 0x1CC
+        Sexy::Rect (*GetInsetRect)(Sexy::Widget *self);                                                                                                                                     // 0x1D0
+        Sexy::Widget *(*FindFocusableWidget)(Sexy::Widget *self, int direction, Sexy::Widget *relativeWidget);                                                                              // 0x1D4
+        Sexy::Widget *(*FindClosest)(Sexy::Widget *self, Sexy::Widget *widget);                                                                                                             // 0x1D8
+        void (*OnArrowKeys)(Sexy::Widget *self, Sexy::KeyCode keyCode);                                                                                                                     // 0x1DC
+        void (*OnKeyReturn)(Sexy::Widget *self);                                                                                                                                            // 0x1E0
+        void (*OnKeyEscape)(Sexy::Widget *self);                                                                                                                                            // 0x1E4
+        void (*ButtonMouseEnter)(Board *self, int id);                                                                                                                                      // 0x1E8
+        void (*ButtonMouseLeave)(Board *self, int id);                                                                                                                                      // 0x1EC
+        void (*ButtonPress)(Board *self, int id);                                                                                                                                           // 0x1F0
+    };
+
 public:
-    void *mButtonListenerVTable;                                      // 65
-    homura::Storage<SyncBlockInfoVector> mSyncBlockInfos;             // 66 ~ 68
     LawnApp *mApp;                                                    // 69
     DataArray<Zombie> mZombies;                                       // 70 ~ 76
     DataArray<Plant> mPlants;                                         // 77 ~ 83
@@ -313,6 +439,9 @@ public:
     }
     int PixelToGridY(int theX, int theY) {
         return reinterpret_cast<int (*)(Board *, int, int)>(Board_PixelToGridYAddr)(this, theX, theY);
+    }
+    const BoardVTable *GetVTable() const {
+        return (BoardVTable *)Widget::vTable;
     }
     GridItem *GetCraterAt(int theGridX, int theGridY);
     GridItem *GetGraveStoneAt(int theGridX, int theGridY);

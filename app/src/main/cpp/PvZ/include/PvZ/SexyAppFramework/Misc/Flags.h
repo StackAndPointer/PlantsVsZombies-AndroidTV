@@ -33,6 +33,18 @@ public:
     }
 };
 
+class ModalFlags {
+public:
+    int mOverFlags;
+    int mUnderFlags;
+    bool mIsOver;
+
+public:
+    int GetFlags() {
+        return mIsOver ? mOverFlags : mUnderFlags;
+    }
+};
+
 } // namespace Sexy
 
 #endif // PVZ_SEXYAPPFRAMEWORK_MISC_FLAGS_H

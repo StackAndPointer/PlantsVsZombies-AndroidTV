@@ -27,6 +27,20 @@
 #include "GameObject.h"
 
 class Coin : public GameObject {
+
+    struct CoinVTable {
+        // 0x00 -> Coin::~Coin()
+        void (*completeDestructor)(Coin *self);
+        // 0x04 -> Coin::~Coin() + operator delete
+        void (*deletingDestructor)(Coin *self);
+        // 0x08 -> GameObject::BeginDraw(Graphics*)
+        bool (*BeginDraw)(GameObject *self, Sexy::Graphics *graphics);
+        // 0x0C -> GameObject::EndDraw(Graphics*)
+        void (*EndDraw)(GameObject *self, Sexy::Graphics *graphics);
+        // 0x10 -> GameObject::MakeParentGraphicsFrame(Graphics*)
+        void (*MakeParentGraphicsFrame)(GameObject *self, Sexy::Graphics *graphics);
+    };
+
 public:
     float mPosX;                   // 13
     float mPosY;                   // 14
@@ -93,6 +107,9 @@ public:
     }
     static int GetCoinValue(CoinType coinType) {
         return reinterpret_cast<int (*)(CoinType)>(Coin_GetCoinValueAddr)(coinType);
+    }
+    const CoinVTable *GetVTable() {
+        return (CoinVTable *)vTable;
     }
 
     void CoinInitialize(int theX, int theY, CoinType theCoinType, CoinMotion theCoinMotion);

@@ -59,7 +59,7 @@ public:
     char mRecentServerAddr[3][22];
 };
 
-
+namespace Sexy {
 class PlayerInfo {
 public:
     void **vTable;                                              // 0
@@ -123,9 +123,10 @@ public:
     int unk6;                      // 515
     // 大小516个整数
 };
+} // namespace Sexy
 
 // 大小未知，故成员全部放在基类PlayerInfo
-class DefaultPlayerInfo : public PlayerInfo {
+class DefaultPlayerInfo : public Sexy::PlayerInfo {
 public:
     void SaveDetails() {
         reinterpret_cast<void (*)(DefaultPlayerInfo *)>(Sexy_DefaultPlayerInfo_SaveDetailsAddr)(this);

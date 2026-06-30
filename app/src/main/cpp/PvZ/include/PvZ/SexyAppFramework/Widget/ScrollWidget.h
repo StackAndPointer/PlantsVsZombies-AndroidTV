@@ -42,12 +42,6 @@ namespace Sexy {
 //     void Draw(Graphics* g); // Is a new function in WP, not an overridden virtual function.
 // }
 
-struct Touch {
-    Point location;
-    // Point previousLocation;
-    // int tapCount;
-    double timestamp;
-};
 
 
 class ScrollWidget : public Widget {

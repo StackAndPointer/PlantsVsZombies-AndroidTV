@@ -24,6 +24,7 @@
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/DataArray.h"
+#include "GameObject.h"
 
 class Board;
 class Reanimation;
@@ -35,9 +36,8 @@ public:
     float mAnimTime;
 };
 
-class GridItem {
+class GridItem : public SyncObject {
 public:
-    int placeHolder[4];
     LawnApp *mApp;                           // 4
     Board *mBoard;                           // 5
     GridItemType mGridItemType;              // 6
