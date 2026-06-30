@@ -120,11 +120,18 @@ void VSSetupMenu::AddedToManager(Sexy::WidgetManager *theWidgetManager) {
     old_VSSetupMenu_AddedToManager(this, theWidgetManager);
 
     // 缩小Widget，使得触控可传递给VSSetupMenu自身
-    for (int i = 0; i < 9; ++i) {
+    for (int i = BACKGROUND_FRAME; i <= CONTROLLER_1; ++i) {
         Sexy::Widget *aWidget = FindWidget(i);
         if (aWidget) {
             aWidget->Resize(aWidget->mX, aWidget->mY, 0, 0);
         }
+    }
+    // 在完成选边前禁用按钮
+    for (int i = QUICK_BUTTON; i <= RANDOM_BUTTON; ++i) {
+        Sexy::ButtonWidget *aButton = ((Sexy::ButtonWidget *)FindWidget(i));
+        aButton->SetDisabled(true);
+        (*aButton->mColors)[ButtonWidget::COLOR_LABEL] = gColorGray;
+        (*aButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = gColorGray;
     }
 }
 
@@ -158,14 +165,14 @@ void VSSetupMenu::DrawOverlay(Graphics *g) {
         g->SetColor(Color(255, 255, 255, aAlpha));
 
         if (!gTcpConnected && mSides[0] == VSSide::VS_SIDE_NONE && CanControlSideSlot(this, 0)) {
-            Sexy::Widget *theController1Widget = FindWidget(7);
+            Sexy::Widget *theController1Widget = FindWidget(CONTROLLER_0);
             g->DrawImage(Sexy::IMAGE_ZEN_NEXTGARDEN, theController1Widget->mX + 160, theController1Widget->mY + 40);
             g->DrawImageMirror(Sexy::IMAGE_ZEN_NEXTGARDEN, theController1Widget->mX - 50, theController1Widget->mY + 40, true);
         }
 
 
         if (gTcpClientSocket < 0 && mSides[1] == VSSide::VS_SIDE_NONE && CanControlSideSlot(this, 1)) {
-            Sexy::Widget *theController2Widget = FindWidget(8);
+            Sexy::Widget *theController2Widget = FindWidget(CONTROLLER_1);
             g->DrawImage(Sexy::IMAGE_ZEN_NEXTGARDEN, theController2Widget->mX + 160, theController2Widget->mY + 40);
             g->DrawImageMirror(Sexy::IMAGE_ZEN_NEXTGARDEN, theController2Widget->mX - 50, theController2Widget->mY + 40, true);
         }
@@ -482,8 +489,8 @@ void VSSetupMenu::MouseDown(int x, int y, int theCount) {
         return;
     }
     if (mState == VS_SETUP_STATE_SIDES) {
-        Sexy::Widget *theController1Widget = FindWidget(7);
-        Sexy::Widget *theController2Widget = FindWidget(8);
+        Sexy::Widget *theController1Widget = FindWidget(CONTROLLER_0);
+        Sexy::Widget *theController2Widget = FindWidget(CONTROLLER_1);
         if (x > theController1Widget->mX && x < theController1Widget->mX + 170 && y > theController1Widget->mY && y < theController1Widget->mY + 122) {
             if (gTcpConnected || !CanControlSideSlot(this, 0)) {
                 return;
@@ -510,7 +517,7 @@ void VSSetupMenu::MouseDrag(int x, int y) {
     if (touchingOnWhichController == 1) {
         if (gTcpConnected || gIsReplayMode)
             return;
-        Sexy::Widget *theController1Widget = FindWidget(7);
+        Sexy::Widget *theController1Widget = FindWidget(CONTROLLER_0);
         theController1Widget->Move(theController1Widget->mX + x - touchDownX, theController1Widget->mY);
         if (gTcpClientSocket >= 0) {
             U16_Event event = {{EventType::EVENT_SERVER_VSSETUPMENU_MOVE_CONTROLLER}, uint16_t(theController1Widget->mX)};
@@ -519,7 +526,7 @@ void VSSetupMenu::MouseDrag(int x, int y) {
     } else if (touchingOnWhichController == 2) {
         if (gTcpClientSocket >= 0)
             return;
-        Sexy::Widget *theController2Widget = FindWidget(8);
+        Sexy::Widget *theController2Widget = FindWidget(CONTROLLER_1);
         theController2Widget->Move(theController2Widget->mX + x - touchDownX, theController2Widget->mY);
         if (gTcpServerSocket >= 0) {
             U16_Event event = {{EventType::EVENT_CLIENT_VSSETUPMENU_MOVE_CONTROLLER}, uint16_t(theController2Widget->mX)};
@@ -541,7 +548,7 @@ void VSSetupMenu::MouseUp(int x, int y, int theCount) {
             return;
         }
         handledControllerMouseUp = true;
-        Sexy::Widget *aControllerWidgetP1 = FindWidget(7);
+        Sexy::Widget *aControllerWidgetP1 = FindWidget(CONTROLLER_0);
         VSSide aSideP1 = aControllerWidgetP1->mX > 400 ? VS_SIDE_ZOMBIE : aControllerWidgetP1->mX > 250 ? VS_SIDE_NONE : VS_SIDE_PLANT;
         VSSide resolvedSideP1 = ResolveRequestedSide(this, 0, aSideP1);
         mSides[0] = resolvedSideP1;
@@ -558,7 +565,7 @@ void VSSetupMenu::MouseUp(int x, int y, int theCount) {
             return;
         }
         handledControllerMouseUp = true;
-        Sexy::Widget *aControllerWidgetP2 = FindWidget(8);
+        Sexy::Widget *aControllerWidgetP2 = FindWidget(CONTROLLER_1);
         VSSide aSideP2 = aControllerWidgetP2->mX > 400 ? VS_SIDE_ZOMBIE : aControllerWidgetP2->mX > 250 ? VS_SIDE_NONE : VS_SIDE_PLANT;
 
         VSSide resolvedSideP2 = ResolveRequestedSide(this, 1, aSideP2);
@@ -587,8 +594,8 @@ void VSSetupMenu::Update() {
     drawTipArrowAlphaCounter++;
 
     if (is1PControllerMoving || is2PControllerMoving) {
-        Sexy::Widget *theController1Widget = FindWidget(7);
-        Sexy::Widget *theController2Widget = FindWidget(8);
+        Sexy::Widget *theController1Widget = FindWidget(CONTROLLER_0);
+        Sexy::Widget *theController2Widget = FindWidget(CONTROLLER_1);
         int Controller1X = theController1Widget->mX;
         int Controller2X = theController2Widget->mX;
         old_VSSetupMenu_Update(this);
@@ -811,7 +818,7 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
             //        } break;
         case EVENT_CLIENT_VSSETUPMENU_MOVE_CONTROLLER: {
             auto *event1 = static_cast<const U16_Event *>(event);
-            Sexy::Widget *theController2Widget = FindWidget(8);
+            Sexy::Widget *theController2Widget = FindWidget(CONTROLLER_1);
             if (theController2Widget != nullptr) {
                 theController2Widget->Move(event1->data, theController2Widget->mY);
                 is2PControllerMoving = true;
@@ -832,7 +839,7 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
 
             VSSide resolvedSide = ResolveRequestedSide(this, 1, requestedSide);
 
-            Sexy::Widget *controllerWidget = FindWidget(8);
+            Sexy::Widget *controllerWidget = FindWidget(CONTROLLER_1);
             mSides[1] = resolvedSide;
             mSideLocked[1] = (mSides[1] != VS_SIDE_NONE);
             if (controllerWidget != nullptr) {
@@ -971,7 +978,7 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
         } break;
         case EVENT_SERVER_VSSETUPMENU_MOVE_CONTROLLER: {
             auto *event1 = static_cast<const U16_Event *>(event);
-            Sexy::Widget *theController1Widget = FindWidget(7);
+            Sexy::Widget *theController1Widget = FindWidget(CONTROLLER_0);
             if (theController1Widget != nullptr) {
                 theController1Widget->Move(event1->data, theController1Widget->mY);
                 is1PControllerMoving = true;
@@ -1139,6 +1146,13 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
         //        }
         //        return;
     } else if (theState == VSSetupState::VS_SETUP_STATE_SELECT_BATTLE) {
+        // 选边完成，启用按钮
+        for (int i = QUICK_BUTTON; i <= RANDOM_BUTTON; ++i) {
+            Sexy::ButtonWidget *aButton = ((Sexy::ButtonWidget *)FindWidget(i));
+            aButton->SetDisabled(false);
+            (*aButton->mColors)[ButtonWidget::COLOR_LABEL] = Color(25, 197, 45);
+            (*aButton->mColors)[ButtonWidget::COLOR_LABEL_HILITE] = Color(277, 225, 108);
+        }
         gGamepad1ToPlayerIndex = mSides[0];
 
         if (Challenge::msVSShuffleMode) {

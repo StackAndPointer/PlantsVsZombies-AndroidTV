@@ -57,6 +57,21 @@ public:
         VSSetupMenu_Back = 1001,
     };
 
+    enum WidgetIds {
+        BACKGROUND_FRAME,
+        PLANT_SIDE,
+        PLANT_SIDE_MID,
+        PLANT_SIDE_FRONT,
+        ZOMBIE_SIDE,
+        ZOMBIE_SIDE_MID,
+        ZOMBIE_SIDE_FRONT,
+        CONTROLLER_0,
+        CONTROLLER_1,
+        QUICK_BUTTON,
+        CUSTOM_BUTTON,
+        RANDOM_BUTTON
+    };
+
     enum VSSetupState {
         VS_SETUP_STATE_CONTROLLERS = 0,   // WaitForSecondPlayerDialog
         VS_SETUP_STATE_SIDES = 1,         // 未分配手柄阵营
