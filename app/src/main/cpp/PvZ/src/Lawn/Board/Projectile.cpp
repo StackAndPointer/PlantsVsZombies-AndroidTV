@@ -37,7 +37,7 @@ using namespace Sexy;
 namespace {
 constexpr int SPIKE_PIERCE_DAMAGE[MAX_PIERCE_HIT_COUNT] = {30, 15, 10};
 
-bool IsBalancePatchPiercingSpike(const Projectile *theProjectile) {
+bool IsPiercingSpike(const Projectile *theProjectile) {
     return theProjectile->mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode && theProjectile->mProjectileType == ProjectileType::PROJECTILE_SPIKE;
 }
 
@@ -195,7 +195,7 @@ Zombie *Projectile::FindCollisionTarget() {
 
             Rect aZombieRect = aZombie->GetZombieRect();
             if (GetRectOverlap(aProjectileRect, aZombieRect) > 0) {
-                if (IsBalancePatchPiercingSpike(this) && HasHitZombie(this, aZombie)) {
+                if (IsPiercingSpike(this) && HasHitZombie(this, aZombie)) {
                     continue;
                 }
                 if (aBestZombie == nullptr || aZombie->mX < aMinX) {
@@ -495,7 +495,7 @@ void Projectile::PlayImpactSound(Zombie *theZombie) {
 }
 
 void Projectile::DoImpact(Zombie *theZombie) {
-    bool aIsPiercingSpike = theZombie != nullptr && IsBalancePatchPiercingSpike(this) && !theZombie->IsFlying();
+    bool aIsPiercingSpike = theZombie != nullptr && IsPiercingSpike(this) && !theZombie->IsFlying();
     if (aIsPiercingSpike && HasHitZombie(this, theZombie)) {
         return;
     }
@@ -641,7 +641,7 @@ void Projectile::DoImpact(Zombie *theZombie) {
 }
 
 void Projectile::DoImpactGridItem(GridItem *theGridItem) {
-    bool aIsPiercingSpike = theGridItem != nullptr && IsBalancePatchPiercingSpike(this);
+    bool aIsPiercingSpike = theGridItem != nullptr && IsPiercingSpike(this);
     if (aIsPiercingSpike && HasHitGridItem(this, theGridItem)) {
         return;
     }
@@ -745,6 +745,7 @@ Zombie *Projectile::FindCollisionMindControlledTarget() {
 GridItem *Projectile::FindCollisionTargetGridItem() {
     GridItem *aBestGridItem = nullptr;
     GridItem *aGridItem = nullptr;
+    bool aHasGravestoneInRow = false;
 
     Rect aProjectileRect = GetProjectileRect();
     while (mBoard->IterateGridItems(aGridItem)) {
@@ -757,6 +758,9 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
             if (mRow != aGridItem->mGridY) {
                 continue;
             }
+            if (IsPiercingSpike(this)) {
+                aHasGravestoneInRow = true; // 若本行有墓碑穿透尖刺不索敌靶子僵尸
+            }
 
             int x = mBoard->GridToPixelX(aGridItem->mGridX, mRow);
             int y = mBoard->GridToPixelY(aGridItem->mGridX, aGridItem->mGridY);
@@ -765,7 +769,7 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
 
             Rect aGraveRect = Rect(x, y, aCelWidth, aCelHeight);
             if (GetRectOverlap(aProjectileRect, aGraveRect) > 12) {
-                if (IsBalancePatchPiercingSpike(this) && HasHitGridItem(this, aGridItem)) {
+                if (IsPiercingSpike(this) && HasHitGridItem(this, aGridItem)) {
                     continue;
                 }
                 if (!aBestGridItem || aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
@@ -776,6 +780,9 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
             }
             continue;
         } else if (aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
+            if (aHasGravestoneInRow) {
+                continue;
+            }
             bool findTarget = (!aBestGridItem || aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE);
             if (findTarget && aGridItem->mVSTargetZombieHealth > 0) {
                 if (mRow == aGridItem->mGridY) {
