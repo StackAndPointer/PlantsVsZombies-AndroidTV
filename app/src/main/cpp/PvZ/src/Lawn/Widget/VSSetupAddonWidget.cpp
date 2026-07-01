@@ -421,10 +421,9 @@ void PickShuffleSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std
     PickMPRandomSeeds(theApp, thePlantSeeds, theZombieSeeds, theIsZombie);
 
     if (theIsZombie) {
-        if (NeedSeedZombieGigaFootball(theApp, theZombieSeeds, true)) {
-            auto it = std::ranges::find(theZombieSeeds, SeedType::SEED_ZOMBIE_FOOTBALL);
-            if (it != thePlantSeeds.end()) {
-                *it = SeedType::SEED_ZOMBIE_GIGA_FOOTBALL;
+        if (NeedSeedZombieSuperFanImp(theApp, theZombieSeeds, true)) {
+            if (!theZombieSeeds.empty()) {
+                theZombieSeeds[0] = SeedType::SEED_ZOMBIE_SUPER_FAN_IMP;
             }
         }
     } else {
@@ -447,8 +446,8 @@ SeedType PickNextRandomSeed(LawnApp *theApp, std::vector<SeedType> &thePlantSeed
     SeedType aSeedType = theIsZombie ? theZombieSeeds[theSeedIndex - 1] : thePlantSeeds[theSeedIndex - 1];
 
     if (theIsZombie) {
-        if (NeedSeedZombieGigaFootball(theApp) && aSeedType == SeedType::SEED_ZOMBIE_FOOTBALL) {
-            aSeedType = SeedType::SEED_ZOMBIE_GIGA_FOOTBALL;
+        if (NeedSeedZombieSuperFanImp(theApp) && theSeedIndex == 1) {
+            aSeedType = SeedType::SEED_ZOMBIE_SUPER_FAN_IMP;
         }
     } else {
         if (NeedSeedInstantCoffee(theApp) && theSeedIndex == 1) {
@@ -716,19 +715,19 @@ bool NeedSeedZombieYeti(LawnApp *theApp) {
     return !hasPea && hasPult;
 }
 
-bool NeedSeedZombieGigaFootball(LawnApp *theApp, const std::vector<SeedType> &theZombieSeeds, bool theIsShuffle) {
+bool NeedSeedZombieSuperFanImp(LawnApp *theApp, const std::vector<SeedType> &theZombieSeeds, bool theIsShuffle) {
     if (theIsShuffle) {
-        // 刷出的新卡组中有粉丝小鬼僵尸
+        // 刷出的新卡组中有全明星僵尸
         for (SeedType aSeedType : theZombieSeeds) {
-            if (aSeedType == SeedType::SEED_ZOMBIE_SUPER_FAN_IMP) {
+            if (aSeedType == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) {
                 return true;
             }
         }
     } else {
-        // 种子栏存在可用的粉丝小鬼僵尸
+        // 种子栏存在可用的全明星僵尸
         for (int i = 1; i < 6; ++i) {
             SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[1]->mSeedPackets[i];
-            if (aSeedPacket.mPacketType == SeedType::SEED_ZOMBIE_SUPER_FAN_IMP && aSeedPacket.mActive) {
+            if (aSeedPacket.mPacketType == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL && aSeedPacket.mActive) {
                 return true;
             }
         }
