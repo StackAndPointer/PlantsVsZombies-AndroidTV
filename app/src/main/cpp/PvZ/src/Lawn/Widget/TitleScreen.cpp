@@ -281,10 +281,10 @@ void TitleScreen::_destructor() {
     ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kTitleScreenButtonListenerVtableOffset);
     delete mStartButton;
     if (mPopcapLogo) {
-        ((void (*)(Sexy::Image *))mPopcapLogo->vTable[1])(mPopcapLogo);
+        mPopcapLogo->GetVTable()->deletingDestructor(mPopcapLogo);
     }
     if (mGuide) {
-        ((void (*)(Sexy::Image *))mGuide->vTable[1])(mGuide);
+        mGuide->GetVTable()->deletingDestructor(mGuide);
     }
     mApp->mResourceManager->ReplaceImage("IMAGE_TITLESCREEN", nullptr);
     mApp->mResourceManager->ReplaceImage("IMAGE_TITLESCREEN_BALL", nullptr);

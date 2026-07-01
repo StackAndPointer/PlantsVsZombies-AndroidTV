@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/SexyAppFramework/Graphics/Image.h"
+#include "PvZ/SexyAppFramework/Graphics/DeviceImage.h"
 
 using namespace Sexy;
 

@@ -30,12 +30,11 @@
 using namespace Sexy;
 
 void ToolTipWidget::CalculateSize() {
-    auto StringWidth = [](Sexy::Font *font, const pvzstl::string &text) -> int { return ((int (*)(Sexy::Font *, const pvzstl::string *))font->vTable[8])(font, &text); };
 
     // 先计算标题和警告文本的最大宽度
-    int maxWidth = StringWidth(mTitleFont, mTitle);
+    int maxWidth = mTitleFont->GetVTable()->StringWidth(mTitleFont, mTitle);
 
-    int warningWidth = StringWidth(mWarningTextFont, mWarningText);
+    int warningWidth = mWarningTextFont->GetVTable()->StringWidth(mWarningTextFont, mWarningText);
     if (warningWidth > maxWidth)
         maxWidth = warningWidth;
 
@@ -51,7 +50,7 @@ void ToolTipWidget::CalculateSize() {
 
     // 正文每一行也参与 tooltip 宽度计算
     for (const pvzstl::string &line : lines) {
-        int lineWidth = StringWidth(mWarningTextFont, line);
+        int lineWidth = mWarningTextFont->GetVTable()->StringWidth(mWarningTextFont, line);
         if (lineWidth > maxWidth)
             maxWidth = lineWidth;
     }
@@ -128,7 +127,7 @@ void ToolTipWidget::Draw(Sexy::Graphics *g) {
         g->SetFont(mTitleFont);
         g->SetColor(mTitleTextColor);
 
-        int titleWidth = ((int (*)(Sexy::Font *, const pvzstl::string *))mTitleFont->vTable[8])(mTitleFont, &mTitle); // int titleWidth = mTitleFont->StringWidth(mTitle);
+        int titleWidth = mTitleFont->GetVTable()->StringWidth(mTitleFont, mTitle); // int titleWidth = mTitleFont->StringWidth(mTitle);
         int titleX = drawX + (mWidth - titleWidth) / 2;
         int titleBaselineY = textY + mTitleFont->GetAscent();
 
@@ -141,8 +140,7 @@ void ToolTipWidget::Draw(Sexy::Graphics *g) {
     if (!mWarningText.empty()) {
         g->SetFont(mWarningTextFont);
 
-        int warningWidth =
-            ((int (*)(Sexy::Font *, const pvzstl::string *))mWarningTextFont->vTable[8])(mWarningTextFont, &mWarningText); // int warningWidth = mWarningTextFont->StringWidth(mWarningText);
+        int warningWidth = mWarningTextFont->GetVTable()->StringWidth(mWarningTextFont, mWarningText); // int warningWidth = mWarningTextFont->StringWidth(mWarningText);
         int warningX = drawX + (mWidth - warningWidth) / 2;
         int warningBaselineY = textY + mWarningTextFont->GetAscent();
 
@@ -169,7 +167,8 @@ void ToolTipWidget::Draw(Sexy::Graphics *g) {
     g->SetColor(Sexy::Color(32, 32, 32));
 
     for (const pvzstl::string &line : lines) {
-        int lineWidth = ((int (*)(Sexy::Font *, const pvzstl::string *))mWarningTextFont->vTable[8])(mWarningTextFont, &line); // int lineWidth = mWarningTextFont->StringWidth(line);
+
+        int lineWidth = mWarningTextFont->GetVTable()->StringWidth(mWarningTextFont, line); // int lineWidth = mWarningTextFont->StringWidth(line);
         int lineX = drawX + (mWidth - lineWidth) / 2;
         int lineBaselineY = bodyY + mWarningTextFont->GetAscent();
 

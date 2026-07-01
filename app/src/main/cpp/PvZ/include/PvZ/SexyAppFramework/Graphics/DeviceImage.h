@@ -17,28 +17,24 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "PvZ/SexyAppFramework/Graphics/MemoryImage.h"
+#ifndef PVZ_SEXYAPPFRAMEWORK_GRAPHICS_DEVICE_IMAGE_H
+#define PVZ_SEXYAPPFRAMEWORK_GRAPHICS_DEVICE_IMAGE_H
 
-using namespace Sexy;
+#include "MemoryImage.h"
 
-void MemoryImage::ClearRect(const Rect &theRect) {
+namespace Sexy {
 
-    unsigned int *bits = GetVTable()->GetBits(this);
+class DeviceImage : public MemoryImage {};
 
-    const int pitch = GetVTable()->GetPitch(this);
+class GLImage : public DeviceImage {
+public:
+    void PushTransform(const SexyMatrix3 &theTransform, bool concatenate);
+    void PopTransform();
+};
 
-    for (int row = 0; row < theRect.mHeight; ++row) {
-        unsigned int *destination = bits + (theRect.mY + row) * pitch + theRect.mX;
-        memset(destination, 0, theRect.mWidth * sizeof(*destination));
-    }
+} // namespace Sexy
 
-    GetVTable()->BitsChanged(this);
-}
+inline void (*old_Sexy_GLImage_PushTransform)(Sexy::GLImage *image, const Sexy::SexyMatrix3 &theTransform, bool concatenate);
 
-void MemoryImage::PushTransform(const SexyMatrix3 &theTransform, bool concatenate) {
-    old_Sexy_MemoryImage_PushTransform(this, theTransform, concatenate);
-}
-
-void MemoryImage::PopTransform() {
-    old_Sexy_MemoryImage_PopTransform(this);
-}
+inline void (*old_Sexy_GLImage_PopTransform)(Sexy::GLImage *image);
+#endif // PVZ_SEXYAPPFRAMEWORK_GRAPHICS_DEVICE_IMAGE_H

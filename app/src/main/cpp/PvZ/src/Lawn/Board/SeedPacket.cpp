@@ -635,8 +635,9 @@ void DrawSeedPacket(Sexy::Graphics *g,
         }
 
         Sexy::Font *font = Sexy::FONT_BRIANNETOD12;
-        int width = 31 - (*((int (**)(Sexy::Font *, const pvzstl::string &))font->vTable + 8))(font, aCostStr); // 33 -> 31，微调一下文字位置，左移2个像素点
-        int height = 48 + (*((int (**)(Sexy::Font *))font->vTable + 2))(font);                                  // 50 -> 48, 微调一下文字位置，上移2个像素点
+
+        int width = 31 - font->GetVTable()->StringWidth(font, aCostStr); // 33 -> 31，微调一下文字位置，左移2个像素点
+        int height = 48 + font->GetVTable()->GetAscent(font);            // 50 -> 48, 微调一下文字位置，上移2个像素点
         Color theColor = {0, 0, 0, 255};
         g->PushState();
         if (g->mScaleX == 1.0f && g->mScaleY == 1.0f) {

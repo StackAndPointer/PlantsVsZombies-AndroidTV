@@ -289,7 +289,7 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
         int totalWidth = 0;
         for (size_t buttonIndex = 0; buttonIndex < buttonList.size(); ++buttonIndex) {
             GameButton *button = buttonList[buttonIndex];
-            const int labelWidth = Sexy::FONT_DWARVENTODCRAFT18->StringWidth(*button->mLabel);
+            const int labelWidth = Sexy::FONT_DWARVENTODCRAFT18->GetVTable()->StringWidth(Sexy::FONT_DWARVENTODCRAFT18, *button->mLabel);
             const int leftWidth = Sexy::IMAGE_BUTTON_LEFT->mWidth;
             const int middleWidth = Sexy::IMAGE_BUTTON_MIDDLE->mWidth;
             const int rightWidth = Sexy::IMAGE_BUTTON_RIGHT->mWidth;
