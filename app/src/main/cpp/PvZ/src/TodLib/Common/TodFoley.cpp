@@ -18,6 +18,7 @@
  */
 
 #include "PvZ/TodLib/Common/TodFoley.h"
+#include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 
 #include <algorithm>
@@ -30,6 +31,63 @@ void TodFoleyInitialize(FoleyParams *theFoleyParamArray, int theFoleyParamArrayS
 
 FoleyParams *LookupFoley(FoleyType theFoleyType) {
     return &gFoleyParamArray[theFoleyType];
+}
+
+void SoundSystemReleaseFinishedInstances(TodFoley *theSoundSystem) {
+    LOG_DEBUG("ENTER");
+    for (int aFoleyIndex = 0; aFoleyIndex < gFoleyParamArraySize; ++aFoleyIndex) {
+
+        FoleyTypeData &aTypeData = theSoundSystem->mTypeData[aFoleyIndex];
+
+        for (int anInstanceIndex = 0; anInstanceIndex < MAX_FOLEY_INSTANCES; ++anInstanceIndex) {
+
+            FoleyInstance &aFoleyInstance = aTypeData.mFoleyInstances[anInstanceIndex];
+
+            if (aFoleyInstance.mRefCount == 0) {
+                continue;
+            }
+            LOG_DEBUG("1 aFoleyIndex={} anInstanceIndex={}", aFoleyIndex, anInstanceIndex);
+            if (aFoleyInstance._paused) {
+                continue;
+            }
+
+            LOG_DEBUG("2");
+            if (aFoleyInstance.mInstance->GetVTable()->IsPlaying(aFoleyInstance.mInstance)) {
+                continue;
+            }
+            LOG_DEBUG("3");
+            aFoleyInstance.mInstance->GetVTable()->Release(aFoleyInstance.mInstance);
+            LOG_DEBUG("4");
+            aFoleyInstance.mInstance = nullptr;
+            aFoleyInstance.mRefCount = 0;
+            LOG_DEBUG("5");
+        }
+    }
+}
+
+void TodFoley::RehookupSoundWithMusicVolume() {
+    LOG_DEBUG("ENTER");
+    SoundSystemReleaseFinishedInstances(this);
+    LOG_DEBUG("MIDDLE");
+    for (int aFoleyIndex = 0; aFoleyIndex < gFoleyParamArraySize; ++aFoleyIndex) {
+        FoleyParams *aFoleyParams = LookupFoley(static_cast<FoleyType>(aFoleyIndex));
+
+        if ((aFoleyParams->mFoleyFlags & 0x8u) == 0) {
+            continue;
+        }
+
+        FoleyTypeData &aTypeData = mTypeData[aFoleyIndex];
+
+        for (int anInstanceIndex = 0; anInstanceIndex < MAX_FOLEY_INSTANCES; ++anInstanceIndex) {
+
+            FoleyInstance *anInstance = &aTypeData.mFoleyInstances[anInstanceIndex];
+
+            if (anInstance->mRefCount != 0) {
+                ApplyMusicVolume(anInstance);
+            }
+        }
+    }
+    LOG_DEBUG("EXIT");
 }
 
 auto GetNewLawnFoleyParamArray() -> FoleyParams (&)[FoleyType::EXTENDED_NUM_FOLEY] {

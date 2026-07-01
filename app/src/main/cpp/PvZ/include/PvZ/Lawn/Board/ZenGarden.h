@@ -61,6 +61,9 @@ public:
     void MouseDownWithFullWheelBarrow(int x, int y) {
         reinterpret_cast<void (*)(ZenGarden *, int, int)>(ZenGarden_MouseDownWithFullWheelBarrowAddr)(this, x, y);
     }
+    void AdvanceCrazyDaveDialog() {
+        reinterpret_cast<void (*)(ZenGarden *)>(ZenGarden_AdvanceCrazyDaveDialogAddr)(this);
+    }
 
     SpecialGridPlacement *GetSpecialGridPlacements(int &theCount) const;
     int GridToPixelX(int theGridX, int theGridY);

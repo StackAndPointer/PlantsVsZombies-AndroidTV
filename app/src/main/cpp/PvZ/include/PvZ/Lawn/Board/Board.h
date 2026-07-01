@@ -636,6 +636,9 @@ public:
     bool StageHasFog() {
         return reinterpret_cast<bool (*)(Board *)>(Board_StageHasFogAddr)((this));
     }
+    bool IsScaryPotterDaveTalking() {
+        return reinterpret_cast<bool (*)(Board *)>(Board_IsScaryPotterDaveTalkingAddr)((this));
+    }
 
     Board(LawnApp *theApp) {
         _constructor(theApp);
@@ -792,7 +795,9 @@ public:
     bool KeyDown(Sexy::KeyCode theKey);
     bool KeyUp(Sexy::KeyCode theKey);
     void GameButtonUp(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theFlags);
-
+    void GameButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theFlags) {
+        reinterpret_cast<void (*)(Board *, Sexy::GamepadButton, int, unsigned int)>(Board_GameButtonDownAddr)(this, theButton, thePlayerIndex, theFlags);
+    }
     void processClientEvent(const BaseEvent *event);
     void processServerEvent(const BaseEvent *event);
     void PauseFromSecondPlayer(bool thePause);

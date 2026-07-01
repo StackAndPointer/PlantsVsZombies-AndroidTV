@@ -180,7 +180,10 @@ public:
     Widget *mFocusLinks[4];                      // 48 ~ 52 ，上下左右
     int unk2[2];                                 // 53 ~ 54
     Widget *mFocusedChildWidget;                 // 55
-    int unk3[4];                                 // 56 ~ 59
+    int unk56;                                   // 56
+    bool mHasWindowFocus;                        // 57
+    int unk58;                                   // 58
+    Sexy::Event *mEvent;                         // 59
     int *mAnimatorForState[4];                   // 60 ~ 63
     // 大小64个整数！
 

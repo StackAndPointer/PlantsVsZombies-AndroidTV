@@ -30,6 +30,12 @@
 #include "PvZ/TodLib/Common/TodStringFile.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
 
+namespace {
+
+constexpr uintptr_t kTitleScreenButtonListenerVtableOffset = 0x1F8;
+
+} // namespace
+
 void TitleScreen::Draw(Sexy::Graphics *graphics) {
     old_TitleScreen_Draw(this, graphics);
     // LOGD("%d",Sexy::IMAGE_ESRB_RATING);
@@ -167,7 +173,7 @@ void TitleScreen::Update() {
     if (mNeedToInit && mTitleState == Loading) {
         mNeedToInit = false;
         *mStartButton->mLabel = TodStringTranslate("[LOADING]");
-        mStartButton->mFont = Sexy::FONT_DWARVENTODCRAFT24;
+        mStartButton->SetFont(Sexy::FONT_DWARVENTODCRAFT24);
         mStartButton->Resize(182, 800, int(mTotalBarWidth), 64);
         mStartButton->mVisible = true;
         float estimatedTotalLoadTime;
@@ -251,9 +257,9 @@ void TitleScreen::Update() {
             reanimation->OverrideScale(1.1f, 1.3f);
         } else if (isZombieMilestone) {
             reanimation->SetPosition(milestone + 120.0f, 481.0f);
-            mApp->PlaySample(Sexy::SOUND_LOADINGBAR_FLOWER);
+            mApp->GetVTable()->PlaySampleWithLoopFlag(mApp, Sexy::SOUND_LOADINGBAR_FLOWER, true);
         }
-        mApp->PlaySample(isZombieMilestone ? Sexy::SOUND_LOADINGBAR_ZOMBIE : Sexy::SOUND_LOADINGBAR_FLOWER);
+        mApp->GetVTable()->PlaySampleWithLoopFlag(mApp, isZombieMilestone ? Sexy::SOUND_LOADINGBAR_ZOMBIE : Sexy::SOUND_LOADINGBAR_FLOWER, true);
     }
 }
 
@@ -270,7 +276,50 @@ void TitleScreen::_constructor(LawnApp *theApp) {
         mNeedPlayLogo = false;
     }
 }
+void TitleScreen::_destructor() {
+    LOG_DEBUG("ENTER");
+    Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForTitleScreenAddr) + 8);
+    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kTitleScreenButtonListenerVtableOffset);
+    delete mStartButton;
+    if (mPopcapLogo) {
+        ((void (*)(Sexy::Image *))mPopcapLogo->vTable[1])(mPopcapLogo);
+    }
+    if (mGuide) {
+        ((void (*)(Sexy::Image *))mGuide->vTable[1])(mGuide);
+    }
+    LOG_DEBUG("MIDDLE");
+    mApp->mResourceManager->ReplaceImage("IMAGE_TITLESCREEN", nullptr);
+    mApp->mResourceManager->ReplaceImage("IMAGE_TITLESCREEN_BALL", nullptr);
+    mApp->mResourceManager->ReplaceImage("IMAGE_TITLESCREEN_GLOW", nullptr);
+    mApp->mResourceManager->ReplaceImage("IMAGE_LOADBAR_DIRT", nullptr);
+    mApp->mResourceManager->ReplaceImage("IMAGE_LOADBAR_GRASS", nullptr);
+    mApp->mResourceManager->ReplaceImage("IMAGE_ESRB_RATING", nullptr);
+    if (mIsPlayingIntroVideo) {
+        AGVideoClose();
+        AGVideoShow(false);
+        AGVideoEnable(false);
+        mIsPlayingIntroVideo = false;
+    }
+    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
+    LOG_DEBUG("LAST");
+    Sexy::Widget::_destructor();
+    LOG_DEBUG("EXIT");
+}
 
 void TitleScreen::VideoCompleted() {
     mVideoCompleted = true;
+}
+
+void TitleScreen::ButtonPress(int theId) {
+    LOG_DEBUG("ENTER {}", theId);
+    mApp->GetVTable()->PlaySampleWithLoopFlag(mApp, Sexy::SOUND_BUTTONCLICK, true);
+    if (mLoadingThreadComplete && mCurBarWidth == mTotalBarWidth) {
+        if (mStartButton->mGamepadIndex > 0) {
+            LOG_DEBUG("MIDDLE {}", theId);
+            mApp->SwapGamepadId(0, mStartButton->mGamepadIndex);
+        }
+        LOG_DEBUG("VTABLE {}", theId);
+        mApp->LoadingCompleted();
+    }
+    LOG_DEBUG("EXIT {}", theId);
 }

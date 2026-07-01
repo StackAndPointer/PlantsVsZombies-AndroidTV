@@ -27,6 +27,7 @@
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
 #include "PvZ/Symbols.h"
 
+#include "PvZ/SexyAppFramework/Misc/ResourceManager.h"
 #include "Buffer.h"
 #include "Graphics/Color.h"
 #include "Graphics/MemoryImage.h"
@@ -507,7 +508,7 @@ public:
     pvzstl::map<pvzstl::string, int> mIntProperties;                         // 0x684
     pvzstl::map<pvzstl::string, double> mDoubleProperties;                   // 0x69C
     pvzstl::map<pvzstl::string, SexyStringVector32> mStringVectorProperties; // 0x6B4, map<string, vector<string>>
-    int *mResourceManager;                                                   // 0x6CC, unkMem5[48]
+    ResourceManager *mResourceManager;                                       // 0x6CC, unkMem5[48]
 
     char mPopLoc[0x30];                            // 0x6D0, unkMem5[49]~[60]
     int *mAuthManager;                             // 0x700, unkMem5[61]

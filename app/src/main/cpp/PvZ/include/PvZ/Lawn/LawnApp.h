@@ -545,6 +545,12 @@ public:
     void HandleOldGameFile() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_HandleOldGameFileFileAddr)(this);
     }
+    void DoPauseDialog() {
+        reinterpret_cast<void (*)(LawnApp *)>(LawnApp_DoPauseDialogAddr)(this);
+    }
+    bool CanPauseNow() {
+        return reinterpret_cast<bool (*)(LawnApp *)>(LawnApp_CanPauseNowAddr)(this);
+    }
 
     LawnApp() {
         _constructor();
@@ -590,6 +596,10 @@ public:
     void DoConfirmBackToMain(bool theIsSave);
     void BuyFullVersion() {
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_BuyFullVersionAddr)(this);
+    }
+    bool MapToButtonEvent(const Sexy::Event *theEvent, Sexy::GamepadButton &theButtonCode, int &thePlayerIndex, unsigned int &theButtonFlags) {
+        return reinterpret_cast<bool (*)(LawnApp *, const Sexy::Event *, Sexy::GamepadButton &, int &, unsigned int &)>(LawnApp_MapToButtonEventAddr)(
+            this, theEvent, theButtonCode, thePlayerIndex, theButtonFlags);
     }
     int TrophiesNeedForGoldSunflower();
     int GamepadToPlayerIndex(unsigned int thePlayerIndex) const;
@@ -659,6 +669,7 @@ public:
     bool HasBeatenChallenge(GameMode theGameMode) const;
     void ShowVSResultsScreen();
     void KillVSResultsScreen();
+    void LoadingCompleted();
 
 protected:
     friend void InitHookFunction();

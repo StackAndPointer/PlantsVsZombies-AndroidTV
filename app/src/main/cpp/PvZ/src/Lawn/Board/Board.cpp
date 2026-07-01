@@ -1032,19 +1032,58 @@ void Board::DrawGameObjects(Graphics *g) {
 
 bool Board::KeyUp(Sexy::KeyCode theKey) {
     // 联机对战屏蔽按键，仅允许返回键
-    if (gTcpConnected || gTcpClientSocket >= 0) {
+    bool isOnlineMode = (gTcpConnected || gTcpClientSocket >= 0);
+
+    if (isOnlineMode) {
         return theKey == KEYCODE_BACK;
     }
+    // 原版函数开始
 
-    return old_Board_KeyUp(this, theKey);
+    const unsigned int anEventFlags = mEvent != nullptr ? mEvent->mFlags : 0;
+
+    if (mEvent != nullptr) {
+        if (mApp->HasGamepad() || (mApp->mGamePad1IsOn && mApp->mGamePad2IsOn)) {
+
+            Sexy::GamepadButton aButtonCode;
+            int aPlayerIndex;
+            unsigned int aButtonFlags;
+            if (mApp->MapToButtonEvent(mEvent, aButtonCode, aPlayerIndex, aButtonFlags)) {
+                GameButtonUp(aButtonCode, aPlayerIndex, aButtonFlags);
+                return true;
+            }
+            return true;
+        }
+    }
+
+    // 304 305
+    if (theKey == KEYCODE_GAMEPAD_A || theKey == KEYCODE_GAMEPAD_B) {
+        return false;
+    }
+    GamepadControls *aControls = mGamepadControls[0];
+    if (isOnlineMode) {
+        if (gTcpConnected) { // Guest
+            aControls = mGamepadControls[0]->mPlayerIndex2 == 1 ? mGamepadControls[0] : mGamepadControls[1];
+        } else if (gTcpClientSocket >= 0) { // Host
+            aControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+        }
+    }
+    if (aControls->GetVTable()->OnKeyUp(aControls, theKey, anEventFlags)) {
+        return true;
+    }
+
+    if (theKey == KEYCODE_ESCAPE && (anEventFlags & 0x80u) == 0) {
+        mApp->DoConfirmBackToMain(NeedSaveGame());
+        return true;
+    }
+    return true;
 }
 
 bool Board::KeyDown(KeyCode theKey) {
     // 联机对战屏蔽按键，仅允许返回键
-    if (gTcpConnected || gTcpClientSocket >= 0) {
+    bool isOnlineMode = (gTcpConnected || gTcpClientSocket >= 0);
+    if (isOnlineMode) {
         return theKey == KEYCODE_BACK;
     }
-
     // 用于切换键盘模式，自动开关砸罐子老虎机种子雨关卡内的"自动拾取植物卡片"功能
     if (theKey >= 37 && theKey <= 40) {
         if (!gKeyboardMode) {
@@ -1054,7 +1093,146 @@ bool Board::KeyDown(KeyCode theKey) {
         requestDrawShovelInCursor = false;
     }
 
-    return old_Board_KeyDown(this, theKey);
+    // 原版函数开始
+
+    /*
+     * 手柄模式处理。
+     */
+    const unsigned int anEventFlags = mEvent != nullptr ? mEvent->mFlags : 0;
+    bool skipInitialKeyProcessing = false;
+
+    if (mEvent != nullptr) {
+
+        if (mApp->HasGamepad() || (mApp->mGamePad1IsOn && mApp->mGamePad2IsOn)) {
+            if (theKey == KEYCODE_ESCAPE) {
+                mApp->DoConfirmBackToMain(NeedSaveGame());
+                return true;
+            }
+
+            Sexy::GamepadButton aButtonCode;
+            int aPlayerIndex;
+            unsigned int aButtonFlags;
+            if (mApp->MapToButtonEvent(mEvent, aButtonCode, aPlayerIndex, aButtonFlags)) {
+                GameButtonDown(aButtonCode, aPlayerIndex, aButtonFlags);
+                return true;
+            }
+
+            skipInitialKeyProcessing = true;
+        }
+    }
+
+    if (!skipInitialKeyProcessing) {
+        /*
+         * 忽略键值 304 和 305。
+         */
+        if (theKey == KEYCODE_GAMEPAD_A || theKey == KEYCODE_GAMEPAD_B) {
+            return false;
+        }
+
+        /*
+         * Crazy Dave 帮助界面处理。
+         */
+        //        if (mApp->mCrazyDaveState != CRAZY_DAVE_OFF) {
+        //
+        //            const bool aDaveHelpResult = GetVTable()->HasWidget(this, mApp->mDaveHelp);
+        //
+        //            if (aDaveHelpResult) {
+        //                if (mApp->mCrazyDaveState == CRAZY_DAVE_ENTERING || mApp->mCrazyDaveState == CRAZY_DAVE_LEAVING) {
+        //                    return true;
+        //                }
+        //
+        //                mApp->mDaveHelp->DealClick(theKey);
+        //                return true;
+        //            }
+        //        }
+
+        /*
+         * 关卡开场动画优先处理按键。
+         */
+        if (mApp->mGameScene == SCENE_LEVEL_INTRO && mCutScene->OnKeyDown(theKey, anEventFlags)) {
+            return true;
+        }
+        GamepadControls *aControls = mGamepadControls[0];
+        if (isOnlineMode) {
+            if (gTcpConnected) { // Guest
+                aControls = mGamepadControls[0]->mPlayerIndex2 == 1 ? mGamepadControls[0] : mGamepadControls[1];
+            } else if (gTcpClientSocket >= 0) { // Host
+                aControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+            }
+        }
+
+
+        if (aControls->GetVTable()->OnKeyDown(aControls, theKey, anEventFlags)) {
+            return true;
+        }
+
+        if (theKey == KEYCODE_ESCAPE && (anEventFlags & 0x80u) == 0) {
+            mApp->DoConfirmBackToMain(NeedSaveGame());
+            return true;
+        }
+
+        if (theKey == KEYCODE_RETURN) {
+
+            if (mApp->mGameMode == GAMEMODE_CHALLENGE_ZEN_GARDEN) {
+                if (mApp->mCrazyDaveMessageIndex != -1) {
+                    if (!mApp->GetDialog(DIALOG_STORE) && !mApp->GetDialog(DIALOG_MAIL)) {
+                        mApp->mZenGarden->AdvanceCrazyDaveDialog();
+                        return true;
+                    }
+                }
+            } else if (mApp->mCrazyDaveMessageIndex != -1 && (mApp->mGameMode == GAMEMODE_TREE_OF_WISDOM || IsScaryPotterDaveTalking())) {
+                mChallenge->AdvanceCrazyDaveDialog();
+                return true;
+            }
+        }
+    }
+
+    /*
+     * 通用按键处理。
+     * 对应原来的 LABEL_5 和 LABEL_6。
+     */
+
+    if (mApp->mGameScene == SCENE_LEVEL_INTRO) {
+
+        if (mApp->mGameMode != GAMEMODE_CHALLENGE_ZEN_GARDEN && mApp->mGameMode != GAMEMODE_TREE_OF_WISDOM) {
+            mCutScene->KeyDown(theKey);
+            return true;
+        }
+    }
+
+    if (theKey == KEYCODE_RETURN || theKey == KEYCODE_SPACE) {
+
+        if (IsScaryPotterDaveTalking() && mApp->mCrazyDaveMessageIndex != -1) {
+            mChallenge->AdvanceCrazyDaveDialog();
+            return true;
+        }
+
+        if (mApp->mGameMode == GAMEMODE_CHALLENGE_ZEN_GARDEN || mApp->mGameMode == GAMEMODE_TREE_OF_WISDOM) {
+            mApp->mZenGarden->AdvanceCrazyDaveDialog();
+            return true;
+        }
+
+        if (theKey == KEYCODE_SPACE) {
+
+            /*
+             * 即使当前不能暂停，原函数仍返回 true，
+             * 表示空格键已经被消费。
+             */
+            if (!mApp->CanPauseNow())
+                return true;
+
+            mApp->PlaySample(Sexy::SOUND_PAUSE);
+            mApp->DoPauseDialog();
+            return true;
+        }
+    }
+
+    if (theKey == KEYCODE_RIGHT) {
+        gStepReady = true; // mApp->StepAdvance();
+        return true;
+    }
+
+    return false;
 }
 
 void Board::GameButtonUp(GamepadButton theButton, int thePlayerIndex, unsigned int theFlags) {

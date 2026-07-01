@@ -35,8 +35,8 @@ public:
         void (*OnButtonDown)(GamepadControls *self, int button, int playerIndex, unsigned int flags); // 0x00
         void (*OnButtonUp)(GamepadControls *self, int button, int playerIndex, unsigned int flags);   // 0x04
         void (*OnGameAxisMove)(GamepadControls *self, int axis, int value, int playerIndex);          // 0x08
-        void (*OnKeyDown)(GamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);          // 0x0C
-        void (*OnKeyUp)(GamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);            // 0x10
+        bool (*OnKeyDown)(GamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);          // 0x0C
+        bool (*OnKeyUp)(GamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);            // 0x10
         void (*Update)(GamepadControls *self, float deltaTime);                                       // 0x14
         bool (*BeginDraw)(GamepadControls *self, Sexy::Graphics *graphics);                           // 0x18
         void (*Draw)(GamepadControls *self, Sexy::Graphics *graphics);                                // 0x1C
@@ -88,8 +88,8 @@ public:
     }
     // theGamepadIndex 根据手柄决定是0还是1
     // a4 恒定为0
-    void OnKeyDown(Sexy::KeyCode theKey, unsigned int a3) {
-        reinterpret_cast<void (*)(GamepadControls *, int, unsigned int)>(GamepadControls_OnKeyDownAddr)(this, theKey, a3);
+    bool OnKeyDown(Sexy::KeyCode theKey, unsigned int a3) {
+        return reinterpret_cast<bool (*)(GamepadControls *, int, unsigned int)>(GamepadControls_OnKeyDownAddr)(this, theKey, a3);
     }
     void UpdateSeedSelect(float dt) {
         reinterpret_cast<void *(*)(GamepadControls *, float dt)>(GamepadControls_UpdateSeedSelectAddr)(this, dt);

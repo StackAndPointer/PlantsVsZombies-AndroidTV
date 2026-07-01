@@ -22,7 +22,10 @@ public:
     float mTextAlpha;                       // 217
     int mUnderlineOffset;
 
-
+public:
+    void SetFont(Sexy::Font *theFont) {
+        reinterpret_cast<void (*)(StartButton *, Sexy::Font *)>(StartButton_SetFontAddr)(this, theFont);
+    }
 }; // 大小 218 个 int
 
 

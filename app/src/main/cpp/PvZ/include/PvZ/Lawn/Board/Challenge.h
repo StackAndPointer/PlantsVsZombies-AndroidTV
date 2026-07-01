@@ -205,6 +205,9 @@ public:
     void IZombiePlantDropRemainingSun(Plant *thePlant) {
         reinterpret_cast<void (*)(Challenge *, Plant *)>(Challenge_IZombiePlantDropRemainingSunAddr)(this, thePlant);
     }
+    void AdvanceCrazyDaveDialog() {
+        reinterpret_cast<void (*)(Challenge *)>(Challenge_AdvanceCrazyDaveDialogAddr)(this);
+    }
 
 
     void Update();

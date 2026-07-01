@@ -43,9 +43,6 @@ public class AudioOutput {
     }
 
     public int getPreferredSampleRate() {
-        if (Build.VERSION.SDK_INT < 17) {
-            return -1;
-        }
         AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         String v = audioManager.getProperty("android.media.property.OUTPUT_SAMPLE_RATE");
         if (v != null) {
@@ -55,9 +52,6 @@ public class AudioOutput {
     }
 
     public int getPreferredFramesPerBuffer() {
-        if (Build.VERSION.SDK_INT < 17) {
-            return -1;
-        }
         AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         String v = audioManager.getProperty("android.media.property.OUTPUT_FRAMES_PER_BUFFER");
         if (v != null) {
@@ -103,7 +97,7 @@ public class AudioOutput {
     }
 
     public synchronized void write(ByteBuffer data, int offset, int len) {
-        Log.d(TAG, "write: ");
+//        Log.d(TAG, "write: ");
 //    public void write(ByteBuffer data, int offset, int len) {
         if (mAudioTrack != null) {
             data.position(offset);

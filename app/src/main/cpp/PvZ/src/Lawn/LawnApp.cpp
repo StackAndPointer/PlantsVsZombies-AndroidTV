@@ -1145,6 +1145,8 @@ void LawnApp::HardwareInit() {
     // lawnApp->mMusic = (Music2*) operator new(104u);
     // Music_Music(lawnApp->mMusic); // 使用Music而非Music2
     // }
+    delete mSoundSystem;
+    mSoundSystem = new TodFoley();
 }
 
 int LawnApp::GetNumPreloadingTasks() {
@@ -1205,8 +1207,8 @@ void LawnApp::SetFoleyVolume(FoleyType theFoleyType, double theVolume) const {
     FoleyTypeData *foleyTypeData = &mSoundSystem->mTypeData[theFoleyType];
     for (FoleyInstance &foleyInstance : foleyTypeData->mFoleyInstances) {
         if (foleyInstance.mRefCount != 0) {
-            int *mInstance = foleyInstance.mInstance;
-            (*(void (**)(int *, uint32_t, double))(*mInstance + 28))(mInstance, *(uint32_t *)(*mInstance + 28), theVolume);
+            foleyInstance.mInstance->GetVTable()->SetVolume(foleyInstance.mInstance, theVolume);
+            //            (*(void (**)(int *, uint32_t, double))(*mInstance + 28))(mInstance, *(uint32_t *)(*mInstance + 28), theVolume);
         }
     }
 }
@@ -1492,6 +1494,22 @@ void LawnApp::KillVSResultsScreen() {
         SafeDeleteWidget(mVSResultsMenu);
     }
     mVSResultsMenu = nullptr;
+}
+
+void LawnApp::LoadingCompleted() {
+    LOG_DEBUG("ENTER");
+    mWidgetManager->RemoveWidget(mTitleScreen);
+    SafeDeleteWidget(mTitleScreen);
+    mTitleScreen = nullptr;
+    LOG_DEBUG("MIDDLE");
+    if (mPlayerInfo) {
+        GetVTable()->SetMusicVolume(this, mPlayerInfo->mMusicVolume);
+        GetVTable()->SetSfxVolume(this, mPlayerInfo->mSoundVolume);
+    }
+    ShowGameSelector();
+    LOG_DEBUG("LAST");
+    mSoundSystem->RehookupSoundWithMusicVolume();
+    LOG_DEBUG("EXIT");
 }
 
 void LawnApp::PreNewGame(GameMode theGameMode, bool theLookForSavedGame) {

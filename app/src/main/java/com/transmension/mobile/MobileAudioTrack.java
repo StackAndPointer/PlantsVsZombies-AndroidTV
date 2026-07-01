@@ -32,13 +32,11 @@ class MobileAudioTrack extends AudioTrack {
 
     @Override
     public void play() throws IllegalStateException {
-        Log.d("TAG", "play: ");
         super.play();
         initBuffer();
     }
 
     public void initBuffer() {
-        Log.d("TAG", "initBuffer: ");
         byte[] audioData = new byte[getNativeFrameCount() * this.mFrameSize];
         write(audioData, 0, audioData.length);
     }

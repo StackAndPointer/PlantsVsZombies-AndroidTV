@@ -71,8 +71,8 @@ public:
     bool IsInShovelTutorial() {
         return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsInShovelTutorialAddr)(this);
     }
-    void OnKeyDown(Sexy::KeyCode theKey, unsigned int a3) {
-        reinterpret_cast<bool (*)(CutScene *, Sexy::KeyCode, unsigned int)>(CutScene_OnKeyDownAddr)(this, theKey, a3);
+    bool OnKeyDown(Sexy::KeyCode theKey, unsigned int a3) {
+        return reinterpret_cast<bool (*)(CutScene *, Sexy::KeyCode, unsigned int)>(CutScene_OnKeyDownAddr)(this, theKey, a3);
     }
     bool IsBeforePreloading() {
         return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsBeforePreloadingAddr)(this);
@@ -94,6 +94,9 @@ public:
     }
     bool IsNonScrollingCutscene() {
         return reinterpret_cast<bool (*)(CutScene *)>(CutScene_IsNonScrollingCutsceneAddr)(this);
+    }
+    void KeyDown(Sexy::KeyCode theKey) {
+        reinterpret_cast<void (*)(CutScene *, Sexy::KeyCode)>(CutScene_KeyDownAddr)(this, theKey);
     }
 
     void ShowShovel();

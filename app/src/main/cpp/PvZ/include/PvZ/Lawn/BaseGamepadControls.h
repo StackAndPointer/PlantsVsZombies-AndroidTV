@@ -60,8 +60,8 @@ public:
         void (*OnButtonDown)(BaseGamepadControls *self, int button, int playerIndex, unsigned int flags); // 0x00
         void (*UnknownPureVirtual1)(BaseGamepadControls *self);                                           // 0x04
         void (*UnknownPureVirtual2)(BaseGamepadControls *self);                                           // 0x08
-        void (*OnKeyDown)(BaseGamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);          // 0x0C
-        void (*OnKeyUp)(BaseGamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);            // 0x10
+        bool (*OnKeyDown)(BaseGamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);          // 0x0C
+        bool (*OnKeyUp)(BaseGamepadControls *self, Sexy::KeyCode keyCode, unsigned int flags);            // 0x10
         void (*Update)(BaseGamepadControls *self, float deltaTime);                                       // 0x14
         bool (*BeginDraw)(BaseGamepadControls *self, Sexy::Graphics *graphics);                           // 0x18
         void (*Draw)(BaseGamepadControls *self, Sexy::Graphics *graphics);                                // 0x1C

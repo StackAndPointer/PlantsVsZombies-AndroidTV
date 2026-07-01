@@ -48,9 +48,41 @@ auto GetNewLawnFoleyParamArray() -> FoleyParams (&)[FoleyType::EXTENDED_NUM_FOLE
 // ############################################################ 以下正式开始拟音音效相关声明 ############################################################
 // ######################################################################################################################################################
 
+
+namespace Sexy {
+class AudiereSoundInstance {
+
+public:
+    struct AudiereSoundInstanceVTable {
+        void (*completeDestructor)(Sexy::AudiereSoundInstance *self);                   // 0x00
+        void (*deletingDestructor)(Sexy::AudiereSoundInstance *self);                   // 0x04
+        void (*Release)(Sexy::AudiereSoundInstance *self);                              // 0x08
+        void (*SetBaseVolume)(Sexy::AudiereSoundInstance *self, double volume);         // 0x0C
+        void (*SetBasePan)(Sexy::AudiereSoundInstance *self, int pan);                  // 0x10
+        void (*SetBaseRate)(Sexy::AudiereSoundInstance *self, double rate);             // 0x14
+        void (*AdjustPitch)(Sexy::AudiereSoundInstance *self, double pitch);            // 0x18
+        void (*SetVolume)(Sexy::AudiereSoundInstance *self, double volume);             // 0x1C
+        void (*SetMasterVolumeIdx)(Sexy::AudiereSoundInstance *self, int volumeIndex);  // 0x20
+        void (*SetPan)(Sexy::AudiereSoundInstance *self, int pan);                      // 0x24
+        bool (*Play)(Sexy::AudiereSoundInstance *self, bool looping, bool autoRelease); // 0x28
+        void (*Stop)(Sexy::AudiereSoundInstance *self);                                 // 0x2C
+        bool (*IsPlaying)(Sexy::AudiereSoundInstance *self);                            // 0x30
+        bool (*IsReleased)(Sexy::AudiereSoundInstance *self);                           // 0x34
+        double (*GetVolume)(Sexy::AudiereSoundInstance *self);                          // 0x38
+    };
+
+    const AudiereSoundInstanceVTable *GetVTable() const {
+        return (AudiereSoundInstanceVTable *)vTable;
+    }
+
+public:
+    void **vTable;
+};
+} // namespace Sexy
+
 class FoleyInstance {
 public:
-    int *mInstance;
+    Sexy::AudiereSoundInstance *mInstance;
     int mRefCount;
     bool _paused;
     int mStartTime;
@@ -60,11 +92,15 @@ public:
 struct FoleyTypeData {
     FoleyInstance mFoleyInstances[MAX_FOLEY_INSTANCES];
     int mLastVariationPlayed;
+
+    FoleyTypeData()
+        : mLastVariationPlayed(-1) {}
 };
 
 class TodFoley {
 public:
-    FoleyTypeData mTypeData[MAX_FOLEY_TYPES];
+    //    FoleyTypeData mTypeData[MAX_FOLEY_TYPES];
+    FoleyTypeData mTypeData[EXTENDED_NUM_FOLEY];
 
     bool IsFoleyPlaying(FoleyType theFoleyType) {
         return reinterpret_cast<bool (*)(TodFoley *, FoleyType)>(TodFoley_IsFoleyPlayingAddr)(this, theFoleyType);
@@ -75,10 +111,20 @@ public:
     void CancelPausedFoley() {
         reinterpret_cast<void (*)(TodFoley *)>(TodFoley_CancelPausedFoleyAddr)(this);
     }
+    void ApplyMusicVolume(FoleyInstance *theInstance) {
+        reinterpret_cast<void (*)(TodFoley *, FoleyInstance *)>(TodFoley_ApplyMusicVolumeAddr)(this, theInstance);
+    }
+    void RehookupSoundWithMusicVolume();
+
+
+    TodFoley() = default;
+    ~TodFoley() = default;
 };
 
 inline FoleyInstance *SoundSystemFindInstance(TodFoley *theSoundSystem, FoleyType theFoleyType) {
     return reinterpret_cast<FoleyInstance *(*)(TodFoley *, FoleyType)>(SoundSystemFindInstanceAddr)(theSoundSystem, theFoleyType);
 }
+
+void SoundSystemReleaseFinishedInstances(TodFoley *theSoundSystem);
 
 #endif // PVZ_SEXYAPPFRAMEWORK_TODLIB_COMMON_TOD_FOLEY_H

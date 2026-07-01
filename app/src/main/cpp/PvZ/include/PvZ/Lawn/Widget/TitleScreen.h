@@ -66,17 +66,21 @@ public:
         _constructor(theApp);
     }
 
-    ~TitleScreen() = delete;
+    ~TitleScreen() {
+        _destructor();
+    }
 
     void Draw(Sexy::Graphics *graphics);
     void Update();
     void SwitchState(TitleState state, int duration);
     void VideoCompleted();
+    void ButtonPress(int theId);
 
 protected:
     friend void InitHookFunction();
 
     void _constructor(LawnApp *theApp);
+    void _destructor();
 
 }; // 大小85个整数
 

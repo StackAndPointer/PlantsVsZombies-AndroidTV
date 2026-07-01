@@ -57,6 +57,9 @@ public:
     int GetSoundThrow(const pvzstl::string &theId) {
         return reinterpret_cast<int (*)(ResourceManager *, const pvzstl::string &)>(Sexy_ResourceManager_GetSoundThrowAddr)(this, theId);
     }
+    void ReplaceImage(const pvzstl::string &theImageName, Image *theNewImage) {
+        reinterpret_cast<void (*)(ResourceManager *, const pvzstl::string, Image *)>(Sexy_ResourceManager_ReplaceImageAddr)(this, theImageName, theNewImage);
+    }
 };
 
 } // namespace Sexy

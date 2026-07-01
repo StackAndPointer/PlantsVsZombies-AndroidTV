@@ -109,6 +109,7 @@ void InitHookFunction() {
     homura::HookFunc(LawnApp_HasBeatenChallengeAddr, &LawnApp::HasBeatenChallenge, nullptr);
     homura::HookFunc(LawnApp_ShowVSResultsScreenAddr, &LawnApp::ShowVSResultsScreen, nullptr);
     homura::HookFunc(LawnApp_KillVSResultsScreenAddr, &LawnApp::KillVSResultsScreen, nullptr);
+    homura::HookFunc(LawnApp_LoadingCompletedAddr, &LawnApp::LoadingCompleted, nullptr);
 
 
     homura::HookFunc(Board_DrawAddr, &Board::Draw, &old_Board_Draw);
@@ -597,6 +598,8 @@ void InitHookFunction() {
     homura::HookFunc(BaseGamepadControls_GetGamepadVelocityAddr, &BaseGamepadControls::GetGamepadVelocity, nullptr);
 
     homura::HookFunc(LookupFoleyAddr, &LookupFoley, nullptr);
+    homura::HookFunc(TodFoley_RehookupSoundWithMusicVolumeAddr, &TodFoley::RehookupSoundWithMusicVolume, nullptr);
+    homura::HookFunc(SoundSystemReleaseFinishedInstancesAddr, &SoundSystemReleaseFinishedInstances, nullptr);
 
     // homura::HookFunc(TodDrawStringWrappedHelperAddr, TodDrawStringWrappedHelper, &old_TodDrawStringWrappedHelper);
     homura::HookFunc(MessageWidget_ClearLabelAddr, &CustomMessageWidget::ClearLabel, &old_MessageWidget_ClearLabel);
@@ -699,6 +702,8 @@ void InitHookFunction() {
     homura::HookFunc(TitleScreen_DrawAddr, &TitleScreen::Draw, &old_TitleScreen_Draw);
     homura::HookFunc(TitleScreen_UpdateAddr, &TitleScreen::Update, &old_TitleScreen_Update);
     homura::HookFunc(TitleScreen_SwitchStateAddr, &TitleScreen::SwitchState, nullptr);
+    homura::HookFunc(TitleScreen__destructorAddr, &TitleScreen::_destructor, nullptr);
+    homura::HookFunc(TitleScreen_ButtonPressAddr, &TitleScreen::ButtonPress, nullptr);
     homura::HookFunc(TitleScreen_VideoCompletedAddr, &TitleScreen::VideoCompleted, nullptr);
 }
 
