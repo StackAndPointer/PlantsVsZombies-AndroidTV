@@ -639,6 +639,9 @@ public:
     bool IsScaryPotterDaveTalking() {
         return reinterpret_cast<bool (*)(Board *)>(Board_IsScaryPotterDaveTalkingAddr)((this));
     }
+    unsigned int SeedNotRecommendedForLevel(SeedType theSeedType) {
+        return reinterpret_cast<unsigned int (*)(Board *, SeedType)>(Board_SeedNotRecommendedForLevelAddr)(this, theSeedType);
+    }
 
     Board(LawnApp *theApp) {
         _constructor(theApp);

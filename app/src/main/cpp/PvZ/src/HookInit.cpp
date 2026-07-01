@@ -316,6 +316,7 @@ void InitHookFunction() {
     homura::HookFunc(SeedChooserScreen_UpdateAfterPurchaseAddr, &SeedChooserScreen::UpdateAfterPurchase, nullptr);
     homura::HookFunc(SeedChooserScreen_PickRandomSeedsAddr, &SeedChooserScreen::PickRandomSeeds, nullptr);
     homura::HookFunc(SeedChooserScreen_SeedNotAllowedToPickAddr, &SeedChooserScreen::SeedNotAllowedToPick, &old_SeedChooserScreen_SeedNotAllowedToPick);
+    homura::HookFunc(SeedChooserScreen_SeedNotRecommendedToPickAddr, &SeedChooserScreen::SeedNotRecommendedToPick, nullptr);
     homura::HookFunc(SeedChooserScreen_ClickedSeedInBankAddr, &SeedChooserScreen::ClickedSeedInBank, nullptr);
     homura::HookFunc(SeedChooserScreen_GameButtonDownAddr, &SeedChooserScreen::GameButtonDown, nullptr);
     homura::HookFunc(SeedChooserScreen_DrawPacketAddr, &SeedChooserScreen::DrawPacket, nullptr);

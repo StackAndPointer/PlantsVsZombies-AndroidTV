@@ -163,9 +163,6 @@ public:
     bool CancelLawnView() {
         return reinterpret_cast<bool (*)(SeedChooserScreen *)>(SeedChooserScreen_CancelLawnViewAddr)(this);
     }
-    bool SeedNotRecommendedToPick(SeedType theSeedType) {
-        return reinterpret_cast<bool (*)(SeedChooserScreen *, SeedType)>(SeedChooserScreen_SeedNotRecommendedToPickAddr)(this, theSeedType);
-    }
     bool SeedNotAllowedDuringTrial(SeedType theSeedType) {
         return reinterpret_cast<bool (*)(SeedChooserScreen *, SeedType)>(SeedChooserScreen_SeedNotAllowedDuringTrialAddr)(this, theSeedType);
     }
@@ -181,6 +178,9 @@ public:
     int PickFromWeightedArrayUsingSpecialRandSeed(TodWeightedArray *theArray, int theCount, Sexy::MTRand &theLevelRNG) {
         return reinterpret_cast<int (*)(SeedChooserScreen *, TodWeightedArray *, int, Sexy::MTRand &)>(SeedChooserScreen_PickFromWeightedArrayUsingSpecialRandSeedAddr)(
             this, theArray, theCount, theLevelRNG);
+    }
+    void UpdateViewLawn() {
+        reinterpret_cast<void (*)(SeedChooserScreen *)>(SeedChooserScreen_UpdateViewLawnAddr)(this);
     }
 
     void AddedToManager(Sexy::WidgetManager *theWidgetManager);
@@ -200,9 +200,6 @@ public:
     void CrazyDavePickSeeds();
     void OnStartButton();
     void Update();
-    void UpdateViewLawn() {
-        reinterpret_cast<void (*)(SeedChooserScreen *)>(SeedChooserScreen_UpdateViewLawnAddr)(this);
-    }
     void UpdateImitaterButton();
     void UpdateCursor();
     void UpdateAfterPurchase();
@@ -210,6 +207,7 @@ public:
     void CloseSeedChooser();
     void LandFlyingSeed(ChosenSeed &theChosenSeed);
     bool SeedNotAllowedToPick(SeedType theSeedType);
+    unsigned int SeedNotRecommendedToPick(SeedType theSeedType);
     SeedType FindSeedInBank(int theIndexInBank, int thePlayerIndex);
     void ClickedSeedInBank(ChosenSeed &theChosenSeed, unsigned int thePlayerIndex);
     void OnKeyDown(Sexy::KeyCode theKey, unsigned int thePlayerIndex);

@@ -220,6 +220,7 @@ bool LoadGameMain() {
     Board_FreezeEffectsForCutsceneAddr = libGameMain.GetSymbol("_ZN5Board24FreezeEffectsForCutsceneEb");
     Board_FindUmbrellaPlantAddr = libGameMain.GetSymbol("_ZN5Board17FindUmbrellaPlantEii");
     Board_IsZombieTypePoolOnlyAddr = libGameMain.GetSymbol("_ZN5Board20IsZombieTypePoolOnlyE10ZombieType");
+    Board_SeedNotRecommendedForLevelAddr = libGameMain.GetSymbol("_ZN5Board26SeedNotRecommendedForLevelE8SeedType");
 
 
     SyncBoardAddr = libGameMain.GetSymbol("_Z9SyncBoardP15SaveGameContextP5Board");

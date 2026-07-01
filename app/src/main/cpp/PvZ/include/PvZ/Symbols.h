@@ -223,6 +223,7 @@ inline void *Board_GetMPTargetCountAddr;
 inline void *Board_FreezeEffectsForCutsceneAddr;
 inline void *Board_FindUmbrellaPlantAddr;
 inline void *Board_IsZombieTypePoolOnlyAddr;
+inline void *Board_SeedNotRecommendedForLevelAddr;
 
 inline void *SyncBoardAddr;
 inline void *FixBoardAfterLoadAddr;

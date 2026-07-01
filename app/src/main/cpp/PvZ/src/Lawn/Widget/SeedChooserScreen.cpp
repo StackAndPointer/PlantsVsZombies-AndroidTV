@@ -923,6 +923,18 @@ bool SeedChooserScreen::SeedNotAllowedToPick(SeedType theSeedType) {
     return old_SeedChooserScreen_SeedNotAllowedToPick(this, theSeedType);
 }
 
+unsigned int SeedChooserScreen::SeedNotRecommendedToPick(SeedType theSeedType) {
+    uint aRecFlags = mBoard->SeedNotRecommendedForLevel(theSeedType);
+    if (TestBit(aRecFlags, NOT_RECOMMENDED_NOCTURNAL) && PickedPlantType(SEED_INSTANT_COFFEE)) {
+        SetBit(aRecFlags, NOT_RECOMMENDED_NOCTURNAL, false);
+    }
+    if (mBoard->StageHasPool() && (theSeedType == SeedType::SEED_ZOMBIE_DANCER || theSeedType == SeedType::SEED_ZOMBIE_MOUND || theSeedType == SeedType::SEED_ZOMBIE_JACKSON)) {
+        aRecFlags = 0;
+        SetBit(aRecFlags, NotRecommend::NOT_RECOMMENDED_FOR_CHALLENGE, true);
+    }
+    return aRecFlags;
+}
+
 bool SeedChooserScreen::HasPacket(SeedType theSeedType, bool theIsZombie) {
     if (mPageIndex == 1 && theSeedType >= SEED_ICEBERG_LETTUCE && theSeedType < NUM_SEEDS_IN_CHOOSER_EXTENDED) {
         return true;
@@ -2219,17 +2231,19 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
             RemoveToolTip(thePlayerIndex);
 
             const int seedPacketIndex = GetSeedPacketIndex(aSeedType);
-            const unsigned int recommendedFlags = SeedNotRecommendedToPick(aSeedType);
+            const unsigned int aRecFlags = SeedNotRecommendedToPick(aSeedType);
             if (SeedNotAllowedToPick(aSeedType)) {
                 aToolTip->SetWarningText("[NOT_ALLOWED_ON_THIS_LEVEL]");
             } else if (SeedNotAllowedDuringTrial(aSeedType)) {
                 aToolTip->SetWarningText("[FULL_VERSION_ONLY]");
             } else if (mChosenSeedsExtended[seedPacketIndex].mSeedState == SEED_IN_BANK && mChosenSeedsExtended[seedPacketIndex].mCrazyDavePicked) {
                 aToolTip->SetWarningText("[CRAZY_DAVE_WANTS]");
-            } else if ((recommendedFlags & 1U) != 0) {
-                aToolTip->SetWarningText("[NOCTURNAL_WARNING]");
-            } else if (recommendedFlags != 0) {
-                aToolTip->SetWarningText("[NOT_RECOMMENDED_FOR_LEVEL]");
+            } else if (aRecFlags != 0U) {
+                if (TestBit(aRecFlags, NOT_RECOMMENDED_NOCTURNAL)) {
+                    aToolTip->SetWarningText("[NOCTURNAL_WARNING]");
+                } else {
+                    aToolTip->SetWarningText("[NOT_RECOMMENDED_FOR_LEVEL]");
+                }
             } else {
                 aToolTip->SetWarningText("");
             }
