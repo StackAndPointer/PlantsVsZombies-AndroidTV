@@ -277,7 +277,6 @@ void TitleScreen::_constructor(LawnApp *theApp) {
     }
 }
 void TitleScreen::_destructor() {
-    LOG_DEBUG("ENTER");
     Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForTitleScreenAddr) + 8);
     ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kTitleScreenButtonListenerVtableOffset);
     delete mStartButton;
@@ -287,7 +286,6 @@ void TitleScreen::_destructor() {
     if (mGuide) {
         ((void (*)(Sexy::Image *))mGuide->vTable[1])(mGuide);
     }
-    LOG_DEBUG("MIDDLE");
     mApp->mResourceManager->ReplaceImage("IMAGE_TITLESCREEN", nullptr);
     mApp->mResourceManager->ReplaceImage("IMAGE_TITLESCREEN_BALL", nullptr);
     mApp->mResourceManager->ReplaceImage("IMAGE_TITLESCREEN_GLOW", nullptr);
@@ -301,9 +299,7 @@ void TitleScreen::_destructor() {
         mIsPlayingIntroVideo = false;
     }
     ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
-    LOG_DEBUG("LAST");
     Sexy::Widget::_destructor();
-    LOG_DEBUG("EXIT");
 }
 
 void TitleScreen::VideoCompleted() {
@@ -311,15 +307,11 @@ void TitleScreen::VideoCompleted() {
 }
 
 void TitleScreen::ButtonPress(int theId) {
-    LOG_DEBUG("ENTER {}", theId);
     mApp->GetVTable()->PlaySampleWithLoopFlag(mApp, Sexy::SOUND_BUTTONCLICK, true);
     if (mLoadingThreadComplete && mCurBarWidth == mTotalBarWidth) {
         if (mStartButton->mGamepadIndex > 0) {
-            LOG_DEBUG("MIDDLE {}", theId);
             mApp->SwapGamepadId(0, mStartButton->mGamepadIndex);
         }
-        LOG_DEBUG("VTABLE {}", theId);
         mApp->LoadingCompleted();
     }
-    LOG_DEBUG("EXIT {}", theId);
 }

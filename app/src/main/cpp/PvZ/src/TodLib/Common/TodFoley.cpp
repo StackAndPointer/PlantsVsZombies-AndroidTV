@@ -34,7 +34,6 @@ FoleyParams *LookupFoley(FoleyType theFoleyType) {
 }
 
 void SoundSystemReleaseFinishedInstances(TodFoley *theSoundSystem) {
-    LOG_DEBUG("ENTER");
     for (int aFoleyIndex = 0; aFoleyIndex < gFoleyParamArraySize; ++aFoleyIndex) {
 
         FoleyTypeData &aTypeData = theSoundSystem->mTypeData[aFoleyIndex];
@@ -46,29 +45,21 @@ void SoundSystemReleaseFinishedInstances(TodFoley *theSoundSystem) {
             if (aFoleyInstance.mRefCount == 0) {
                 continue;
             }
-            LOG_DEBUG("1 aFoleyIndex={} anInstanceIndex={}", aFoleyIndex, anInstanceIndex);
             if (aFoleyInstance._paused) {
                 continue;
             }
-
-            LOG_DEBUG("2");
             if (aFoleyInstance.mInstance->GetVTable()->IsPlaying(aFoleyInstance.mInstance)) {
                 continue;
             }
-            LOG_DEBUG("3");
             aFoleyInstance.mInstance->GetVTable()->Release(aFoleyInstance.mInstance);
-            LOG_DEBUG("4");
             aFoleyInstance.mInstance = nullptr;
             aFoleyInstance.mRefCount = 0;
-            LOG_DEBUG("5");
         }
     }
 }
 
 void TodFoley::RehookupSoundWithMusicVolume() {
-    LOG_DEBUG("ENTER");
     SoundSystemReleaseFinishedInstances(this);
-    LOG_DEBUG("MIDDLE");
     for (int aFoleyIndex = 0; aFoleyIndex < gFoleyParamArraySize; ++aFoleyIndex) {
         FoleyParams *aFoleyParams = LookupFoley(static_cast<FoleyType>(aFoleyIndex));
 
@@ -87,7 +78,6 @@ void TodFoley::RehookupSoundWithMusicVolume() {
             }
         }
     }
-    LOG_DEBUG("EXIT");
 }
 
 auto GetNewLawnFoleyParamArray() -> FoleyParams (&)[FoleyType::EXTENDED_NUM_FOLEY] {

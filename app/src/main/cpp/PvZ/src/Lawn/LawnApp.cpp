@@ -1497,19 +1497,15 @@ void LawnApp::KillVSResultsScreen() {
 }
 
 void LawnApp::LoadingCompleted() {
-    LOG_DEBUG("ENTER");
     mWidgetManager->RemoveWidget(mTitleScreen);
     SafeDeleteWidget(mTitleScreen);
     mTitleScreen = nullptr;
-    LOG_DEBUG("MIDDLE");
     if (mPlayerInfo) {
         GetVTable()->SetMusicVolume(this, mPlayerInfo->mMusicVolume);
         GetVTable()->SetSfxVolume(this, mPlayerInfo->mSoundVolume);
     }
     ShowGameSelector();
-    LOG_DEBUG("LAST");
     mSoundSystem->RehookupSoundWithMusicVolume();
-    LOG_DEBUG("EXIT");
 }
 
 void LawnApp::PreNewGame(GameMode theGameMode, bool theLookForSavedGame) {
