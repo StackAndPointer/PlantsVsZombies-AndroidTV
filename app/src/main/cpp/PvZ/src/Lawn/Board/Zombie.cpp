@@ -3185,7 +3185,7 @@ void Zombie::RiseFromGrave(int theCol, int theRow) {
     mZombiePhase = ZombiePhase::PHASE_RISING_FROM_GRAVE;
     mPhaseCounter = 150;
 
-    if (mBoard->StageHasPool() && !mApp->IsVSMode()) { // 修复对战泳池战场闪退(Reanimation::GetTransformAtTime)
+    if (mBoard->StageHasPool()) {
         mAltitude = -150.0f;
         mInPool = true;
         mPhaseCounter = 50;
@@ -3197,28 +3197,30 @@ void Zombie::RiseFromGrave(int theCol, int theRow) {
         ReanimIgnoreClipRect("Zombie_outerarm_hand", false);
         ReanimIgnoreClipRect("Zombie_innerarm3", false);
 
-        Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
-        TodParticleSystem *aParticle = mApp->AddTodParticle(0.0f, 0.0f, 0, ParticleEffect::PARTICLE_ZOMBIE_SEAWEED);
-        OverrideParticleScale(aParticle);
+        if (GetZombieDefinition(mZombieType).mReanimationType == ReanimationType::REANIM_ZOMBIE) { // 修复泳池放置非领带类僵尸闪退
+            Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+            TodParticleSystem *aParticle = mApp->AddTodParticle(0.0f, 0.0f, 0, ParticleEffect::PARTICLE_ZOMBIE_SEAWEED);
+            OverrideParticleScale(aParticle);
 
-        if (mZombieType == ZombieType::ZOMBIE_TRAFFIC_CONE && aParticle) {
-            aBodyReanim->AttachParticleToTrack("anim_cone", aParticle, 37.0f, 20.0f);
-        } else if (mZombieType == ZombieType::ZOMBIE_PAIL && aParticle) {
-            aBodyReanim->AttachParticleToTrack("anim_bucket", aParticle, 37.0f, 20.0f);
-        } else if (aParticle) {
-            aBodyReanim->AttachParticleToTrack("anim_head1", aParticle, 30.0f, 20.0f);
-        }
+            if (mZombieType == ZombieType::ZOMBIE_TRAFFIC_CONE && aParticle) {
+                aBodyReanim->AttachParticleToTrack("anim_cone", aParticle, 37.0f, 20.0f);
+            } else if (mZombieType == ZombieType::ZOMBIE_PAIL && aParticle) {
+                aBodyReanim->AttachParticleToTrack("anim_bucket", aParticle, 37.0f, 20.0f);
+            } else if (aParticle) {
+                aBodyReanim->AttachParticleToTrack("anim_head1", aParticle, 30.0f, 20.0f);
+            }
 
-        TodParticleSystem *aParticle2 = mApp->AddTodParticle(0.0f, 0.0f, 0, ParticleEffect::PARTICLE_ZOMBIE_SEAWEED);
-        if (aParticle2) {
-            OverrideParticleScale(aParticle2);
-            aBodyReanim->AttachParticleToTrack("Zombie_outerarm_upper", aParticle2, 5.0f, 5.0f);
-        }
+            TodParticleSystem *aParticle2 = mApp->AddTodParticle(0.0f, 0.0f, 0, ParticleEffect::PARTICLE_ZOMBIE_SEAWEED);
+            if (aParticle2) {
+                OverrideParticleScale(aParticle2);
+                aBodyReanim->AttachParticleToTrack("Zombie_outerarm_upper", aParticle2, 5.0f, 5.0f);
+            }
 
-        TodParticleSystem *aParticle3 = mApp->AddTodParticle(0.0f, 0.0f, 0, ParticleEffect::PARTICLE_ZOMBIE_SEAWEED);
-        if (aParticle3) {
-            OverrideParticleScale(aParticle3);
-            aBodyReanim->AttachParticleToTrack("Zombie_duckytube", aParticle3, 77.0f, 20.0f);
+            TodParticleSystem *aParticle3 = mApp->AddTodParticle(0.0f, 0.0f, 0, ParticleEffect::PARTICLE_ZOMBIE_SEAWEED);
+            if (aParticle3) {
+                OverrideParticleScale(aParticle3);
+                aBodyReanim->AttachParticleToTrack("Zombie_duckytube", aParticle3, 77.0f, 20.0f);
+            }
         }
 
         PoolSplash(false);

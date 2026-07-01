@@ -1248,12 +1248,18 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 aBungeeZombie->mRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, aGridY, 7);
             } else if (aZombieType == ZombieType::ZOMBIE_FLAG) {
                 mBoard->DisplayAdviceAgain("[ADVICE_HUGE_WAVE]", MessageStyle::MESSAGE_STYLE_HUGE_WAVE, AdviceType::ADVICE_HUGE_WAVE);
+                mGameObject->mApp->PlaySample(Sexy::SOUND_HUGE_WAVE); // 播放大波僵尸音效
                 mBoard->SpawnZombieWave();
-            } else if (Challenge::IsMPZombieTypeAddInRow(aZombieType) || mBoard->mPlantRow[aGridY] == PlantRowType::PLANTROW_POOL) {
+            } else if (Challenge::IsMPZombieTypeAddInRow(aZombieType)) {
                 mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, true);
             } else {
-                Zombie *aZombie = mBoard->AddZombie(aZombieType, Zombie::ZOMBIE_WAVE_VS, false);
-                if (aZombie) {
+                Zombie *aZombie = nullptr;
+                if (mBoard->mPlantRow[aGridY] == PlantRowType::PLANTROW_POOL) {
+                    aZombie = mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, false);
+                } else {
+                    aZombie = mBoard->AddZombie(aZombieType, Zombie::ZOMBIE_WAVE_VS, false);
+                }
+                if (aZombie != nullptr) {
                     if (mBoard->StageHasRoof()) {
                         Zombie *aBungeeZombie = mBoard->AddZombie(ZombieType::ZOMBIE_BUNGEE, Zombie::ZOMBIE_WAVE_VS, false);
                         aBungeeZombie->BungeeDropZombie(aZombie, aGridX, aGridY);

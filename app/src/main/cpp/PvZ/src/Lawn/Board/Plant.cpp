@@ -1554,6 +1554,7 @@ static int GetVSCostBalanced(SeedType theSeedType) {
             break;
         case SeedType::SEED_ICESHROOM:       // 75 -> 25
         case SeedType::SEED_ZOMBIE_TRASHCAN: // 50 -> 25
+        case SeedType::SEED_ZOMBIE_SNORKEL:  // 125 -> 25
             aCost = 25;
             break;
         case SeedType::SEED_HYPNOSHROOM:         // 75 -> 50
@@ -1561,7 +1562,6 @@ static int GetVSCostBalanced(SeedType theSeedType) {
         case SeedType::SEED_PUMPKINSHELL:        // 125 -> 50
         case SeedType::SEED_ZOMBIE_TRAFFIC_CONE: // 75 -> 50
         case SeedType::SEED_ZOMBIE_BOBSLED:      // 75 -> 50
-        case SeedType::SEED_ZOMBIE_SNORKEL:      // 125 -> 50
             aCost = 50;
             break;
         case SeedType::SEED_PEASHOOTER:           // 100 -> 75

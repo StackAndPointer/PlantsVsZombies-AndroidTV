@@ -1058,8 +1058,9 @@ bool Challenge::IsMPZombieTypeCanGoInPool(ZombieType theZombieType) {
     if (IsMPZombieTypeAddInRow(theZombieType))
         return false;
 
-    return theZombieType != ZombieType::ZOMBIE_POLEVAULTER && theZombieType != ZombieType::ZOMBIE_DOOR && theZombieType != ZombieType::ZOMBIE_POGO && theZombieType != ZombieType::ZOMBIE_YETI
-        && theZombieType != ZombieType::ZOMBIE_LADDER && theZombieType != ZombieType::ZOMBIE_TRASHCAN;
+    return theZombieType == ZombieType::ZOMBIE_NORMAL || theZombieType == ZombieType::ZOMBIE_TRAFFIC_CONE || theZombieType == ZombieType::ZOMBIE_PAIL || theZombieType == ZombieType::ZOMBIE_FLAG
+        || theZombieType == ZombieType::ZOMBIE_FOOTBALL || theZombieType == ZombieType::ZOMBIE_BUNGEE || theZombieType == ZombieType::ZOMBIE_IMP || theZombieType == ZombieType::ZOMBIE_PEA_HEAD
+        || theZombieType == ZombieType::ZOMBIE_GATLING_HEAD || theZombieType == ZombieType::ZOMBIE_TALLNUT_HEAD;
 }
 
 void Challenge::DrawWeather(Sexy::Graphics *g) {

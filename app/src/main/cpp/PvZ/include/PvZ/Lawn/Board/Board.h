@@ -776,6 +776,7 @@ public:
     [[nodiscard]] ZombieType PickGraveRisingZombieTypeMP(int theMoundLevel) const;
     static bool IsZombieTypeSpawnedOnly(ZombieType theZombieType);
     void ProcessDeleteQueue();
+    static bool IsZombieTypePoolOnly(ZombieType theZombieType);
 
     void MouseMove(int x, int y);
     void MouseDown(int x, int y, int theClickCount);

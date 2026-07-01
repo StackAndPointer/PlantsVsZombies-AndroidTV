@@ -191,6 +191,7 @@ void InitHookFunction() {
     homura::HookFunc(Board_PlantsWonAddr, &Board::PlantsWon, &old_Board_PlantsWon);
     homura::HookFunc(Board_AddALadderAddr, &Board::AddALadder, nullptr);
     homura::HookFunc(Board_AddACraterAddr, &Board::AddACrater, nullptr);
+    homura::HookFunc(Board_IsZombieTypePoolOnlyAddr, &Board::IsZombieTypePoolOnly, nullptr);
 
 
     homura::HookFunc(FixBoardAfterLoadAddr, &FixBoardAfterLoad, &old_FixBoardAfterLoad);

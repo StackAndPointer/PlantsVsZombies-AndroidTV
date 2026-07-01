@@ -217,6 +217,7 @@ bool LoadGameMain() {
     Board_GetMPTargetCountAddr = libGameMain.GetSymbol("_ZN5Board16GetMPTargetCountEv");
     Board_FreezeEffectsForCutsceneAddr = libGameMain.GetSymbol("_ZN5Board24FreezeEffectsForCutsceneEb");
     Board_FindUmbrellaPlantAddr = libGameMain.GetSymbol("_ZN5Board17FindUmbrellaPlantEii");
+    Board_IsZombieTypePoolOnlyAddr = libGameMain.GetSymbol("_ZN5Board20IsZombieTypePoolOnlyE10ZombieType");
 
 
     SyncBoardAddr = libGameMain.GetSymbol("_Z9SyncBoardP15SaveGameContextP5Board");

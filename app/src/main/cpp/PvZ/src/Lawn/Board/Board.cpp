@@ -3428,13 +3428,8 @@ void Board::SpawnZombiesFromGraves() {
 }
 
 void Board::SpawnZombieWave() {
-    // 在对战模式中放出一大波僵尸时播放大波僵尸音效
-    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-        mApp->PlaySample(Sexy::SOUND_HUGE_WAVE);
-    }
-
     // 在联机对战模式同步大波僵尸事件
-    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+    if (mApp->IsVSMode()) {
         if (gTcpClientSocket) {
             BaseEvent event = {EventType::EVENT_SERVER_BOARD_ZOMBIE_HUGE_WAVE};
             netplay::PutEvent(event);
@@ -6276,6 +6271,10 @@ bool Board::RowCanHaveZombieType(int theRow, ZombieType theZombieType) {
         return Zombie::ZombieTypeCanGoInPool(theZombieType);
     }
 
+    if (mApp->IsVSMode() && mPlantRow[theRow] == PlantRowType::PLANTROW_POOL) {
+        return true; // 修复泳池对战放置旗帜僵尸在水路不出怪
+    }
+
     return old_Board_RowCanHaveZombieType(this, theRow, theZombieType);
 }
 
@@ -7378,4 +7377,8 @@ ZombieType Board::PickGraveRisingZombieTypeMP(int theMoundLevel) const {
 
 bool Board::IsZombieTypeSpawnedOnly(ZombieType theZombieType) {
     return (theZombieType == ZombieType::ZOMBIE_BACKUP_DANCER || theZombieType == ZombieType::ZOMBIE_BOBSLED || theZombieType == ZombieType::ZOMBIE_IMP);
+}
+
+bool Board::IsZombieTypePoolOnly(ZombieType theZombieType) {
+    return (theZombieType == ZombieType::ZOMBIE_SNORKEL || theZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER);
 }

@@ -194,7 +194,9 @@ void CutScene::PlaceLawnItems() {
                 }
             }
             if (mBoard->StageHasPool() && (aRow == 2 || aRow == 3)) {
-                mBoard->AddPlant(0, aRow, SeedType::SEED_LILYPAD, SeedType::SEED_NONE, -1, true);
+                for (int aCol = 0; aCol < 4; ++aCol) {
+                    mBoard->AddPlant(aCol, aRow, SeedType::SEED_LILYPAD, SeedType::SEED_NONE, -1, true);
+                }
             }
         }
     }
