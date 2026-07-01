@@ -193,6 +193,11 @@ Zombie *Projectile::FindCollisionTarget() {
                 continue;
             }
 
+            // 修复对地发射的尖刺能命中气球僵尸
+            if (mProjectileType == ProjectileType::PROJECTILE_SPIKE && mDamageRangeFlags == DamageRangeFlags::DAMAGES_FLYING && aZombie->IsFlying()) {
+                continue;
+            }
+
             Rect aZombieRect = aZombie->GetZombieRect();
             if (GetRectOverlap(aProjectileRect, aZombieRect) > 0) {
                 if (IsPiercingSpike(this) && HasHitZombie(this, aZombie)) {

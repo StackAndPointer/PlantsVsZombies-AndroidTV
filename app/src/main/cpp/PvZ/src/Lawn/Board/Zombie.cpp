@@ -269,9 +269,9 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
 
         case ZombieType::ZOMBIE_SUNDAY_EDITION:
             mZombieAttackRect = Rect(20, 0, 50, 115);
-            mZombiePhase = ZombiePhase::PHASE_SUNDAY_EDITION_READING;
+            mZombiePhase = ZombiePhase::PHASE_NEWSPAPER_READING;
             mShieldType = ShieldType::SHIELDTYPE_SUNDAY_EDITION;
-            mShieldHealth = 300;
+            mShieldHealth = 500;
             mBodyHealth = 500;
             mVariant = false;
             AttachShield();
@@ -3522,11 +3522,8 @@ void Zombie::EatPlant(Plant *thePlant) {
             thePlant->mPlantHealth -= DAMAGE_PER_EAT;
         }
     }
-    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
-        thePlant->mPlantHealth -= DAMAGE_PER_EAT;
-        if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
-            thePlant->mPlantHealth -= 2 * DAMAGE_PER_EAT;
-        }
+    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION && mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
+        thePlant->mPlantHealth -= DAMAGE_PER_EAT * 3;
     }
 
     if (thePlant->mPlantHealth <= 0) {
@@ -3552,11 +3549,8 @@ void Zombie::EatPlant(Plant *thePlant) {
 
 void Zombie::EatZombie(Zombie *theZombie) {
     theZombie->TakeDamage(DAMAGE_PER_EAT, 9U);
-    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
-        theZombie->TakeDamage(DAMAGE_PER_EAT, 9U);
-        if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
-            theZombie->TakeDamage(DAMAGE_PER_EAT * 2, 9U);
-        }
+    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION && mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
+        theZombie->TakeDamage(DAMAGE_PER_EAT * 3, 9U);
     }
     StartEating();
     if (theZombie->mBodyHealth <= 0) {
@@ -4978,8 +4972,7 @@ void Zombie::DropArm(unsigned int theDamageFlags) {
             return;
         }
         if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_INTO_POOL || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_INTO_POOL
-            || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP || mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_READING
-            || mZombiePhase == ZombiePhase::PHASE_SUNDAY_EDITION_READING) {
+            || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP || mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_READING) {
             return;
         }
         if (!mHasArm) {
@@ -5810,7 +5803,7 @@ void Zombie::PickRandomSpeed() {
         mVelX = 0.9f;
     } else if (mZombiePhase == ZombiePhase::PHASE_YETI_RUNNING) {
         mVelX = 0.8f;
-    } else if (mZombieType == ZombieType::ZOMBIE_YETI || mZombiePhase == ZombiePhase::PHASE_SUNDAY_EDITION_READING) {
+    } else if (mZombieType == ZombieType::ZOMBIE_YETI) {
         mVelX = 0.4f;
     } else if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER || mZombieType == ZombieType::ZOMBIE_POGO || mZombieType == ZombieType::ZOMBIE_FLAG
                || mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING || mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON
