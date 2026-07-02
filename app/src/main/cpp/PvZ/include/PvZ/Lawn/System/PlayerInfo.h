@@ -107,7 +107,7 @@ public:
     Mode3RecentServerStorage serverStorage;
     bool mRenamed;
     bool mUnused675[70];
-    bool mIsHapticFeedbackClosed;
+    bool mHapticFeedbackEnabled;
     bool mZombatarEnabled;
     unsigned char mZombatarHat;
     unsigned char mZombatarHatColor;

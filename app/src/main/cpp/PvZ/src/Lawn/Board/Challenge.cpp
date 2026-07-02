@@ -377,7 +377,7 @@ void Challenge::Update() {
         }
         if (mSuddenDeathCounter == MP_SUDDEN_DEATH_START_COUNTER) {
             aClockReanim->PlayReanim("anim_ring", REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
-            TriggerVibration(VibrationEffect::VIVRATION_ZOMBIE_RISE_FROM_GRAVE);
+            TriggerVibration(VibrationEffect::VIBRATION_ZOMBIE_RISE_FROM_GRAVE);
         }
 
         UpdateVSAddPlants();
@@ -1042,9 +1042,9 @@ void Challenge::MouseDownWhackAZombie(int theX, int theY, int thePlayerIndex) co
             mBoard->ClearCursor(thePlayerIndex);
         }
 
-        TriggerVibration(VibrationEffect::VIVRATION_WHACK_HIT);
+        TriggerVibration(VibrationEffect::VIBRATION_WHACK_HIT);
     } else {
-        TriggerVibration(VibrationEffect::VIVRATION_WHACK_MISS);
+        TriggerVibration(VibrationEffect::VIBRATION_WHACK_MISS);
     }
 }
 

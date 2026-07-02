@@ -770,7 +770,7 @@ void Plant::DoSpecial_Origin() {
             mApp->AddTodParticle(aPosX, aPosY, (int)RenderLayer::RENDER_LAYER_TOP, ParticleEffect::PARTICLE_ICE_TRAP);
 
             Die();
-            TriggerVibration(VibrationEffect::VIVRATION_ICE_TRAP);
+            TriggerVibration(VibrationEffect::VIBRATION_ICE_TRAP);
             break;
         }
         case SeedType::SEED_POTATOMINE: {
@@ -2763,7 +2763,7 @@ void Plant::UpdateSquash() {
         }
     } else if (mState == PlantState::STATE_SQUASH_PRE_LAUNCH) {
         if (mStateCountdown == 1) {
-            TriggerVibration(VibrationEffect::VIVRATION_JUMP); // 这窝瓜有力气!!
+            TriggerVibration(VibrationEffect::VIBRATION_JUMP); // 这窝瓜有力气!!
         }
         if (isRemoteClient) {
             return;

@@ -35,7 +35,7 @@ void SettingsDialog::_constructor(LawnApp *theApp) {
     mHardwareAccelerationCheckbox = MakeNewCheckbox(SettingsDialog::SettingsDialog_HardwareAcceleration, &mCheckboxListener, this, theApp->Is3DAccelerated());
     mHardwareAccelerationCheckbox->Resize(80, 260, 300, 50);
 
-    mHapticFeedbackCheckbox = MakeNewCheckbox(SettingsDialog::SettingsDialog_HapticFeedback, &mCheckboxListener, this, !theApp->mPlayerInfo->mIsHapticFeedbackClosed);
+    mHapticFeedbackCheckbox = MakeNewCheckbox(SettingsDialog::SettingsDialog_HapticFeedback, &mCheckboxListener, this, theApp->mPlayerInfo->mHapticFeedbackEnabled);
     mHapticFeedbackCheckbox->Resize(80, 320, 300, 50);
 
     mSoundSlider->mFocusLinks[1] = mHardwareAccelerationCheckbox;
@@ -95,7 +95,7 @@ void SettingsDialog::CheckboxChecked(int theId, bool isChecked) {
             lawnApp->Set3DAccelerated(isChecked);
             break;
         case SettingsDialog::SettingsDialog_HapticFeedback:
-            lawnApp->mPlayerInfo->mIsHapticFeedbackClosed = !isChecked;
+            lawnApp->mPlayerInfo->mHapticFeedbackEnabled = isChecked;
             break;
         default:
             break;

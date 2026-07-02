@@ -676,5 +676,5 @@ void SeedPacket::SlotMachineStart() {
     mSlotMachineCountDown = 400;
     PickNextSlotMachineSeed();
 
-    TriggerVibration(VibrationEffect::VIVRATION_SLOT_MACHINE);
+    TriggerVibration(VibrationEffect::VIBRATION_SLOT_MACHINE);
 }

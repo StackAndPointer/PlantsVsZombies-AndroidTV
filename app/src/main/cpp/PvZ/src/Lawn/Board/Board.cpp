@@ -3572,10 +3572,10 @@ void Board::SpawnZombiesFromGraves() {
 
     if (StageHasRoof()) {
         SpawnZombiesFromSky();
-        TriggerVibration(VibrationEffect::VIVRATION_BUNGEE_LANDING);
+        TriggerVibration(VibrationEffect::VIBRATION_BUNGEE_LANDING);
     } else if (StageHasPool()) {
         SpawnZombiesFromPool();
-        TriggerVibration(VibrationEffect::VIVRATION_ZOMBIE_RISE_FROM_POOL);
+        TriggerVibration(VibrationEffect::VIBRATION_ZOMBIE_RISE_FROM_POOL);
         return;
     }
 
@@ -3602,7 +3602,7 @@ void Board::SpawnZombiesFromGraves() {
         }
     }
 
-    TriggerVibration(VibrationEffect::VIVRATION_ZOMBIE_RISE_FROM_GRAVE);
+    TriggerVibration(VibrationEffect::VIBRATION_ZOMBIE_RISE_FROM_GRAVE);
 }
 
 void Board::SpawnZombieWave() {
@@ -6464,14 +6464,14 @@ void Board::ShakeBoard(int theShakeAmountX, int theShakeAmountY) {
         case 4: // PHASE_SQUASH_FALLING
         case 3: // GARGANTUAR_DEATH
         case 2: // BOSS_EXPLOSION, BOSS_RV_THROW
-            TriggerVibration(VibrationEffect::VIVRATION_THUMP);
+            TriggerVibration(VibrationEffect::VIBRATION_THUMP);
             break;
         case -2: // WALLNUT_BOWLING_IMPACT
-            TriggerVibration(VibrationEffect::VIVRATION_BOWLING);
+            TriggerVibration(VibrationEffect::VIBRATION_BOWLING);
             break;
         case -4: // PLANT_BURN
         case -6: // JACK_IN_THE_BOX_POPPING
-            TriggerVibration(VibrationEffect::VIVRATION_EXPLOSION);
+            TriggerVibration(VibrationEffect::VIBRATION_EXPLOSION);
             break;
         default:
             break;

@@ -5279,7 +5279,7 @@ void Zombie::TakeDamage(int theDamage, unsigned int theDamageFlags) {
 void Zombie::TakeDamage_Origin(int theDamage, unsigned int theDamageFlags) {
     if (mZombieType == ZombieType::ZOMBIE_BOSS) {
         if (!TestBit(theDamageFlags, int(DamageFlags::DAMAGE_DOESNT_CAUSE_FLASH))) {
-            TriggerVibration(VibrationEffect::VIVRATION_BOSS_HIT);
+            TriggerVibration(VibrationEffect::VIBRATION_BOSS_HIT);
         }
     }
 

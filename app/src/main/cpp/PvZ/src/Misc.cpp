@@ -23,7 +23,7 @@
 #include "PvZ/Lawn/LawnApp.h"
 
 void TriggerVibration(VibrationEffect theVibrationEffect) {
-    if (gLawnApp->mPlayerInfo->mIsHapticFeedbackClosed) {
+    if (!gLawnApp->mPlayerInfo->mHapticFeedbackEnabled) {
         return;
     }
 
