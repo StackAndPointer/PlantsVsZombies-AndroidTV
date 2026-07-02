@@ -800,7 +800,7 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
                 break;
             }
 
-            ChosenSeed &chosenSeed = seedChooser->mChosenSeedsExtended[seedIndex];
+            ChosenSeed &chosenSeed = seedChooser->GetChosenSeed(seedIndex);
             if (chosenSeed.mSeedState != ChosenSeedState::SEED_IN_CHOOSER) {
                 break;
             }
@@ -956,7 +956,7 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
                 break;
             }
 
-            ChosenSeed &chosenSeed = seedChooser->mChosenSeedsExtended[seedIndex];
+            ChosenSeed &chosenSeed = seedChooser->GetChosenSeed(seedIndex);
             if (chosenSeed.mSeedState != ChosenSeedState::SEED_IN_CHOOSER) {
                 break;
             }

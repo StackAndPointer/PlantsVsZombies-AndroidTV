@@ -182,6 +182,18 @@ public:
     void UpdateViewLawn() {
         reinterpret_cast<void (*)(SeedChooserScreen *)>(SeedChooserScreen_UpdateViewLawnAddr)(this);
     }
+    ChosenSeed &GetChosenSeed(int theIndex) {
+        return theIndex < NUM_SEED_TYPES ? mChosenSeeds[theIndex] : mChosenSeedsExtended[theIndex];
+    }
+    int GetChosenSeedIndex(const ChosenSeed &theChosenSeed) const {
+        if (&theChosenSeed >= mChosenSeeds && &theChosenSeed < mChosenSeeds + NUM_SEED_TYPES) {
+            return int(&theChosenSeed - mChosenSeeds);
+        }
+        if (&theChosenSeed >= mChosenSeedsExtended && &theChosenSeed < mChosenSeedsExtended + NUM_SEEDS_IN_CHOOSER + NUM_SEED_TYPES_EXTENDED) {
+            return int(&theChosenSeed - mChosenSeedsExtended);
+        }
+        return -1;
+    }
 
     void AddedToManager(Sexy::WidgetManager *theWidgetManager);
     void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
