@@ -929,7 +929,8 @@ unsigned int SeedChooserScreen::SeedNotRecommendedToPick(SeedType theSeedType) {
     if (TestBit(aRecFlags, NOT_RECOMMENDED_NOCTURNAL) && PickedPlantType(SEED_INSTANT_COFFEE)) {
         SetBit(aRecFlags, NOT_RECOMMENDED_NOCTURNAL, false);
     }
-    if (mBoard->StageHasPool() && (theSeedType == SeedType::SEED_ZOMBIE_DANCER || theSeedType == SeedType::SEED_ZOMBIE_MOUND || theSeedType == SeedType::SEED_ZOMBIE_JACKSON)) {
+    ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(theSeedType);
+    if (mIsZombieChooser && mBoard->StageHasPool() && (!Challenge::IsMPZombieTypeCanGoInPool(aZombieType) || theSeedType == SeedType::SEED_ZOMBIE_MOUND)) {
         aRecFlags = 0;
         SetBit(aRecFlags, NotRecommend::NOT_RECOMMENDED_FOR_CHALLENGE, true);
     }
@@ -952,7 +953,6 @@ bool SeedChooserScreen::HasPacket(SeedType theSeedType, bool theIsZombie) {
 SeedType SeedChooserScreen::GetZombieSeedType(int theSeedIndex) {
     int aSeedType = theSeedIndex + SEED_ZOMBIE_GRAVESTONE;
     // 解锁更多对战僵尸
-    // return aSeedType > SEED_ZOMBIE_GARGANTUAR ? SEED_NONE : SeedType(aSeedType);
     return aSeedType < NUM_ZOMBIE_SEEDS_IN_CHOOSER ? SeedType(aSeedType) : SEED_NONE;
 }
 
@@ -2313,6 +2313,10 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
         if (mIsZombieChooser) {
             if (GetChosenSeed(aSeedType - SEED_ZOMBIE_GRAVESTONE).mSeedState == ChosenSeedState::SEED_IN_BANK && GetChosenSeed(aSeedType - SEED_ZOMBIE_GRAVESTONE).mCrazyDavePicked) {
                 aToolTip->SetWarningText(aToolTipSeed == SEED_ZOMBIE_GRAVESTONE ? "[ZOMBIE_BOSS_WANTS]" : "");
+            }
+            ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(aSeedType);
+            if ((!Challenge::IsMPZombieTypeCanGoInPool(aZombieType) || aSeedType == SeedType::SEED_ZOMBIE_MOUND)) {
+                aToolTip->SetWarningText("[NOT_ALLOWED_ON_WATER]");
             }
             // 对战显示隐藏僵尸卡信息
             if (aSeedType > SeedType::SEED_ZOMBIE_GARGANTUAR && aSeedType < SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER) {
