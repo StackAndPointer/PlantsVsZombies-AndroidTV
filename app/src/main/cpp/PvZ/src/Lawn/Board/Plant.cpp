@@ -654,7 +654,7 @@ void Plant::DrawSeedType(Sexy::Graphics *g, SeedType theSeedType, SeedType theIm
         } else {
             if (theSeedType < NUM_SEED_TYPES) {
                 lawnApp->mReanimatorCache->DrawCachedPlant(g, v25 + thePosX, v24 + thePosY, theSeedType2, theDrawVariation);
-            } else {
+            } else if (theSeedType >= SEED_ICEBERG_LETTUCE) {
                 lawnApp->mReanimatorCache->DrawCachedExtendedPlant(g, v25 + thePosX, v24 + thePosY, theSeedType2, theDrawVariation);
             }
         }

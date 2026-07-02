@@ -2946,7 +2946,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
                     continue;
                 }
                 if (mPageIndex == 1) {
-                    if (aDisplaySeedType < SeedType::SEED_ICEBERG_LETTUCE || aDisplaySeedType > SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED) {
+                    if (aDisplaySeedType < SeedType::SEED_ICEBERG_LETTUCE || aDisplaySeedType >= SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED) {
                         continue;
                     }
                 }

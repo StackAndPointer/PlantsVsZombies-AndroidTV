@@ -127,6 +127,10 @@ void ReanimatorCache::DrawCachedPlant(Graphics *g, float thePosX, float thePosY,
 }
 
 void ReanimatorCache::DrawCachedExtendedPlant(Graphics *g, float thePosX, float thePosY, SeedType theSeedType, DrawVariation theDrawVariation) {
+    if (theSeedType < SEED_ICEBERG_LETTUCE || theSeedType >= NUM_SEEDS_IN_CHOOSER_EXTENDED) {
+        return;
+    }
+
     MemoryImage *aImage = nullptr;
     if (theDrawVariation != DrawVariation::VARIATION_NORMAL) {
         //        for (TodListNode<ReanimCacheImageVariation> *aNode = mImageVariationList.mHead; aNode != nullptr; aNode = aNode->mNext) {
