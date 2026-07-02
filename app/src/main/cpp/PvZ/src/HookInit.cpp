@@ -111,6 +111,7 @@ void InitHookFunction() {
     homura::HookFunc(LawnApp_ShowVSResultsScreenAddr, &LawnApp::ShowVSResultsScreen, nullptr);
     homura::HookFunc(LawnApp_KillVSResultsScreenAddr, &LawnApp::KillVSResultsScreen, nullptr);
     homura::HookFunc(LawnApp_LoadingCompletedAddr, &LawnApp::LoadingCompleted, nullptr);
+    homura::HookFunc(LawnApp_TryLoadGameAddr, &LawnApp::TryLoadGame, nullptr);
 
 
     homura::HookFunc(Board_DrawAddr, &Board::Draw, &old_Board_Draw);

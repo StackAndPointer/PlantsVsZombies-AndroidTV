@@ -63,7 +63,9 @@ bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext);
 void FixBoardAfterLoad(Board *board);
 bool LawnSaveGame(Board *theBoard, const pvzstl::string &theFilePath);
 bool LawnLoadGame(Board *theBoard, SaveGameContext *theContext);
-
+inline void GetSavedGameName(const pvzstl::string &name, GameMode theGameMode, int theProfileId, int theId) {
+    reinterpret_cast<void (*)(const pvzstl::string &, GameMode, int, int)>(GetSavedGameNameAddr)(name, theGameMode, theProfileId, theId);
+}
 
 inline void (*old_FixBoardAfterLoad)(Board *board);
 

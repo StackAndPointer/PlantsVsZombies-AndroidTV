@@ -102,27 +102,27 @@ public:
     };
 
 public:
-    void **vTable;                // 0
-    int placeHolder[2];           // 1 ~ 2
-    bool unkBool;                 // 12
-    int unkMmWidthems1[2];        // 4 ~ 5
-    pvzstl::string stringUnk1;    // 6
-    pvzstl::string stringUnk2;    // 7
-    pvzstl::string stringUnk3;    // 8
-    int mWidth;                   // 9
-    int mHeight;                  // 10
-    int mPitch;                   // 11
-    int mStride;                  // 12
-    PixelFormat mFormat;          // 13
-    PixelFormat mPixelFormatHint; // 14
-    int mNumRows;                 // 15
-    int mNumCols;                 // 16
-    int *mAnimInfo;               // 17
-    int unk[6];                   // 18 ~ 23
-    int mHorizonWrapMode;         // 24
-    int mVertWrapMode;            // 25
-    int mTag;                     // 26
-                                  // 大小27个整数
+    void **vTable;                              // 0
+    int placeHolder[2];                         // 1 ~ 2
+    bool unkBool;                               // 12
+    int unkMmWidthems1[2];                      // 4 ~ 5
+    homura::Storage<pvzstl::string> stringUnk1; // 6
+    homura::Storage<pvzstl::string> stringUnk2; // 7
+    homura::Storage<pvzstl::string> stringUnk3; // 8
+    int mWidth;                                 // 9
+    int mHeight;                                // 10
+    int mPitch;                                 // 11
+    int mStride;                                // 12
+    PixelFormat mFormat;                        // 13
+    PixelFormat mPixelFormatHint;               // 14
+    int mNumRows;                               // 15
+    int mNumCols;                               // 16
+    int *mAnimInfo;                             // 17
+    int unk[6];                                 // 18 ~ 23
+    int mHorizonWrapMode;                       // 24
+    int mVertWrapMode;                          // 25
+    int mTag;                                   // 26
+                                                // 大小27个整数
 
     const ImageVTable *GetVTable() const {
         return (ImageVTable *)vTable;

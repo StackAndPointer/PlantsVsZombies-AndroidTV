@@ -599,8 +599,8 @@ public:
     bool WriteBufferToFile(const pvzstl::string &theFileName, Sexy::Buffer *theBuffer) {
         return reinterpret_cast<bool (*)(SexyAppBase *, const pvzstl::string &, Sexy::Buffer *)>(Sexy_SexyAppBase_WriteBufferToFileAddr)(this, theFileName, theBuffer);
     }
-    bool ReadBufferFromFile(const pvzstl::string &theFileName, Buffer *theBuffer, bool dontWriteToDemo = false) {
-        return reinterpret_cast<bool (*)(SexyAppBase *, const pvzstl::string &, Buffer *, bool)>(Sexy_SexyAppBase_ReadBufferFromFileAddr)(this, theFileName, theBuffer, dontWriteToDemo);
+    bool ReadBufferFromFile(const pvzstl::string &theFileName, Sexy::Buffer *theBuffer, bool dontWriteToDemo = false) {
+        return reinterpret_cast<bool (*)(SexyAppBase *, const pvzstl::string &, Sexy::Buffer *, bool)>(Sexy_SexyAppBase_ReadBufferFromFileAddr)(this, theFileName, theBuffer, dontWriteToDemo);
     } // UNICODE
 
     const SexyAppBaseVTable *GetVTable() const {

@@ -1508,6 +1508,26 @@ void LawnApp::LoadingCompleted() {
     mSoundSystem->RehookupSoundWithMusicVolume();
 }
 
+bool LawnApp::TryLoadGame() {
+    int aId = mPlayerInfo->GetVTable()->GetId(mPlayerInfo);
+    int aProfileId = mPlayerInfo->GetVTable()->GetProfileId(mPlayerInfo);
+    pvzstl::string name;
+    GetSavedGameName(name, mGameMode, aProfileId, aId);
+    LOG_DEBUG("name:{}", name);
+    mMusic->GetVTable()->StopAllMusic(mMusic);
+    delete mSaveGame;
+    mSaveGame = new SaveGameContext();
+    mSaveGame->mFailed = false;
+    mSaveGame->mReading = true;
+    if (ReadBufferFromFile(name, &mSaveGame->mBuffer, false)) {
+        LOG_DEBUG("true");
+        mNeedLoadGame = true;
+        mSaveGameOperation = SAVE_GAME_OPERATION_LOAD;
+        return true;
+    }
+    return false;
+}
+
 void LawnApp::PreNewGame(GameMode theGameMode, bool theLookForSavedGame) {
     // Best-effort flush queued outbound events before resetting recorder.
     if (gTcpClientSocket >= 0) {

@@ -224,6 +224,7 @@ bool LoadGameMain() {
 
 
     SyncBoardAddr = libGameMain.GetSymbol("_Z9SyncBoardP15SaveGameContextP5Board");
+    GetSavedGameNameAddr = libGameMain.GetSymbol("_Z16GetSavedGameName8GameModeii");
     FixBoardAfterLoadAddr = libGameMain.GetSymbol("_Z17FixBoardAfterLoadP5Board");
     SyncReanimationAddr = libGameMain.GetSymbol("_Z15SyncReanimationP5BoardP11ReanimationP15SaveGameContext");
     LawnSaveGameAddr = libGameMain.GetSymbol("_Z12LawnSaveGameP5BoardRKSs");
@@ -354,6 +355,7 @@ bool LoadGameMain() {
     LawnApp_IsChallengeWithoutSeedBankAddr = libGameMain.GetSymbol("_ZN7LawnApp26IsChallengeWithoutSeedBankEv");
     LawnApp_KillVSResultsScreenAddr = libGameMain.GetSymbol("_ZN7LawnApp19KillVSResultsScreenEv");
     LawnApp_LoadingCompletedAddr = libGameMain.GetSymbol("_ZN7LawnApp16LoadingCompletedEv");
+    LawnApp_TryLoadGameAddr = libGameMain.GetSymbol("_ZN7LawnApp11TryLoadGameEv");
     LawnApp_HideHelpBarWidgetAddr = libGameMain.GetSymbol("_ZN7LawnApp17HideHelpBarWidgetEv");
     LawnApp_ShowHelpTextScreenAddr = libGameMain.GetSymbol("_ZN7LawnApp18ShowHelpTextScreenEi");
     LawnApp_GetPottedPlantByIndexAddr = libGameMain.GetSymbol("_ZN7LawnApp21GetPottedPlantByIndexEi");
@@ -1421,6 +1423,7 @@ bool LoadGameMain() {
     vTableForSexyButtonListenerAddr = libGameMain.GetSymbol("_ZTVN4Sexy14ButtonListenerE");
     vTableForCursorObjectAddr = libGameMain.GetSymbol("_ZTV12CursorObject");
     vTableForBoardAddr = libGameMain.GetSymbol("_ZTV5Board");
+    vTableForSexyBufferAddr = libGameMain.GetSymbol("_ZTVN4Sexy6BufferE");
     vTableForTitleScreenAddr = libGameMain.GetSymbol("_ZTV11TitleScreen");
     vTableForStoreScreenAddr = libGameMain.GetSymbol("_ZTV11StoreScreen");
     vTableForMailScreenAddr = libGameMain.GetSymbol("_ZTV10MailScreen");

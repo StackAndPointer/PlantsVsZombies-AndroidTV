@@ -559,7 +559,7 @@ public:
 
     void Init();
     bool IsNight();
-    inline bool IsIceDemo() {
+    bool IsIceDemo() {
         return false;
     }
     void HardwareInit();
@@ -670,6 +670,7 @@ public:
     void ShowVSResultsScreen();
     void KillVSResultsScreen();
     void LoadingCompleted();
+    bool TryLoadGame();
 
 protected:
     friend void InitHookFunction();
