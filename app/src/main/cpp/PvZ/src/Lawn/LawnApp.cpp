@@ -1513,14 +1513,12 @@ bool LawnApp::TryLoadGame() {
     int aProfileId = mPlayerInfo->GetVTable()->GetProfileId(mPlayerInfo);
     pvzstl::string name;
     GetSavedGameName(name, mGameMode, aProfileId, aId);
-    LOG_DEBUG("name:{}", name);
     mMusic->GetVTable()->StopAllMusic(mMusic);
     delete mSaveGame;
     mSaveGame = new SaveGameContext();
     mSaveGame->mFailed = false;
     mSaveGame->mReading = true;
     if (ReadBufferFromFile(name, &mSaveGame->mBuffer, false)) {
-        LOG_DEBUG("true");
         mNeedLoadGame = true;
         mSaveGameOperation = SAVE_GAME_OPERATION_LOAD;
         return true;
