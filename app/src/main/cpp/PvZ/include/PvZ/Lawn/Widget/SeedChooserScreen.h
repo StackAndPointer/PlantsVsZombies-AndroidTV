@@ -148,7 +148,7 @@ public:
     bool mShowExtendedSeeds = false;
     bool mHas7Packets = false;
     bool mGlobalBpBansApplied = false;
-    ChosenSeed mChosenSeedsExtended[NUM_SEEDS_IN_CHOOSER + NUM_SEED_TYPES_EXTENDED]{};
+    ChosenSeed mChosenSeedsExtended[NUM_SEED_TYPES_EXTENDED]{};
     GameButton *mMainMenuButton = nullptr;
 
     SeedChooserScreen(bool theIsZombieChooser) {
@@ -183,15 +183,23 @@ public:
         reinterpret_cast<void (*)(SeedChooserScreen *)>(SeedChooserScreen_UpdateViewLawnAddr)(this);
     }
     ChosenSeed &GetChosenSeed(int theIndex) {
-        return theIndex < NUM_SEED_TYPES ? mChosenSeeds[theIndex] : mChosenSeedsExtended[theIndex];
+        if (theIndex < NUM_SEED_TYPES) {
+            return mChosenSeeds[theIndex];
+        }
+
+        return mChosenSeedsExtended[theIndex - NUM_SEED_TYPES];
     }
     int GetChosenSeedIndex(const ChosenSeed &theChosenSeed) const {
-        if (&theChosenSeed >= mChosenSeeds && &theChosenSeed < mChosenSeeds + NUM_SEED_TYPES) {
-            return int(&theChosenSeed - mChosenSeeds);
+        const ChosenSeed *aChosenSeed = &theChosenSeed;
+
+        if (aChosenSeed >= mChosenSeeds && aChosenSeed < mChosenSeeds + NUM_SEED_TYPES) {
+            return int(aChosenSeed - mChosenSeeds);
         }
-        if (&theChosenSeed >= mChosenSeedsExtended && &theChosenSeed < mChosenSeedsExtended + NUM_SEEDS_IN_CHOOSER + NUM_SEED_TYPES_EXTENDED) {
-            return int(&theChosenSeed - mChosenSeedsExtended);
+
+        if (aChosenSeed >= mChosenSeedsExtended && aChosenSeed < mChosenSeedsExtended + NUM_SEED_TYPES_EXTENDED) {
+            return NUM_SEED_TYPES + int(aChosenSeed - mChosenSeedsExtended);
         }
+
         return -1;
     }
 

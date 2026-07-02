@@ -993,7 +993,7 @@ int SeedChooserScreen::GetSeedStorageCount() const {
         return NUM_ZOMBIE_SEEDS_IN_CHOOSER - SEED_ZOMBIE_GRAVESTONE;
     }
 
-    return NUM_SEEDS_IN_CHOOSER + NUM_SEED_TYPES_EXTENDED;
+    return NUM_SEED_TYPES + NUM_SEED_TYPES_EXTENDED;
 }
 
 int SeedChooserScreen::GetCurrentPageSeedCount() const {
