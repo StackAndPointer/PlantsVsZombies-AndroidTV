@@ -1254,7 +1254,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, true);
             } else {
                 Zombie *aZombie = nullptr;
-                if (mBoard->mPlantRow[aGridY] == PlantRowType::PLANTROW_POOL) {
+                if (mBoard->StageHasPool()) {
                     aZombie = mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, false);
                 } else {
                     aZombie = mBoard->AddZombie(aZombieType, Zombie::ZOMBIE_WAVE_VS, false);

@@ -105,7 +105,7 @@ public:
 
     bool mShowHelpText;                      // 65
     GameButton *mImitaterButton;             // 66
-    ChosenSeed mChosenSeeds[NUM_SEED_TYPES]; // 67 ~ 930, 已用 mChosenSeedsExtended 替代
+    ChosenSeed mChosenSeeds[NUM_SEED_TYPES]; // 67 ~ 930
     LawnApp *mApp;                           // 931
     Board *mBoard;                           // 932
     int mSeedChooserAge;                     // 933

@@ -621,11 +621,21 @@ PlantingReason Challenge::CanPlantAt(int theGridX, int theGridY, SeedType theSee
         return PLANTING_NOT_HERE;
     } else if (mApp->IsVSMode()) {
         if (IsMPSeedType(theSeedType)) {
+            if (theSeedType == SeedType::SEED_ZOMBIE_GRAVESTONE && mBoard->CanAddGraveStoneAt(theGridX, theGridY)) {
+                return PlantingReason::PLANTING_OK;
+            }
+            if (theSeedType == SeedType::SEED_ZOMBIE_MOUND && mBoard->mPlantRow[theGridY] == PlantRowType::PLANTROW_POOL) {
+                return PlantingReason::PLANTING_ONLY_ON_GROUND; // 召唤墓碑禁止放置在水路
+            }
             ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(theSeedType);
-            if ((!Challenge::IsMPZombieTypeCanGoInPool(aZombieType) || theSeedType == SeedType::SEED_ZOMBIE_MOUND) && mBoard->mPlantRow[theGridY] == PlantRowType::PLANTROW_POOL) {
-                return PLANTING_ONLY_ON_GROUND; // 部分僵尸类型或召唤墓碑禁止放置在水路
-            } else if ((aZombieType == ZombieType::ZOMBIE_SNORKEL || aZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER) && mBoard->mPlantRow[theGridY] != PlantRowType::PLANTROW_POOL) {
-                return PLANTING_ONLY_IN_POOL; // 潜水僵尸和海豚骑士僵尸禁止放置在非水路
+            if (Challenge::IsMPZombieTypeCanGoInPool(aZombieType)) {
+                if (Board::IsZombieTypePoolOnly(aZombieType) && mBoard->mPlantRow[theGridY] != PlantRowType::PLANTROW_POOL) {
+                    return PLANTING_ONLY_IN_POOL; // 潜水僵尸和海豚骑士僵尸禁止放置在非水路
+                }
+            } else {
+                if (mBoard->mPlantRow[theGridY] == PlantRowType::PLANTROW_POOL) {
+                    return PLANTING_ONLY_ON_GROUND; // 部分僵尸类型禁止放置在水路
+                }
             }
 
             if ((theSeedType == SEED_BEGHOULED_BUTTON_SHUFFLE || theSeedType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE)) {
@@ -637,8 +647,10 @@ PlantingReason Challenge::CanPlantAt(int theGridX, int theGridY, SeedType theSee
             return (theGridX > 5 || theSeedType == SeedType::SEED_ZOMBIE_BUNGEE) ? PLANTING_OK : PLANTING_NOT_PASSED_LINE_VS;
         }
         if (theSeedType == SeedType::SEED_GRAVEBUSTER) {
-            if (mBoard->GetGridItemAt(GridItemType::GRIDITEM_GRAVESTONE, theGridX, theGridY) == nullptr && mBoard->GetGridItemAt(GridItemType::GRIDITEM_MP_BURIAL_MOUND, theGridX, theGridY) == nullptr)
+            if (mBoard->GetGridItemAt(GridItemType::GRIDITEM_GRAVESTONE, theGridX, theGridY) == nullptr
+                && mBoard->GetGridItemAt(GridItemType::GRIDITEM_MP_BURIAL_MOUND, theGridX, theGridY) == nullptr) {
                 return PlantingReason::PLANTING_ONLY_ON_GRAVES;
+            }
         } else {
             if (theGridX <= 5)
                 return PlantingReason::PLANTING_OK;

@@ -3185,7 +3185,7 @@ void Zombie::RiseFromGrave(int theCol, int theRow) {
     mZombiePhase = ZombiePhase::PHASE_RISING_FROM_GRAVE;
     mPhaseCounter = 150;
 
-    if (mBoard->StageHasPool()) {
+    if (mBoard->StageHasPool() && mBoard->mPlantRow[theRow] == PlantRowType::PLANTROW_POOL /*修复陆路僵尸触发水路特效*/) {
         mAltitude = -150.0f;
         mInPool = true;
         mPhaseCounter = 50;
