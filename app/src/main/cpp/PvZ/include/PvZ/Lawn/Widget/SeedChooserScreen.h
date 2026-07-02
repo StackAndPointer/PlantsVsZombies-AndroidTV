@@ -199,7 +199,7 @@ public:
     void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
     void EnableStartButton(int theIsEnabled);
     void RebuildHelpbar();
-    SeedType PickedPlantType(SeedType theSeedType);
+    bool PickedPlantType(SeedType theSeedType);
     SeedType GetZombieSeedType(int theSeedIndex);
     SeedType GetPlantSeedType(int theSeedIndex) const;
     int GetSeedStorageCount() const;

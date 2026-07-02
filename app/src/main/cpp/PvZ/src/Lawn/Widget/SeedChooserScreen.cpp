@@ -956,20 +956,16 @@ SeedType SeedChooserScreen::GetZombieSeedType(int theSeedIndex) {
     return aSeedType < NUM_ZOMBIE_SEEDS_IN_CHOOSER ? SeedType(aSeedType) : SEED_NONE;
 }
 
-SeedType SeedChooserScreen::PickedPlantType(SeedType theSeedType) {
+bool SeedChooserScreen::PickedPlantType(SeedType theSeedType) {
     for (int seedIndex = 0; seedIndex < GetSeedStorageCount(); ++seedIndex) {
-        const ChosenSeed &chosenSeed = GetChosenSeed(seedIndex);
-        if (chosenSeed.mSeedState != ChosenSeedState::SEED_IN_BANK) {
-            continue;
-        }
-        if (chosenSeed.mSeedType == theSeedType) {
-            return theSeedType;
-        }
-        if (chosenSeed.mSeedType == SeedType::SEED_IMITATER && chosenSeed.mImitaterType == theSeedType) {
-            return theSeedType;
+        const ChosenSeed &aChosenSeed = GetChosenSeed(seedIndex);
+        if (aChosenSeed.mSeedState == SEED_IN_BANK) {
+            if (aChosenSeed.mSeedType == theSeedType || (aChosenSeed.mSeedType == SEED_IMITATER && aChosenSeed.mImitaterType == theSeedType)) {
+                return true;
+            }
         }
     }
-    return SeedType::SEED_NONE;
+    return false;
 }
 
 SeedType SeedChooserScreen::GetPlantSeedType(int theSeedIndex) const {
