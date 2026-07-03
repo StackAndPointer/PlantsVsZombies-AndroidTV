@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3179;
+inline constexpr uint32_t NETPLAY_VERSION = 3180;
 
 enum EventType : uint8_t {
     EVENT_NULL,

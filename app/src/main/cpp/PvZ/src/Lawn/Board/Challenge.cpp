@@ -621,9 +621,6 @@ PlantingReason Challenge::CanPlantAt(int theGridX, int theGridY, SeedType theSee
         return PLANTING_NOT_HERE;
     } else if (mApp->IsVSMode()) {
         if (IsMPSeedType(theSeedType)) {
-            if (theSeedType == SeedType::SEED_ZOMBIE_GRAVESTONE && mBoard->CanAddGraveStoneAt(theGridX, theGridY)) {
-                return PlantingReason::PLANTING_OK;
-            }
             if (theSeedType == SeedType::SEED_ZOMBIE_MOUND && mBoard->mPlantRow[theGridY] == PlantRowType::PLANTROW_POOL) {
                 return PlantingReason::PLANTING_ONLY_ON_GROUND; // 召唤墓碑禁止放置在水路
             }
@@ -633,7 +630,7 @@ PlantingReason Challenge::CanPlantAt(int theGridX, int theGridY, SeedType theSee
                     return PLANTING_ONLY_IN_POOL; // 潜水僵尸和海豚骑士僵尸禁止放置在非水路
                 }
             } else {
-                if (mBoard->mPlantRow[theGridY] == PlantRowType::PLANTROW_POOL) {
+                if (theSeedType != SeedType::SEED_ZOMBIE_GRAVESTONE && mBoard->mPlantRow[theGridY] == PlantRowType::PLANTROW_POOL) {
                     return PLANTING_ONLY_ON_GROUND; // 部分僵尸类型禁止放置在水路
                 }
             }
@@ -652,9 +649,7 @@ PlantingReason Challenge::CanPlantAt(int theGridX, int theGridY, SeedType theSee
                 return PlantingReason::PLANTING_ONLY_ON_GRAVES;
             }
         } else {
-            if (theGridX <= 5)
-                return PlantingReason::PLANTING_OK;
-            return PlantingReason::PLANTING_NOT_PASSED_LINE_VS;
+            return theGridX <= 5 ? PLANTING_OK : PLANTING_NOT_PASSED_LINE_VS;
         }
     }
     return PlantingReason::PLANTING_OK;
