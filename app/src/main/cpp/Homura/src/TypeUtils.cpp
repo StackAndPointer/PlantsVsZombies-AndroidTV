@@ -19,7 +19,12 @@
 
 #include "Homura/TypeUtils.h"
 
-#if defined(__GNUC__) || (defined(__has_include) && __has_include(<cxxabi.h>))
+// just like 'BOOST_CORE_HAS_CXXABI_H' defined in <boost/core/demangle.hpp>
+#if defined(__has_include) && (defined(__clang__) || !defined(__GNUC__) || (__GNUC__ + 0) >= 5)
+#if __has_include(<cxxabi.h>)
+#define HOMURA_HAS_CXXABI_H
+#endif
+#elif defined(__GLIBCXX__) || defined(__GLIBCPP__)
 #define HOMURA_HAS_CXXABI_H
 #endif
 
