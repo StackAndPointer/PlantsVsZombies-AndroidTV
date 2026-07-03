@@ -3618,19 +3618,17 @@ void Board::SpawnZombieWave() {
 }
 
 void Board::DrawProgressMeter(Sexy::Graphics *g, int theX, int theY) {
-
-
     if (gIsReplayMode) {
         // 先画上面的空进度条
-        g->DrawImageCel(Sexy::IMAGE_FLAGMETER, theX, theY, 0);
+        g->DrawImageCel(Sexy::IMAGE_FLAGMETER, theX, theY + 20, 0);
         int aCelWidth = Sexy::IMAGE_FLAGMETER->GetCelWidth();
         int aCelHeight = Sexy::IMAGE_FLAGMETER->GetCelHeight();
         constexpr int aMeterWidth = 143;
         int aTotalTicks = std::max(1, replay::GetPlaybackBoardTicks());
         int aCurrentTicks = std::clamp(mMainCounter, 0, aTotalTicks);
         int aClipWidth = aCurrentTicks * aMeterWidth / aTotalTicks;
-        Rect aSrcRect(aCelWidth - aClipWidth - 7, aCelHeight, aClipWidth, aCelHeight);
-        Rect aDstRect(aCelWidth - aClipWidth + theX - 7, theY, aClipWidth, aCelHeight);
+        Rect aSrcRect(aCelWidth - aClipWidth - 7, aCelHeight + 20, aClipWidth, aCelHeight + 20);
+        Rect aDstRect(aCelWidth - aClipWidth + theX - 7, theY + 20, aClipWidth, aCelHeight + 20);
         g->DrawImage(Sexy::IMAGE_FLAGMETER, aDstRect, aSrcRect);
 
         const int aMeterRight = aCelWidth + theX - 7;
@@ -3640,22 +3638,24 @@ void Board::DrawProgressMeter(Sexy::Graphics *g, int theX, int theY) {
             int aBoardTick = std::clamp(theReplayTick - aBoardStartTick, 0, aTotalTicks);
             return aMeterRight - aBoardTick * aMeterWidth / aTotalTicks;
         };
-        auto drawMarker = [&](Sexy::Image *theImage, int theReplayTick, int theWidth, int theHeight, int theYOffset) {
+        auto drawMarker = [&](Sexy::Image *theImage, int theReplayTick, int theWidth, int theHeight, int theOffsetX, int theOffsetY) {
             if (theImage == nullptr) {
                 return;
             }
-            int aMarkerX = getMarkerX(theReplayTick) - theWidth / 2;
-            int aMarkerY = aMeterTop + theYOffset;
+            int aMarkerX = getMarkerX(theReplayTick) - theWidth / 2 + theOffsetX;
+            int aMarkerY = aMeterTop + theOffsetY;
             Rect aSrc(0, 0, theImage->mWidth, theImage->mHeight);
             Rect aDst(aMarkerX, aMarkerY, theWidth, theHeight);
             g->DrawImage(theImage, aDst, aSrc);
         };
 
         for (int aTick : replay::FindPlaybackEventTicks(EVENT_SERVER_BOARD_GRIDITEM_DIE)) {
-            drawMarker(addonImages.zombie_target, aTick, 18, 24, -20);
+            drawMarker(addonImages.zombie_target, aTick, 24, 32, 0, -10);
+            drawMarker(IMAGE_MP_TARGETS_X, aTick, 18, 24, 0, -5);
         }
         for (int aTick : replay::FindPlaybackEventTicks(EVENT_SERVER_BOARD_LAWNMOWER_START)) {
-            drawMarker(mApp->mReanimatorCache->mLawnMowers[LAWNMOWER_LAWN], aTick, 30, 33, 14);
+            drawMarker(mApp->mReanimatorCache->mLawnMowers[LAWNMOWER_LAWN], aTick, 40, 44, 0, 34);
+            drawMarker(IMAGE_MP_TARGETS_X, aTick, 18, 20, 4, 39);
         }
 
         return;
