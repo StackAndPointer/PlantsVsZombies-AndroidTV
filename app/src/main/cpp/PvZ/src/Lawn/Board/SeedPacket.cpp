@@ -209,6 +209,11 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
                     mActive = true;
                 }
                 break;
+            case SEED_ZOMBIE_PEA_HEAD:
+                if (aIsBalancePatch) {
+                    mRefreshTime = 2000; // 10 -> 20
+                }
+                break;
             case SEED_ZOMBIE_TRAFFIC_CONE:
             case SEED_ZOMBIE_BOBSLED:
             case SEED_ZOMBIE_SNORKEL:
