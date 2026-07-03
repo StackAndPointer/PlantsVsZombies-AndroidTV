@@ -1115,8 +1115,8 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
             }
         } else if (theTargetGridItem) {
             aRangeX = mBoard->GridToPixelX(theTargetGridItem->mGridX, theTargetGridItem->mGridY) - aOriginX;
-            // 为靶子僵尸添加半格距离，以匹配靶子僵尸的碰撞箱
-            if (theTargetGridItem->mGridItemType == GRIDITEM_MP_TARGET_ZOMBIE) {
+            // 为靶子僵尸添加半格距离，以匹配靶子僵尸的碰撞箱。水路除外，以修复西瓜投手无法命中靶子
+            if (theTargetGridItem->mGridItemType == GRIDITEM_MP_TARGET_ZOMBIE && mBoard->mPlantRow[theRow] != PlantRowType::PLANTROW_POOL) {
                 aRangeX += mBoard->GridCellWidth(theTargetGridItem->mGridX, theTargetGridItem->mGridY) / 2.0f;
             }
             aRangeY = float(mBoard->GridToPixelY(theTargetGridItem->mGridX, theTargetGridItem->mGridY) - aOriginY) * 0.0083333f - 7.0f;
