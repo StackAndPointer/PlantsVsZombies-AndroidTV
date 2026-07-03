@@ -932,7 +932,7 @@ unsigned int SeedChooserScreen::SeedNotRecommendedToPick(SeedType theSeedType) {
     ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(theSeedType);
     if (mIsZombieChooser && mBoard->StageHasPool() && (!Challenge::IsMPZombieTypeCanGoInPool(aZombieType) || theSeedType == SeedType::SEED_ZOMBIE_MOUND)) {
         aRecFlags = 0;
-        SetBit(aRecFlags, NotRecommend::NOT_RECOMMENDED_FOR_CHALLENGE, true);
+        SetBit(aRecFlags, NotRecommend::NOT_RECOMMENDED_ON_POOL, true);
     }
     return aRecFlags;
 }
@@ -2238,6 +2238,8 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
             } else if (aRecFlags != 0U) {
                 if (TestBit(aRecFlags, NOT_RECOMMENDED_NOCTURNAL)) {
                     aToolTip->SetWarningText("[NOCTURNAL_WARNING]");
+                } else if (TestBit(aRecFlags, NOT_RECOMMENDED_ON_POOL)) {
+                    aToolTip->SetWarningText("[NOT_ALLOWED_ON_WATER]");
                 } else {
                     aToolTip->SetWarningText("[NOT_RECOMMENDED_FOR_LEVEL]");
                 }
@@ -2315,9 +2317,6 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
                 aToolTip->SetWarningText(aToolTipSeed == SEED_ZOMBIE_GRAVESTONE ? "[ZOMBIE_BOSS_WANTS]" : "");
             }
             ZombieType aZombieType = Challenge::IZombieSeedTypeToZombieType(aSeedType);
-            if ((!Challenge::IsMPZombieTypeCanGoInPool(aZombieType) || aSeedType == SeedType::SEED_ZOMBIE_MOUND)) {
-                aToolTip->SetWarningText("[NOT_ALLOWED_ON_WATER]");
-            }
             // 对战显示隐藏僵尸卡信息
             if (aSeedType > SeedType::SEED_ZOMBIE_GARGANTUAR && aSeedType < SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER) {
                 const char *aTitle = nullptr;

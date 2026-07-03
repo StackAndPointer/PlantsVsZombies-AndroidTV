@@ -90,7 +90,7 @@ ZombieDefinition gExtendedZombieDefs[] = {
     {ZOMBIE_BACKUP_JACKSON, REANIM_BACKUP_JACKSON, 1, 18, 1, 0, "BACKUP_JACKSON"},
     {ZOMBIE_GIGA_POLEVAULTER, REANIM_GIGA_POLEVAULTER, 2, 6, 5, 2000, "GIGA_POLE_VAULTING_ZOMBIE"},
     {ZOMBIE_SUNDAY_EDITION, REANIM_SUNDAY_EDITION, 2, 11, 1, 1000, "SUNDAY_EDITION_ZOMBIE"},
-    {ZOMBIE_EXPLOER, REANIM_EXPLOER, 2, 6, 5, 2000, "EXPLOER_ZOMBIE"},
+    {ZOMBIE_EXPLORER, REANIM_EXPLORER, 2, 6, 5, 2000, "EXPLORER_ZOMBIE"},
 };
 
 ZombieDefinition &GetZombieDefinition(ZombieType theZombieType) {
@@ -277,7 +277,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             AttachShield();
             break;
 
-        case ZombieType::ZOMBIE_EXPLOER:
+        case ZombieType::ZOMBIE_EXPLORER:
             mZombieAttackRect = Rect(-10, 0, 50, 115);
             mHasObject = true;
             mBodyHealth = 500;
@@ -461,8 +461,8 @@ void Zombie::UpdateActions() {
     if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
         UpdateSundayEdition();
     }
-    if (mZombieType == ZombieType::ZOMBIE_EXPLOER) {
-        UpdateZombieExploer();
+    if (mZombieType == ZombieType::ZOMBIE_EXPLORER) {
+        UpdateZombieExplorer();
     }
 }
 
@@ -1927,7 +1927,7 @@ void Zombie::UpdateSundayEdition() {
     }
 }
 
-void Zombie::UpdateZombieExploer() {
+void Zombie::UpdateZombieExplorer() {
     if (!mHasHead || IsDeadOrDying()) {
         return;
     }
@@ -1974,7 +1974,7 @@ void Zombie::UpdateZombieExploer() {
                 }
             }
 
-            mApp->PlayFoley(FoleyType::FOLEY_EXPLOER_IGNITE);
+            mApp->PlayFoley(FoleyType::FOLEY_EXPLORER_IGNITE);
             int aRenderOrder = mBoard->MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, mRow, 1);
             Reanimation *aOriReanim = mApp->ReanimationTryToGet(mBoard->mFwooshID[mRow][aPlant->mRow]);
             if (aOriReanim) {
@@ -2012,7 +2012,7 @@ void Zombie::UpdateZombieExploer() {
         if (Zombie *aZombie = FindZombieTarget()) {
             aZombie->TakeDamage(5, 0U);
             if (aZombie->mBodyHealth < 5) {
-                mApp->PlayFoley(FoleyType::FOLEY_EXPLOER_IGNITE);
+                mApp->PlayFoley(FoleyType::FOLEY_EXPLORER_IGNITE);
                 aZombie->ApplyBurn();
             }
         }
@@ -2020,7 +2020,7 @@ void Zombie::UpdateZombieExploer() {
 
     if (!mHasObject) {
         if (Zombie *aZombie = FindFriendZombieTarget()) {
-            if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && aZombie->mHasObject) {
+            if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && aZombie->mHasObject) {
                 ExplorerTorchConvert(true);
             }
         }
@@ -2029,7 +2029,7 @@ void Zombie::UpdateZombieExploer() {
 
 void Zombie::ExplorerTorchConvert(bool theBurn) {
     if (theBurn) {
-        mApp->PlayFoley(FoleyType::FOLEY_EXPLOER_IGNITE);
+        mApp->PlayFoley(FoleyType::FOLEY_EXPLORER_IGNITE);
         mHasObject = true;
         mZombieAttackRect = Rect(-10, 0, 50, 115);
         if (Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID)) {
@@ -2402,7 +2402,7 @@ void Zombie::BurnRow(int theRow) {
                         aZombie->ApplyBurn();
                     }
                 }
-            } else if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && !aZombie->mHasObject) {
+            } else if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && !aZombie->mHasObject) {
                 aZombie->ExplorerTorchConvert(true);
             }
         }
@@ -4572,7 +4572,7 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
                 ReanimShowPrefix("anim_glasses", RENDER_GROUP_HIDDEN);
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_GIGA_ZOMBIEPOLEVAULTERHEAD);
                 DropPole();
-            } else if (mZombieType == ZombieType::ZOMBIE_EXPLOER) {
+            } else if (mZombieType == ZombieType::ZOMBIE_EXPLORER) {
                 ExplorerTorchConvert(false);
             }
         }
@@ -5114,7 +5114,7 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
         return thePlant->mSeedType == SeedType::SEED_POTATOMINE && thePlant->mState == PlantState::STATE_NOTREADY;
     }
 
-    if (mZombieType == ZombieType::ZOMBIE_EXPLOER && mHasObject) {
+    if (mZombieType == ZombieType::ZOMBIE_EXPLORER && mHasObject) {
         if (thePlant->mSeedType == SeedType::SEED_POTATOMINE || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
             return false;
         }
@@ -5809,7 +5809,7 @@ void Zombie::PickRandomSpeed() {
         mVelX = 0.4f;
     } else if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER || mZombieType == ZombieType::ZOMBIE_POGO || mZombieType == ZombieType::ZOMBIE_FLAG
                || mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING || mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON
-               || mZombieType == ZombieType::ZOMBIE_EXPLOER) {
+               || mZombieType == ZombieType::ZOMBIE_EXPLORER) {
         mVelX = 0.45f;
     } else if (mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT || mZombieType == ZombieType::ZOMBIE_FOOTBALL
                || mZombieType == ZombieType::ZOMBIE_SNORKEL || mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX) {
@@ -5998,7 +5998,7 @@ void Zombie::ApplyChill(bool theIsIceTrap) {
 
     UpdateAnimSpeed();
 
-    if (mZombieType == ZombieType::ZOMBIE_EXPLOER && mHasObject) {
+    if (mZombieType == ZombieType::ZOMBIE_EXPLORER && mHasObject) {
         ExplorerTorchConvert(false);
     }
 }

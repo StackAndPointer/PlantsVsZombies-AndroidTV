@@ -511,7 +511,7 @@ void Projectile::DoImpact(Zombie *theZombie) {
         if (theZombie && mProjectileType == ProjectileType::PROJECTILE_FIREBALL) {
             theZombie->RemoveColdEffects();
 
-            if (theZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && !theZombie->mHasObject) {
+            if (theZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && !theZombie->mHasObject) {
                 theZombie->ExplorerTorchConvert(true);
             }
         }
@@ -589,7 +589,7 @@ void Projectile::DoImpact(Zombie *theZombie) {
             aFireReanim->mAnimTime = 0.25f;
             aFireReanim->mAnimRate = 24.0f;
             aFireReanim->OverrideScale(0.7f, 0.4f);
-            if (theZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && !theZombie->mHasObject) {
+            if (theZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && !theZombie->mHasObject) {
                 theZombie->ExplorerTorchConvert(true);
             }
         }
@@ -786,9 +786,6 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
             }
             continue;
         } else if (aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
-            if (aHasGravestoneInRow) {
-                continue;
-            }
             bool findTarget = (!aBestGridItem || aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE);
             if (findTarget && aGridItem->mVSTargetZombieHealth > 0) {
                 if (mRow == aGridItem->mGridY) {
@@ -806,6 +803,10 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
             }
             continue;
         }
+    }
+
+    if (aHasGravestoneInRow && aBestGridItem != nullptr && aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
+        return nullptr;
     }
 
     return aBestGridItem;

@@ -723,7 +723,7 @@ void GamepadControls::UpdatePreviewReanim() {
                 zombieReanim->PlayReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 12.0);
             } else if (aZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL || aZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
                 zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
-            } else if (aZombieType == ZombieType::ZOMBIE_EXPLOER) {
+            } else if (aZombieType == ZombieType::ZOMBIE_EXPLORER) {
                 zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
                 zombieReanim->AssignRenderGroupToPrefix("Zombie_flaghand", RENDER_GROUP_NORMAL);
                 zombieReanim->AssignRenderGroupToPrefix("Zombie_innerarm_screendoor", RENDER_GROUP_NORMAL);

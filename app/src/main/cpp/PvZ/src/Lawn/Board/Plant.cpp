@@ -809,7 +809,7 @@ void Plant::DoSpecial_Origin() {
                 if (aZombie->mZombiePhase == ZombiePhase::PHASE_BOSS_HEAD_SPIT) {
                     mBoard->RemoveParticleByType(ParticleEffect::PARTICLE_ZOMBIE_BOSS_FIREBALL);
                 }
-                if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && aZombie->mHasObject) {
+                if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && aZombie->mHasObject) {
                     aZombie->ExplorerTorchConvert(false);
                 }
                 aZombie->UpdateAnimSpeed();
@@ -1279,7 +1279,7 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
             }
 
             if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
-                if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER) {
+                if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER) {
                     aWeight += 10000; // 优先攻击探险家僵尸
                 }
             }
@@ -1438,7 +1438,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_BOBSLED:
         case SeedType::SEED_ZOMBIE_BALLOON:
         case SeedType::SEED_ZOMBIE_MOUND:
-        case SeedType::SEED_ZOMBIE_EXPLOER:
+        case SeedType::SEED_ZOMBIE_EXPLORER:
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
@@ -1509,7 +1509,7 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
             case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
             case SeedType::SEED_ZOMBIE_JACKSON:
             case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
-            case SeedType::SEED_ZOMBIE_EXPLOER:
+            case SeedType::SEED_ZOMBIE_EXPLORER:
                 return 3000;
             case SeedType::SEED_ZOMBIE_NEWSPAPER:
             case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -1558,6 +1558,7 @@ static int GetVSCostBalanced(SeedType theSeedType) {
             aCost = 25;
             break;
         case SeedType::SEED_HYPNOSHROOM:         // 75 -> 50
+        case SeedType::SEED_TANGLEKELP:          // 25 -> 50
         case SeedType::SEED_BLOVER:              // 100 -> 50
         case SeedType::SEED_PUMPKINSHELL:        // 125 -> 50
         case SeedType::SEED_ZOMBIE_TRAFFIC_CONE: // 75 -> 50
@@ -2028,7 +2029,7 @@ void Plant::BurnRow(int theRow) {
             aZombie->RemoveColdEffects();
             aZombie->ApplyBurn();
         }
-        if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLOER && !aZombie->mHasObject && aZombie->mMindControlled) {
+        if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && !aZombie->mHasObject && aZombie->mMindControlled) {
             aZombie->ExplorerTorchConvert(true);
         }
     }

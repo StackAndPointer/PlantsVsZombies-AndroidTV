@@ -267,7 +267,7 @@ void LawnApp::LoadAddonSounds() {
     addonSounds.thriller = GetSoundByFileName("addonFiles/sounds/thriller");
     addonSounds.allstardbl = GetSoundByFileName("addonFiles/sounds/allstardbl");
     addonSounds.whistle = GetSoundByFileName("addonFiles/sounds/whistle");
-    addonSounds.exploer = GetSoundByFileName("addonFiles/sounds/exploer");
+    addonSounds.explorer = GetSoundByFileName("addonFiles/sounds/explorer");
     addonSounds.iceberg = GetSoundByFileName("addonFiles/sounds/iceberg");
 
     int addonSoundsNum = (sizeof(addonSounds) / sizeof(int));
@@ -1342,9 +1342,12 @@ bool LawnApp::IsLittleTroubleLevel() const {
 }
 
 bool LawnApp::IsScaryPotterLevel() const {
-    if (mGameMode >= GameMode::GAMEMODE_SCARY_POTTER_1 && mGameMode <= GameMode::GAMEMODE_SCARY_POTTER_ENDLESS)
+    if (mGameMode == GameMode::GAMEMODE_SCARY_POTTER_1 || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_2 || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_3
+        || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_4 || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_5 || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_6
+        || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_7 || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_8 || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_9
+        || mGameMode == GameMode::GAMEMODE_SCARY_POTTER_ENDLESS) {
         return true;
-
+    }
     return IsAdventureMode() && mPlayerInfo->mLevel == 35;
 }
 

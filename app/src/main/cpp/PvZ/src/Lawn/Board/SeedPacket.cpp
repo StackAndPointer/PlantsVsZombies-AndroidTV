@@ -211,7 +211,7 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
                 break;
             case SEED_ZOMBIE_PEA_HEAD:
                 if (aIsBalancePatch) {
-                    mRefreshTime = 2000; // 10 -> 20
+                    mRefreshTime = 1500; // 10 -> 15
                 }
                 break;
             case SEED_ZOMBIE_TRAFFIC_CONE:
@@ -493,7 +493,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
         case SeedType::SEED_ZOMBIE_DANCER:
         case SeedType::SEED_ZOMBIE_JACKSON:
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
-        case SeedType::SEED_ZOMBIE_EXPLOER:
+        case SeedType::SEED_ZOMBIE_EXPLORER:
             offsetY = -7.0f;
             offsetX = -3.0f;
             theDrawScale = 0.35f;

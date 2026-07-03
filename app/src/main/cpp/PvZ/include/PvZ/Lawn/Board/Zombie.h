@@ -371,7 +371,7 @@ public:
     Plant *FindGigaPolevaulterTarget();
     void UpdateGigaPolevaulter();
     void UpdateSundayEdition();
-    void UpdateZombieExploer();
+    void UpdateZombieExplorer();
     void ExplorerTorchConvert(bool theBurn);
     void UpdateZombieGargantuar();
     void ZombieImpThrown(Zombie *theThrowerZombie, float theOffsetDistance);
