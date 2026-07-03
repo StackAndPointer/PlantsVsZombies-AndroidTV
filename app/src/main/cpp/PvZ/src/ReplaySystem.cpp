@@ -51,6 +51,7 @@ struct PlaybackState {
     std::uint32_t boardTicks = 0;
     std::size_t nextIndex = 0;
     int speedLevel = 0;
+    bool halfSpeedPhase = false;
     int vsBackground = 0;
     std::string filePath;
     std::vector<ReplayPacketRecord> packets;
@@ -347,6 +348,7 @@ bool replay::BeginPlaybackFromFile(const std::string &path) {
     gPlaybackState.boardTicks = static_cast<std::uint32_t>(std::max(0, std::atoi(ReadMetaValue(meta, "board_tick").c_str())));
     gPlaybackState.nextIndex = 0;
     gPlaybackState.speedLevel = 0;
+    gPlaybackState.halfSpeedPhase = false;
     gPlaybackState.vsBackground = std::atoi(ReadMetaValue(meta, "vs_background").c_str());
     gPlaybackState.filePath = path;
     gPlaybackState.packets = std::move(packets);
@@ -400,33 +402,55 @@ int replay::GetPlaybackSpeedLevel() {
     return gPlaybackState.speedLevel;
 }
 
-int replay::GetPlaybackSpeedMultiplier() {
+float replay::GetPlaybackSpeedMultiplier() {
     switch (gPlaybackState.speedLevel) {
         case 1:
-            return 2;
+            return 2.0f;
         case 2:
-            return 3;
+            return 3.0f;
         case 3:
-            return 5;
+            return 5.0f;
         case 4:
-            return 10;
+            return 10.0f;
+        case 5:
+            return 0.5f;
         default:
-            return 1;
+            return 1.0f;
     }
+}
+
+bool replay::ConsumePlaybackFrameStep() {
+    if (!gPlaybackState.active || gPlaybackState.paused) {
+        gPlaybackState.halfSpeedPhase = false;
+        return false;
+    }
+
+    // 正常速度和高速档位每帧都执行。
+    if (gPlaybackState.speedLevel != 5) {
+        gPlaybackState.halfSpeedPhase = false;
+        return true;
+    }
+
+    // 0.5 倍速：执行一帧，跳过一帧。
+    gPlaybackState.halfSpeedPhase = !gPlaybackState.halfSpeedPhase;
+
+    return gPlaybackState.halfSpeedPhase;
 }
 
 void replay::SetPlaybackSpeedLevel(int speedLevel) {
     if (!gPlaybackState.active) {
         return;
     }
-    gPlaybackState.speedLevel = std::clamp(speedLevel, 0, 4);
+    gPlaybackState.speedLevel = std::clamp(speedLevel, 0, 5);
+    gPlaybackState.halfSpeedPhase = false;
 }
 
 void replay::CyclePlaybackSpeed() {
     if (!gPlaybackState.active) {
         return;
     }
-    gPlaybackState.speedLevel = (gPlaybackState.speedLevel + 1) % 5;
+    gPlaybackState.speedLevel = (gPlaybackState.speedLevel + 1) % 6;
+    gPlaybackState.halfSpeedPhase = false;
 }
 
 int replay::GetPlaybackTick() {

@@ -169,7 +169,7 @@ void ReplayControlsWidget::Draw(Graphics *g) {
 
     TodDrawString(g, "[REPLAY]", 56, 26, FONT_DWARVENTODCRAFT18, Color(0, 205, 0, 255), DS_ALIGN_CENTER);
     DrawButton(g, PauseButtonRect(), replay::IsPlaybackPaused() ? "[REPLAY_PLAY]" : "[REPLAY_PAUSE]");
-    DrawButton(g, SpeedButtonRect(), StrFormat("%s:%dx", TodStringTranslate("[REPLAY_SPEED]").c_str(), replay::GetPlaybackSpeedMultiplier()).c_str());
+    DrawButton(g, SpeedButtonRect(), StrFormat("%s:%gx", TodStringTranslate("[REPLAY_SPEED]").c_str(), static_cast<double>(replay::GetPlaybackSpeedMultiplier())).c_str());
     DrawButton(g, ForwardButtonRect(), "+10s");
     DrawButton(g, RestartButtonRect(), "[REPLAY_RESTART]");
     if (ShowSkipSetupButton()) {

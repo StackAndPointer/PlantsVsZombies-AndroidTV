@@ -3345,7 +3345,7 @@ void Board::Update() {
         }
 
         if (gIsReplayMode && replay::IsPlaybackActive() && !replay::IsPlaybackPaused()) {
-            const int extraUpdates = replay::GetPlaybackSpeedMultiplier() - 1;
+            const int extraUpdates = std::max(0, static_cast<int>(replay::GetPlaybackSpeedMultiplier()) - 1);
             for (int i = 0; i < extraUpdates; ++i) {
                 replay::AdvancePlaybackOneTick();
                 if (mApp->mGameScene == GameScenes::SCENE_LEVEL_INTRO && mCutScene != nullptr) {

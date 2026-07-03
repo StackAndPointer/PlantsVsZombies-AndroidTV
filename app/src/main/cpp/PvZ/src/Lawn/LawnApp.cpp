@@ -613,7 +613,14 @@ void LawnApp::FinishLoadGame() {
 }
 
 void LawnApp::UpdateFrames() {
+    const bool replayActive = replay::IsPlaybackActive();
     const bool replayPaused = replay::IsPlaybackPaused();
+
+    bool runReplayFrame = true;
+
+    if (replayActive && !replayPaused) {
+        runReplayFrame = replay::ConsumePlaybackFrameStep();
+    }
     if ((gTcpClientSocket >= 0 || gTcpConnected || replay::IsPlaybackActive()) && !replayPaused) {
         ++gNetPingNowTick;
         if (!gIsServerModeSpectator) {
@@ -626,9 +633,9 @@ void LawnApp::UpdateFrames() {
                 gSpectatePeerPingValid = false;
             }
         }
-        if (!replay::IsPlaybackActive()) {
+        if (!replayActive) {
             SendPeriodicNetPing();
-        } else if (replay::IsPlaybackActive()) {
+        } else if (runReplayFrame) {
             replay::AdvancePlaybackOneTick();
         }
     }
@@ -777,6 +784,10 @@ void LawnApp::UpdateFrames() {
         }
     } else {
         updateCount = 1;
+    }
+
+    if (replayActive && !replayPaused && !runReplayFrame) {
+        updateCount = 0;
     }
 
     for (int i = 0; i < updateCount; ++i) {
