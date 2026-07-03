@@ -547,6 +547,7 @@ void Projectile::DoImpact(Zombie *theZombie) {
                 }
             } else {
                 theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
+                Die();
             }
             return;
         } else {
