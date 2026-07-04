@@ -39,7 +39,7 @@ void Coin::CoinInitialize(int theX, int theY, CoinType theCoinType, CoinMotion t
     if (mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN) {
         mScale = 0.5f;
 
-        Reanimation *aReanim = mApp->AddReanimation(0.0f, 0.0f, 0, ReanimationType::REANIM_VS_ZOMBIE_BRAIN);
+        Reanimation *aReanim = mApp->AddReanimation(0.0f, 0.0f, 0, ReanimationType::REANIM_ZOMBIESUN);
         aReanim->SetPosition(mPosX + mWidth * 0.5f, mPosY + mHeight * 0.5f);
         aReanim->mLoopType = ReanimLoopType::REANIM_LOOP;
         aReanim->SetAnimRate(6.0f);

@@ -7158,7 +7158,7 @@ GridItem *Board::AddAGraveStone(int theGridX, int theGridY) {
         int aX = GridToPixelX(theGridX, theGridY);
         int aY = GridToPixelY(theGridX, theGridY);
         int aRenderOrder = MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, theGridY, 0);
-        Reanimation *aReanim = mApp->AddReanimation((float)aX, (float)aY, aRenderOrder, ReanimationType::REANIM_MP_GRAVESTONE);
+        Reanimation *aReanim = mApp->AddReanimation((float)aX, (float)aY, aRenderOrder, ReanimationType::REANIM_VS_GRAVESTONE);
         aReanim->mIsAttachment = true;
         aReanim->SetTruncateDisappearingFrames(nullptr, false);
         aReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0);
@@ -7449,7 +7449,7 @@ GridItem *Board::AddMPTarget(int theGridX, int theGridY) {
     int aPixelX = GridToPixelX(theGridX, theGridY);
     int aPixelY = GridToPixelY(theGridX, theGridY);
     int aNumRows = StageHas6Rows() ? 6 : 5;
-    Reanimation *reanimation = mApp->AddReanimation((20.0f / (aNumRows - theGridY)) + 26.0f + aPixelX, aPixelY - 54.0f, RenderOrder, REANIM_VS_TARGET);
+    Reanimation *reanimation = mApp->AddReanimation((20.0f / (aNumRows - theGridY)) + 26.0f + aPixelX, aPixelY - 54.0f, RenderOrder, REANIM_ZOMBIE_TARGET);
     reanimation->SetAnimRate(0.0);
     reanimation->mLoopType = REANIM_LOOP;
     reanimation->mIsAttachment = true;
