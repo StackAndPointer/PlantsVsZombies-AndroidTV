@@ -3819,14 +3819,6 @@ void Board::Draw(Sexy::Graphics *g) {
     old_Board_Draw(this, g);
 
     if (mApp->IsVSMode()) {
-        if (mChallenge->mSuddenDeathCounter >= 0) {
-            int aRemainSeconds = std::max(0, MP_SUDDEN_DEATH_SECONDS - mChallenge->mSuddenDeathCounter / MP_SUDDEN_DEATH_TICKS_PER_SECOND);
-            int aMinutes = aRemainSeconds / 60;
-            int aSeconds = aRemainSeconds % 60;
-            Color aSuddenDeathColor = aRemainSeconds <= 10 ? Color(255, 0, 0) : Color::White;
-            TodDrawString(g, StrFormat("%d:%02d", aMinutes, aSeconds), 400, 620, Sexy::FONT_DWARVENTODCRAFT18, aSuddenDeathColor, DS_ALIGN_CENTER);
-        }
-
         Color aColor = Color(0, 205, 0, 255);
 
         if (gIsReplayMode) {

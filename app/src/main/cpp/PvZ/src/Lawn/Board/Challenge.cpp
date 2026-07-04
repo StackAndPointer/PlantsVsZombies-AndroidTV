@@ -1096,17 +1096,25 @@ void Challenge::DrawBackdrop(Sexy::Graphics *g) {
     old_Challenge_DrawBackdrop(this, g);
 
     if (mApp->IsVSMode()) {
-        DrawVSClock(g);
+        DrawVSSuddenDeathClock(g);
     }
 }
 
-void Challenge::DrawVSClock(Graphics *g) {
-    //    if (mApp->mGameScene == SCENE_ZOMBIES_WON || mApp->mGameScene == SCENE_PLANTS_WON) {
-    //        return;
-    //    }
+void Challenge::DrawVSSuddenDeathClock(Graphics *g) {
+    if (mApp->mGameScene == SCENE_ZOMBIES_WON || mApp->mGameScene == SCENE_PLANTS_WON) {
+        return;
+    }
 
     Graphics gBoardParent = Graphics(*g);
     gBoardParent.mTransX -= mBoard->mX;
     gBoardParent.mTransY -= mBoard->mY;
     mApp->ReanimationGet(mReanimChallenge)->Draw(&gBoardParent);
+
+    if (mSuddenDeathCounter >= 0) {
+        int aRemainSeconds = std::max(0, MP_SUDDEN_DEATH_SECONDS - mSuddenDeathCounter / MP_SUDDEN_DEATH_TICKS_PER_SECOND);
+        int aMinutes = aRemainSeconds / 60;
+        int aSeconds = aRemainSeconds % 60;
+        Color aSuddenDeathColor = aRemainSeconds <= 10 ? Color(255, 0, 0) : Color::White;
+        TodDrawString(&gBoardParent, StrFormat("%d:%02d", aMinutes, aSeconds), 400, 620, Sexy::FONT_DWARVENTODCRAFT18, aSuddenDeathColor, DS_ALIGN_CENTER);
+    }
 }

@@ -251,7 +251,7 @@ public:
     void UpdateMPGraveStones();
     bool ISMPSeedSuddenDeathDisabled(int thePlayerIndex, SeedType theSeedType);
     void DrawBackdrop(Sexy::Graphics *g);
-    void DrawVSClock(Sexy::Graphics *g);
+    void DrawVSSuddenDeathClock(Sexy::Graphics *g);
 
 protected:
     friend void InitHookFunction();
