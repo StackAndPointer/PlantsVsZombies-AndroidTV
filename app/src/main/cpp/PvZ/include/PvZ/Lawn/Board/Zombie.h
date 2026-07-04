@@ -63,6 +63,7 @@ inline constexpr float CLIP_HEIGHT_OFF = -200.0f;
 inline constexpr float FLYER_ALTITUDE = 25.0f;
 inline constexpr Sexy::Color ZOMBIE_MINDCONTROLLED_COLOR = Sexy::Color(128, 0, 192, 255);
 inline constexpr Sexy::Color ZOMBIE_REVIVED_COLOR = Sexy::Color(135, 206, 250, 180);
+inline constexpr int ZOMBIE_POISONING_TIME = 300;
 
 enum ZombieAttackType {
     ATTACKTYPE_CHEW,
@@ -142,6 +143,8 @@ public:
     bool mCanRevived;                                 // 新增成员，用于计入复生池
     int mZombieFade;                                  // 33
     bool mFlatTires;                                  // 136
+    bool mPoisoned;                                   // 新增成员，判定僵尸是否中毒
+    short mPoisonedCounter;                           // 新增成员，中毒死亡倒计时
     int mUseLadderCol;                                // 35
     int mTargetCol;                                   // 36
     float mAltitude;                                  // 37
@@ -333,6 +336,9 @@ public:
     void BossDie() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_BossDieAddr)(this);
     }
+    void TrySpawnLevelAward() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_TrySpawnLevelAwardAddr)(this);
+    }
 
 
     Zombie() {
@@ -431,6 +437,8 @@ public:
     void SetRow(int theRow);
     void StartMindControlled();
     void StartMindControlled_Origin();
+    void ConvertToImp();
+    void ConvertToImp_Origin();
     void UpdateReanim();
     void UpdateReanimColor();
     void SetupLostArmReanim();

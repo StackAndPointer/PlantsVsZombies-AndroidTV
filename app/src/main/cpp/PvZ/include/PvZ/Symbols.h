@@ -576,6 +576,7 @@ inline void *Zombie_BungeeLandingAddr;
 inline void *Zombie_UpdateLadderAddr;
 inline void *Zombie_GetDrawPosAddr;
 inline void *Zombie_ZombieNotWalkingAddr;
+inline void *Zombie_TrySpawnLevelAwardAddr;
 
 
 inline void *SeedChooserScreen_UpdateAddr;

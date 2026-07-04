@@ -2366,6 +2366,15 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aZombie->StartMindControlled_Origin();
             }
         } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_CONVERT_TO_IMP: {
+            auto *eventZombieConvertToImp = static_cast<const U16_Event *>(event);
+            uint16_t serverZombieID = eventZombieConvertToImp->data;
+            uint16_t clientZombieID = 0;
+            if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                aZombie->ConvertToImp_Origin();
+            }
+        } break;
         case EVENT_SERVER_BOARD_ZOMBIE_ADD: {
             auto *eventZombieAdd = static_cast<const U8x5U16UNI32x2_Event *>(event);
             auto aZombieType = ZombieType(eventZombieAdd->data1[0]);

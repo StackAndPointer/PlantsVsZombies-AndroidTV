@@ -111,6 +111,8 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     mSquashHeadCol = -1;
     mIsRevived = false;
     mCanRevived = true;
+    mPoisoned = false;
+    mPoisonedCounter = 0;
 
     if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineServerModeActive() && !gIsReplayMode) {
         mScaleZombie = 0.2f * zombieSetScale;
@@ -430,6 +432,9 @@ void Zombie::Update() {
                 DieNoLoot();
             }
         }
+        if (mPoisonedCounter > 0) {
+            --mPoisonedCounter;
+        }
 
         mX = int(mPosX);
         mY = int(mPosY);
@@ -509,6 +514,23 @@ void Zombie::UpdatePlaying() {
         if (mButteredCounter == 0) {
             RemoveButter();
         }
+    }
+
+    if (mPoisoned) {
+        StopEating();
+
+        if (mPoisonedCounter <= 0) {
+            mPoisonedCounter = 0;
+
+            if (mHasHead) {
+                DropHead(0U);
+            }
+
+            StopZombieSound();
+            PlayDeathAnim(0U);
+        }
+
+        return;
     }
 
     if (mZombiePhase == ZombiePhase::PHASE_RISING_FROM_GRAVE) {
@@ -3537,6 +3559,18 @@ void Zombie::EatPlant(Plant *thePlant) {
             netplay::PutEvent(event);
         }
 
+        if (thePlant->mSeedType == SeedType::SEED_IMP_PEAR) {
+            mApp->PlayFoley(FoleyType::FOLEY_FLOOP);
+
+            ConvertToImp();
+            mApp->AddTodParticle(mPosX + 60.0f, mPosY + 40.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_MIND_CONTROL);
+            TrySpawnLevelAward();
+
+            mVelX = 0.17f;
+            mAnimTicksPerFrame = 18;
+            UpdateAnimSpeed();
+        }
+
         mBoard->mPlantsEaten++;
         thePlant->Die();
         mBoard->mChallenge->ZombieAtePlant(this, thePlant);
@@ -4392,6 +4426,16 @@ void Zombie::DrawReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos, int t
     } else if (mZombieHeight == ZombieHeight::HEIGHT_ZOMBIQUARIUM && mBodyHealth < 100) {
         aColorOverride = Color(100, 150, 25, aFadeAlpha);
         aExtraAdditiveColor = aColorOverride;
+        aEnableExtraAdditiveDraw = true;
+    } else if (mPoisoned) {
+        int aProgress = ClampInt(ZOMBIE_POISONING_TIME - mPoisonedCounter, 0, ZOMBIE_POISONING_TIME);
+
+        int aRedBlue = TodAnimateCurve(0, ZOMBIE_POISONING_TIME, aProgress, 255, 70, TodCurves::CURVE_LINEAR);
+        int aGreen = TodAnimateCurve(0, ZOMBIE_POISONING_TIME, aProgress, 255, 230, TodCurves::CURVE_LINEAR);
+        int aPoisonGlow = TodAnimateCurve(0, ZOMBIE_POISONING_TIME, aProgress, 0, 120, TodCurves::CURVE_LINEAR);
+
+        aColorOverride = Color(aRedBlue, aGreen, aRedBlue, aFadeAlpha);
+        aExtraAdditiveColor = Color(0, aPoisonGlow, 0, 255);
         aEnableExtraAdditiveDraw = true;
     } else if (mIsRevived) {
         aColorOverride = ZOMBIE_REVIVED_COLOR;
@@ -5573,6 +5617,45 @@ void Zombie::StartMindControlled_Origin() {
     if (mZombieType == ZombieType::ZOMBIE_JACKSON && !mBoard->GetLiveZombieByType(ZombieType::ZOMBIE_JACKSON)) {
         mBoard->SetDanceMode(false);
         msDeadFollowers.clear();
+    }
+}
+
+void Zombie::ConvertToImp() {
+    if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
+            return;
+
+        if (gTcpClientSocket >= 0) {
+            U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_CONVERT_TO_IMP}, uint16_t(mBoard->mZombies.DataArrayGetID(this))};
+            netplay::PutEvent(event);
+        }
+    }
+
+    ConvertToImp_Origin();
+}
+
+void Zombie::ConvertToImp_Origin() {
+    if (mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
+        mPoisoned = true;
+        mPoisonedCounter = ZOMBIE_POISONING_TIME;
+        StopEating();
+        PlayZombieReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+    } else {
+        mApp->PlayFoley(FoleyType::FOLEY_IMP);
+
+        Zombie *aZombieImp = mBoard->AddZombieInRow(ZombieType::ZOMBIE_IMP, mRow, mFromWave, false);
+        if (aZombieImp != nullptr) {
+            aZombieImp->mPosX = mPosX;
+            aZombieImp->mPosY = mPosY;
+            aZombieImp->mZombiePhase = ZombiePhase::PHASE_IMP_PRE_RUN;
+        }
+        if (mHelmType != HelmType::HELMTYPE_NONE) {
+            DropHelm(0U);
+        }
+        if (mShieldType != ShieldType::SHIELDTYPE_NONE) {
+            DropShield(0U);
+        }
+        DieNoLoot();
     }
 }
 

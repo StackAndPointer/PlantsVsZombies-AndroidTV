@@ -77,7 +77,7 @@ int LeaderboardsWidget_GetAchievementIdByReanimationType(ReanimationType type) {
         case ReanimationType::REANIM_ACHIEVEMENT_CRASH_OF_THE_TITAN:
             id = AchievementType::ACHIEVEMENT_GARG;
             break;
-        case ReanimationType::REANIM_ACHIEVEMENT_Zffs4Evr:
+        case ReanimationType::REANIM_ACHIEVEMENT_ZFFS_4_EVR:
             id = AchievementType::ACHIEVEMENT_COOP;
             break;
         case ReanimationType::REANIM_ACHIEVEMENT_ALIVE_AND_PLANTING:
@@ -135,7 +135,7 @@ int LeaderboardsWidget_GetAchievementIdByDrawOrder(int drawOrder) {
             type = ReanimationType::REANIM_ACHIEVEMENT_VERSUS;
             break;
         case 8:
-            type = ReanimationType::REANIM_ACHIEVEMENT_Zffs4Evr;
+            type = ReanimationType::REANIM_ACHIEVEMENT_ZFFS_4_EVR;
             break;
         case 9:
             type = ReanimationType::REANIM_ACHIEVEMENT_CRASH_OF_THE_TITAN;

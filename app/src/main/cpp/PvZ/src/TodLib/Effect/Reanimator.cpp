@@ -111,6 +111,7 @@ static ReanimationParams gExtendedReanimationParamArray[] = {
     {ReanimationType::REANIM_SUNDAY_EDITION, "addonFiles/compiled/reanim/Zombie_sunday_edition.reanim", 0},
     {ReanimationType::REANIM_EXPLORER, "addonFiles/compiled/reanim/Zombie_explorer.reanim", 0},
     {ReanimationType::REANIM_ICEBERG_LETTUCE, "addonFiles/compiled/reanim/iceberg_lettuce.reanim", 0},
+    {ReanimationType::REANIM_IMP_PEAR, "addonFiles/compiled/reanim/imp_pear.reanim", 0},
     {ReanimationType::REANIM_APPLE_CLOCK, "addonFiles/compiled/reanim/apple_clock.reanim", 0},
 };
 

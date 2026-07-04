@@ -103,6 +103,7 @@ PlantDefinition gPlantDefs[SeedType::NUM_SEED_TYPES] = {
 
 PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_ICEBERG_LETTUCE, nullptr, ReanimationType::REANIM_ICEBERG_LETTUCE, 0, 0, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "ICEBERG_LETTUCE"},
+    {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
 
 void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, SeedType theImitaterType, int a6) {

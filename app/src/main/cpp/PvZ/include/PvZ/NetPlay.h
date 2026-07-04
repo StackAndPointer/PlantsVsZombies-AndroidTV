@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3180;
+inline constexpr uint32_t NETPLAY_VERSION = 3181;
 
 enum EventType : uint8_t {
     EVENT_NULL,
@@ -130,6 +130,7 @@ enum EventType : uint8_t {
 
     EVENT_SERVER_BOARD_ZOMBIE_DIE,
     EVENT_SERVER_BOARD_ZOMBIE_MIND_CONTROLLED,
+    EVENT_SERVER_BOARD_ZOMBIE_CONVERT_TO_IMP,
     EVENT_SERVER_BOARD_ZOMBIE_ADD,                   // AddZombieInRow触发的同步
     EVENT_SERVER_BOARD_ZOMBIE_BOBSELD_ADD,           // 单独同步雪橇小队
     EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_SET_STEAL_GRID, // 蹦极僵尸在AddZombieInRow之后还会设置靶标位置，所以单独同步
