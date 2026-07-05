@@ -1418,6 +1418,7 @@ bool LoadGameMain() {
 
     Sexy_Font_CharWidthKernAddr = libGameMain.GetSymbol("_ZN4Sexy4Font13CharWidthKernEii");
     Sexy_Font_StringWidthAddr = libGameMain.GetSymbol("_ZN4Sexy4Font11StringWidthERKSs");
+    Sexy_FreeTypeFont_FreeTypeFontAddr = libGameMain.GetSymbol("_ZN4Sexy12FreeTypeFontC2EPNS_11SexyAppBaseERKSsibbb");
 
     vTableForWidgetAddr = libGameMain.GetSymbol("_ZTVN4Sexy6WidgetE");
     vTableForSyncObjectAddr = libGameMain.GetSymbol("_ZTV10SyncObject");

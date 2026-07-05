@@ -1426,6 +1426,7 @@ inline void *TodFoley_PlayFoleyAddr;
 
 inline void *Sexy_Font_CharWidthKernAddr;
 inline void *Sexy_Font_StringWidthAddr;
+inline void *Sexy_FreeTypeFont_FreeTypeFontAddr;
 
 inline void *Sexy_MTRand_MTRandUlongAddr;
 inline void *Sexy_MTRand_NextUlongAddr;

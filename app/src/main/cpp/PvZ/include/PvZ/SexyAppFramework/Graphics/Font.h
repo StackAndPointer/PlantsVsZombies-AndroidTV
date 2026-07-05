@@ -141,7 +141,15 @@ public:
     }
 };
 
-class FreeTypeFont : public Font {};
+class FreeTypeFont : public Font {
+    int unk[3];
+
+public:
+    FreeTypeFont(SexyAppBase *theApp, pvzstl::string const &theFile, int size, bool bold, bool italic, bool underline) {
+        reinterpret_cast<void (*)(FreeTypeFont *, SexyAppBase *, pvzstl::string const &, int, bool, bool, bool)>(Sexy_FreeTypeFont_FreeTypeFontAddr)(
+            this, theApp, theFile, size, bold, italic, underline);
+    }
+};
 class SysFont : public Font {};
 
 } // namespace Sexy

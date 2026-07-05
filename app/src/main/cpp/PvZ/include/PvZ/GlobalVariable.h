@@ -29,6 +29,7 @@ class GameButton;
 
 namespace Sexy {
 class Image;
+class Font;
 }
 
 inline uintptr_t gLibGameMainBaseAddr;
@@ -496,5 +497,9 @@ struct AddonZombatarImages {
     Sexy::Image *zombatar_accessory_bg_highlight;
     Sexy::Image *zombatar_accessory_bg_none;
 } inline addonZombatarImages; // 此处是新增贴图的列表；
+
+struct AddonFonts {
+    Sexy::Font *FANGZHENG_JIANZHI;
+} inline addonFonts;
 
 #endif // PVZ_GLOBAL_VARIABLE_H

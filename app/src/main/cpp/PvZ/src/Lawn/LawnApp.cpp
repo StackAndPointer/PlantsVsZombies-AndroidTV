@@ -39,6 +39,7 @@
 #include "PvZ/ReplaySystem.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Buffer.h"
+#include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonWidget.h"
 #include "PvZ/SexyAppFramework/Widget/Dialog.h"
 #include "PvZ/Symbols.h"
@@ -1098,6 +1099,9 @@ void LawnApp::LoadingThreadProc() {
 
     // 加载新增 Foley
     TodFoleyInitialize(GetNewLawnFoleyParamArray(), std::size(GetNewLawnFoleyParamArray()));
+
+    // 加载新增 字体文件
+    addonFonts.FANGZHENG_JIANZHI = new FreeTypeFont(this, "addonFiles/FangZhengJianZhi.ttf", 28, false, false, false);
 
     // //试图修复偶现的地图错位现象。不知道是否有效
     // LawnApp_Load(lawnApp,"DelayLoad_Background1");
