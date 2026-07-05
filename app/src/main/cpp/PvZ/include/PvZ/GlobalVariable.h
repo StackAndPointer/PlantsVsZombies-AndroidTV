@@ -30,7 +30,7 @@ class GameButton;
 namespace Sexy {
 class Image;
 class Font;
-}
+} // namespace Sexy
 
 inline uintptr_t gLibGameMainBaseAddr;
 
