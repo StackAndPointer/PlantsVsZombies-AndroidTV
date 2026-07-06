@@ -2923,17 +2923,12 @@ void Board::processServerEvent(const BaseEvent *event) {
             uint16_t serverZombieID = eventZombieSquishAllInSquare->data1;
             uint16_t clientZombieID = 0;
             if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
-                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
-
-                Plant *aPlant = nullptr;
-                while (IteratePlants(aPlant)) {
+                for (Plant *aPlant = nullptr; IteratePlants(aPlant);) {
                     if (aPlant->mRow == eventZombieSquishAllInSquare->data2.u8x4.u8_2 && aPlant->mPlantCol == eventZombieSquishAllInSquare->data2.u8x4.u8_1) {
                         if (eventZombieSquishAllInSquare->data2.u8x4.u8_3 == ZombieAttackType::ATTACKTYPE_DRIVE_OVER && aPlant->IsSpiky()) {
                             continue;
                         }
-
                         if (aPlant->mSeedType != SeedType::SEED_SPIKEROCK) {
-                            mPlantsEaten++;
                             aPlant->Squish();
                         }
                     }
@@ -6686,10 +6681,10 @@ void Board::FixReanimErrorAfterLoad() {
 
         // 修复读档后盾牌贴图变为满血盾牌贴图、垃圾桶变为铁门
         if (aZombie->mShieldType != ShieldType::SHIELDTYPE_NONE) {
-            int shieldDamageIndex = aZombie->GetShieldDamageIndex();
+            int aShieldDamageIndex = aZombie->GetShieldDamageIndex();
             switch (aZombie->mShieldType) {
                 case ShieldType::SHIELDTYPE_DOOR:
-                    switch (shieldDamageIndex) {
+                    switch (aShieldDamageIndex) {
                         case 1:
                             mBodyReanim->SetImageOverride("anim_screendoor", Sexy::IMAGE_REANIM_ZOMBIE_SCREENDOOR2);
                             break;
@@ -6701,7 +6696,7 @@ void Board::FixReanimErrorAfterLoad() {
                     }
                     break;
                 case ShieldType::SHIELDTYPE_NEWSPAPER:
-                    switch (shieldDamageIndex) {
+                    switch (aShieldDamageIndex) {
                         case 1:
                             mBodyReanim->SetImageOverride("Zombie_paper_paper", Sexy::IMAGE_REANIM_ZOMBIE_PAPER_PAPER2);
                             break;
@@ -6713,7 +6708,7 @@ void Board::FixReanimErrorAfterLoad() {
                     }
                     break;
                 case ShieldType::SHIELDTYPE_LADDER:
-                    switch (shieldDamageIndex) {
+                    switch (aShieldDamageIndex) {
                         case 1:
                             mBodyReanim->SetImageOverride("Zombie_ladder_1", Sexy::IMAGE_REANIM_ZOMBIE_LADDER_1_DAMAGE1);
                             break;
@@ -6725,7 +6720,7 @@ void Board::FixReanimErrorAfterLoad() {
                     }
                     break;
                 case ShieldType::SHIELDTYPE_TRASHCAN:
-                    switch (shieldDamageIndex) {
+                    switch (aShieldDamageIndex) {
                         case 0:
                             mBodyReanim->SetImageOverride("anim_screendoor", Sexy::IMAGE_REANIM_ZOMBIE_TRASHCAN1);
                             break;
@@ -6739,8 +6734,20 @@ void Board::FixReanimErrorAfterLoad() {
                             break;
                     }
                     break;
-                case ShieldType::SHIELDTYPE_NONE:
+                case ShieldType::SHIELDTYPE_SUNDAY_EDITION:
+                    switch (aShieldDamageIndex) {
+                        case 1:
+                            mBodyReanim->SetImageOverride("Zombie_paper_paper", addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER2);
+                            break;
+                        case 2:
+                            mBodyReanim->SetImageOverride("Zombie_paper_paper", addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER3);
+                            break;
+                        default:
+                            break;
+                    }
                     break;
+                case ShieldType::SHIELDTYPE_NONE:
+                    std::unreachable();
             }
         }
 

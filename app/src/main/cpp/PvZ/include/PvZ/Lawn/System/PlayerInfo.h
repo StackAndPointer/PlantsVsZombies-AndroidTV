@@ -24,8 +24,9 @@
 #include "PvZ/Lawn/Widget/LeaderboardsWidget.h"
 
 #include "../Common/ConstEnums.h"
+
 class DataSync {
-    int unk[19];
+    [[maybe_unused]] int unk[19];
 }; // 大小未知，至少19个int
 
 class PottedPlant {

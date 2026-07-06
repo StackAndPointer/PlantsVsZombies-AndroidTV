@@ -1368,6 +1368,7 @@ enum ShieldType {
     SHIELDTYPE_NEWSPAPER,
     SHIELDTYPE_LADDER,
     SHIELDTYPE_TRASHCAN,
+    // extended begin
     SHIELDTYPE_SUNDAY_EDITION,
 };
 enum StoreItem {

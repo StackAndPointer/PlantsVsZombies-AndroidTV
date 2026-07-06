@@ -238,7 +238,6 @@ public:
     void GetSeedPositionInChooser(int theIndex, int &x, int &y);
     int NumColumns() const;
     void ShowToolTip(unsigned int thePlayerIndex);
-    static SeedType GetZombieIndexBySeedType(SeedType theSeedType);
     int GetNextSeedInDir(int theNumSeed, SeedDir theMoveDirection);
     void Draw(Sexy::Graphics *g);
     void DrawBanIcon(Sexy::Graphics *g);

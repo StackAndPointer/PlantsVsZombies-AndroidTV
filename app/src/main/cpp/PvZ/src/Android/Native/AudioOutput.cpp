@@ -435,7 +435,7 @@ namespace opensl {
         return dataSize;
     }
 
-    void stop() {
+    [[maybe_unused]] void stop() {
         /*
          * 先禁止新的 write() 继续入队。
          */

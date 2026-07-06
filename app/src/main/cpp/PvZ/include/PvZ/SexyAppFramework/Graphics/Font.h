@@ -56,14 +56,12 @@ public:
         bool (*IsComposited)(Font *self);                                                                                                                                                    // 0x50
     };
 
-public:
     void **vTable;
     int mAscent;
     int mAscentPadding;
     int mHeight;
     int mLineSpacingOffset;
 
-public:
     inline int CharWidthKern(int theChar, int thePrevChar) {
         return reinterpret_cast<int (*)(Font *, int, int)>(Sexy_Font_CharWidthKernAddr)(this, theChar, thePrevChar);
     }
@@ -81,10 +79,14 @@ public:
     int GetAscent() {
         return mAscent;
     }
+
+protected:
+    Font() = default;
+    ~Font() = default;
 };
 
-
 class ImageFont : public Font {
+public:
     struct ImageFontVTable {
         void (*completeDestructor)(ImageFont *self);                                                                                                                         // 0x00
         void (*deletingDestructor)(ImageFont *self);                                                                                                                         // 0x04
@@ -135,22 +137,30 @@ class ImageFont : public Font {
         void (*Prepare)(ImageFont *self);                                                                                                   // 0x94
     };
 
-public:
     const ImageFontVTable *GetVTable() const {
         return (ImageFontVTable *)vTable;
     }
+
+    ImageFont() = delete;
+    ~ImageFont() = delete;
 };
 
 class FreeTypeFont : public Font {
-    int unk[3];
+    [[maybe_unused]] int unk[3];
 
 public:
     FreeTypeFont(SexyAppBase *theApp, pvzstl::string const &theFile, int size, bool bold, bool italic, bool underline) {
         reinterpret_cast<void (*)(FreeTypeFont *, SexyAppBase *, pvzstl::string const &, int, bool, bool, bool)>(Sexy_FreeTypeFont_FreeTypeFontAddr)(
             this, theApp, theFile, size, bold, italic, underline);
     }
+    ~FreeTypeFont() = delete;
 };
-class SysFont : public Font {};
+
+class SysFont : public Font {
+public:
+    SysFont() = delete;
+    ~SysFont() = delete;
+};
 
 } // namespace Sexy
 

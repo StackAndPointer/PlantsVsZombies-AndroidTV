@@ -2724,7 +2724,7 @@ void Plant::UpdateMagnetShroom() {
 }
 
 void Plant::UpdateSquash() {
-    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    // mApp->ReanimationTryToGet(mBodyReanimID); // disassembled code
     bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
     auto syncSquashState = [this]() {
         if (gTcpClientSocket < 0) {

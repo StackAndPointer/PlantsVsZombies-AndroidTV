@@ -25,14 +25,15 @@ add_library(Homura SHARED Main.cpp ${SRC_FILES})
 target_include_directories(Homura PRIVATE Homura/include PvZ/include)
 
 target_compile_options(Homura PRIVATE
+        -Werror
         -Wall
-        -Werror=array-bounds
-        -Werror=implicit-fallthrough
-        -Werror=nonnull
-        -Werror=return-type
-        -Werror=unused-but-set-variable
-        -Werror=unused-result
-        -Werror=writable-strings
+        -Warray-bounds
+        -Wformat
+        -Wimplicit-fallthrough
+        -Wreturn-type
+        -Wunused-but-set-variable
+        -Wunused-value
+        -Wwrite-strings
 )
 
 target_compile_definitions(Homura PRIVATE PVZ_VERSION=${PVZ_VERSION})
