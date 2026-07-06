@@ -27,13 +27,8 @@ target_include_directories(Homura PRIVATE Homura/include PvZ/include)
 target_compile_options(Homura PRIVATE
         -Werror
         -Wall
-        -Warray-bounds
-        -Wformat
         -Wimplicit-fallthrough
-        -Wreturn-type
         -Wunused-but-set-variable
-        -Wunused-value
-        -Wwrite-strings
 )
 
 target_compile_definitions(Homura PRIVATE PVZ_VERSION=${PVZ_VERSION})
