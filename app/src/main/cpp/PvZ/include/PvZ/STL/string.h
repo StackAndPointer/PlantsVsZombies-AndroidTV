@@ -20,7 +20,9 @@
 #ifndef PVZ_STL_STRING_H
 #define PVZ_STL_STRING_H
 
+#ifdef PVZ_VERSION
 #include "PvZ/MagicNumbers.h"
+#endif
 
 #include "ext/string_conversions.h"
 
@@ -37,11 +39,13 @@ extern uintptr_t gLibGameMainBaseAddr;
 
 namespace pvzstl {
 
-template <typename SV, typename CharT>
-concept _convertible_to_string_view = std::is_convertible_v<const SV &, std::basic_string_view<CharT>> && !std::is_convertible_v<const SV &, const CharT *>;
+namespace details {
+    template <typename SV, typename CharT>
+    concept convertible_to_string_view = std::is_convertible_v<const SV &, std::basic_string_view<CharT>> && !std::is_convertible_v<const SV &, const CharT *>;
 
-template <typename Range, typename Tp>
-concept _container_compatible_range = std::ranges::input_range<Range> && std::convertible_to<std::ranges::range_reference_t<Range>, Tp>;
+    template <typename Range, typename Tp>
+    concept container_compatible_range = std::ranges::input_range<Range> && std::convertible_to<std::ranges::range_reference_t<Range>, Tp>;
+} // namespace details
 
 /**
  * @class basic_string
@@ -85,21 +89,21 @@ public:
     static constexpr size_type npos = static_cast<size_type>(-1);
 
     basic_string() noexcept // strengthened
-        : _dataplus{_rep::_empty_rep()._data} {}
+        : m_dataplus{rep::empty_rep().m_data} {}
 
     basic_string(const basic_string &other)
-        : _dataplus{other._get_rep()->_grab()} {}
+        : m_dataplus{other.get_rep()->grab()} {}
 
     basic_string(basic_string &&other) noexcept
-        : _dataplus{other._dataplus} {
-        other._dataplus = _rep::_empty_rep()._data;
+        : m_dataplus{other.m_dataplus} {
+        other.m_dataplus = rep::empty_rep().m_data;
     }
 
     basic_string(const basic_string &str, size_type pos, size_type n)
-        : _dataplus{_construct(str.c_str() + str._check_range(pos, "basic_string"), str.c_str() + std::min(n, str.size() - pos))} {}
+        : m_dataplus{construct(str.c_str() + str.check_range(pos, "basic_string"), str.c_str() + std::min(n, str.size() - pos))} {}
 
     basic_string(const basic_string &str, size_type pos)
-        : _dataplus{_construct(str.c_str() + str._check_range(pos, "basic_string"), str.c_str() + str.size() - pos)} {}
+        : m_dataplus{construct(str.c_str() + str.check_range(pos, "basic_string"), str.c_str() + str.size() - pos)} {}
 
     basic_string(basic_string &&str, size_type pos, size_type n)
         : basic_string(std::move(str.assign(str, pos, n))) {}
@@ -112,39 +116,39 @@ public:
     basic_string(const SV &t, size_type pos, size_type n) {
         const _self_view sv0 = t;
         const _self_view sv = sv0.substr(pos, n);
-        _dataplus = _construct(sv.begin(), sv.end());
+        m_dataplus = construct(sv.begin(), sv.end());
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     explicit basic_string(const SV &t) {
         const _self_view sv = t;
-        _dataplus = _construct(sv.begin(), sv.end());
+        m_dataplus = construct(sv.begin(), sv.end());
     }
 
     basic_string(const CharT *s, size_type n)
-        : _dataplus{_construct(s, s + n)} {}
+        : m_dataplus{construct(s, s + n)} {}
 
     basic_string(const CharT *s)
-        : _dataplus{_construct(s, s + (s != nullptr ? traits_type::length(s) : npos))} {}
+        : m_dataplus{construct(s, s + (s != nullptr ? traits_type::length(s) : npos))} {}
 
     basic_string(std::nullptr_t) = delete;
 
     basic_string(size_type n, CharT c)
-        : _dataplus{_construct(n, c)} {}
+        : m_dataplus{construct(n, c)} {}
 
     template <std::input_iterator InputIt>
     basic_string(InputIt first, InputIt last)
-        : _dataplus{_construct(first, last)} {}
+        : m_dataplus{construct(first, last)} {}
 
-    template <_container_compatible_range<CharT> Range>
+    template <details::container_compatible_range<CharT> Range>
     basic_string(std::from_range_t, Range &&range)
-        : _dataplus{_construct(std::ranges::begin(range), std::ranges::end(range))} {}
+        : m_dataplus{construct(std::ranges::begin(range), std::ranges::end(range))} {}
 
     basic_string(std::initializer_list<CharT> il)
-        : _dataplus{_construct(il.begin(), il.end())} {}
+        : m_dataplus{construct(il.begin(), il.end())} {}
 
     ~basic_string() {
-        _get_rep()->_dispose();
+        get_rep()->dispose();
     }
 
     /* implicit */ operator _self_view() const noexcept {
@@ -152,9 +156,9 @@ public:
     }
 
     basic_string &operator=(const basic_string &other) {
-        if (_get_rep() != other._get_rep()) {
-            _get_rep()->_dispose();
-            _dataplus = other._get_rep()->_grab();
+        if (get_rep() != other.get_rep()) {
+            get_rep()->dispose();
+            m_dataplus = other.get_rep()->grab();
         }
         return *this;
     }
@@ -164,7 +168,7 @@ public:
         return *this;
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &operator=(const SV &t) {
         const _self_view sv = t;
         return assign(sv);
@@ -185,7 +189,7 @@ public:
     }
 
     basic_string &assign(const basic_string &str, size_type pos, size_type n = npos) {
-        str._check_range(pos, "basic_string::assign");
+        str.check_range(pos, "basic_string::assign");
         return assign(str.c_str() + pos, std::min(n, str.size() - pos));
     }
 
@@ -197,13 +201,13 @@ public:
         return *this = std::move(str);
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &assign(const SV &t, size_type pos, size_type n = npos) {
         const _self_view sv = t;
         return assign(sv.substr(pos, n));
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &assign(const SV &t) {
         const _self_view sv = t;
         return assign(sv.data(), sv.size());
@@ -211,17 +215,17 @@ public:
 
     basic_string &assign(const CharT *s, size_type n) {
         assert((s != nullptr || n == 0) && "basic_string::assign received nullptr");
-        _check_length(0, n, "basic_string::assign");
-        if (_disjunct(s) || _get_rep()->_is_shared()) {
-            return _replace_safe(0, size(), s, n);
+        check_length(0, n, "basic_string::assign");
+        if (disjunct(s) || get_rep()->is_shared()) {
+            return replace_safe(0, size(), s, n);
         }
         const size_type pos = static_cast<size_type>(s - c_str());
         if (pos >= n) {
-            traits_type::copy(_dataplus, s, n);
+            traits_type::copy(m_dataplus, s, n);
         } else if (pos > 0) {
-            traits_type::move(_dataplus, s, n);
+            traits_type::move(m_dataplus, s, n);
         }
-        _get_rep()->_set_size_and_sharable(n);
+        get_rep()->set_size_and_sharable(n);
         return *this;
     }
 
@@ -231,7 +235,7 @@ public:
     }
 
     basic_string &assign(size_type n, CharT c) {
-        return _replace_aux(0, size(), n, c);
+        return replace_aux(0, size(), n, c);
     }
 
     basic_string &assign(std::initializer_list<CharT> il) {
@@ -249,8 +253,8 @@ public:
         if (pos >= size()) {
             throw std::out_of_range{"basic_string::at"};
         }
-        _leak();
-        return _dataplus[pos];
+        leak();
+        return m_dataplus[pos];
     }
 
     // 不提供非 const 重载以满足 noexcept 要求,
@@ -271,11 +275,11 @@ public:
     }
 
     [[nodiscard]] const CharT *data() const noexcept {
-        return _dataplus;
+        return m_dataplus;
     }
 
     [[nodiscard]] const CharT *c_str() const noexcept {
-        return _dataplus;
+        return m_dataplus;
     }
 
     [[nodiscard]] const_iterator begin() const noexcept {
@@ -315,50 +319,50 @@ public:
     }
 
     [[nodiscard]] size_type size() const noexcept {
-        return _get_rep()->_size;
+        return get_rep()->m_size;
     }
 
     [[nodiscard]] size_type length() const noexcept {
-        return _get_rep()->_size;
+        return get_rep()->m_size;
     }
 
     [[nodiscard]] constexpr size_type max_size() const noexcept {
-        return _rep::_max_size();
+        return rep::max_size();
     }
 
     void reserve(size_type new_cap) {
         const size_type old_cap = capacity();
-        if ((new_cap <= old_cap) && !_get_rep()->_is_shared()) {
+        if ((new_cap <= old_cap) && !get_rep()->is_shared()) {
             return;
         }
-        CharT *tmp = _get_rep()->_clone(std::max(new_cap, old_cap) - size());
-        _get_rep()->_dispose();
-        _dataplus = tmp;
+        CharT *tmp = get_rep()->clone(std::max(new_cap, old_cap) - size());
+        get_rep()->dispose();
+        m_dataplus = tmp;
     }
 
     [[nodiscard]] size_type capacity() const noexcept {
-        return _get_rep()->_capacity;
+        return get_rep()->m_capacity;
     }
 
     void shrink_to_fit() {
-        if (capacity() > size() || _get_rep()->_is_shared()) {
-            CharT *tmp = _get_rep()->_clone();
-            _get_rep()->_dispose();
-            _dataplus = tmp;
+        if (capacity() > size() || get_rep()->is_shared()) {
+            CharT *tmp = get_rep()->clone();
+            get_rep()->dispose();
+            m_dataplus = tmp;
         }
     }
 
     void clear() noexcept {
-        if (_get_rep()->_is_shared()) {
-            _get_rep()->_dispose();
-            _dataplus = _rep::_empty_rep()._data;
+        if (get_rep()->is_shared()) {
+            get_rep()->dispose();
+            m_dataplus = rep::empty_rep().m_data;
         } else {
-            _get_rep()->_set_size_and_sharable(0);
+            get_rep()->set_size_and_sharable(0);
         }
     }
 
     basic_string &insert(size_type pos1, const basic_string &str, size_type pos2, size_type n = npos) {
-        str._check_range(pos2, "basic_string::insert");
+        str.check_range(pos2, "basic_string::insert");
         return insert(pos1, str.c_str() + pos2, std::min(n, str.size() - pos2));
     }
 
@@ -366,13 +370,13 @@ public:
         return insert(pos, str.c_str(), str.size());
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &insert(size_type pos1, const SV &t, size_type pos2, size_type n = npos) {
         const _self_view sv = t;
         return insert(pos1, sv.substr(pos2, n));
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &insert(size_type pos, const SV &t) {
         const _self_view sv = t;
         return insert(pos, sv.data(), sv.size());
@@ -380,15 +384,15 @@ public:
 
     basic_string &insert(size_type pos, const CharT *s, size_type n) {
         assert((s != nullptr || n == 0) && "basic_string::insert received nullptr");
-        _check_range(pos, "basic_string::insert");
-        _check_length(0, n, "basic_string::insert");
-        if (_disjunct(s) || _get_rep()->_is_shared()) {
-            return _replace_safe(pos, 0, s, n);
+        check_range(pos, "basic_string::insert");
+        check_length(0, n, "basic_string::insert");
+        if (disjunct(s) || get_rep()->is_shared()) {
+            return replace_safe(pos, 0, s, n);
         }
         const size_type off = static_cast<size_type>(s - c_str());
-        _mutate(pos, 0, n);
+        mutate(pos, 0, n);
         s = c_str() + off;
-        CharT *p = _dataplus + pos;
+        CharT *p = m_dataplus + pos;
         if (s + n <= p) {
             traits_type::copy(p, s, n);
         } else if (s >= p) {
@@ -407,19 +411,19 @@ public:
     }
 
     basic_string &insert(size_type pos, size_type n, CharT c) {
-        return _replace_aux(_check_range(pos, "basic_string::insert"), 0, n, c);
+        return replace_aux(check_range(pos, "basic_string::insert"), 0, n, c);
     }
 
     basic_string &erase(size_type pos = 0, size_type n = npos) {
-        _mutate(_check_range(pos, "basic_string::erase"), std::min(n, size() - pos), 0);
+        mutate(check_range(pos, "basic_string::erase"), std::min(n, size() - pos), 0);
         return *this;
     }
 
     void push_back(CharT c) {
         const size_type len = size() + 1;
         reserve(len);
-        _dataplus[size()] = c;
-        _get_rep()->_set_size_and_sharable(len);
+        m_dataplus[size()] = c;
+        get_rep()->set_size_and_sharable(len);
     }
 
     void pop_back() {
@@ -428,7 +432,7 @@ public:
     }
 
     basic_string &append(const basic_string &str, size_type pos, size_type n = npos) {
-        str._check_range(pos, "basic_string::append");
+        str.check_range(pos, "basic_string::append");
         return append(str.c_str() + pos, std::min(n, str.size() - pos));
     }
 
@@ -436,13 +440,13 @@ public:
         return append(str.c_str(), str.size());
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &append(const SV &t, size_type pos, size_type n = npos) {
         const _self_view sv = t;
         return append(sv.substr(pos, n));
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &append(const SV &t) {
         const _self_view sv = t;
         return append(sv.data(), sv.size());
@@ -453,17 +457,17 @@ public:
         if (n == 0) {
             return *this;
         }
-        _check_length(0, n, "basic_string::append");
+        check_length(0, n, "basic_string::append");
         const size_type len = n + size();
-        if (_disjunct(s)) {
+        if (disjunct(s)) {
             reserve(len);
         } else {
             const size_type off = static_cast<size_type>(s - c_str());
             reserve(len);
             s = c_str() + off;
         }
-        traits_type::copy(_dataplus + size(), s, n);
-        _get_rep()->_set_size_and_sharable(len);
+        traits_type::copy(m_dataplus + size(), s, n);
+        get_rep()->set_size_and_sharable(len);
         return *this;
     }
 
@@ -474,11 +478,11 @@ public:
 
     basic_string &append(size_type n, CharT c) {
         if (n > 0) {
-            _check_length(0, n, "basic_string::append");
+            check_length(0, n, "basic_string::append");
             const size_type len = n + size();
             reserve(len);
-            traits_type::assign(_dataplus + size(), n, c);
-            _get_rep()->_set_size_and_sharable(len);
+            traits_type::assign(m_dataplus + size(), n, c);
+            get_rep()->set_size_and_sharable(len);
         }
         return *this;
     }
@@ -491,7 +495,7 @@ public:
         return append(str);
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &operator+=(const SV &t) {
         const _self_view sv = t;
         return append(sv);
@@ -511,7 +515,7 @@ public:
     }
 
     basic_string &replace(size_type pos1, size_type n1, const basic_string &str, size_type pos2, size_type n2 = npos) {
-        str._check_range(pos2, "basic_string::replace");
+        str.check_range(pos2, "basic_string::replace");
         return replace(pos1, n1, str.c_str() + pos2, std::min(n2, str.size() - pos2));
     }
 
@@ -519,13 +523,13 @@ public:
         return replace(pos, n, str.c_str(), str.size());
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &replace(size_type pos1, size_type n1, const SV &t, size_type pos2, size_type n2 = npos) {
         const _self_view sv = t;
         return replace(pos1, n1, sv.substr(pos2, n2));
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     basic_string &replace(size_type pos, size_type n, const SV &t) {
         const _self_view sv = t;
         return replace(pos, n, sv.data(), sv.size());
@@ -533,23 +537,23 @@ public:
 
     basic_string &replace(size_type pos, size_type n1, const CharT *s, size_type n2) {
         assert((s != nullptr || n2 == 0) && "basic_string::replace received nullptr");
-        _check_range(pos, "basic_string::replace");
+        check_range(pos, "basic_string::replace");
         n1 = std::min(n1, size() - pos);
-        _check_length(n1, n2, "basic_string::replace");
+        check_length(n1, n2, "basic_string::replace");
         bool left;
-        if (_disjunct(s) || _get_rep()->_is_shared()) {
-            return _replace_safe(pos, n1, s, n2);
+        if (disjunct(s) || get_rep()->is_shared()) {
+            return replace_safe(pos, n1, s, n2);
         } else if ((left = (s + n2 <= c_str() + pos)) || (c_str() + pos + n1 <= s)) {
             size_type off = static_cast<size_type>(s - c_str());
             if (!left) {
                 off += n2 - n1;
             }
-            _mutate(pos, n1, n2);
-            traits_type::copy(_dataplus + pos, c_str() + off, n2);
+            mutate(pos, n1, n2);
+            traits_type::copy(m_dataplus + pos, c_str() + off, n2);
             return *this;
         } else {
             const basic_string tmp(s, n2);
-            return _replace_safe(pos, n1, tmp.c_str(), n2);
+            return replace_safe(pos, n1, tmp.c_str(), n2);
         }
     }
 
@@ -559,11 +563,11 @@ public:
     }
 
     basic_string &replace(size_type pos, size_type n1, size_type n2, CharT c) {
-        return _replace_aux(_check_range(pos, "basic_string::replace"), std::min(n1, size() - pos), n2, c);
+        return replace_aux(check_range(pos, "basic_string::replace"), std::min(n1, size() - pos), n2, c);
     }
 
     size_type copy(CharT *dest, size_type n, size_type pos = 0) const {
-        _check_range(pos, "basic_string::copy");
+        check_range(pos, "basic_string::copy");
         n = std::min(n, size() - pos);
         assert((dest != nullptr || n == 0) && "basic_string::copy received nullptr");
         if (n > 0) {
@@ -574,7 +578,7 @@ public:
 
     void resize(size_type n, CharT c) {
         const size_type sz = size();
-        _check_length(sz, n, "basic_string::resize");
+        check_length(sz, n, "basic_string::resize");
         if (n > sz) {
             append(n - sz, c);
         } else if (n < sz) {
@@ -589,10 +593,10 @@ public:
     template <typename Operation>
     void resize_and_overwrite(size_type n, Operation op) {
         reserve(n);
-        CharT *p = _dataplus;
+        CharT *p = m_dataplus;
         struct Terminator {
             ~Terminator() {
-                _this->_get_rep()->_set_size_and_sharable(_r);
+                _this->get_rep()->set_size_and_sharable(_r);
             }
             basic_string *_this;
             size_type _r;
@@ -608,23 +612,23 @@ public:
     }
 
     void swap(basic_string &other) noexcept /* strengthened */ {
-        if (_get_rep()->_is_leaked()) {
-            _get_rep()->_set_sharable();
+        if (get_rep()->is_leaked()) {
+            get_rep()->set_sharable();
         }
-        if (other._get_rep()->_is_leaked()) {
-            other._get_rep()->_set_sharable();
+        if (other.get_rep()->is_leaked()) {
+            other.get_rep()->set_sharable();
         }
-        std::swap(_dataplus, other._dataplus);
+        std::swap(m_dataplus, other.m_dataplus);
     }
 
     [[nodiscard]] size_type find(const basic_string &str, size_type pos = 0) const noexcept {
         return find(_self_view{str}, pos);
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
         const _self_view sv = t;
-        return _from_view_pos(_self_view{*this}.find(sv, pos));
+        return from_view_pos(_self_view{*this}.find(sv, pos));
     }
 
     [[nodiscard]] size_type find(const CharT *s, size_type pos, size_type n) const {
@@ -638,17 +642,17 @@ public:
     }
 
     [[nodiscard]] size_type find(CharT c, size_type pos = 0) const noexcept {
-        return _from_view_pos(_self_view{*this}.find(c, pos));
+        return from_view_pos(_self_view{*this}.find(c, pos));
     }
 
     [[nodiscard]] size_type rfind(const basic_string &str, size_type pos = npos) const noexcept {
         return rfind(_self_view{str}, pos);
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type rfind(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
         const _self_view sv = t;
-        return _from_view_pos(_self_view{*this}.rfind(sv, pos));
+        return from_view_pos(_self_view{*this}.rfind(sv, pos));
     }
 
     [[nodiscard]] size_type rfind(const CharT *s, size_type pos, size_type n) const {
@@ -662,17 +666,17 @@ public:
     }
 
     [[nodiscard]] size_type rfind(CharT c, size_type pos = npos) const noexcept {
-        return _from_view_pos(_self_view{*this}.rfind(c, pos));
+        return from_view_pos(_self_view{*this}.rfind(c, pos));
     }
 
     [[nodiscard]] size_type find_first_of(const basic_string &str, size_type pos = 0) const noexcept {
         return find_first_of(_self_view{str}, pos);
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find_first_of(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
         const _self_view sv = t;
-        return _from_view_pos(_self_view{*this}.find_first_of(sv, pos));
+        return from_view_pos(_self_view{*this}.find_first_of(sv, pos));
     }
 
     [[nodiscard]] size_type find_first_of(const CharT *s, size_type pos, size_type n) const {
@@ -693,10 +697,10 @@ public:
         return find_first_not_of(_self_view{str}, pos);
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find_first_not_of(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
         const _self_view sv = t;
-        return _from_view_pos(_self_view{*this}.find_first_not_of(sv, pos));
+        return from_view_pos(_self_view{*this}.find_first_not_of(sv, pos));
     }
 
     [[nodiscard]] size_type find_first_not_of(const CharT *s, size_type pos, size_type n) const {
@@ -710,17 +714,17 @@ public:
     }
 
     [[nodiscard]] size_type find_first_not_of(CharT c, size_type pos = 0) const noexcept {
-        return _from_view_pos(_self_view{*this}.find_first_not_of(c, pos));
+        return from_view_pos(_self_view{*this}.find_first_not_of(c, pos));
     }
 
     [[nodiscard]] size_type find_last_of(const basic_string &str, size_type pos = npos) const noexcept {
         return find_last_of(_self_view{str}, pos);
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find_last_of(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
         const _self_view sv = t;
-        return _from_view_pos(_self_view{*this}.find_last_of(sv, pos));
+        return from_view_pos(_self_view{*this}.find_last_of(sv, pos));
     }
 
     [[nodiscard]] size_type find_last_of(const CharT *s, size_type pos, size_type n) const {
@@ -741,10 +745,10 @@ public:
         return find_last_not_of(_self_view{str}, pos);
     }
 
-    template <_convertible_to_string_view<CharT> SV>
+    template <details::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find_last_not_of(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
         const _self_view sv = t;
-        return _from_view_pos(_self_view{*this}.find_last_not_of(sv, pos));
+        return from_view_pos(_self_view{*this}.find_last_not_of(sv, pos));
     }
 
     [[nodiscard]] size_type find_last_not_of(const CharT *s, size_type pos, size_type n) const {
@@ -758,7 +762,7 @@ public:
     }
 
     [[nodiscard]] size_type find_last_not_of(CharT c, size_type pos = npos) const noexcept {
-        return _from_view_pos(_self_view{*this}.find_last_not_of(c, pos));
+        return from_view_pos(_self_view{*this}.find_last_not_of(c, pos));
     }
 
     [[nodiscard]] bool starts_with(_self_view sv) const noexcept {
@@ -801,134 +805,132 @@ public:
     }
 
     [[nodiscard]] basic_string substr(size_type pos = 0, size_type n = npos) const & {
-        return basic_string(*this, _check_range(pos, "basic_string::substr"), n);
+        return basic_string(*this, check_range(pos, "basic_string::substr"), n);
     }
 
     [[nodiscard]] basic_string substr(size_type pos = 0, size_type n = npos) && {
-        return basic_string(std::move(*this), _check_range(pos, "basic_string::substr"), n);
+        return basic_string(std::move(*this), check_range(pos, "basic_string::substr"), n);
     }
 
 protected:
-    struct _rep {
-        size_type _size;                // 字符数
-        size_type _capacity;            // 已分配存储空间中可以容纳的字符数
-        std::atomic_int32_t _ref_count; // 引用计数 (小于等于 0 时释放内存)
-        CharT _data[];                  // 作为字符存储的底层数组 (柔性数组成员)
-
+    struct rep {
         // C++ 标准中未明确在静态成员变量的初始化器中自身是否为完整类型 (`sizeof` 运算符需要完整类型),
-        // 故将 `_max_size` 定义为静态成员函数.
-        [[nodiscard]] static consteval size_type _max_size() noexcept {
-            // npos = (m + 1) * sizeof(CharT) + sizeof(_rep)
-            constexpr size_type m = ((npos - sizeof(_rep)) / sizeof(CharT)) - 1;
+        // 故将 `max_size` 定义为静态成员函数.
+        [[nodiscard]] static consteval size_type max_size() noexcept {
+            // npos = (m + 1) * sizeof(CharT) + sizeof(rep)
+            constexpr size_type m = ((npos - sizeof(rep)) / sizeof(CharT)) - 1;
             return m / 4;
         }
 
-        [[nodiscard]] static _rep &_empty_rep() noexcept {
+        [[nodiscard]] static rep &empty_rep() noexcept {
 #ifdef PVZ_VERSION
             assert(::gLibGameMainBaseAddr != 0);
-            constexpr uintptr_t offset = std::is_same_v<CharT, char> ? /* string */ STRING_EMPTY_REP1 : /* basic_string<int> */ STRING_EMPTY_REP2;
-            return *reinterpret_cast<_rep *>(::gLibGameMainBaseAddr + offset);
+            constexpr uintptr_t offset = std::is_same_v<CharT, char> ? /* string */ PVZSTL_STRING_EMPTY_REP : /* basic_string<int> */ PVZSTL_WSTRING_EMPTY_REP;
+            return *reinterpret_cast<rep *>(::gLibGameMainBaseAddr + offset);
 #else
-            alignas(_rep) static std::byte empty_rep_storage[sizeof(_rep) + sizeof(CharT)] = {};
-            return *reinterpret_cast<_rep *>(&empty_rep_storage);
+            alignas(rep) static std::byte empty_rep_storage[sizeof(rep) + sizeof(CharT)] = {};
+            return *reinterpret_cast<rep *>(&empty_rep_storage);
 #endif
         }
 
-        [[nodiscard]] static _rep *_create(size_type cap, size_type old_cap) {
-            if (cap > _max_size()) {
-                throw std::length_error{"basic_string::_rep::_create"};
+        [[nodiscard]] static rep *create(size_type cap, size_type old_cap) {
+            if (cap > max_size()) {
+                throw std::length_error{"basic_string::rep::create"};
             }
             constexpr size_type pagesize = 4096;
             constexpr size_type malloc_header_size = 4 * sizeof(void *);
             if ((cap > old_cap) && (cap < 2 * old_cap)) {
                 cap = 2 * old_cap;
             }
-            size_type size = (cap + 1) * sizeof(CharT) + sizeof(_rep);
+            size_type size = (cap + 1) * sizeof(CharT) + sizeof(rep);
             const size_type adj_size = size + malloc_header_size;
             if (adj_size > pagesize && cap > old_cap) {
                 const size_type extra = pagesize - adj_size % pagesize;
                 cap += extra / sizeof(CharT);
-                if (cap > _max_size()) {
-                    cap = _max_size();
+                if (cap > max_size()) {
+                    cap = max_size();
                 }
-                size = (cap + 1) * sizeof(CharT) + sizeof(_rep);
+                size = (cap + 1) * sizeof(CharT) + sizeof(rep);
             }
             void *place = ::operator new(size);
-            _rep *p = ::new (place) _rep;
-            p->_capacity = cap;
+            rep *p = ::new (place) rep;
+            p->m_capacity = cap;
             return p;
         }
 
-        [[nodiscard]] CharT *_ref_copy() noexcept {
-            if (this != &_empty_rep()) {
-                ++_ref_count;
+        [[nodiscard]] CharT *ref_copy() noexcept {
+            if (this != &empty_rep()) {
+                ++m_ref_count;
             }
-            return _data;
+            return m_data;
         }
 
-        [[nodiscard]] CharT *_clone(size_type res = 0) const {
-            _rep *r = _create(_size + res, _capacity);
-            if (_size > 0) {
-                traits_type::copy(r->_data, _data, _size);
+        [[nodiscard]] CharT *clone(size_type res = 0) const {
+            rep *r = create(m_size + res, m_capacity);
+            if (m_size > 0) {
+                traits_type::copy(r->m_data, m_data, m_size);
             }
-            r->_set_size(_size);
-            return r->_data;
+            r->set_size(m_size);
+            return r->m_data;
         }
 
-        [[nodiscard]] CharT *_grab() {
-            return !_is_leaked() ? _ref_copy() : _clone();
+        [[nodiscard]] CharT *grab() {
+            return !is_leaked() ? ref_copy() : clone();
         }
 
-        void _destroy() noexcept {
+        void destroy() noexcept {
             ::operator delete(this);
         }
 
-        void _dispose() noexcept {
-            if ((this != &_empty_rep()) && (_ref_count-- <= 0)) {
-                _destroy();
+        void dispose() noexcept {
+            if ((this != &empty_rep()) && (m_ref_count-- <= 0)) {
+                destroy();
             }
         }
 
         // 调用过不清楚是否修改自身数据的成员函数, 如 `operator[]`, `begin()`
-        [[nodiscard]] bool _is_leaked() const noexcept {
-            return _ref_count < 0;
+        [[nodiscard]] bool is_leaked() const noexcept {
+            return m_ref_count < 0;
         }
 
-        [[nodiscard]] bool _is_shared() const noexcept {
-            return _ref_count > 0;
+        [[nodiscard]] bool is_shared() const noexcept {
+            return m_ref_count > 0;
         }
 
-        void _set_leaked() noexcept {
-            _ref_count = -1;
+        void set_leaked() noexcept {
+            m_ref_count = -1;
         }
 
-        void _set_sharable() noexcept {
-            _ref_count = 0;
+        void set_sharable() noexcept {
+            m_ref_count = 0;
         }
 
-        void _set_size(size_type sz) noexcept {
-            _size = sz;
-            _data[sz] = CharT{};
+        void set_size(size_type sz) noexcept {
+            m_size = sz;
+            m_data[sz] = CharT{};
         }
 
-        void _set_size_and_sharable(size_type sz) noexcept {
-            if (this != &_empty_rep()) {
-                _set_sharable();
-                _set_size(sz);
+        void set_size_and_sharable(size_type sz) noexcept {
+            if (this != &empty_rep()) {
+                set_sharable();
+                set_size(sz);
             }
         }
-    };
 
-    mutable CharT *_dataplus;
+        size_type m_size;                // 字符数
+        size_type m_capacity;            // 已分配存储空间中可以容纳的字符数
+        std::atomic_int32_t m_ref_count; // 引用计数 (小于等于 0 时释放内存)
+        CharT m_data[];                  // 作为字符存储的底层数组 (柔性数组成员)
+    };
 
     // NB: This is the special case for Input Iterators, used in
     // istreambuf_iterators, etc.
     // Input Iterators have a cost structure very different from
     // pointers, calling for a different coding style.
     template <std::input_iterator InputIt>
-    [[nodiscard]] static CharT *_construct(InputIt first, InputIt last) {
+    [[nodiscard]] static CharT *construct(InputIt first, InputIt last) {
         if (first == last) {
-            return _rep::_empty_rep()._data;
+            return rep::empty_rep().m_data;
         }
         CharT buf[128];
         size_type len = 0;
@@ -936,65 +938,65 @@ protected:
             buf[len++] = *first;
             ++first;
         }
-        _rep *r = _rep::_create(len, 0);
-        traits_type::copy(r->_data, buf, len);
+        rep *r = rep::create(len, 0);
+        traits_type::copy(r->m_data, buf, len);
         try {
             while (first != last) {
-                if (len == r->_capacity) {
+                if (len == r->m_capacity) {
                     // Allocate more space.
-                    _rep *another = _rep::_create(len + 1, len);
-                    traits_type::copy(another->_data, r->_data, len);
-                    r->_destroy();
+                    rep *another = rep::create(len + 1, len);
+                    traits_type::copy(another->m_data, r->m_data, len);
+                    r->destroy();
                     r = another;
                 }
-                r->_data[len++] = *first;
+                r->m_data[len++] = *first;
                 ++first;
             }
         } catch (...) {
-            r->_destroy();
+            r->destroy();
             throw;
         }
-        r->_set_size(len);
-        return r->_data;
+        r->set_size(len);
+        return r->m_data;
     }
 
     template <std::forward_iterator InputIt>
-    [[nodiscard]] static CharT *_construct(InputIt first, InputIt last) {
+    [[nodiscard]] static CharT *construct(InputIt first, InputIt last) {
         if (first == last) {
-            return _rep::_empty_rep()._data;
+            return rep::empty_rep().m_data;
         }
         // NB: Not required, but considered best practice.
         if constexpr (std::is_pointer_v<InputIt>) {
             if (first == nullptr) {
-                throw std::logic_error{"basic_string::_construct null not valid"};
+                throw std::logic_error{"basic_string::construct null not valid"};
             }
         }
         const size_type dnew = static_cast<size_type>(std::distance(first, last));
         // Check for out_of_range and length_error exceptions.
-        _rep *r = _rep::_create(dnew, 0);
+        rep *r = rep::create(dnew, 0);
         try {
-            for (CharT *p = r->_data; first != last; ++first) {
+            for (CharT *p = r->m_data; first != last; ++first) {
                 *p++ = *first;
             }
         } catch (...) {
-            r->_destroy();
+            r->destroy();
             throw;
         }
-        r->_set_size(dnew);
-        return r->_data;
+        r->set_size(dnew);
+        return r->m_data;
     }
 
-    [[nodiscard]] static CharT *_construct(size_type n, CharT c) {
+    [[nodiscard]] static CharT *construct(size_type n, CharT c) {
         if (n == 0) {
-            return _rep::_empty_rep()._data;
+            return rep::empty_rep().m_data;
         }
-        _rep *r = _rep::_create(n, 0);
-        traits_type::assign(r->_data, n, c);
-        r->_set_size(n);
-        return r->_data;
+        rep *r = rep::create(n, 0);
+        traits_type::assign(r->m_data, n, c);
+        r->set_size(n);
+        return r->m_data;
     }
 
-    [[nodiscard]] static constexpr size_type _from_view_pos(typename _self_view::size_type pos) noexcept {
+    [[nodiscard]] static constexpr size_type from_view_pos(typename _self_view::size_type pos) noexcept {
         if constexpr (npos == _self_view::npos) {
             return pos;
         } else {
@@ -1002,77 +1004,79 @@ protected:
         }
     }
 
-    [[nodiscard]] _rep *_get_rep() const noexcept {
-        return reinterpret_cast<_rep *>(_dataplus) - 1;
+    [[nodiscard]] rep *get_rep() const noexcept {
+        return reinterpret_cast<rep *>(m_dataplus) - 1;
     }
 
-    size_type _check_range(size_type pos, const char *msg) const {
+    size_type check_range(size_type pos, const char *msg) const {
         if (pos > size()) {
             throw std::out_of_range{msg};
         }
         return pos;
     }
 
-    void _check_length(size_type n1, size_type n2, const char *msg) const {
+    void check_length(size_type n1, size_type n2, const char *msg) const {
         if (max_size() - (size() - n1) < n2) {
             throw std::length_error{msg};
         }
     }
 
-    [[nodiscard]] bool _disjunct(const CharT *s) const noexcept {
+    [[nodiscard]] bool disjunct(const CharT *s) const noexcept {
         return (s < c_str()) || (c_str() + size() < s);
     }
 
     // for use in begin() & non-const op[]
-    void _leak() {
-        if (_get_rep()->_is_leaked() || _get_rep() == &_rep::_empty_rep()) {
+    void leak() {
+        if (get_rep()->is_leaked() || get_rep() == &rep::empty_rep()) {
             return;
         }
-        if (_get_rep()->_is_shared()) {
+        if (get_rep()->is_shared()) {
             reserve(capacity());
         }
-        _get_rep()->_set_leaked();
+        get_rep()->set_leaked();
     }
 
     // 清空范围 [ `begin() + pos`, `begin() + pos + len1` ) 中的字符,
     // 并在原位置预留大小为 `len2` 的空间.
-    void _mutate(size_type pos, size_type len1, size_type len2) {
+    void mutate(size_type pos, size_type len1, size_type len2) {
         const size_type cap = capacity();
         const size_type old_sz = size();
         const size_type new_sz = old_sz + len2 - len1;
         const size_type how_much = old_sz - pos - len1;
-        if (new_sz > cap || _get_rep()->_is_shared()) {
-            _rep *r = _rep::_create(new_sz, cap);
+        if (new_sz > cap || get_rep()->is_shared()) {
+            rep *r = rep::create(new_sz, cap);
             if (pos > 0) {
-                traits_type::copy(r->_data, c_str(), pos);
+                traits_type::copy(r->m_data, c_str(), pos);
             }
             if (how_much > 0) {
-                traits_type::copy((r->_data + pos + len2), (c_str() + pos + len1), how_much);
+                traits_type::copy((r->m_data + pos + len2), (c_str() + pos + len1), how_much);
             }
-            _get_rep()->_dispose();
-            _dataplus = r->_data;
+            get_rep()->dispose();
+            m_dataplus = r->m_data;
         } else if ((how_much > 0) && (len1 != len2)) {
-            traits_type::move((_dataplus + pos + len2), (c_str() + pos + len1), how_much);
+            traits_type::move((m_dataplus + pos + len2), (c_str() + pos + len1), how_much);
         }
-        _get_rep()->_set_size_and_sharable(new_sz);
+        get_rep()->set_size_and_sharable(new_sz);
     }
 
-    basic_string &_replace_aux(size_type pos, size_type n1, size_type n2, CharT c) {
-        _check_length(n1, n2, "basic_string::_replace_aux");
-        _mutate(pos, n1, n2);
+    basic_string &replace_aux(size_type pos, size_type n1, size_type n2, CharT c) {
+        check_length(n1, n2, "basic_string::replace_aux");
+        mutate(pos, n1, n2);
         if (n2 > 0) {
-            traits_type::assign(_dataplus + pos, n2, c);
+            traits_type::assign(m_dataplus + pos, n2, c);
         }
         return *this;
     }
 
-    basic_string &_replace_safe(size_type pos, size_type n1, const CharT *s, size_type n2) {
-        _mutate(pos, n1, n2);
+    basic_string &replace_safe(size_type pos, size_type n1, const CharT *s, size_type n2) {
+        mutate(pos, n1, n2);
         if (n2 > 0) {
-            traits_type::copy(_dataplus + pos, s, n2);
+            traits_type::copy(m_dataplus + pos, s, n2);
         }
         return *this;
     }
+
+    mutable CharT *m_dataplus;
 };
 
 template <typename CharT>
@@ -1186,75 +1190,75 @@ using u16string = basic_string<char16_t>;
 #endif
 
 [[nodiscard]] inline string to_string(int val) {
-    return _to_xstring<string, 4 * sizeof(int)>(std::vsnprintf, "%d", val);
+    return details::to_xstring<string, 4 * sizeof(int)>(std::vsnprintf, "%d", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned val) {
-    return _to_xstring<string, 4 * sizeof(unsigned)>(std::vsnprintf, "%u", val);
+    return details::to_xstring<string, 4 * sizeof(unsigned)>(std::vsnprintf, "%u", val);
 }
 
 [[nodiscard]] inline string to_string(long val) {
-    return _to_xstring<string, 4 * sizeof(long)>(std::vsnprintf, "%ld", val);
+    return details::to_xstring<string, 4 * sizeof(long)>(std::vsnprintf, "%ld", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned long val) {
-    return _to_xstring<string, 4 * sizeof(unsigned long)>(std::vsnprintf, "%lu", val);
+    return details::to_xstring<string, 4 * sizeof(unsigned long)>(std::vsnprintf, "%lu", val);
 }
 
 [[nodiscard]] inline string to_string(long long val) {
-    return _to_xstring<string, 4 * sizeof(long long)>(std::vsnprintf, "%lld", val);
+    return details::to_xstring<string, 4 * sizeof(long long)>(std::vsnprintf, "%lld", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned long long val) {
-    return _to_xstring<string, 4 * sizeof(unsigned long long)>(std::vsnprintf, "%llu", val);
+    return details::to_xstring<string, 4 * sizeof(unsigned long long)>(std::vsnprintf, "%llu", val);
 }
 
 [[nodiscard]] inline string to_string(float val) {
-    return _to_xstring<string, std::numeric_limits<float>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
+    return details::to_xstring<string, std::numeric_limits<float>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
 }
 
 [[nodiscard]] inline string to_string(double val) {
-    return _to_xstring<string, std::numeric_limits<double>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
+    return details::to_xstring<string, std::numeric_limits<double>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
 }
 
 [[nodiscard]] inline string to_string(long double val) {
-    return _to_xstring<string, std::numeric_limits<long double>::max_exponent10 + 20>(std::vsnprintf, "%Lf", val);
+    return details::to_xstring<string, std::numeric_limits<long double>::max_exponent10 + 20>(std::vsnprintf, "%Lf", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(int val) {
-    return _to_xstring<wstring, 4 * sizeof(int)>(std::vswprintf, L"%d", val);
+    return details::to_xstring<wstring, 4 * sizeof(int)>(std::vswprintf, L"%d", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned val) {
-    return _to_xstring<wstring, 4 * sizeof(unsigned)>(std::vswprintf, L"%u", val);
+    return details::to_xstring<wstring, 4 * sizeof(unsigned)>(std::vswprintf, L"%u", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long val) {
-    return _to_xstring<wstring, 4 * sizeof(long)>(std::vswprintf, L"%ld", val);
+    return details::to_xstring<wstring, 4 * sizeof(long)>(std::vswprintf, L"%ld", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned long val) {
-    return _to_xstring<wstring, 4 * sizeof(unsigned long)>(std::vswprintf, L"%lu", val);
+    return details::to_xstring<wstring, 4 * sizeof(unsigned long)>(std::vswprintf, L"%lu", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long long val) {
-    return _to_xstring<wstring, 4 * sizeof(long long)>(std::vswprintf, L"%lld", val);
+    return details::to_xstring<wstring, 4 * sizeof(long long)>(std::vswprintf, L"%lld", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned long long val) {
-    return _to_xstring<wstring, 4 * sizeof(unsigned long long)>(std::vswprintf, L"%llu", val);
+    return details::to_xstring<wstring, 4 * sizeof(unsigned long long)>(std::vswprintf, L"%llu", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(float val) {
-    return _to_xstring<wstring, std::numeric_limits<float>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
+    return details::to_xstring<wstring, std::numeric_limits<float>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(double val) {
-    return _to_xstring<wstring, std::numeric_limits<double>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
+    return details::to_xstring<wstring, std::numeric_limits<double>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long double val) {
-    return _to_xstring<wstring, std::numeric_limits<long double>::max_exponent10 + 20>(std::vswprintf, L"%Lf", val);
+    return details::to_xstring<wstring, std::numeric_limits<long double>::max_exponent10 + 20>(std::vswprintf, L"%Lf", val);
 }
 
 } // namespace pvzstl
