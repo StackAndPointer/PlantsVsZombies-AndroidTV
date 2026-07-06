@@ -28,10 +28,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Checkout assets
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ secrets.ASSETS_REPO }}
           path: app/src/main/assets
@@ -67,19 +67,19 @@ jobs:
           fi
 
       - name: Build with Gradle
+        id: build
         run: |
           VERSION="${{ matrix.version }}"
           BUILD_TYPE="${{ matrix.build_type }}"
           chmod +x gradlew
           ./gradlew assemble${VERSION^}${BUILD_TYPE^}
-          mkdir artifact
-          mv app/build/outputs/apk/${{ matrix.version }}/${{ matrix.build_type }}/*.apk artifact/
+          echo "path=app/build/outputs/apk/$VERSION/$BUILD_TYPE/*.apk" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: PvZ-TV-${{ matrix.version }}-${{ matrix.build_type }}
-          path: artifact/*.apk
+          path: ${{ steps.build.outputs.path }}
 
       - name: Publish pre-release
         uses: marvinpinto/action-automatic-releases@latest
@@ -93,7 +93,7 @@ jobs:
           prerelease: true
           automatic_release_tag: nightly
           title: Nightly Build
-          files: artifact/*.apk
+          files: ${{ steps.build.outputs.path }}
 
   release:
     needs: [ build ]
@@ -102,7 +102,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
