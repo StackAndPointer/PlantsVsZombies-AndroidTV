@@ -55,6 +55,10 @@ void GridItem::GridItemDie() {
             // 靶子和墓碑战损
             if (mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
                 netplay::MetricsRecordTargetLoss();
+
+                BaseEvent eventTargetZombieDie = {EventType::EVENT_SERVER_BOARD_GRIDITEM_TAEGETZOMBIE_DIE}; // 仅用于读取回放文件并绘制进度条时，能记录到靶子僵尸死亡的具体时间
+                netplay::PutEvent(eventTargetZombieDie);
+
             } else if (mGridItemType == GridItemType::GRIDITEM_GRAVESTONE) {
                 netplay::MetricsRecordGraveLoss();
             }

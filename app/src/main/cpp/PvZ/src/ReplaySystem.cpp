@@ -53,6 +53,9 @@ struct PlaybackState {
     int speedLevel = 0;
     bool halfSpeedPhase = false;
     int vsBackground = 0;
+    int boardStartTick = -1;
+    std::vector<int> gridItemDieTicks;
+    std::vector<int> lawnMowerStartTicks;
     std::string filePath;
     std::vector<ReplayPacketRecord> packets;
 };
@@ -103,6 +106,46 @@ std::string EscapePrintable(const char *src) {
         }
     }
     return s;
+}
+
+template <typename Fn>
+void ForEachPlaybackEvent(const std::vector<ReplayPacketRecord> &packets, Fn &&fn) {
+    for (const auto &pkt : packets) {
+        std::size_t offset = 0;
+        while (offset + sizeof(BaseEvent) <= pkt.data.size()) {
+            const auto *event = reinterpret_cast<const BaseEvent *>(pkt.data.data() + offset);
+            if (event->size == 0 || offset + event->size > pkt.data.size()) {
+                break;
+            }
+
+            fn(static_cast<int>(pkt.tick), event);
+            offset += event->size;
+        }
+    }
+}
+
+void BuildPlaybackProgressMarkerCache() {
+    gPlaybackState.boardStartTick = -1;
+    gPlaybackState.gridItemDieTicks.clear();
+    gPlaybackState.lawnMowerStartTicks.clear();
+
+    ForEachPlaybackEvent(gPlaybackState.packets, [](int tick, const BaseEvent *event) {
+        switch (event->type) {
+            case EVENT_SERVER_BOARD_START_LEVEL:
+                if (gPlaybackState.boardStartTick < 0) {
+                    gPlaybackState.boardStartTick = tick;
+                }
+                break;
+            case EVENT_SERVER_BOARD_GRIDITEM_TAEGETZOMBIE_DIE:
+                gPlaybackState.gridItemDieTicks.push_back(tick);
+                break;
+            case EVENT_SERVER_BOARD_LAWNMOWER_START:
+                gPlaybackState.lawnMowerStartTicks.push_back(tick);
+                break;
+            default:
+                break;
+        }
+    });
 }
 
 } // namespace
@@ -358,6 +401,7 @@ bool replay::BeginPlaybackFromFile(const std::string &path) {
     if (gPlaybackState.boardTicks == 0) {
         gPlaybackState.boardTicks = gPlaybackState.durationTicks;
     }
+    BuildPlaybackProgressMarkerCache();
     LOG_INFO("[REPLAY] playback begin path={} packets={}", path, gPlaybackState.packets.size());
     return true;
 }
@@ -473,43 +517,52 @@ int replay::GetPlaybackVsBackground() {
     return gPlaybackState.vsBackground;
 }
 
+int replay::GetPlaybackBoardStartTick() {
+    return gPlaybackState.boardStartTick;
+}
+
+const std::vector<int> &replay::GetPlaybackGridItemDieTicks() {
+    return gPlaybackState.gridItemDieTicks;
+}
+
+const std::vector<int> &replay::GetPlaybackLawnMowerStartTicks() {
+    return gPlaybackState.lawnMowerStartTicks;
+}
+
 int replay::FindPlaybackEventTick(EventType eventType) {
+    EventList events = FindPlaybackEvents(eventType);
+    return events.empty() ? -1 : events.front().tick;
+}
+
+replay::EventList replay::FindPlaybackEvents(EventType eventType) {
+    EventList events;
     if (!gPlaybackState.active) {
-        return -1;
+        return events;
     }
-    for (const auto &pkt : gPlaybackState.packets) {
-        std::size_t offset = 0;
-        while (offset + sizeof(BaseEvent) <= pkt.data.size()) {
-            const auto *event = reinterpret_cast<const BaseEvent *>(pkt.data.data() + offset);
-            if (event->size == 0 || offset + event->size > pkt.data.size()) {
-                break;
-            }
-            if (event->type == eventType) {
-                return static_cast<int>(pkt.tick);
-            }
-            offset += event->size;
+
+    ForEachPlaybackEvent(gPlaybackState.packets, [&](int tick, const BaseEvent *event) {
+        if (event->type == eventType) {
+            events.push_back({tick, event});
         }
-    }
-    return -1;
+    });
+    return events;
 }
 
 std::vector<int> replay::FindPlaybackEventTicks(EventType eventType) {
-    std::vector<int> ticks;
-    if (!gPlaybackState.active) {
-        return ticks;
+    if (eventType == EVENT_SERVER_BOARD_START_LEVEL) {
+        const int tick = GetPlaybackBoardStartTick();
+        return tick >= 0 ? std::vector<int>{tick} : std::vector<int>{};
     }
-    for (const auto &pkt : gPlaybackState.packets) {
-        std::size_t offset = 0;
-        while (offset + sizeof(BaseEvent) <= pkt.data.size()) {
-            const auto *event = reinterpret_cast<const BaseEvent *>(pkt.data.data() + offset);
-            if (event->size == 0 || offset + event->size > pkt.data.size()) {
-                break;
-            }
-            if (event->type == eventType) {
-                ticks.push_back(static_cast<int>(pkt.tick));
-            }
-            offset += event->size;
-        }
+    if (eventType == EVENT_SERVER_BOARD_GRIDITEM_DIE) {
+        return gPlaybackState.gridItemDieTicks;
+    }
+    if (eventType == EVENT_SERVER_BOARD_LAWNMOWER_START) {
+        return gPlaybackState.lawnMowerStartTicks;
+    }
+
+    std::vector<int> ticks;
+    for (const PlaybackEvent &entry : FindPlaybackEvents(eventType)) {
+        ticks.push_back(entry.tick);
     }
     return ticks;
 }

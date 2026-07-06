@@ -3637,7 +3637,7 @@ void Board::DrawProgressMeter(Sexy::Graphics *g, int theX, int theY) {
 
         const int aMeterRight = aCelWidth + theX - 7;
         const int aMeterTop = theY;
-        const int aBoardStartTick = std::max(0, replay::FindPlaybackEventTick(EVENT_SERVER_BOARD_START_LEVEL));
+        const int aBoardStartTick = std::max(0, replay::GetPlaybackBoardStartTick());
         auto getMarkerX = [&](int theReplayTick) {
             int aBoardTick = std::clamp(theReplayTick - aBoardStartTick, 0, aTotalTicks);
             return aMeterRight - aBoardTick * aMeterWidth / aTotalTicks;
@@ -3653,11 +3653,11 @@ void Board::DrawProgressMeter(Sexy::Graphics *g, int theX, int theY) {
             g->DrawImage(theImage, aDst, aSrc);
         };
 
-        for (int aTick : replay::FindPlaybackEventTicks(EVENT_SERVER_BOARD_GRIDITEM_DIE)) {
+        for (int aTick : replay::GetPlaybackGridItemDieTicks()) {
             drawMarker(addonImages.zombie_target, aTick, 24, 32, 0, -10);
             drawMarker(IMAGE_MP_TARGETS_X, aTick, 18, 24, 0, -5);
         }
-        for (int aTick : replay::FindPlaybackEventTicks(EVENT_SERVER_BOARD_LAWNMOWER_START)) {
+        for (int aTick : replay::GetPlaybackLawnMowerStartTicks()) {
             drawMarker(mApp->mReanimatorCache->mLawnMowers[LAWNMOWER_LAWN], aTick, 40, 44, 0, 34);
             drawMarker(IMAGE_MP_TARGETS_X, aTick, 18, 20, 4, 39);
         }

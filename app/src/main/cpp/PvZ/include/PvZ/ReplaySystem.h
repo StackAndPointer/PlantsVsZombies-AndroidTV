@@ -27,6 +27,7 @@
 #include <vector>
 
 enum EventType : std::uint8_t;
+struct BaseEvent;
 
 enum class ReplayPacketDir : std::uint8_t {
     Outbound = 0,
@@ -54,6 +55,12 @@ struct ReplayMetaInfo {
 };
 
 namespace replay {
+struct PlaybackEvent {
+    int tick = 0;
+    const BaseEvent *event = nullptr;
+};
+using EventList = std::vector<PlaybackEvent>;
+
 void ResetRecorder();
 void RecordPacket(ReplayPacketDir dir, const std::byte *data, std::size_t len, std::uint32_t tick);
 bool SaveCurrentMatchReplay(const ReplayMetaInfo &meta);
@@ -76,7 +83,11 @@ int GetPlaybackDurationTicks();
 int GetPlaybackBoardTicks();
 const std::string &GetPlaybackFilePath();
 int GetPlaybackVsBackground();
+int GetPlaybackBoardStartTick();
+const std::vector<int> &GetPlaybackGridItemDieTicks();
+const std::vector<int> &GetPlaybackLawnMowerStartTicks();
 int FindPlaybackEventTick(EventType eventType);
+EventList FindPlaybackEvents(EventType eventType);
 std::vector<int> FindPlaybackEventTicks(EventType eventType);
 void TickPlayback();
 } // namespace replay
