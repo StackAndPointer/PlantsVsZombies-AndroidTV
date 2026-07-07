@@ -80,7 +80,7 @@ void NewOptionsDialog::ButtonDepress(int theId) {
                     // 客户端点击投降
                     BaseEvent event = {EventType::EVENT_CLIENT_BOARD_CONCEDE};
                     netplay::PutEvent(event);
-                    GamepadControls *clientGamepadControls = mApp->mBoard->mGamepadControls[1]->mPlayerIndex2 == 1 ? mApp->mBoard->mGamepadControls[1] : mApp->mBoard->mGamepadControls[0];
+                    GamepadControls *clientGamepadControls = mApp->mBoard->mGamepadControls[1]->mGamepadIndex == 1 ? mApp->mBoard->mGamepadControls[1] : mApp->mBoard->mGamepadControls[0];
                     if (!clientGamepadControls->mIsZombie) {
                         mApp->SetBoardResult(BoardResult::BOARDRESULT_VS_ZOMBIE_WON);
                         mApp->mGameScene = SCENE_ZOMBIES_WON;
@@ -94,7 +94,7 @@ void NewOptionsDialog::ButtonDepress(int theId) {
                     // 主机端点击投降
                     BaseEvent event = {EventType::EVENT_SERVER_BOARD_CONCEDE};
                     netplay::PutEvent(event);
-                    GamepadControls *serverGamepadControls = mApp->mBoard->mGamepadControls[0]->mPlayerIndex2 == 0 ? mApp->mBoard->mGamepadControls[0] : mApp->mBoard->mGamepadControls[1];
+                    GamepadControls *serverGamepadControls = mApp->mBoard->mGamepadControls[0]->mGamepadIndex == 0 ? mApp->mBoard->mGamepadControls[0] : mApp->mBoard->mGamepadControls[1];
                     if (!serverGamepadControls->mIsZombie) {
                         mApp->SetBoardResult(BoardResult::BOARDRESULT_VS_ZOMBIE_WON);
                         mApp->mGameScene = SCENE_ZOMBIES_WON;

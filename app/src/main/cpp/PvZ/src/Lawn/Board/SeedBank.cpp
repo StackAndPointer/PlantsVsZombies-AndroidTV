@@ -119,7 +119,7 @@ void SeedBank::Draw(Sexy::Graphics *g) {
                 if (mApp->IsCoopMode() || mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
                     bool rightSideSeedbank = mBoard->mSeedBank[1] == this;
                     GamepadControls *gamepadControls = rightSideSeedbank ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0];
-                    if (gamepadControls->mPlayerIndex2 != -1 && i == gamepadControls->mSelectedSeedIndex) {
+                    if (gamepadControls->mGamepadIndex != -1 && i == gamepadControls->mSelectedSeedIndex) {
                         if (rightSideSeedbank) {
                             seedPacket2 = seedPacket;
                         } else {
@@ -129,12 +129,12 @@ void SeedBank::Draw(Sexy::Graphics *g) {
                     }
                 } else {
                     GamepadControls *gamepadControls1 = mBoard->mGamepadControls[0];
-                    if (gamepadControls1->mPlayerIndex2 != -1 && i == gamepadControls1->mSelectedSeedIndex) {
+                    if (gamepadControls1->mGamepadIndex != -1 && i == gamepadControls1->mSelectedSeedIndex) {
                         seedPacket1 = seedPacket;
                         continue;
                     }
                     GamepadControls *gamepadControls2 = mBoard->mGamepadControls[1];
-                    if (gamepadControls2->mPlayerIndex2 != -1 && i == gamepadControls2->mSelectedSeedIndex) {
+                    if (gamepadControls2->mGamepadIndex != -1 && i == gamepadControls2->mSelectedSeedIndex) {
                         seedPacket2 = seedPacket;
                         continue;
                     }

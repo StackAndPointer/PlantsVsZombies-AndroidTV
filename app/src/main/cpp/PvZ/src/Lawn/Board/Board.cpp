@@ -136,22 +136,19 @@ void Board::_constructor(LawnApp *theApp) {
     mLevel = 0;
 
     for (int playerIndex = 0; playerIndex < 2; ++playerIndex) {
-        int secondaryPlayerIndex = -1;
+        int gamepadIndex = -1;
         if (playerIndex == 0) {
-            secondaryPlayerIndex = mApp->mPlayerInfo->GetId();
-        } else {
-            secondaryPlayerIndex = mApp->mSecondPlayerGamepadIndex;
-            if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || mApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
-                secondaryPlayerIndex = -1;
-            }
+            gamepadIndex = mApp->mPlayerInfo->GetId();
+        } else if (mApp->mGameMode != GAMEMODE_CHALLENGE_ZEN_GARDEN && mApp->mGameMode != GAMEMODE_TREE_OF_WISDOM) {
+            gamepadIndex = mApp->mSecondPlayerGamepadIndex;
         }
 
         if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {
-            mGamepadControls[playerIndex] = new ZenGardenControls(this, playerIndex, secondaryPlayerIndex);
+            mGamepadControls[playerIndex] = new ZenGardenControls(this, playerIndex, gamepadIndex);
         } else if (mApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
-            mGamepadControls[playerIndex] = new TreeOfWisdomControls(this, playerIndex, secondaryPlayerIndex);
+            mGamepadControls[playerIndex] = new TreeOfWisdomControls(this, playerIndex, gamepadIndex);
         } else {
-            mGamepadControls[playerIndex] = new GamepadControls_(this, playerIndex, secondaryPlayerIndex);
+            mGamepadControls[playerIndex] = new GamepadControls_(this, playerIndex, gamepadIndex);
         }
 
         auto snap = mGamepadControls[playerIndex]->GetSnapToGridPos();
@@ -1062,9 +1059,9 @@ bool Board::KeyUp(Sexy::KeyCode theKey) {
     GamepadControls *aControls = mGamepadControls[0];
     if (isOnlineMode) {
         if (gTcpConnected) { // Guest
-            aControls = mGamepadControls[0]->mPlayerIndex2 == 1 ? mGamepadControls[0] : mGamepadControls[1];
+            aControls = mGamepadControls[0]->mGamepadIndex == 1 ? mGamepadControls[0] : mGamepadControls[1];
         } else if (gTcpClientSocket >= 0) { // Host
-            aControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+            aControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
         }
     }
     if (aControls->GetVTable()->OnKeyUp(aControls, theKey, anEventFlags)) {
@@ -1155,9 +1152,9 @@ bool Board::KeyDown(KeyCode theKey) {
         GamepadControls *aControls = mGamepadControls[0];
         if (isOnlineMode) {
             if (gTcpConnected) { // Guest
-                aControls = mGamepadControls[0]->mPlayerIndex2 == 1 ? mGamepadControls[0] : mGamepadControls[1];
+                aControls = mGamepadControls[0]->mGamepadIndex == 1 ? mGamepadControls[0] : mGamepadControls[1];
             } else if (gTcpClientSocket >= 0) { // Host
-                aControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+                aControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
             }
         }
 
@@ -1880,14 +1877,14 @@ void Board::processClientEvent(const BaseEvent *event) {
         case EVENT_CLIENT_BOARD_TOUCH_DOWN: {
             auto *event1 = static_cast<const I16I16_Event *>(event);
             if (gIsServerModeSpectator || gIsReplayMode) {
-                GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
+                GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
                 SeedBank *clientSeedBank = clientGamepadControls ? clientGamepadControls->GetSeedBank() : nullptr;
                 bool inClientSeedBank = clientSeedBank != nullptr && clientSeedBank->ContainsPoint(event1->data1, event1->data2);
                 ClientMouseDownLocal(event1->data1, event1->data2, inClientSeedBank);
                 break;
             }
             MouseDownSecond(event1->data1, event1->data2, 0);
-            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
+            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
             U8U8I16I16_Event eventReply = {{EventType::EVENT_BOARD_TOUCH_DOWN_REPLY},
                                            uint8_t(clientGamepadControls->mSelectedSeedIndex),
                                            uint8_t(clientGamepadControls->mGamepadState),
@@ -1902,7 +1899,7 @@ void Board::processClientEvent(const BaseEvent *event) {
                 break;
             }
             MouseDragSecond(event1->data1, event1->data2);
-            //            GamepadControls *clientGamepadControls = mGamepadControls[1]->mPlayerIndex2 == 1 ? mGamepadControls[1] : mGamepadControls[0];
+            //            GamepadControls *clientGamepadControls = mGamepadControls[1]->mGamepadIndex == 1 ? mGamepadControls[1] : mGamepadControls[0];
             //            I16I16_Event eventReply = {{EventType::EVENT_BOARD_TOUCH_DRAG_REPLY}, int16_t(clientGamepadControls->mCursorPositionX), int16_t(clientGamepadControls->mCursorPositionY)};
             //            netplay::PutEvent(gTcpClientSocket, eventReply);
         } break;
@@ -1913,8 +1910,8 @@ void Board::processClientEvent(const BaseEvent *event) {
                 break;
             }
             MouseUpSecond(event1->data1, event1->data2, 0);
-            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
-            CursorObject *clientCursorObject = mGamepadControls[1]->mPlayerIndex2 == 1 ? mCursorObject[1] : mCursorObject[0];
+            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
+            CursorObject *clientCursorObject = mGamepadControls[1]->mGamepadIndex == 1 ? mCursorObject[1] : mCursorObject[0];
             U8U8_Event eventReply = {{EventType::EVENT_BOARD_TOUCH_UP_REPLY}, uint8_t(clientGamepadControls->mGamepadState), uint8_t(clientCursorObject->mCursorType)};
             netplay::PutEvent(eventReply);
         } break;
@@ -1927,7 +1924,7 @@ void Board::processClientEvent(const BaseEvent *event) {
         case EVENT_CLIENT_BOARD_CONCEDE: {
             mApp->KillNewOptionsDialog();
             mApp->KillDialog(DIALOG_CONFIRM_IN_GAME_RESTART);
-            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
+            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
             if (clientGamepadControls->mIsZombie) {
                 mApp->SetBoardResult(BoardResult::BOARDRESULT_VS_PLANT_WON);
                 mApp->mGameScene = SCENE_PLANTS_WON;
@@ -1957,8 +1954,8 @@ void Board::processServerEvent(const BaseEvent *event) {
     switch (event->type) {
         case EVENT_BOARD_TOUCH_DOWN_REPLY: {
             auto *event1 = static_cast<const U8U8I16I16_Event *>(event);
-            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
-            SeedBank *clientSeedBank = mGamepadControls[1]->mPlayerIndex2 == 1 ? mSeedBank[1] : mSeedBank[0];
+            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
+            SeedBank *clientSeedBank = mGamepadControls[1]->mGamepadIndex == 1 ? mSeedBank[1] : mSeedBank[0];
             if (clientGamepadControls->mSelectedSeedIndex != event1->data1) {
                 clientGamepadControls->mSelectedSeedIndex = event1->data1;
                 clientSeedBank->mSeedPackets[event1->data1].mLastSelectedTime = 0.0f; // 动画效果专用
@@ -1969,21 +1966,21 @@ void Board::processServerEvent(const BaseEvent *event) {
         } break;
         case EVENT_BOARD_TOUCH_DRAG_REPLY: {
             //  auto *event1 = static_cast<const U16U16_Event *>(event);
-            // GamepadControls *clientGamepadControls = mGamepadControls[1]->mPlayerIndex2 == 1 ? mGamepadControls[1] : mGamepadControls[0];
+            // GamepadControls *clientGamepadControls = mGamepadControls[1]->mGamepadIndex == 1 ? mGamepadControls[1] : mGamepadControls[0];
             //            clientGamepadControls->mCursorPositionX = event1->data1;
             //            clientGamepadControls->mCursorPositionY = event1->data3;
         } break;
         case EVENT_BOARD_TOUCH_UP_REPLY: {
             auto *event1 = static_cast<const U8U8_Event *>(event);
-            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
-            CursorObject *clientCursorObject = mGamepadControls[1]->mPlayerIndex2 == 1 ? mCursorObject[1] : mCursorObject[0];
+            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
+            CursorObject *clientCursorObject = mGamepadControls[1]->mGamepadIndex == 1 ? mCursorObject[1] : mCursorObject[0];
             clientGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data1);
             clientCursorObject->mCursorType = (CursorType)event1->data2;
         } break;
         case EVENT_SERVER_BOARD_TOUCH_DOWN: {
             auto *event1 = static_cast<const U8U8I16I16_Event *>(event);
-            GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
-            SeedBank *serverSeedBank = mGamepadControls[0]->mPlayerIndex2 == 0 ? mSeedBank[0] : mSeedBank[1];
+            GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
+            SeedBank *serverSeedBank = mGamepadControls[0]->mGamepadIndex == 0 ? mSeedBank[0] : mSeedBank[1];
             if (serverGamepadControls->mSelectedSeedIndex != event1->data1) {
                 serverGamepadControls->mSelectedSeedIndex = event1->data1;
                 serverSeedBank->mSeedPackets[event1->data1].mLastSelectedTime = 0.0f; // 动画效果专用
@@ -1994,35 +1991,35 @@ void Board::processServerEvent(const BaseEvent *event) {
         } break;
         case EVENT_SERVER_BOARD_TOUCH_DRAG: {
             auto *event1 = static_cast<const U16U16_Event *>(event);
-            GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+            GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
             serverGamepadControls->mCursorPositionX = event1->data1;
             serverGamepadControls->mCursorPositionY = event1->data2;
         } break;
         case EVENT_SERVER_BOARD_TOUCH_UP: {
             auto *event1 = static_cast<const U8U8_Event *>(event);
-            GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
-            CursorObject *serverCursorObject = mGamepadControls[0]->mPlayerIndex2 == 0 ? mCursorObject[0] : mCursorObject[1];
+            GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
+            CursorObject *serverCursorObject = mGamepadControls[0]->mGamepadIndex == 0 ? mCursorObject[0] : mCursorObject[1];
             serverGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data1);
             serverCursorObject->mCursorType = (CursorType)event1->data2;
         } break;
         case EVENT_SERVER_BOARD_TOUCH_CLEAR_CURSOR: {
-            GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
-            ClearCursor(mGamepadControls[0]->mPlayerIndex2 == 0 ? 0 : 1);
+            GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
+            ClearCursor(mGamepadControls[0]->mGamepadIndex == 0 ? 0 : 1);
             serverGamepadControls->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
         } break;
         case EVENT_CLIENT_BOARD_TOUCH_CLEAR_CURSOR: {
-            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
-            ClearCursor(mGamepadControls[0]->mPlayerIndex2 == 0 ? 1 : 0);
+            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
+            ClearCursor(mGamepadControls[0]->mGamepadIndex == 0 ? 1 : 0);
             clientGamepadControls->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_NORMAL;
         } break;
         case EVENT_CLIENT_BOARD_GAMEPAD_SET_STATE: {
-            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
+            GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
             auto *event1 = static_cast<const U8_Event *>(event);
             clientGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data);
         } break;
         case EVENT_SERVER_BOARD_GAMEPAD_SET_STATE: {
             auto *event1 = static_cast<const U8_Event *>(event);
-            GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+            GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
             serverGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data);
         } break;
         case EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL: {
@@ -3033,7 +3030,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             mApp->mSoundSystem->CancelPausedFoley();
             mApp->KillNewOptionsDialog();
             mApp->KillDialog(DIALOG_CONFIRM_IN_GAME_RESTART);
-            GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+            GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
             if (serverGamepadControls->mIsZombie) {
                 mApp->SetBoardResult(BoardResult::BOARDRESULT_VS_PLANT_WON);
                 mApp->mGameScene = SCENE_PLANTS_WON;
@@ -3289,7 +3286,7 @@ void Board::Update() {
         if (aZombieUnderButter_1P != nullptr) {
             aZombieUnderButter_1P->AddButter();
         }
-        if (mGamepadControls[1]->mPlayerIndex2 != -1) {
+        if (mGamepadControls[1]->mGamepadIndex != -1) {
             Zombie *aZombieUnderButter_2P = ZombieHitTest(mGamepadControls[1]->mCursorPositionX, mGamepadControls[1]->mCursorPositionY, 1);
             if (aZombieUnderButter_2P != nullptr) {
                 aZombieUnderButter_2P->AddButter();
@@ -3300,8 +3297,8 @@ void Board::Update() {
     if (isKeyboardTwoPlayerMode) {
         mGamepadControls[0]->mIsInShopSeedBank = false;
         mGamepadControls[1]->mIsInShopSeedBank = false;
-        mGamepadControls[0]->mPlayerIndex2 = 0;
-        mGamepadControls[1]->mPlayerIndex2 = 1;
+        mGamepadControls[0]->mGamepadIndex = 0;
+        mGamepadControls[1]->mGamepadIndex = 1;
         mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
         mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
     }
@@ -3431,7 +3428,7 @@ void Board::Update() {
 
     if (startAllMowers) {
         if (mApp->mGameScene == GameScenes::SCENE_PLAYING && !IsOnlineServerModeActive() && !gIsReplayMode) {
-            for (LawnMower *alawnMower = nullptr; IterateLawnMowers(alawnMower); alawnMower->StartMower()) {}
+            for (LawnMower *aLawnMower = nullptr; IterateLawnMowers(aLawnMower); aLawnMower->StartMower()) {}
         }
         startAllMowers = false;
     }
@@ -4623,7 +4620,7 @@ void Board::ClientMouseDownLocal(int x, int y, bool isInBank) {
     gClientMouseInBank = isInBank;
     gClientMouseInBoard = !isInBank;
     if (gClientMouseInBoard) {
-        GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
+        GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
         clientGamepadControls->mCursorPositionX = x;
         clientGamepadControls->mCursorPositionY = y;
     }
@@ -4631,7 +4628,7 @@ void Board::ClientMouseDownLocal(int x, int y, bool isInBank) {
 
 void Board::ClientMouseDragLocal(int x, int y) {
 
-    GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mPlayerIndex2 == 1) ? 1 : 0];
+    GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
     SeedBank *seedBank = clientGamepadControls->GetSeedBank();
     bool isInBank = seedBank->ContainsPoint(x, y);
 
@@ -4670,10 +4667,10 @@ void Board::MouseDown(int x, int y, int theClickCount) {
         return;
     }
 
-    bool inRangeOf1PSeedBank = (mGamepadControls[0]->mPlayerIndex2 == 1 && mSeedBank[1]->ContainsPoint(x, y))
-        || (mGamepadControls[0]->mPlayerIndex2 == 0 && (mSeedBank[0]->ContainsPoint(x, y) || gTouchVSShovelRect.Contains(x, y)));
-    bool inRangeOf2PSeedBank = (mGamepadControls[1]->mPlayerIndex2 == 1 && mSeedBank[1]->ContainsPoint(x, y))
-        || (mGamepadControls[1]->mPlayerIndex2 == 0 && (mSeedBank[0]->ContainsPoint(x, y) || gTouchVSShovelRect.Contains(x, y)));
+    bool inRangeOf1PSeedBank = (mGamepadControls[0]->mGamepadIndex == 1 && mSeedBank[1]->ContainsPoint(x, y))
+        || (mGamepadControls[0]->mGamepadIndex == 0 && (mSeedBank[0]->ContainsPoint(x, y) || gTouchVSShovelRect.Contains(x, y)));
+    bool inRangeOf2PSeedBank = (mGamepadControls[1]->mGamepadIndex == 1 && mSeedBank[1]->ContainsPoint(x, y))
+        || (mGamepadControls[1]->mGamepadIndex == 0 && (mSeedBank[0]->ContainsPoint(x, y) || gTouchVSShovelRect.Contains(x, y)));
 
 
     // 如果是客户端
@@ -4691,7 +4688,7 @@ void Board::MouseDown(int x, int y, int theClickCount) {
         if (inRangeOf2PSeedBank)
             return;
         __MouseDown(x, y, theClickCount);
-        GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+        GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
         U8U8I16I16_Event event = {{EventType::EVENT_SERVER_BOARD_TOUCH_DOWN},
                                   uint8_t(serverGamepadControls->mSelectedSeedIndex),
                                   uint8_t(serverGamepadControls->mGamepadState),
@@ -4775,7 +4772,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             if (currentSeedBankIndex != newSeedPacketIndex || aGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[0]->mIsInShopSeedBank = false;
-                bool isClientGamepadControl = mGamepadControls[0]->mPlayerIndex2 == 1;
+                bool isClientGamepadControl = mGamepadControls[0]->mGamepadIndex == 1;
                 if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
                     U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 2};
                     netplay::PutEvent(event);
@@ -4818,7 +4815,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
             if (currentSeedBankIndex_2P != newSeedPacketIndex_2P || aGameState_2P != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[1]->mIsInShopSeedBank = false;
-                bool isClientGamepadControl = mGamepadControls[1]->mPlayerIndex2 == 1;
+                bool isClientGamepadControl = mGamepadControls[1]->mGamepadIndex == 1;
                 if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
                     U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 2};
                     netplay::PutEvent(event);
@@ -4907,7 +4904,7 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
 
     if (aGameMode == GameMode::GAMEMODE_MP_VS) {
         if (gTcpClientSocket >= 0) {
-            gPlayerIndex = mGamepadControls[0]->mPlayerIndex2 == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
+            gPlayerIndex = mGamepadControls[0]->mGamepadIndex == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
         } else {
             gPlayerIndex = PixelToGridX(x, y) > 5 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER2 : TouchPlayerIndex::TOUCHPLAYER_PLAYER1;
         }
@@ -5094,7 +5091,7 @@ void Board::MouseDrag(int x, int y) {
     __MouseDrag(x, y);
 
     if (gTcpClientSocket >= 0) {
-        GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
+        GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
         I16I16_Event event = {{EventType::EVENT_SERVER_BOARD_TOUCH_DRAG}, int16_t(serverGamepadControls->mCursorPositionX), int16_t(serverGamepadControls->mCursorPositionY)};
         netplay::PutEvent(event);
     }
@@ -5133,7 +5130,7 @@ void Board::__MouseDrag(int x, int y) {
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
                 netplay::PutEvent(event);
             }
-            if (gTcpClientSocket >= 0 && mGamepadControls[0]->mPlayerIndex2 == 0) {
+            if (gTcpClientSocket >= 0 && mGamepadControls[0]->mGamepadIndex == 0) {
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_SET_STATE}, 7};
                 netplay::PutEvent(event);
             }
@@ -5141,7 +5138,7 @@ void Board::__MouseDrag(int x, int y) {
             mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
             mGamepadControls[1]->mIsInShopSeedBank = false;
             requestDrawButterInCursor = false;
-            if (gTcpClientSocket >= 0 && mGamepadControls[1]->mPlayerIndex2 == 0) {
+            if (gTcpClientSocket >= 0 && mGamepadControls[1]->mGamepadIndex == 0) {
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_SET_STATE}, 7};
                 netplay::PutEvent(event);
             }
@@ -5218,7 +5215,7 @@ void Board::__MouseDrag(int x, int y) {
             gTouchState = TouchState::TOUCHSTATE_NONE;
             gSendKeyWhenTouchUp = false;
 
-            if (mGamepadControls[0]->mPlayerIndex2 == 0 && gTcpClientSocket >= 0) {
+            if (mGamepadControls[0]->mGamepadIndex == 0 && gTcpClientSocket >= 0) {
                 BaseEvent event = {EventType::EVENT_SERVER_BOARD_TOUCH_CLEAR_CURSOR};
                 netplay::PutEvent(event);
             }
@@ -5234,7 +5231,7 @@ void Board::__MouseDrag(int x, int y) {
             gTouchState = TouchState::TOUCHSTATE_NONE;
             gSendKeyWhenTouchUp = false;
 
-            if (mGamepadControls[1]->mPlayerIndex2 == 0 && gTcpClientSocket >= 0) {
+            if (mGamepadControls[1]->mGamepadIndex == 0 && gTcpClientSocket >= 0) {
                 BaseEvent event = {EventType::EVENT_SERVER_BOARD_TOUCH_CLEAR_CURSOR};
                 netplay::PutEvent(event);
             }
@@ -5294,8 +5291,8 @@ void Board::MouseUp(int x, int y, int theClickCount) {
     __MouseUp(x, y, theClickCount);
 
     if (gTcpClientSocket >= 0) {
-        GamepadControls *serverGamepadControls = mGamepadControls[0]->mPlayerIndex2 == 0 ? mGamepadControls[0] : mGamepadControls[1];
-        CursorObject *serverCursorObject = mGamepadControls[0]->mPlayerIndex2 == 0 ? mCursorObject[0] : mCursorObject[1];
+        GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
+        CursorObject *serverCursorObject = mGamepadControls[0]->mGamepadIndex == 0 ? mCursorObject[0] : mCursorObject[1];
         U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_TOUCH_UP}, uint8_t(serverGamepadControls->mGamepadState), uint8_t(serverCursorObject->mCursorType)};
         netplay::PutEvent(event);
     }
@@ -5477,7 +5474,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             if (currentSeedBankIndex != newSeedPacketIndex || aGameState != BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
                 mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[0]->mIsInShopSeedBank = false;
-                bool isClientGamepadControl = mGamepadControls[0]->mPlayerIndex2 == 1;
+                bool isClientGamepadControl = mGamepadControls[0]->mGamepadIndex == 1;
                 if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
                     U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 2};
                     netplay::PutEvent(event);
@@ -5521,7 +5518,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                 mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
                 mGamepadControls[1]->mIsInShopSeedBank = false;
 
-                bool isClientGamepadControl = mGamepadControls[1]->mPlayerIndex2 == 1;
+                bool isClientGamepadControl = mGamepadControls[1]->mGamepadIndex == 1;
                 if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
                     U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 2};
                     netplay::PutEvent(event);
@@ -5623,7 +5620,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
 
     if (aGameMode == GameMode::GAMEMODE_MP_VS) {
         if (gTcpClientSocket >= 0) {
-            gPlayerIndexSecond = mGamepadControls[1]->mPlayerIndex2 == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
+            gPlayerIndexSecond = mGamepadControls[1]->mGamepadIndex == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
         } else {
             gPlayerIndexSecond = PixelToGridX(x, y) > 5 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER2 : TouchPlayerIndex::TOUCHPLAYER_PLAYER1;
         }
@@ -5750,7 +5747,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
         auto *plant = (Plant *)hitResult.mObject;
         bool isValidCobCannon = plant->mSeedType == SeedType::SEED_COBCANNON && plant->mState == PlantState::STATE_COBCANNON_READY;
         if (isValidCobCannon) {
-            if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 && mGamepadControls[1]->mPlayerIndex2 == -1) {
+            if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 && mGamepadControls[1]->mGamepadIndex == -1) {
                 mGamepadControls[1]->mCursorPositionX = x;
                 mGamepadControls[1]->mCursorPositionY = y;
                 mGamepadControls[0]->mCursorPositionX = tmpX1;
@@ -5761,7 +5758,7 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
                     return;
                 }
                 mGamepadControls[1]->mIsInShopSeedBank = true;
-                mGamepadControls[1]->mPlayerIndex2 = 1;
+                mGamepadControls[1]->mGamepadIndex = 1;
                 gPlayerIndexSecond = TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
                 mGamepadControls[1]->pickUpCobCannon(plant);
                 gTouchStateSecond = TouchState::TOUCHSTATE_VALID_COBCONON_SECOND;
@@ -5820,7 +5817,7 @@ void Board::MouseDragSecond(int x, int y) {
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_GAMEPAD_PICKUP_SHOVEL}, requestDrawShovelInCursor};
                 netplay::PutEvent(event);
             }
-            if (gTcpClientSocket >= 0 && mGamepadControls[0]->mPlayerIndex2 == 1) {
+            if (gTcpClientSocket >= 0 && mGamepadControls[0]->mGamepadIndex == 1) {
                 U8_Event event = {{EventType::EVENT_CLIENT_BOARD_GAMEPAD_SET_STATE}, 7};
                 netplay::PutEvent(event);
             }
@@ -5828,7 +5825,7 @@ void Board::MouseDragSecond(int x, int y) {
             mGamepadControls[1]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR;
             mGamepadControls[1]->mIsInShopSeedBank = false;
             requestDrawButterInCursor = false;
-            if (gTcpClientSocket >= 0 && mGamepadControls[1]->mPlayerIndex2 == 1) {
+            if (gTcpClientSocket >= 0 && mGamepadControls[1]->mGamepadIndex == 1) {
                 U8_Event event = {{EventType::EVENT_CLIENT_BOARD_GAMEPAD_SET_STATE}, 7};
                 netplay::PutEvent(event);
             }
@@ -5891,7 +5888,7 @@ void Board::MouseDragSecond(int x, int y) {
         mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096); // 退选加农炮
         if (gTouchStateSecond == TouchState::TOUCHSTATE_VALID_COBCONON_SECOND) {
             mApp->ClearSecondPlayer();
-            mGamepadControls[1]->mPlayerIndex2 = -1;
+            mGamepadControls[1]->mGamepadIndex = -1;
         }
         gTouchStateSecond = TouchState::TOUCHSTATE_NONE;
         gSendKeyWhenTouchUpSecond = false;
@@ -5908,7 +5905,7 @@ void Board::MouseDragSecond(int x, int y) {
             gTouchStateSecond = TouchState::TOUCHSTATE_NONE;
             gSendKeyWhenTouchUpSecond = false;
 
-            if (gTcpClientSocket >= 0 && mGamepadControls[0]->mPlayerIndex2 == 1) {
+            if (gTcpClientSocket >= 0 && mGamepadControls[0]->mGamepadIndex == 1) {
                 BaseEvent event = {EventType::EVENT_CLIENT_BOARD_TOUCH_CLEAR_CURSOR};
                 netplay::PutEvent(event);
             }
@@ -5924,7 +5921,7 @@ void Board::MouseDragSecond(int x, int y) {
             gTouchStateSecond = TouchState::TOUCHSTATE_NONE;
             gSendKeyWhenTouchUpSecond = false;
 
-            if (gTcpClientSocket >= 0 && mGamepadControls[1]->mPlayerIndex2 == 1) {
+            if (gTcpClientSocket >= 0 && mGamepadControls[1]->mGamepadIndex == 1) {
                 BaseEvent event = {EventType::EVENT_CLIENT_BOARD_TOUCH_CLEAR_CURSOR};
                 netplay::PutEvent(event);
             }
@@ -6039,7 +6036,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                 //                }
                 if (gTouchStateSecond == TouchState::TOUCHSTATE_VALID_COBCONON_SECOND) {
                     mApp->ClearSecondPlayer();
-                    mGamepadControls[1]->mPlayerIndex2 = -1;
+                    mGamepadControls[1]->mGamepadIndex = -1;
                 }
             }
         }

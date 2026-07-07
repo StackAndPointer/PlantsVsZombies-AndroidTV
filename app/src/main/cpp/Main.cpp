@@ -549,7 +549,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_n
     }
     anApp->ClearSecondPlayer();
     if (aBoard) {
-        aBoard->mGamepadControls[1]->mPlayerIndex2 = -1;
+        aBoard->mGamepadControls[1]->mGamepadIndex = -1;
     }
     anApp->mSecondPlayerGamepadIndex = -1;
 }

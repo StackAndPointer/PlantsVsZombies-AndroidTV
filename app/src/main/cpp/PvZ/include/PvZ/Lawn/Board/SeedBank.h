@@ -62,8 +62,8 @@ public:
         return reinterpret_cast<int (*)(SeedBank *)>(SeedBank_GetNumSeedsOnConveyorBeltAddr)(this);
     }
 
-    SeedBank(bool thePlayerIndex) {
-        _constructor(thePlayerIndex);
+    SeedBank(bool theIsZombie) {
+        _constructor(theIsZombie);
     }
     ~SeedBank() {
         _destructor();
@@ -80,8 +80,8 @@ public:
 protected:
     friend void InitHookFunction();
 
-    void _constructor(bool thePlayerIndex) {
-        reinterpret_cast<void (*)(SeedBank *, bool)>(SeedBank_SeedBankAddr)(this, thePlayerIndex);
+    void _constructor(bool theIsZombie) {
+        reinterpret_cast<void (*)(SeedBank *, bool)>(SeedBank_SeedBankAddr)(this, theIsZombie);
     }
     void _destructor() {
         reinterpret_cast<void (*)(SeedBank *)>(SeedBank_DeleteAddr)(this);

@@ -78,7 +78,7 @@ bool GamepadButtonDown(LawnApp *app, int playerIndex, int button) {
 }
 
 void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) {
-    if (gamepadControls->mPlayerIndex2 == -1) {
+    if (gamepadControls->mGamepadIndex == -1) {
         return;
     }
 
@@ -88,10 +88,10 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
             gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_NORMAL);
             gamepadControls->mIsShowingDigIndicator = false;
         }
-        if (!GamepadButtonDown(app, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_B) && gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD) {
+        if (!GamepadButtonDown(app, gamepadControls->mGamepadIndex, Sexy::GamepadButton::GAMEPAD_BUTTON_B) && gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD) {
             gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_NORMAL);
         }
-        if (!GamepadButtonDown(app, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_X) && gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_BUTTER_HELD) {
+        if (!GamepadButtonDown(app, gamepadControls->mGamepadIndex, Sexy::GamepadButton::GAMEPAD_BUTTON_X) && gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_BUTTER_HELD) {
             gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_BUTTER_RELEASED);
         }
     } else {
@@ -109,7 +109,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
     gamepadControls->unknown_always_1 = gamepadControls->mIsCobCannonSelected ? 0 : 1;
 
     Reanimation *cobCannonReanim = app->ReanimationTryToGet(gamepadControls->mCobCannonReanimID);
-    if (cobCannonReanim == nullptr && gamepadControls->mPlayerIndex2 != -1) {
+    if (cobCannonReanim == nullptr && gamepadControls->mGamepadIndex != -1) {
         cobCannonReanim = app->AddReanimation(0.0f, 0.0f, 0, static_cast<ReanimationType>(158));
         if (cobCannonReanim != nullptr) {
             cobCannonReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
@@ -117,10 +117,10 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
             cobCannonReanim->mIsAttachment = true;
         }
     }
-    if (cobCannonReanim != nullptr && gamepadControls->mPlayerIndex2 != -1) {
+    if (cobCannonReanim != nullptr && gamepadControls->mGamepadIndex != -1) {
         Reanimation *cobCannonReanimById = app->ReanimationTryToGet(gamepadControls->mCobCannonReanimID);
         if (cobCannonReanimById != nullptr) {
-            if (GamepadButtonDown(gamepadControls->mBoard->mApp, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_A)) {
+            if (GamepadButtonDown(gamepadControls->mBoard->mApp, gamepadControls->mGamepadIndex, Sexy::GamepadButton::GAMEPAD_BUTTON_A)) {
                 cobCannonReanimById->PlayReanim("anim_depressed", ReanimLoopType::REANIM_LOOP, 0, 12.0f);
             } else if (!cobCannonReanimById->IsAnimPlaying("anim_bounce")) {
                 cobCannonReanimById->PlayReanim("anim_bounce", ReanimLoopType::REANIM_LOOP, 0, 12.0f);
@@ -166,7 +166,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
 
     if ((gamepadControls->mGamepadFrameCounter & 25) == 0) {
         HitResult hitResult = {};
-        gamepadControls->mBoard->MouseHitTest(gamepadControls->mCursorPositionX, gamepadControls->mCursorPositionY, &hitResult, gamepadControls->mPlayerIndex2);
+        gamepadControls->mBoard->MouseHitTest(gamepadControls->mCursorPositionX, gamepadControls->mCursorPositionY, &hitResult, gamepadControls->mGamepadIndex);
         if (hitResult.mObjectType == GameObjectType::OBJECT_TYPE_COIN) {
             Coin *coin = reinterpret_cast<Coin *>(hitResult.mObject);
             GameMode gameMode = gamepadControls->mGameObject->mApp->mGameMode;
@@ -314,7 +314,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
     gamepadControls->mCursorLabelLiftOffset = rise;
 
     float yJitter = NAN;
-    if (GamepadButtonDown(gamepadControls->mGameObject->mApp, gamepadControls->mPlayerIndex2, Sexy::GamepadButton::GAMEPAD_BUTTON_A) || gamepadControls->mButterZombie != nullptr) {
+    if (GamepadButtonDown(gamepadControls->mGameObject->mApp, gamepadControls->mGamepadIndex, Sexy::GamepadButton::GAMEPAD_BUTTON_A) || gamepadControls->mButterZombie != nullptr) {
         yJitter = 3.0f;
     } else {
         gamepadControls->mCursorJitterAnimPhase += 0.016f;
@@ -410,7 +410,7 @@ void GamepadControls::pickUpCobCannon(Plant *cobCannon) {
     Plant *otherSelectedCob = nullptr;
     GamepadControls *otherGamepadControls = (mPlayerIndex1 != 0) ? mBoard->mGamepadControls[0] : mBoard->mGamepadControls[1];
 
-    if (otherGamepadControls != nullptr && otherGamepadControls->mPlayerIndex2 != -1 && otherGamepadControls->mIsCobCannonSelected) {
+    if (otherGamepadControls != nullptr && otherGamepadControls->mGamepadIndex != -1 && otherGamepadControls->mIsCobCannonSelected) {
         const uint32_t otherCobPlantId = static_cast<uint32_t>(otherGamepadControls->mCobCannonPlantIndexInList);
         if (otherCobPlantId != 0) {
             otherSelectedCob = mBoard->mPlants.DataArrayTryToGet(otherCobPlantId);
@@ -434,7 +434,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
     // 实现在光标内绘制铲子和黄油手套(黄油手套其实就是花园的手套),并在锤僵尸关卡绘制种植预览
 
 
-    if (mPlayerIndex2 != -1) {
+    if (mGamepadIndex != -1) {
         LawnApp *anApp = mGameObject->mApp;
         bool is2P = mPlayerIndex1 == 1;
         CursorObject *aCursorObject = is2P ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
@@ -515,7 +515,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
             Image *tmp1 = Sexy::IMAGE_CURSOR_P1_TEXT;
             Sexy::IMAGE_CURSOR_P1_TEXT = IMAGE_BLANK;
             old_GamepadControls_Draw(this, g);
-            const bool isHostSide = (mPlayerIndex2 == 0);
+            const bool isHostSide = (mGamepadIndex == 0);
             TodDrawString(
                 g, isHostSide ? hostName : guestName, mCursorPositionX - 5, mCursorPositionY - 60, Sexy::FONT_DWARVENTODCRAFT18, Color(255, 242, 14, 255), DrawStringJustification::DS_ALIGN_CENTER);
             Sexy::IMAGE_CURSOR_P1_TEXT = tmp1;
@@ -525,7 +525,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
             Image *tmp = Sexy::IMAGE_CURSOR_P2_TEXT;
             Sexy::IMAGE_CURSOR_P2_TEXT = IMAGE_BLANK;
             old_GamepadControls_Draw(this, g);
-            const bool isHostSide = (mPlayerIndex2 == 0);
+            const bool isHostSide = (mGamepadIndex == 0);
             TodDrawString(
                 g, isHostSide ? hostName : guestName, mCursorPositionX - 5, mCursorPositionY - 60, Sexy::FONT_DWARVENTODCRAFT18, Color(68, 207, 255, 255), DrawStringJustification::DS_ALIGN_CENTER);
             Sexy::IMAGE_CURSOR_P2_TEXT = tmp;
@@ -583,8 +583,8 @@ void GamepadControls::Update(float a2) {
     // Reanimation *mCursorReanim = ReanimationTryToGet(gamepadControls->mGameObject->anApp, gamepadControls->mCursorReanimID);
     // LOGD("%d",mCursorReanim);
     // if (mCursorReanim != nullptr) {
-    // if ((gamepadControls->mPlayerIndex2 == 0 &&(mIsZombie == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 || gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1)) ||
-    // (gamepadControls->mPlayerIndex2 == 1
+    // if ((gamepadControls->mGamepadIndex == 0 &&(mIsZombie == TouchPlayerIndex::TOUCHPLAYER_PLAYER1 || gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1)) ||
+    // (gamepadControls->mGamepadIndex == 1
     // &&(mIsZombie == TouchPlayerIndex::TOUCHPLAYER_PLAYER2 || gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER2))) {
     // if (!Reanimation_IsAnimPlaying(mCursorReanim, "anim_depressed"))
     // Reanimation_PlayReanim(mCursorReanim, "anim_depressed", a::REANIM_LOOP, 0,12.0);
@@ -940,7 +940,7 @@ void GamepadControls::UpdatePreviewReanim() {
             flagUpdateCanPlant = false;
             flagDrawGray = true;
         }
-        if (!mBoard->HasConveyorBeltSeedBank(mPlayerIndex2) && aCursorObject->mCursorType != CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
+        if (!mBoard->HasConveyorBeltSeedBank(mGamepadIndex) && aCursorObject->mCursorType != CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
             if (aGameMode == GameMode::GAMEMODE_MP_VS) {
                 if (mIsZombie) {
                     if (!mBoard->CanTakeDeathMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE))) {
@@ -954,7 +954,7 @@ void GamepadControls::UpdatePreviewReanim() {
                     }
                 }
             } else {
-                if (!mBoard->CanTakeSunMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE), mPlayerIndex2)) {
+                if (!mBoard->CanTakeSunMoney(mBoard->GetCurrentPlantCost(aSeedType, SeedType::SEED_NONE), mGamepadIndex)) {
                     flagUpdateCanPlant = false;
                     flagDrawGray = true;
                 }
@@ -1141,7 +1141,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 
     if (mBoard->HasLevelAwardDropped() || (mBoard->mChallenge->IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode <= 1 && Challenge::IsMPResourceProducer(aSeedPacket->mPacketType))
         || mBoard->mChallenge->ISMPSeedSuddenDeathDisabled(aSeedBank->mIsZombie, aPacketType)) {
-        bool isClientGamepadControl = mPlayerIndex2 == 1;
+        bool isClientGamepadControl = mGamepadIndex == 1;
         if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
             U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
             netplay::PutEvent(event);
@@ -1162,7 +1162,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
     if (mIsZombie) {
 
         if (!mBoard->CanTakeDeathMoney(aPacketCost) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK || mBoard->HasLevelAwardDropped()) {
-            bool isClientGamepadControl = mPlayerIndex2 == 1;
+            bool isClientGamepadControl = mGamepadIndex == 1;
             if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
                 netplay::PutEvent(event);
@@ -1188,7 +1188,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             }
             mBoard->TakeDeathMoney(aPacketCost);
             aSeedPacket->Deactivate();
-            aSeedPacket->WasPlanted(mPlayerIndex2);
+            aSeedPacket->WasPlanted(mGamepadIndex);
             return;
         }
 
@@ -1270,7 +1270,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             }
 
             aSeedPacket->Deactivate();
-            aSeedPacket->WasPlanted(mPlayerIndex2);
+            aSeedPacket->WasPlanted(mGamepadIndex);
             mGamepadState = MOVEMENT_STATE_NORMAL;
             return;
         }
@@ -1278,7 +1278,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
         if (!mBoard->CanTakeSunMoney(aPacketCost, 0) || !aSeedPacket->CanPickUp() || mBoard->CanPlantAt(aGridX, aGridY, aPacketType) != PlantingReason::PLANTING_OK || mBoard->HasLevelAwardDropped()) {
             // 优化玩家体验：不执行旧函数，使未成功种下的卡槽不会退回未选取状态
             //                old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
-            bool isClientGamepadControl = mPlayerIndex2 == 1;
+            bool isClientGamepadControl = mGamepadIndex == 1;
             if (gTcpClientSocket >= 0 && isClientGamepadControl) { // 让对方播放音效
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
                 netplay::PutEvent(event);

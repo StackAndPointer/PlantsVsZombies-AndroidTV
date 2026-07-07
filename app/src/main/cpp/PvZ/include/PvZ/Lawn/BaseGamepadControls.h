@@ -100,8 +100,8 @@ public:
     float mGamepadVelocityRightX;  // 31
     float mGamepadVelocityRightY;  // 32
     int unk2[4];                   // 33 ~ 36
-    int mPlayerIndex1;             // 37，P1/P2
-    int mPlayerIndex2;             // 38，与mPlayerIndex完全相等，没有区别
+    int mPlayerIndex1;             // 37，只是个index，GamepadControls[0]->mPlayerIndex1 == 0，GamepadControls[1]->mPlayerIndex1 == 1。用于找到对应index的CursorObject和CursorPreview
+    int mGamepadIndex;             // 38，与mPlayerIndex完全相等，没有区别
     float mCursorPositionYJitter;  // 39
     float mCursorJitterAnimPhase;  // 40
     int unkMems[2];                // 41 ~ 42

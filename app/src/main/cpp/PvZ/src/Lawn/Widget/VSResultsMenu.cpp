@@ -226,8 +226,8 @@ void VSResultsMenu::InitFromBoard(Board *theBoard) {
     const auto *controls0 = theBoard->mGamepadControls[0];
     const auto *controls1 = theBoard->mGamepadControls[1];
 
-    mPlayerIndices[0] = controls0->mPlayerIndex2;
-    mPlayerIndices[1] = controls1->mPlayerIndex2;
+    mPlayerIndices[0] = controls0->mGamepadIndex;
+    mPlayerIndices[1] = controls1->mGamepadIndex;
     mSides[0] = WinSide(controls0->mIsZombie);
     mSides[1] = WinSide(controls1->mIsZombie);
 

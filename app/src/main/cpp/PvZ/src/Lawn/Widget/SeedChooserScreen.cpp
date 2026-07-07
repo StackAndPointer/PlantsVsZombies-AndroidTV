@@ -1537,7 +1537,7 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
         }
     }
 
-    if (mBoard->mGamepadControls[0]->mPlayerIndex2 == -1) {
+    if (mBoard->mGamepadControls[0]->mGamepadIndex == -1) {
         return;
     }
 
@@ -1793,7 +1793,7 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
         }
     }
 
-    if (mBoard->mGamepadControls[playerIndex]->mPlayerIndex2 == -1) {
+    if (mBoard->mGamepadControls[playerIndex]->mGamepadIndex == -1) {
         return;
     }
 
@@ -2959,7 +2959,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
             mSeedIndex1 = seedIndex;
         }
 
-        if (mSeedIndex2 == seedIndex && mBoard->mGamepadControls[1]->mPlayerIndex2 != -1 && aSeedState == SEED_IN_CHOOSER) {
+        if (mSeedIndex2 == seedIndex && mBoard->mGamepadControls[1]->mGamepadIndex != -1 && aSeedState == SEED_IN_CHOOSER) {
             mSeedIndex2 = seedIndex;
         }
 
@@ -2975,7 +2975,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
 
     // Draw cursor selectors for two players
     for (int aPlayerIndex = 0; aPlayerIndex < 2; aPlayerIndex++) {
-        int aPlayerState = (aPlayerIndex ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0])->mPlayerIndex2;
+        int aPlayerState = (aPlayerIndex ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0])->mGamepadIndex;
         if (aPlayerState != -1 && !mButtonSlotState) {
             if (aPlayerState == mPlayerIndex || !mApp->IsVSMode()) {
                 int aCursorX = aPlayerIndex ? mCursorPositionX2 : mCursorPositionX1;
@@ -3020,7 +3020,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
 
     // Draw cursor arrows for players
     for (int aPlayerIndex = 0; aPlayerIndex < 2; aPlayerIndex++) {
-        if (ShouldDisplayCursor(aPlayerIndex) && (aPlayerIndex ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0])->mPlayerIndex2 != -1) {
+        if (ShouldDisplayCursor(aPlayerIndex) && (aPlayerIndex ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0])->mGamepadIndex != -1) {
             int aCursorX = aPlayerIndex ? mCursorPositionX2 : mCursorPositionX1;
             int aCursorY = aPlayerIndex ? mCursorPositionY2 : mCursorPositionY1;
             Image *aArrowImage = aPlayerIndex ? Sexy::IMAGE_CURSOR_ARROW_P2 : Sexy::IMAGE_CURSOR_ARROW_P1;
