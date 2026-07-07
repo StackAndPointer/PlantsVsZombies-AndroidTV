@@ -56,10 +56,12 @@ namespace details {
  */
 template <typename CharT>
 class basic_string {
+    using sv_type = std::basic_string_view<CharT>;
+
 public:
     using traits_type = std::char_traits<CharT>;
     using value_type = CharT;
-    using size_type = /* std::size_t */ std::uint32_t;
+    using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
     using pointer = CharT *;
     using const_pointer = const CharT *;
@@ -75,10 +77,9 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
     using reverse_iterator = const_reverse_iterator;
 
-    using _self_view = std::basic_string_view<CharT>;
-
 #ifdef PVZ_VERSION
     static_assert(std::is_same_v<CharT, char> || std::is_same_v<CharT, wchar_t> || std::is_same_v<CharT, char32_t>);
+    static_assert(sizeof(size_type) == sizeof(uint32_t));
 #else
     static_assert(!std::is_array_v<CharT>, "Character type of basic_string must not be an array");
     static_assert(std::is_standard_layout_v<CharT>, "Character type of basic_string must be standard-layout");
@@ -114,14 +115,14 @@ public:
     template <typename SV>
         requires std::is_convertible_v<const SV &, std::basic_string_view<CharT>>
     basic_string(const SV &t, size_type pos, size_type n) {
-        const _self_view sv0 = t;
-        const _self_view sv = sv0.substr(pos, n);
+        const sv_type sv0 = t;
+        const sv_type sv = sv0.substr(pos, n);
         m_dataplus = construct(sv.begin(), sv.end());
     }
 
     template <details::convertible_to_string_view<CharT> SV>
     explicit basic_string(const SV &t) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         m_dataplus = construct(sv.begin(), sv.end());
     }
 
@@ -151,8 +152,8 @@ public:
         get_rep()->dispose();
     }
 
-    /* implicit */ operator _self_view() const noexcept {
-        return _self_view{c_str(), size()};
+    /* implicit */ operator sv_type() const noexcept {
+        return sv_type{c_str(), size()};
     }
 
     basic_string &operator=(const basic_string &other) {
@@ -170,7 +171,7 @@ public:
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &operator=(const SV &t) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return assign(sv);
     }
 
@@ -203,13 +204,13 @@ public:
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &assign(const SV &t, size_type pos, size_type n = npos) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return assign(sv.substr(pos, n));
     }
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &assign(const SV &t) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return assign(sv.data(), sv.size());
     }
 
@@ -372,13 +373,13 @@ public:
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &insert(size_type pos1, const SV &t, size_type pos2, size_type n = npos) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return insert(pos1, sv.substr(pos2, n));
     }
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &insert(size_type pos, const SV &t) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return insert(pos, sv.data(), sv.size());
     }
 
@@ -442,13 +443,13 @@ public:
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &append(const SV &t, size_type pos, size_type n = npos) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return append(sv.substr(pos, n));
     }
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &append(const SV &t) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return append(sv.data(), sv.size());
     }
 
@@ -497,7 +498,7 @@ public:
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &operator+=(const SV &t) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return append(sv);
     }
 
@@ -525,13 +526,13 @@ public:
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &replace(size_type pos1, size_type n1, const SV &t, size_type pos2, size_type n2 = npos) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return replace(pos1, n1, sv.substr(pos2, n2));
     }
 
     template <details::convertible_to_string_view<CharT> SV>
     basic_string &replace(size_type pos, size_type n, const SV &t) {
-        const _self_view sv = t;
+        const sv_type sv = t;
         return replace(pos, n, sv.data(), sv.size());
     }
 
@@ -622,71 +623,71 @@ public:
     }
 
     [[nodiscard]] size_type find(const basic_string &str, size_type pos = 0) const noexcept {
-        return find(_self_view{str}, pos);
+        return find(sv_type{str}, pos);
     }
 
     template <details::convertible_to_string_view<CharT> SV>
-    [[nodiscard]] size_type find(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
-        const _self_view sv = t;
-        return from_view_pos(_self_view{*this}.find(sv, pos));
+    [[nodiscard]] size_type find(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
+        const sv_type sv = t;
+        return sv_type{*this}.find(sv, pos);
     }
 
     [[nodiscard]] size_type find(const CharT *s, size_type pos, size_type n) const {
         assert((s != nullptr || n == 0) && "basic_string::find received nullptr");
-        return find(_self_view{s, n}, pos);
+        return find(sv_type{s, n}, pos);
     }
 
     [[nodiscard]] size_type find(const CharT *s, size_type pos = 0) const {
         assert((s != nullptr) && "basic_string::find received nullptr");
-        return find(_self_view{s}, pos);
+        return find(sv_type{s}, pos);
     }
 
     [[nodiscard]] size_type find(CharT c, size_type pos = 0) const noexcept {
-        return from_view_pos(_self_view{*this}.find(c, pos));
+        return sv_type{*this}.find(c, pos);
     }
 
     [[nodiscard]] size_type rfind(const basic_string &str, size_type pos = npos) const noexcept {
-        return rfind(_self_view{str}, pos);
+        return rfind(sv_type{str}, pos);
     }
 
     template <details::convertible_to_string_view<CharT> SV>
-    [[nodiscard]] size_type rfind(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
-        const _self_view sv = t;
-        return from_view_pos(_self_view{*this}.rfind(sv, pos));
+    [[nodiscard]] size_type rfind(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
+        const sv_type sv = t;
+        return sv_type{*this}.rfind(sv, pos);
     }
 
     [[nodiscard]] size_type rfind(const CharT *s, size_type pos, size_type n) const {
         assert((s != nullptr || n == 0) && "basic_string::rfind received nullptr");
-        return rfind(_self_view{s, n}, pos);
+        return rfind(sv_type{s, n}, pos);
     }
 
     [[nodiscard]] size_type rfind(const CharT *s, size_type pos = npos) const {
         assert((s != nullptr) && "basic_string::rfind received nullptr");
-        return rfind(_self_view{s}, pos);
+        return rfind(sv_type{s}, pos);
     }
 
     [[nodiscard]] size_type rfind(CharT c, size_type pos = npos) const noexcept {
-        return from_view_pos(_self_view{*this}.rfind(c, pos));
+        return sv_type{*this}.rfind(c, pos);
     }
 
     [[nodiscard]] size_type find_first_of(const basic_string &str, size_type pos = 0) const noexcept {
-        return find_first_of(_self_view{str}, pos);
+        return find_first_of(sv_type{str}, pos);
     }
 
     template <details::convertible_to_string_view<CharT> SV>
-    [[nodiscard]] size_type find_first_of(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
-        const _self_view sv = t;
-        return from_view_pos(_self_view{*this}.find_first_of(sv, pos));
+    [[nodiscard]] size_type find_first_of(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
+        const sv_type sv = t;
+        return sv_type{*this}.find_first_of(sv, pos);
     }
 
     [[nodiscard]] size_type find_first_of(const CharT *s, size_type pos, size_type n) const {
         assert((s != nullptr || n == 0) && "basic_string::find_first_of received nullptr");
-        return find_first_of(_self_view{s, n}, pos);
+        return find_first_of(sv_type{s, n}, pos);
     }
 
     [[nodiscard]] size_type find_first_of(const CharT *s, size_type pos = 0) const {
         assert((s != nullptr) && "basic_string::find_first_of received nullptr");
-        return find_first_of(_self_view{s}, pos);
+        return find_first_of(sv_type{s}, pos);
     }
 
     [[nodiscard]] size_type find_first_of(CharT c, size_type pos = 0) const noexcept {
@@ -694,47 +695,47 @@ public:
     }
 
     [[nodiscard]] size_type find_first_not_of(const basic_string &str, size_type pos = 0) const noexcept {
-        return find_first_not_of(_self_view{str}, pos);
+        return find_first_not_of(sv_type{str}, pos);
     }
 
     template <details::convertible_to_string_view<CharT> SV>
-    [[nodiscard]] size_type find_first_not_of(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
-        const _self_view sv = t;
-        return from_view_pos(_self_view{*this}.find_first_not_of(sv, pos));
+    [[nodiscard]] size_type find_first_not_of(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
+        const sv_type sv = t;
+        return sv_type{*this}.find_first_not_of(sv, pos);
     }
 
     [[nodiscard]] size_type find_first_not_of(const CharT *s, size_type pos, size_type n) const {
         assert((s != nullptr || n == 0) && "basic_string::find_first_not_of received nullptr");
-        return find_first_not_of(_self_view{s, n}, pos);
+        return find_first_not_of(sv_type{s, n}, pos);
     }
 
     [[nodiscard]] size_type find_first_not_of(const CharT *s, size_type pos = 0) const {
         assert((s != nullptr) && "basic_string::find_first_not_of received nullptr");
-        return find_first_not_of(_self_view{s}, pos);
+        return find_first_not_of(sv_type{s}, pos);
     }
 
     [[nodiscard]] size_type find_first_not_of(CharT c, size_type pos = 0) const noexcept {
-        return from_view_pos(_self_view{*this}.find_first_not_of(c, pos));
+        return sv_type{*this}.find_first_not_of(c, pos);
     }
 
     [[nodiscard]] size_type find_last_of(const basic_string &str, size_type pos = npos) const noexcept {
-        return find_last_of(_self_view{str}, pos);
+        return find_last_of(sv_type{str}, pos);
     }
 
     template <details::convertible_to_string_view<CharT> SV>
-    [[nodiscard]] size_type find_last_of(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
-        const _self_view sv = t;
-        return from_view_pos(_self_view{*this}.find_last_of(sv, pos));
+    [[nodiscard]] size_type find_last_of(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
+        const sv_type sv = t;
+        return sv_type{*this}.find_last_of(sv, pos);
     }
 
     [[nodiscard]] size_type find_last_of(const CharT *s, size_type pos, size_type n) const {
         assert((s != nullptr || n == 0) && "basic_string::find_last_of received nullptr");
-        return find_last_of(_self_view{s, n}, pos);
+        return find_last_of(sv_type{s, n}, pos);
     }
 
     [[nodiscard]] size_type find_last_of(const CharT *s, size_type pos = npos) const {
         assert((s != nullptr) && "basic_string::find_last_of received nullptr");
-        return find_last_of(_self_view{s}, pos);
+        return find_last_of(sv_type{s}, pos);
     }
 
     [[nodiscard]] size_type find_last_of(CharT c, size_type pos = npos) const noexcept {
@@ -742,66 +743,66 @@ public:
     }
 
     [[nodiscard]] size_type find_last_not_of(const basic_string &str, size_type pos = npos) const noexcept {
-        return find_last_not_of(_self_view{str}, pos);
+        return find_last_not_of(sv_type{str}, pos);
     }
 
     template <details::convertible_to_string_view<CharT> SV>
-    [[nodiscard]] size_type find_last_not_of(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, _self_view>) {
-        const _self_view sv = t;
-        return from_view_pos(_self_view{*this}.find_last_not_of(sv, pos));
+    [[nodiscard]] size_type find_last_not_of(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
+        const sv_type sv = t;
+        return sv_type{*this}.find_last_not_of(sv, pos);
     }
 
     [[nodiscard]] size_type find_last_not_of(const CharT *s, size_type pos, size_type n) const {
         assert((s != nullptr || n == 0) && "basic_string::find_last_not_of received nullptr");
-        return find_last_not_of(_self_view{s, n}, pos);
+        return find_last_not_of(sv_type{s, n}, pos);
     }
 
     [[nodiscard]] size_type find_last_not_of(const CharT *s, size_type pos = npos) const {
         assert((s != nullptr) && "basic_string::find_last_not_of received nullptr");
-        return find_last_not_of(_self_view{s}, pos);
+        return find_last_not_of(sv_type{s}, pos);
     }
 
     [[nodiscard]] size_type find_last_not_of(CharT c, size_type pos = npos) const noexcept {
-        return from_view_pos(_self_view{*this}.find_last_not_of(c, pos));
+        return sv_type{*this}.find_last_not_of(c, pos);
     }
 
-    [[nodiscard]] bool starts_with(_self_view sv) const noexcept {
-        return _self_view{*this}.starts_with(sv);
+    [[nodiscard]] bool starts_with(sv_type sv) const noexcept {
+        return sv_type{*this}.starts_with(sv);
     }
 
     [[nodiscard]] bool starts_with(const CharT *s) const {
         assert((s != nullptr) && "basic_string::starts_with received nullptr");
-        return starts_with(_self_view{s});
+        return starts_with(sv_type{s});
     }
 
     [[nodiscard]] bool starts_with(CharT c) const noexcept {
         return !empty() && traits_type::eq(front(), c);
     }
 
-    [[nodiscard]] bool ends_with(_self_view sv) const noexcept {
-        return _self_view{*this}.ends_with(sv);
+    [[nodiscard]] bool ends_with(sv_type sv) const noexcept {
+        return sv_type{*this}.ends_with(sv);
     }
 
     [[nodiscard]] bool ends_with(const CharT *s) const {
         assert((s != nullptr) && "basic_string::ends_with received nullptr");
-        return ends_with(_self_view{s});
+        return ends_with(sv_type{s});
     }
 
     [[nodiscard]] bool ends_with(CharT c) const noexcept {
         return !empty() && traits_type::eq(back(), c);
     }
 
-    [[nodiscard]] bool contains(_self_view sv) const noexcept {
-        return _self_view{*this}.contains(sv);
+    [[nodiscard]] bool contains(sv_type sv) const noexcept {
+        return sv_type{*this}.contains(sv);
     }
 
     [[nodiscard]] bool contains(const CharT *s) const {
         assert((s != nullptr) && "basic_string::contains received nullptr");
-        return _self_view{*this}.contains(s);
+        return sv_type{*this}.contains(s);
     }
 
     [[nodiscard]] bool contains(CharT c) const noexcept {
-        return _self_view{*this}.contains(c);
+        return sv_type{*this}.contains(c);
     }
 
     [[nodiscard]] basic_string substr(size_type pos = 0, size_type n = npos) const & {
@@ -812,7 +813,7 @@ public:
         return basic_string(std::move(*this), check_range(pos, "basic_string::substr"), n);
     }
 
-protected:
+private:
     struct rep {
         // C++ 标准中未明确在静态成员变量的初始化器中自身是否为完整类型 (`sizeof` 运算符需要完整类型),
         // 故将 `max_size` 定义为静态成员函数.
@@ -917,10 +918,10 @@ protected:
             }
         }
 
-        size_type m_size;                // 字符数
-        size_type m_capacity;            // 已分配存储空间中可以容纳的字符数
-        std::atomic_int32_t m_ref_count; // 引用计数 (小于等于 0 时释放内存)
-        CharT m_data[];                  // 作为字符存储的底层数组 (柔性数组成员)
+        size_type m_size;                  // 字符数
+        size_type m_capacity;              // 已分配存储空间中可以容纳的字符数
+        std::atomic_int m_ref_count;       // 引用计数 (小于等于 0 时释放内存)
+        alignas(size_type) CharT m_data[]; // 作为字符存储的底层数组 (柔性数组成员)
     };
 
     // NB: This is the special case for Input Iterators, used in
@@ -994,14 +995,6 @@ protected:
         traits_type::assign(r->m_data, n, c);
         r->set_size(n);
         return r->m_data;
-    }
-
-    [[nodiscard]] static constexpr size_type from_view_pos(typename _self_view::size_type pos) noexcept {
-        if constexpr (npos == _self_view::npos) {
-            return pos;
-        } else {
-            return (pos == _self_view::npos) ? npos : static_cast<size_type>(pos);
-        }
     }
 
     [[nodiscard]] rep *get_rep() const noexcept {
