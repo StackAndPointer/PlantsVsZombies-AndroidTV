@@ -881,13 +881,13 @@ Rect GridItem::GetItemRect() const {
     }
     if (mApp->IsVSMode()) {
         if (mGridItemType == GRIDITEM_MP_BURIAL_MOUND || mGridItemType == GRIDITEM_GRAVESTONE) {
-            return {mBoard->GridToPixelX(mGridX, mGridY), mBoard->GridToPixelY(mGridX, mGridY), (IMAGE_TOMBSTONES)->GetCelWidth(), (IMAGE_TOMBSTONES)->GetCelHeight()};
+            return {mBoard->GridToPixelX(mGridX, mGridY), mBoard->GridToPixelY(mGridX, mGridY), IMAGE_TOMBSTONES->GetCelWidth(), IMAGE_TOMBSTONES->GetCelHeight()};
         }
         if (mGridItemType == GRIDITEM_MP_TARGET_ZOMBIE) {
             return {mBoard->GridToPixelX(mGridX, mGridY) + mBoard->GridCellWidth(mGridX, mGridY) / 2,
                     mBoard->GridToPixelY(mGridX, mGridY),
-                    (IMAGE_MP_TARGET)->GetCelWidth(),
-                    (IMAGE_MP_TARGET)->GetCelHeight()};
+                    IMAGE_MP_TARGET->GetCelWidth(),
+                    IMAGE_MP_TARGET->GetCelHeight()};
         }
     }
 

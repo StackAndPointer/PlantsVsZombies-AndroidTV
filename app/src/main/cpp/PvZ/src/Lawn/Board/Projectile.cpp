@@ -216,19 +216,19 @@ Zombie *Projectile::FindCollisionTarget() {
 
 Rect Projectile::GetProjectileRect() {
     if (mProjectileType == ProjectileType::PROJECTILE_PEA || mProjectileType == ProjectileType::PROJECTILE_SNOWPEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
-        return Rect(mX - 15, mY, mWidth + 15, mHeight);
+        return {mX - 15, mY, mWidth + 15, mHeight};
     } else if (mProjectileType == ProjectileType::PROJECTILE_COBBIG) {
-        return Rect(mX + mWidth / 2 - 115, mY + mHeight / 2 - 115, 230, 230);
+        return {mX + mWidth / 2 - 115, mY + mHeight / 2 - 115, 230, 230};
     } else if (mProjectileType == ProjectileType::PROJECTILE_MELON || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON) {
-        return Rect(mX + 20, mY, 60, mHeight);
+        return {mX + 20, mY, 60, mHeight};
     } else if (mProjectileType == ProjectileType::PROJECTILE_FIREBALL || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
-        return Rect(mX, mY, mWidth - 10, mHeight);
+        return {mX, mY, mWidth - 10, mHeight};
     } else if (mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
-        return Rect(mX - 25, mY, mWidth + 25, mHeight);
+        return {mX - 25, mY, mWidth + 25, mHeight};
     } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE) {
-        return Rect(mX + 60, mY, mWidth, mHeight);
+        return {mX + 60, mY, mWidth, mHeight};
     } else {
-        return Rect(mX, mY, mWidth, mHeight);
+        return {mX, mY, mWidth, mHeight};
     }
 }
 
@@ -767,14 +767,7 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
             if (IsPiercingSpike(this)) {
                 aHasGravestoneInRow = true; // 若本行有墓碑穿透尖刺不索敌靶子僵尸
             }
-
-            int x = mBoard->GridToPixelX(aGridItem->mGridX, mRow);
-            int y = mBoard->GridToPixelY(aGridItem->mGridX, aGridItem->mGridY);
-            int aCelWidth = (IMAGE_TOMBSTONES)->GetCelWidth();
-            int aCelHeight = (IMAGE_TOMBSTONES)->GetCelHeight();
-
-            Rect aGraveRect = Rect(x, y, aCelWidth, aCelHeight);
-            if (GetRectOverlap(aProjectileRect, aGraveRect) > 12) {
+            if (GetRectOverlap(aProjectileRect, aGridItem->GetItemRect()) > 12) {
                 if (IsPiercingSpike(this) && HasHitGridItem(this, aGridItem)) {
                     continue;
                 }
@@ -789,14 +782,7 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
             bool findTarget = (!aBestGridItem || aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE);
             if (findTarget && aGridItem->mVSTargetZombieHealth > 0) {
                 if (mRow == aGridItem->mGridY) {
-                    int x = mBoard->GridToPixelX(aGridItem->mGridX, mRow);
-                    int y = mBoard->GridToPixelY(aGridItem->mGridX, aGridItem->mGridY);
-                    int aPosX = x + mBoard->GridCellWidth(aGridItem->mGridX, aGridItem->mGridY) / 2;
-                    int aCelWidth = (IMAGE_MP_TARGET)->GetCelWidth();
-                    int aCelHeight = (IMAGE_MP_TARGET)->GetCelHeight();
-
-                    Rect aTargetRect = Rect(aPosX, y, aCelWidth, aCelHeight);
-                    if (GetRectOverlap(aProjectileRect, aTargetRect) > 12) {
+                    if (GetRectOverlap(aProjectileRect, aGridItem->GetItemRect()) > 12) {
                         aBestGridItem = aGridItem;
                     }
                 }
