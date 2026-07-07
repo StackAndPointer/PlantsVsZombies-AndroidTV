@@ -103,7 +103,7 @@ public:
     int mBeghouledMouseCaptureCountdown;                    // 54
     int mUnknown55;                                         // 55
     int mBobSledMPCounter;                                  // 56
-    int mSuddenDeathCounter;                                // 57, 原 mSuddenDeathStartTick，现改为 mSuddenDeathCounter。将导致VS_HIDE中的计时胜利模式不可用。
+    int mSuddenDeathStartTick;                              // 57, 废弃
     int mPauseStartTick;                                    // 58, 废弃
     bool mIsMPSuddenDeathNow;                               // 59 * 4
     SeedType mSuddenDeathDisableSeeds1[3];                  // 60 ~ 62

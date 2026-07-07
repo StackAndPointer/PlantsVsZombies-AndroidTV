@@ -93,7 +93,7 @@ void Challenge::_constructor() {
         mReanimChallenge = mApp->ReanimationGetID(aClockReanim);
         aClockReanim->OverrideScale(0.4f, 0.4f);
 
-        mSuddenDeathCounter = -1;
+        mSuddenDeathStartTick = -1;
         mPauseStartTick = -1;
         Zombie::msDeadFollowers.clear();
         if (mBoard->mDanceMode) {
@@ -127,17 +127,17 @@ void Challenge::_destructor() {
 }
 
 bool Challenge::IsMPSuddenDeath() const {
-    if (gLawnApp->mGameMode != GameMode::GAMEMODE_MP_VS || mSuddenDeathCounter < 0) {
+    if (gLawnApp->mGameMode != GameMode::GAMEMODE_MP_VS || mBoard->mMainCounter < 0) {
         return false;
     }
-    return mSuddenDeathCounter > MP_SUDDEN_DEATH_START_COUNTER;
+    return mBoard->mMainCounter > MP_SUDDEN_DEATH_START_COUNTER;
 }
 
 int Challenge::GetSuddenDeathCount() const {
     if (!IsMPSuddenDeath()) {
         return -1;
     }
-    return mSuddenDeathCounter / MP_SUDDEN_DEATH_TICKS_PER_SECOND - MP_SUDDEN_DEATH_SECONDS;
+    return mBoard->mMainCounter / MP_SUDDEN_DEATH_TICKS_PER_SECOND - MP_SUDDEN_DEATH_SECONDS;
 }
 
 void Challenge::Update() {
@@ -195,9 +195,9 @@ void Challenge::Update() {
         return;
     }
 
-    if (aGameMode == GAMEMODE_MP_VS && mSuddenDeathCounter >= 0 && mApp->mGameScene == GameScenes::SCENE_PLAYING) {
-        ++mSuddenDeathCounter;
-    }
+    //    if (aGameMode == GAMEMODE_MP_VS && mSuddenDeathStartTick >= 0 && mApp->mGameScene == GameScenes::SCENE_PLAYING) {
+    //        ++mSuddenDeathStartTick;
+    //    }
 
     if (mApp->mGameMode == GAMEMODE_CHALLENGE_RAINING_SEEDS || mApp->IsStormyNightLevel()) {
         UpdateRain();
@@ -372,10 +372,10 @@ void Challenge::Update() {
 
     if (mApp->IsVSMode()) {
         Reanimation *aClockReanim = mApp->ReanimationGet(mReanimChallenge);
-        if (mSuddenDeathCounter == 1) {
+        if (mBoard->mMainCounter == 1) {
             aClockReanim->PlayReanim("anim_timer", REANIM_PLAY_ONCE_AND_HOLD, 0, 1.2f);
         }
-        if (mSuddenDeathCounter == MP_SUDDEN_DEATH_START_COUNTER) {
+        if (mBoard->mMainCounter == MP_SUDDEN_DEATH_START_COUNTER) {
             aClockReanim->PlayReanim("anim_ring", REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
             TriggerVibration(VibrationEffect::VIBRATION_ZOMBIE_RISE_FROM_GRAVE);
         }
@@ -1110,8 +1110,8 @@ void Challenge::DrawVSSuddenDeathClock(Graphics *g) {
     gBoardParent.mTransY -= mBoard->mY;
     mApp->ReanimationGet(mReanimChallenge)->Draw(&gBoardParent);
 
-    if (mSuddenDeathCounter >= 0) {
-        int aRemainSeconds = std::max(0, MP_SUDDEN_DEATH_SECONDS - mSuddenDeathCounter / MP_SUDDEN_DEATH_TICKS_PER_SECOND);
+    if (mBoard->mMainCounter >= 0) {
+        int aRemainSeconds = std::max(0, MP_SUDDEN_DEATH_SECONDS - mBoard->mMainCounter / MP_SUDDEN_DEATH_TICKS_PER_SECOND);
         int aMinutes = aRemainSeconds / 60;
         int aSeconds = aRemainSeconds % 60;
         Color aSuddenDeathColor = aRemainSeconds <= 10 ? Color(255, 0, 0) : Color::White;

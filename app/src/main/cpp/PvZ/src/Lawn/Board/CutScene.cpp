@@ -262,7 +262,6 @@ void CutScene::EndSeedChooser() {
     mApp->mWidgetManager->SetFocus(mBoard);
     if (mApp->mGameMode == GAMEMODE_MP_VS) {
         //        mBoard->mChallenge->mSuddenDeathStartTick =  Sexy::GetTickCount();
-        mBoard->mChallenge->mSuddenDeathCounter = 0;
         mBoard->mEnableGraveStones = true;
     }
 }
