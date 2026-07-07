@@ -36,7 +36,7 @@ public class AudioOutput {
     //    private native void nativePause();
 //    private native void nativeResume();
 //    private native void nativeWrite(byte[] data, int length);
-    private MobileAudioTrack mAudioTrack = null;
+    private AudioTrack mAudioTrack = null;
 
     public AudioOutput(Context context) {
         mContext = context;
@@ -66,7 +66,7 @@ public class AudioOutput {
         }
         if (mAudioTrack == null && sampleRate == 44100 && channels == 2 && bits == 16) {
             int bufferSize = AudioTrack.getMinBufferSize(sampleRate, 3, 2);
-            mAudioTrack = new MobileAudioTrack(3, sampleRate, 3, 2, bufferSize, 1);
+            mAudioTrack = new AudioTrack(3, sampleRate, 3, 2, bufferSize, 1);
             if (mAudioTrack.getState() != 1) {
                 mAudioTrack.release();
                 mAudioTrack = null;

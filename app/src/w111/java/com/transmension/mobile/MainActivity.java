@@ -19,12 +19,29 @@
 
 package com.transmension.mobile;
 
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.WindowManager;
 
-/* loaded from: classes.dex */
 public class MainActivity extends NativeActivity {
     private static final String TAG = "MainActivity";
     private final AudioOutput mAudioOutput = new AudioOutput(this);
+    private InputManager mInputManager;
+    private String mInputManagerFactoryName = InputManagerFactory.class.getName();
+
+    public void hideSystemNagvigationBar() {
+        getWindow().getDecorView().setSystemUiVisibility(2);
+    }
+
+
+    @Override // com.transmension.mobile.NativeActivity, android.app.Activity
+    public void onDestroy() {
+        if (this.mInputManager != null) {
+            this.mInputManager.onDestroy();
+        }
+        super.onDestroy();
+    }
 
     @Override // com.transmension.mobile.NativeActivity, android.app.Activity
     public void onStart() {
@@ -40,6 +57,72 @@ public class MainActivity extends NativeActivity {
 
     public AudioOutput getAudioOutput() {
         return this.mAudioOutput;
+    }
+
+    public String getInputManagerFactoryName() {
+        return this.mInputManagerFactoryName;
+    }
+
+    public void setInputManagerFactoryName(String name) {
+        this.mInputManagerFactoryName = name;
+    }
+
+    public InputManager createInputManager() {
+        if (this.mInputManager != null) {
+            return this.mInputManager;
+        }
+        try {
+            Class<?> clazz = Class.forName(this.mInputManagerFactoryName);
+            try {
+                InputManagerFactory factory = (InputManagerFactory) clazz.newInstance();
+                this.mInputManager = factory.create(this);
+                Log.i(TAG, "InputManager: " + this.mInputManager.getName());
+                onInputManagerCreated();
+                return this.mInputManager;
+            } catch (IllegalAccessException | InstantiationException e) {
+                e.printStackTrace();
+                return null;
+            }
+        } catch (ClassNotFoundException e3) {
+            e3.printStackTrace();
+            return null;
+        }
+    }
+
+    public boolean hasInputManager() {
+        return this.mInputManager != null;
+    }
+
+    public InputManager getInputManager() {
+        return this.mInputManager;
+    }
+
+    public void onInputManagerCreated() {
+    }
+
+
+    @Override // com.transmension.mobile.NativeActivity
+    public void onNativeKeyEvent(KeyEvent event) {
+        if (this.mInputManager == null) {
+            createInputManager();
+        }
+        if (this.mInputManager == null) {
+            super.onNativeKeyEvent(event);
+        } else {
+            this.mInputManager.onKeyEvent(event);
+        }
+    }
+
+    @Override // com.transmension.mobile.NativeActivity
+    public void onNativeMotionEvent(MotionEvent event) {
+        if (this.mInputManager == null) {
+            createInputManager();
+        }
+        if (this.mInputManager == null) {
+            super.onNativeMotionEvent(event);
+        } else {
+            this.mInputManager.onMotionEvent(event);
+        }
     }
 
 }

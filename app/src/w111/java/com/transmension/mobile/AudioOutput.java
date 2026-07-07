@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
 public class AudioOutput {
     private final Context mContext;
     byte[] mAudioData = new byte[8192];
-    private MobileAudioTrack mAudioTrack;
+    private AudioTrack mAudioTrack;
 
 //    private native void nativePause();
 //    private native void nativeResume();
@@ -41,9 +41,6 @@ public class AudioOutput {
     }
 
     public int getPreferredSampleRate() {
-        if (Build.VERSION.SDK_INT < 17) {
-            return -1;
-        }
         AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         String v = audioManager.getProperty("android.media.property.OUTPUT_SAMPLE_RATE");
         if (v != null) {
@@ -53,9 +50,6 @@ public class AudioOutput {
     }
 
     public int getPreferredFramesPerBuffer() {
-        if (Build.VERSION.SDK_INT < 17) {
-            return -1;
-        }
         AudioManager audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         String v = audioManager.getProperty("android.media.property.OUTPUT_FRAMES_PER_BUFFER");
         if (v != null) {
@@ -67,7 +61,7 @@ public class AudioOutput {
     public boolean setup(int sampleRate, int channels, int bits) {
         if (mAudioTrack == null && sampleRate == 44100 && channels == 2 && bits == 16) {
             int bufferSize = AudioTrack.getMinBufferSize(sampleRate, 3, 2);
-            mAudioTrack = new MobileAudioTrack(3, sampleRate, 3, 2, bufferSize, 1);
+            mAudioTrack = new AudioTrack(3, sampleRate, 3, 2, bufferSize, 1);
             if (mAudioTrack.getState() != 1) {
                 mAudioTrack.release();
                 mAudioTrack = null;

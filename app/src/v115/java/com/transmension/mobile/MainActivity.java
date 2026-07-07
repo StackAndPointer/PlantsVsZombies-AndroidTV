@@ -32,9 +32,7 @@ public class MainActivity extends NativeActivity {
     private String mInputManagerFactoryName = InputManagerFactory.class.getName();
 
     public void hideSystemNagvigationBar() {
-        if (Build.VERSION.SDK_INT >= 14) {
-            getWindow().getDecorView().setSystemUiVisibility(2);
-        }
+        getWindow().getDecorView().setSystemUiVisibility(2);
     }
 
 
@@ -134,11 +132,8 @@ public class MainActivity extends NativeActivity {
                 Log.i(TAG, "InputManager: " + this.mInputManager.getName());
                 onInputManagerCreated();
                 return this.mInputManager;
-            } catch (IllegalAccessException e) {
+            } catch (IllegalAccessException | InstantiationException e) {
                 e.printStackTrace();
-                return null;
-            } catch (InstantiationException e2) {
-                e2.printStackTrace();
                 return null;
             }
         } catch (ClassNotFoundException e3) {
