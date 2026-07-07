@@ -28,6 +28,8 @@
 #include "PvZ/Symbols.h"
 
 #include "PvZ/SexyAppFramework/Misc/ResourceManager.h"
+#include "PvZ/SexyAppFramework/Widget/DialogListener.h"
+#include "PvZ/SexyAppFramework/Widget/InputConnectListener.h"
 #include "Buffer.h"
 #include "Graphics/Color.h"
 #include "Graphics/MemoryImage.h"
@@ -83,8 +85,8 @@ namespace Sexy {
 class Gamepad;
 class Dialog;
 struct Event;
-
-class SexyAppBase {
+#pragma pack(push, 4)
+class SexyAppBase : public Sexy::ButtonListener, public Sexy::DialogListener, public Sexy::InputConnectListener {
 public:
     struct SexyAppBaseVTable {
         void (*completeDestructor)(SexyAppBase *self);                               // 0x000
@@ -238,8 +240,6 @@ public:
     };
 
 public:
-    void **vTable;    // 0x000, dword 0
-    int *mVtables[2]; // 0x004, dword 1~2
     int mRandSeed;    // 0x00C, dword 3
 
     homura::Storage<pvzstl::string> mCompanyName;           // 0x010
@@ -604,7 +604,7 @@ public:
     } // UNICODE
 
     const SexyAppBaseVTable *GetVTable() const {
-        return (SexyAppBaseVTable *)vTable;
+        return (SexyAppBaseVTable *)Sexy::ButtonListener::vTable;
     }
 
     bool UpdateApp();
@@ -618,7 +618,7 @@ protected:
 
     void _constructor();
 };
-
+#pragma pack(pop)
 } // namespace Sexy
 
 inline void (*old_Sexy_SexyAppBase_SexyAppBase)(Sexy::SexyAppBase *appBase);

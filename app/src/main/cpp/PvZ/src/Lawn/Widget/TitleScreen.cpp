@@ -278,7 +278,7 @@ void TitleScreen::_constructor(LawnApp *theApp) {
 }
 void TitleScreen::_destructor() {
     Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForTitleScreenAddr) + 8);
-    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kTitleScreenButtonListenerVtableOffset);
+    ButtonListener::vTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kTitleScreenButtonListenerVtableOffset);
     delete mStartButton;
     if (mPopcapLogo) {
         mPopcapLogo->GetVTable()->deletingDestructor(mPopcapLogo);
@@ -298,7 +298,7 @@ void TitleScreen::_destructor() {
         AGVideoEnable(false);
         mIsPlayingIntroVideo = false;
     }
-    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
+    ButtonListener::vTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
     Sexy::Widget::_destructor();
 }
 

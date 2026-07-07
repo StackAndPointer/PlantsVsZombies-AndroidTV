@@ -198,8 +198,8 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     SeedType repickImitaterType = SeedType::SEED_NONE;
 
     Sexy::Widget::_constructor();
-    vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForSeedChooserScreenAddr) + 8);
-    mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTable) + kSeedChooserButtonListenerVtableOffset);
+    Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForSeedChooserScreenAddr) + 8);
+    ButtonListener::vTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kSeedChooserButtonListenerVtableOffset);
 
     auto &buttonList = mButtons.Construct();
     mApp = reinterpret_cast<LawnApp *>(Sexy::gSexyAppBase);

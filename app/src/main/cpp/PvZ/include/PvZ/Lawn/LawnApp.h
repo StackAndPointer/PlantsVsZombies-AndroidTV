@@ -587,7 +587,7 @@ public:
         reinterpret_cast<void (*)(LawnApp *)>(LawnApp_DoContinueDialogAddr)(this);
     }
     const LawnAppVTable *GetVTable() const {
-        return (LawnAppVTable *)vTable;
+        return (LawnAppVTable *)Sexy::ButtonListener::vTable;
     }
     void DoSettingsDialog(bool theIsModal);
     bool CanShopLevel();

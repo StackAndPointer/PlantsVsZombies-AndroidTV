@@ -36,7 +36,7 @@ public:
         void *ButtonMouseMove = (void *)&ButtonListener::ButtonMouseMove;
     };
 
-    const VTable *mVTable;
+    const VTable *vTable;
 
 private:
     void _destructor(this ButtonListener &self) {}

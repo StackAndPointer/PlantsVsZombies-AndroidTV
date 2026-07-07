@@ -91,7 +91,7 @@ bool gPauseSyncFromRemote = false;
 void Board::_constructor(LawnApp *theApp) {
     Sexy::Widget::_constructor();
     Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
-    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVtableOffset);
+    ButtonListener::vTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVtableOffset);
     SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVTableOffset2);
     auto &syncBlocks = mSyncBlocks.Construct();
 
@@ -313,7 +313,7 @@ void Board::_destructor() {
     auto PlantTreeErase = reinterpret_cast<PlantTreeEraseFn>(PlantPtrSet_M_eraseAddr);
 
     Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
-    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVtableOffset);
+    ButtonListener::vTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVtableOffset);
     SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVTableOffset2);
 
     delete mReplayControlsWidget;
@@ -408,7 +408,7 @@ void Board::_destructor() {
     mSyncBlocks.Destruct();
 
     SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForSyncObjectAddr) + 8);
-    ButtonListener::mVTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
+    ButtonListener::vTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(vTableForSexyButtonListenerAddr) + 8);
 
     Sexy::Widget::_destructor();
 }
