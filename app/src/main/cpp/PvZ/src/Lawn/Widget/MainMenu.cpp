@@ -609,8 +609,9 @@ void MainMenu::Draw(Sexy::Graphics *g) {
     }
     MenuWidget::Draw(g);
     DeferOverlay(0);
-    if (!InTransition())
-        (*((void (**)(MainMenu *, Sexy::Graphics *))vTable + 129))(this, g);
+    if (!InTransition()) {
+        DrawSpeechBubble(g);
+    }
     SexyTransform2D aSexyTransform2D;
     ReanimatorTransform v43;
     int mailAlertTrackIndex = mainMenuReanim->FindTrackIndex("mail alert");

@@ -125,6 +125,9 @@ public:
     void StartAdventureMode() {
         reinterpret_cast<void (*)(MainMenu *)>(MainMenu_StartAdventureModeAddr)(this);
     };
+    void DrawSpeechBubble(Sexy::Graphics *g) {
+        reinterpret_cast<void (*)(MainMenu *)>(MainMenu_DrawSpeechBubbleAddr)(this);
+    }
 
     static FoleyType GetFoleyTypeByScene(int theScene);
     void KeyDown(Sexy::KeyCode theKeyCode);

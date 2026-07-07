@@ -272,6 +272,7 @@ bool LoadGameMain() {
     MainMenu_DrawFadeAddr = libGameMain.GetSymbol("_ZN8MainMenu8DrawFadeEPN4Sexy8GraphicsE");
     MainMenu_Delete2Addr = libGameMain.GetSymbol("_ZN8MainMenuD2Ev");
     MainMenu_DrawAddr = libGameMain.GetSymbol("_ZN8MainMenu4DrawEPN4Sexy8GraphicsE");
+    MainMenu_DrawSpeechBubbleAddr = libGameMain.GetSymbol("_ZN8MainMenu16DrawSpeechBubbleEPN4Sexy8GraphicsE");
     MainMenu_AddedToManagerAddr = libGameMain.GetSymbol("_ZN8MainMenu14AddedToManagerEPN4Sexy13WidgetManagerE");
     MainMenu_KeyDownAddr = libGameMain.GetSymbol("_ZN8MainMenu7KeyDownEN4Sexy7KeyCodeE");
     MainMenu_StartAdventureModeAddr = libGameMain.GetSymbol("_ZN8MainMenu18StartAdventureModeEv");

@@ -23,6 +23,7 @@
 #include "PvZ//SexyAppFramework/Misc/Common.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/SexyAppFramework/Graphics/Image.h"
+#include "GameObject.h"
 
 inline constexpr int MAX_MESSAGE_LENGTH = 128;
 inline constexpr int MAX_REANIM_LINES = 5;
@@ -34,10 +35,8 @@ class Font;
 class Graphics;
 } // namespace Sexy
 
-class MessageWidget {
+class MessageWidget : public SyncObject {
 public:
-    void **vTable;                                  // 0
-    int unk[3];                                     // 1 ~ 3
     LawnApp *mApp;                                  // 4
     char mLabel[128];                               // 5 ~ 36
     int mDisplayTime;                               // 37

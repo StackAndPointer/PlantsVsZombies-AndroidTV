@@ -273,6 +273,7 @@ inline void *MainMenu_DrawOverlayAddr;
 inline void *MainMenu_DrawFadeAddr;
 inline void *MainMenu_Delete2Addr;
 inline void *MainMenu_DrawAddr;
+inline void *MainMenu_DrawSpeechBubbleAddr;
 inline void *MainMenu_AddedToManagerAddr;
 inline void *MainMenu_KeyDownAddr;
 inline void *MainMenu_StartAdventureModeAddr;

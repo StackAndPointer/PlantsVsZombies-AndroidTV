@@ -50,14 +50,12 @@ class TodParticleHolder {
 public:
 };
 
-class TodParticleEmitter {
+class TodParticleEmitter : public SyncObject {
 public:
 };
 
-class TodParticleSystem {
+class TodParticleSystem : public SyncObject {
 public:
-    void **vTable;                           // 0
-    int unk1[3];                             // 1 ~ 3
     ParticleEffect mEffectType;              // 4
     TodParticleDefinition *mParticleDef;     // 5
     TodParticleHolder *mParticleHolder;      // 6

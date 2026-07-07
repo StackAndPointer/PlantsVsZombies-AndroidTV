@@ -27,6 +27,7 @@
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/DataArray.h"
 
+#include "PvZ/Lawn/Board/GameObject.h"
 #include "FilterEffect.h"
 
 class Reanimation;
@@ -162,9 +163,8 @@ public:
     bool mIgnoreExtraAdditiveColor;      // 99
 }; // 大小25个整数
 
-class Reanimation {
+class Reanimation : SyncObject {
 public:
-    int unk1[4];                                // 0 ~ 3
     ReanimationType mReanimationType;           // 4
     float mAnimTime;                            // 5
     float mAnimRate;                            // 6
