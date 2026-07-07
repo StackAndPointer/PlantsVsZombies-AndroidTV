@@ -20,9 +20,9 @@
 #ifndef PVZ_LAWN_BOARD_LAWN_MOWER_H
 #define PVZ_LAWN_BOARD_LAWN_MOWER_H
 
+#include "PvZ/Lawn/Board/GameObject.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Symbols.h"
-#include "GameObject.h"
 
 class LawnApp;
 class Board;

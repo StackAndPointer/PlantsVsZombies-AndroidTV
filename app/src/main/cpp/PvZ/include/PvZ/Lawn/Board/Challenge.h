@@ -21,10 +21,10 @@
 #define PVZ_LAWN_BOARD_CHALLENGE_H
 
 #include "PvZ/Lawn/Common/ConstEnums.h"
+#include "PvZ/Lawn/Common/SyncObject.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Effect/FilterEffect.h"
-#include "GameObject.h"
 
 inline constexpr int BEGHOULED_MAX_GRIDSIZEX = 8;
 inline constexpr int BEGHOULED_MAX_GRIDSIZEY = 5;

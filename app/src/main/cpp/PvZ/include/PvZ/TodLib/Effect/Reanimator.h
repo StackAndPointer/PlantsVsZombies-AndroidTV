@@ -21,14 +21,13 @@
 #define PVZ_SEXYAPPFRAMEWORK_EFFECT_REANIMATION_H
 
 #include "Homura/TypeUtils.h"
+#include "PvZ/Lawn/Common/SyncObject.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Graphics/Color.h"
 #include "PvZ/SexyAppFramework/Misc/SexyMatrix.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/DataArray.h"
-
-#include "PvZ/Lawn/Board/GameObject.h"
-#include "FilterEffect.h"
+#include "PvZ/TodLib/Effect/FilterEffect.h"
 
 class Reanimation;
 class ReanimAtlas;

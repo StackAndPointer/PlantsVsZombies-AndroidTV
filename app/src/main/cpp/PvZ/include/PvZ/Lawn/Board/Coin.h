@@ -20,11 +20,10 @@
 #ifndef PVZ_LAWN_BOARD_COIN_H
 #define PVZ_LAWN_BOARD_COIN_H
 
+#include "PvZ/Lawn/Board/GameObject.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/System/PlayerInfo.h"
 #include "PvZ/Symbols.h"
-
-#include "GameObject.h"
 
 class Coin : public GameObject {
 

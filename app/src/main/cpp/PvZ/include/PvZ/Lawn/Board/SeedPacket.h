@@ -20,10 +20,9 @@
 #ifndef PVZ_LAWN_BOARD_SEED_PACKET_H
 #define PVZ_LAWN_BOARD_SEED_PACKET_H
 
+#include "PvZ/Lawn/Board/GameObject.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Symbols.h"
-
-#include "GameObject.h"
 
 inline constexpr int SLOT_MACHINE_TIME = 400;
 inline constexpr int CONVEYOR_SPEED = 4;

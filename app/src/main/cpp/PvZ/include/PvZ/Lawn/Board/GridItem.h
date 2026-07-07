@@ -20,11 +20,11 @@
 #ifndef PVZ_LAWN_BOARD_GRID_ITEM_H
 #define PVZ_LAWN_BOARD_GRID_ITEM_H
 
+#include "PvZ/Lawn/Board/GameObject.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/DataArray.h"
-#include "GameObject.h"
 
 class Board;
 class Reanimation;

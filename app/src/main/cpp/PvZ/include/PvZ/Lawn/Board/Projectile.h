@@ -20,10 +20,10 @@
 #ifndef PVZ_LAWN_BOARD_PROJECTILE_H
 #define PVZ_LAWN_BOARD_PROJECTILE_H
 
+#include "PvZ/Lawn/Board/GameObject.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
+#include "PvZ/SexyAppFramework/Misc/Rect.h"
 #include "PvZ/Symbols.h"
-
-#include "GameObject.h"
 
 inline constexpr int MAX_PIERCE_HIT_COUNT = 3;
 

@@ -20,9 +20,8 @@
 #ifndef PVZ_LAWN_BOARD_CURSOR_OBJECT_H
 #define PVZ_LAWN_BOARD_CURSOR_OBJECT_H
 
+#include "PvZ/Lawn/Board/GameObject.h"
 #include "PvZ/Symbols.h"
-
-#include "GameObject.h"
 
 class Coin;
 class Plant;

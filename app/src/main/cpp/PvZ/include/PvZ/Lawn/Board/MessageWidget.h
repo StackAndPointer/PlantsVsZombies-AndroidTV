@@ -22,8 +22,8 @@
 
 #include "PvZ//SexyAppFramework/Misc/Common.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
+#include "PvZ/Lawn/Common/SyncObject.h"
 #include "PvZ/SexyAppFramework/Graphics/Image.h"
-#include "GameObject.h"
 
 inline constexpr int MAX_MESSAGE_LENGTH = 128;
 inline constexpr int MAX_REANIM_LINES = 5;

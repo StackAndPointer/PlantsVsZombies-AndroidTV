@@ -20,26 +20,15 @@
 #ifndef PVZ_LAWN_BOARD_GAME_OBJECT_H
 #define PVZ_LAWN_BOARD_GAME_OBJECT_H
 
-#include "PvZ/Lawn/Common/ConstEnums.h"
-#include "PvZ/SexyAppFramework/Graphics/Graphics.h"
+#include "PvZ/Lawn/Common/SyncObject.h"
 #include "PvZ/Symbols.h"
-
-#include <vector>
 
 class LawnApp;
 class Board;
 
-struct SyncBlockInfo {
-    void *mAddress;
-    size_t mSize;
-};
-
-class SyncObject {
-
-public:
-    void **vTable;                                           // 0
-    homura::Storage<std::vector<SyncBlockInfo>> mSyncBlocks; // 0x04，大小 12 字节
-};
+namespace Sexy {
+class Graphics;
+}
 
 class GameObject : public SyncObject {
 public:
@@ -51,7 +40,6 @@ public:
         void (*MakeParentGraphicsFrame)(GameObject *self, Sexy::Graphics *graphics);
     };
 
-public:
     LawnApp *mApp;    // 4
     Board *mBoard;    // 5
     int mX;           // 6

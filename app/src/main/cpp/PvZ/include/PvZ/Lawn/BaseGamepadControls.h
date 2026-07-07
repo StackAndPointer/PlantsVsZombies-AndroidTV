@@ -24,6 +24,7 @@
 #include "Homura/TypeUtils.h"
 #include "PvZ/Lawn/Board/GameObject.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
+#include "PvZ/SexyAppFramework/Misc/Point.h"
 
 struct SnapToGridPosition {
     float mX;

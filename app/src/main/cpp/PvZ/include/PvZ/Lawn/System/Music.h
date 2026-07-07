@@ -20,7 +20,7 @@
 #ifndef PVZ_LAWN_SYSTEM_MUSIC_H
 #define PVZ_LAWN_SYSTEM_MUSIC_H
 
-#include "PvZ/Lawn/Board/GameObject.h"
+#include "PvZ/Lawn/Common/SyncObject.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Sound/MusicInterface.h"
 #include "PvZ/Symbols.h"
