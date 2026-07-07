@@ -82,7 +82,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         return;
     }
 
-    LawnApp *app = gamepadControls->mGameObject->mApp;
+    LawnApp *app = gamepadControls->mApp;
     if (app->HasGamepad() || (app->mGamePad1IsOn && app->mGamePad2IsOn)) {
         if (gamepadControls->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_DIG_INDICATOR_WAIT) {
             gamepadControls->GotoState(BaseGamepadControls::MOVEMENT_STATE_NORMAL);
@@ -106,7 +106,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         }
     }
 
-    gamepadControls->unknown_always_1 = gamepadControls->mIsCobCannonSelected ? 0 : 1;
+    gamepadControls->mDrawCursorFrame = !gamepadControls->mIsCobCannonSelected;
 
     Reanimation *cobCannonReanim = app->ReanimationTryToGet(gamepadControls->mCobCannonReanimID);
     if (cobCannonReanim == nullptr && gamepadControls->mGamepadIndex != -1) {
@@ -169,7 +169,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         gamepadControls->mBoard->MouseHitTest(gamepadControls->mCursorPositionX, gamepadControls->mCursorPositionY, &hitResult, gamepadControls->mGamepadIndex);
         if (hitResult.mObjectType == GameObjectType::OBJECT_TYPE_COIN) {
             Coin *coin = reinterpret_cast<Coin *>(hitResult.mObject);
-            GameMode gameMode = gamepadControls->mGameObject->mApp->mGameMode;
+            GameMode gameMode = gamepadControls->mApp->mGameMode;
             if (gameMode == GameMode::GAMEMODE_MP_VS_DEBUG || gameMode == GameMode::GAMEMODE_MP_VS) {
                 if (gamepadControls->mIsZombie) {
                     if (coin->IsDeath() || coin->mType == CoinType::COIN_VS_ZOMBIE_TROPHY) {
@@ -233,10 +233,10 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         }
     }
 
-    if (gamepadControls->mGameObject->mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD) {
+    if (gamepadControls->mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD) {
         Coin *coin = nullptr;
         while (gamepadControls->mBoard->IterateCoins(coin)) {
-            if (gamepadControls->mGameObject->mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+            if (gamepadControls->mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
                 if (gamepadControls->mIsZombie) {
                     if (!coin->IsDeath() && coin->mType != CoinType::COIN_VS_ZOMBIE_TROPHY) {
                         continue;
@@ -314,7 +314,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
     gamepadControls->mCursorLabelLiftOffset = rise;
 
     float yJitter = NAN;
-    if (GamepadButtonDown(gamepadControls->mGameObject->mApp, gamepadControls->mGamepadIndex, Sexy::GamepadButton::GAMEPAD_BUTTON_A) || gamepadControls->mButterZombie != nullptr) {
+    if (GamepadButtonDown(gamepadControls->mApp, gamepadControls->mGamepadIndex, Sexy::GamepadButton::GAMEPAD_BUTTON_A) || gamepadControls->mButterZombieID != ZOMBIEID_NULL) {
         yJitter = 3.0f;
     } else {
         gamepadControls->mCursorJitterAnimPhase += 0.016f;
@@ -357,13 +357,13 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         }
     }
 
-    float canPickupAnim = gamepadControls->mCanPickUp ? (gamepadControls->mUpdateAdd_a2_Or_Minus_2xa2 + dt) : (gamepadControls->mUpdateAdd_a2_Or_Minus_2xa2 - dt * 2.0f);
+    float canPickupAnim = gamepadControls->mCanPickUp ? (gamepadControls->mCanPickUpFade + dt) : (gamepadControls->mCanPickUpFade - dt * 2.0f);
     if (canPickupAnim > 1.0f) {
         canPickupAnim = 1.0f;
     } else if (canPickupAnim < 0.0f) {
         canPickupAnim = 0.0f;
     }
-    gamepadControls->mUpdateAdd_a2_Or_Minus_2xa2 = canPickupAnim;
+    gamepadControls->mCanPickUpFade = canPickupAnim;
 
     if (previewReanim1 != nullptr) {
         int pixelX = gamepadControls->mBoard->GridToPixelX(gridX, gridY);
@@ -371,7 +371,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         previewReanim1->SetPosition(static_cast<float>(pixelX - 30), static_cast<float>(pixelY - 45));
     }
 
-    GameMode gameMode = gamepadControls->mGameObject->mApp->mGameMode;
+    GameMode gameMode = gamepadControls->mApp->mGameMode;
     if (gameMode != GameMode::GAMEMODE_CHALLENGE_BEGHOULED_TWIST && gameMode != GameMode::GAMEMODE_CHALLENGE_BEGHOULED) {
         gamepadControls->UpdatePreviewReanim();
     }
@@ -399,7 +399,7 @@ void GamepadControls::_constructor(Board *theBoard, int thePlayerIndex1, int the
     if (isKeyboardTwoPlayerMode)
         return;
 
-    GameMode aGameMode = mGameObject->mApp->mGameMode;
+    GameMode aGameMode = mApp->mGameMode;
     bool isTwoSeedBankMode = (aGameMode == GameMode::GAMEMODE_MP_VS || (aGameMode >= GameMode::GAMEMODE_TWO_PLAYER_COOP_DAY && aGameMode <= GameMode::GAMEMODE_TWO_PLAYER_COOP_ENDLESS));
     if (!gKeyboardMode && !isTwoSeedBankMode && aGameMode != GameMode::GAMEMODE_CHALLENGE_SLOT_MACHINE) {
         mIsInShopSeedBank = true; // 是否在Shop栏。
@@ -435,7 +435,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
 
 
     if (mGamepadIndex != -1) {
-        LawnApp *anApp = mGameObject->mApp;
+        LawnApp *anApp = mApp;
         bool is2P = mPlayerIndex1 == 1;
         CursorObject *aCursorObject = is2P ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
 
@@ -536,7 +536,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
 }
 
 void GamepadControls::Update(float a2) {
-    LawnApp *anApp = mGameObject->mApp;
+    LawnApp *anApp = mApp;
     int aGridX = mBoard->PixelToGridXKeepOnBoard(mCursorPositionX, mCursorPositionY);
     int aGridY = mBoard->PixelToGridYKeepOnBoard(mCursorPositionX, mCursorPositionY);
     int aGridCenterPosX = mBoard->GridToPixelX(aGridX, aGridY) + mBoard->GridCellWidth(aGridX, aGridY) / 2;
@@ -544,7 +544,7 @@ void GamepadControls::Update(float a2) {
     // 键盘双人模式 平滑移动光标
     const bool readOnlyReplayOrSpectate = (gIsReplayMode || gIsServerModeSpectator);
     if (isKeyboardTwoPlayerMode && !readOnlyReplayOrSpectate) {
-        int aGamepadIndex = mGameObject->mApp->PlayerToGamepadIndex(mPlayerIndex1);
+        int aGamepadIndex = mApp->PlayerToGamepadIndex(mPlayerIndex1);
         if (aGamepadIndex == 0) {
             mGamepadVelocityLeftX = gGamepadP1VelX;
             mGamepadVelocityLeftY = gGamepadP1VelY;
@@ -607,14 +607,14 @@ void GamepadControls::ButtonDownFireCobcannonTest() {
 }
 
 void GamepadControls::InvalidatePreviewReanim() {
-    Reanimation *aPreviewReanim4 = mGameObject->mApp->ReanimationTryToGet(mPreviewReanimID4);
+    Reanimation *aPreviewReanim4 = mApp->ReanimationTryToGet(mPreviewReanimID4);
     if (aPreviewReanim4 != nullptr) {
         aPreviewReanim4->ReanimationDie();
         mPreviewReanimID4 = ReanimationID::REANIMATIONID_NULL;
     }
 
     if (mPreviewReanimID3 != 0) {
-        mGameObject->mApp->RemoveReanimation(mPreviewReanimID3);
+        mApp->RemoveReanimation(mPreviewReanimID3);
         mPreviewReanimID3 = REANIMATIONID_NULL;
     }
 }
@@ -633,7 +633,7 @@ void GamepadControls::UpdatePreviewReanim() {
 
     // TV后续版本仅在PreviewingSeedType切换时进行一次Reanimation::Update，而TV 1.0.1则是无时无刻进行Reanimation::Update。我们恢复1.0.1的逻辑即可。
 
-    LawnApp *anApp = mGameObject->mApp;
+    LawnApp *anApp = mApp;
     CursorObject *aCursorObject = mPlayerIndex1 ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
     SeedBank *aSeedBank = GetSeedBank();
 
@@ -1013,7 +1013,7 @@ void GamepadControls::UpdateStates(float dt) {
 
 void GamepadControls::DrawPreview(Sexy::Graphics *g) {
     // 修复排山倒海、砸罐子无尽、锤僵尸、种子雨不显示植物预览的问题。
-    LawnApp *anApp = mGameObject->mApp;
+    LawnApp *anApp = mApp;
     GameMode mGameMode = anApp->mGameMode;
     if (mGameMode == GameMode::GAMEMODE_CHALLENGE_RAINING_SEEDS) { // 为种子雨添加种植预览
         CursorObject *cursorObject = mPlayerIndex1 ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
@@ -1131,7 +1131,7 @@ void GamepadControls::DrawPreview(Sexy::Graphics *g) {
 
 void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int unk) {
 
-    if (!mGameObject->mApp->IsVSMode() || theButton != Sexy::GamepadButton::GAMEPAD_BUTTON_A) {
+    if (!mApp->IsVSMode() || theButton != Sexy::GamepadButton::GAMEPAD_BUTTON_A) {
         return old_GamepadControls_OnButtonDown(this, theButton, thePlayerIndex, unk);
     }
 
@@ -1146,7 +1146,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
             netplay::PutEvent(event);
         } else {
-            mGameObject->mApp->PlaySample(SOUND_BUZZER);
+            mApp->PlaySample(SOUND_BUZZER);
             if (gTcpClientSocket >= 0) {
                 U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_BUZZER)};
                 netplay::PutEvent(event);
@@ -1167,7 +1167,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
                 netplay::PutEvent(event);
             } else {
-                mGameObject->mApp->PlaySample(SOUND_BUZZER);
+                mApp->PlaySample(SOUND_BUZZER);
                 if (gTcpClientSocket >= 0) {
                     U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_BUZZER)};
                     netplay::PutEvent(event);
@@ -1179,7 +1179,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 
         if (aPacketType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE) {
             std::vector<SeedType> aPlantSeeds, aZombieSeeds;
-            PickShuffleSeeds(mGameObject->mApp, aPlantSeeds, aZombieSeeds, true);
+            PickShuffleSeeds(mApp, aPlantSeeds, aZombieSeeds, true);
             if (!aZombieSeeds.empty()) {
                 for (int aPacketIndex = 1; aPacketIndex <= aZombieSeeds.size(); ++aPacketIndex) {
                     SeedType aSeedType = aZombieSeeds[aPacketIndex - 1];
@@ -1248,7 +1248,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 aBungeeZombie->mRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, aGridY, 7);
             } else if (aZombieType == ZombieType::ZOMBIE_FLAG) {
                 mBoard->DisplayAdviceAgain("[ADVICE_HUGE_WAVE]", MessageStyle::MESSAGE_STYLE_HUGE_WAVE, AdviceType::ADVICE_HUGE_WAVE);
-                mGameObject->mApp->PlaySample(Sexy::SOUND_HUGE_WAVE); // 播放大波僵尸音效
+                mApp->PlaySample(Sexy::SOUND_HUGE_WAVE); // 播放大波僵尸音效
                 mBoard->SpawnZombieWave();
             } else if (Challenge::IsMPZombieTypeAddInRow(aZombieType)) {
                 mBoard->AddZombieInRow(aZombieType, aGridY, Zombie::ZOMBIE_WAVE_VS, true);
@@ -1283,7 +1283,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND}, 1};
                 netplay::PutEvent(event);
             } else {
-                mGameObject->mApp->PlaySample(SOUND_BUZZER);
+                mApp->PlaySample(SOUND_BUZZER);
                 if (gTcpClientSocket >= 0) {
                     U8U8_Event event = {{EventType::EVENT_SERVER_BOARD_PLAY_SOUND_SR}, 0, uint8_t(SOUND_BUZZER)};
                     netplay::PutEvent(event);
@@ -1302,7 +1302,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
 
         if (aPacketType == SEED_BEGHOULED_BUTTON_SHUFFLE) {
             std::vector<SeedType> aPlantSeeds, aZombieSeeds;
-            PickShuffleSeeds(mGameObject->mApp, aPlantSeeds, aZombieSeeds, false);
+            PickShuffleSeeds(mApp, aPlantSeeds, aZombieSeeds, false);
             if (!aPlantSeeds.empty()) {
                 for (int aPacketIndex = 1; aPacketIndex <= aPlantSeeds.size(); ++aPacketIndex) {
                     SeedType aSeedType = aPlantSeeds[aPacketIndex - 1];

@@ -53,31 +53,31 @@ public:
     };
 
 public:
-    float mCursorLabelLiftOffset;      // 43
-    int *mSelectorParticle;            // 44
-    int mSelectedSeedIndex;            // 45
-    SeedType mSelectedSeedType;        // 46
-    bool mIsZombie;                    // 188
-    bool mCanPickUp;                   // 189
-    int mSelectedUpgradableType;       // 48
-    int mCobCannonPlantIndexInList;    // 49
-    bool mIsCobCannonSelected;         // 200
-    float mUpdateAdd_a2_Or_Minus_2xa2; // 51
-    ReanimationID mPreviewReanimID1;   // 52
-    ReanimationID mCobCannonReanimID;  // 53
-    ReanimationID mPreviewReanimID3;   // 54
-    int mCobCannonAnimCounter;         // 55
-    ReanimationID mPreviewReanimID4;   // 56
-    SeedType mPreviewingSeedType;      // 57
-    Sexy::Image *mPreviewImage;        // 58
-    Zombie *mButterZombie;             // 59
-    int mDigIndicatorStartCounter;     // 60
-    bool mIsShowingDigIndicator;       // 244
-    bool mIsInShopSeedBank;            // 245
-    int mSelectedShopSeedIndex;        // 62
-    int unknown252;                    // 63 (offset 252)
-    int unknown256;                    // 64 (offset 256)
-    int unknown260;                    // 65 (offset 260)
+    float mCursorLabelLiftOffset;         // 43
+    ParticleSystemID mSelectorParticleID; // 44
+    int mSelectedSeedIndex;               // 45
+    SeedType mSelectedSeedType;           // 46
+    bool mIsZombie;                       // 188
+    bool mCanPickUp;                      // 189
+    int mSelectedUpgradableType;          // 48
+    int mCobCannonPlantIndexInList;       // 49
+    bool mIsCobCannonSelected;            // 200
+    float mCanPickUpFade;                 // 0x0CC, 原 mUpdateAdd_a2_Or_Minus_2xa2
+    ReanimationID mPreviewReanimID1;      // 52
+    ReanimationID mCobCannonReanimID;     // 53
+    ReanimationID mPreviewReanimID3;      // 54
+    int mCobCannonAnimCounter;            // 55
+    ReanimationID mPreviewReanimID4;      // 56
+    SeedType mPreviewingSeedType;         // 57
+    Sexy::Image *mPreviewImage;           // 58
+    ZombieID mButterZombieID;             // 59
+    int mDigIndicatorStartCounter;        // 60
+    bool mIsShowingDigIndicator;          // 244
+    bool mIsInShopSeedBank;               // 245
+    int mSelectedShopSeedIndex;           // 62
+    int unknown252;                       // 63 (offset 252)
+    int unknown256;                       // 64 (offset 256)
+    int unknown260;                       // 65 (offset 260)
     // 大小66个整数
 
     SeedBank *GetSeedBank() {
@@ -95,7 +95,7 @@ public:
         reinterpret_cast<void *(*)(GamepadControls *, float dt)>(GamepadControls_UpdateSeedSelectAddr)(this, dt);
     }
     const GamepadControlsVTable *GetVTable() const {
-        return (GamepadControlsVTable *)mVtable;
+        return (GamepadControlsVTable *)Sexy::GamepadListener::vTable;
     }
     // 确定 13 1096
     // 返回 27 1096

@@ -31,9 +31,16 @@ struct SnapToGridPosition {
     float mY;
 };
 
+namespace Sexy {
+class GamepadListener {
+public:
+    void **vTable;
+};
+} // namespace Sexy
+
 class SeedBank;
 
-class BaseGamepadControls {
+class BaseGamepadControls : public Sexy::GamepadListener, public GameObject {
 public:
     enum MovementState {
         MOVEMENT_STATE_NONE = 0,
@@ -79,10 +86,8 @@ public:
     };
 
 public:
-    int *mVtable;                            // 0
-    homura::Storage<GameObject> mGameObject; // 1 ~ 13
     Board *mBoard;                           // 14
-    int unknown_always_1;                    // 15
+    bool mDrawCursorFrame;                   // 0x03C, 原 unknown_always_1
     float mCursorHighlightAnimPhase;         // 16
     int mGamepadFrameCounter;                // 17
     float mGamepadAccLeftX;
@@ -92,7 +97,7 @@ public:
     float mRightPositionX;         // 22
     float mRightPositionY;         // 23
     MovementState mGamepadState;   // 24
-    int unk1;                      // 25
+    float mMovementStateTimer;     // 0x064, 原 unk1
     float mDigIndicatorPercentage; // 26 , 每按下一次铲除键就加2.3
     float mCursorPositionX;        // 27
     float mCursorPositionY;        // 28
@@ -100,12 +105,16 @@ public:
     float mGamepadVelocityLeftY;   // 30
     float mGamepadVelocityRightX;  // 31
     float mGamepadVelocityRightY;  // 32
-    int unk2[4];                   // 33 ~ 36
+    float mInputLeftStickX;        // 0x084, 原 unk2[0]
+    float mInputLeftStickY;        // 0x088, 原 unk2[1]
+    float mInputRightStickX;       // 0x08C, 原 unk2[2]
+    float mInputRightStickY;       // 0x090, 原 unk2[3]
     int mPlayerIndex1;             // 37，只是个index，GamepadControls[0]->mPlayerIndex1 == 0，GamepadControls[1]->mPlayerIndex1 == 1。用于找到对应index的CursorObject和CursorPreview
     int mGamepadIndex;             // 38，与mPlayerIndex完全相等，没有区别
     float mCursorPositionYJitter;  // 39
     float mCursorJitterAnimPhase;  // 40
-    int unkMems[2];                // 41 ~ 42
+    int mButterCursorMoveCounter;  // 0x0A4, 原 unkMems[0]
+    int mDerivedSyncBlockPadding;  // 0x0A8, 原 unkMems[1]，暂未发现语义访问
     // 大小43个整数
 
     void Update(float dt) {
@@ -122,7 +131,7 @@ public:
         //        return homura::CallVirtualFunc<BaseGamepadControls, 14, SnapToGridPosition>(this);
     }
     const BaseGamepadControlsVTable *GetVTable() const {
-        return (BaseGamepadControlsVTable *)mVtable;
+        return (BaseGamepadControlsVTable *)Sexy::GamepadListener::vTable;
     }
     void GetGamepadVelocity(float *horizontal, float *vertical);
 
