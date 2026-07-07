@@ -23,11 +23,29 @@
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Symbols.h"
 
+#include "PvZ/SexyAppFramework/Graphics/SharedImageRef.h"
+#include "PvZ/SexyAppFramework/Widget/InputDeviceListener.h"
 #include "SexyCommonApp.h"
 
 namespace Sexy {
 
-class GamepadApp : public SexyCommonApp {
+class GamepadApp : public SexyCommonApp, public Sexy::InputDeviceListener {
+public:
+    Sexy::Gamepad *mGamepads[4];
+    bool mSimulateGamepadWithKeyboard; // 0x838, LAWN_SIMULATE_GAMEPAD
+    bool mGamePad1IsOn;                // 0x839
+
+    SexyOpaqueCritSect32 mDeviceEventCritSect; // 0x83C
+    SexyOpaqueList32 mDeviceEventList;         // 0x840 ~ 0x847
+
+    SexyAtlasParserStorage32 mAtlasParser; // 0x848 ~ 0x877
+    SexyOpaqueCritSect32 mAtlasCritSect;   // 0x878
+
+    // std::map<std::string, Sexy::SharedImageRef>
+    homura::Storage<pvzstl::map<pvzstl::string, Sexy::SharedImageRef>> mAtlasImageMap; // 0x87C ~ 0x893
+
+    bool mHasGamepad;   // 0x894, CheckGamepad() result
+    bool mGamePad2IsOn; // 0x895, LAWN_GAMEPAD_MODE
 public:
     void UpdateFrames() {
         reinterpret_cast<void (*)(GamepadApp *)>(Sexy_GamepadApp_UpdateFramesAddr)(this);
@@ -43,7 +61,6 @@ protected:
     GamepadApp() = default;
     ~GamepadApp() = default;
 };
-
 } // namespace Sexy
 
 #endif // PVZ_SEXYAPPFRAMEWORK_GAMEPAD_APP_H

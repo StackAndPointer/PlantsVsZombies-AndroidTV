@@ -27,8 +27,6 @@
 #include <cstdint>
 
 #if PVZ_VERSION == 111
-inline constexpr int SexyAppBasePartSize = 32;
-inline constexpr int LAWNAPP_PLAYSAMPLE_OFFSET = 680;
 inline constexpr uintptr_t BOARD_UPDATE_ADDR_RELATIVE = 0x1669E4;
 inline constexpr uintptr_t ZOMBIE_ISTANGLEKELPTARGET_ADDR_RELATIVE = 0x1AA288;
 inline constexpr uintptr_t ZOMBIE_ISTANGLEKELPTARGET2_ADDR_RELATIVE = 0x1ACCE8;
@@ -36,8 +34,6 @@ inline constexpr uintptr_t J_AUDIOWRITE_ADDR_RELATIVE = 0x524E28;
 inline constexpr uintptr_t PVZSTL_STRING_EMPTY_REP = 0x7185BC;
 inline constexpr uintptr_t PVZSTL_WSTRING_EMPTY_REP = 0x69AEBC;
 #elif PVZ_VERSION == 115
-inline constexpr int SexyAppBasePartSize = 34;
-inline constexpr int LAWNAPP_PLAYSAMPLE_OFFSET = 676;
 inline constexpr uintptr_t BOARD_UPDATE_ADDR_RELATIVE = 0x164A88;
 inline constexpr uintptr_t ZOMBIE_ISTANGLEKELPTARGET_ADDR_RELATIVE = 0x1AAD98;  // 符号重复，无法dlsym获取地址，只好常量封装
 inline constexpr uintptr_t ZOMBIE_ISTANGLEKELPTARGET2_ADDR_RELATIVE = 0x1A8338; // 符号重复，无法dlsym获取地址，只好常量封装

@@ -17,18 +17,16 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PVZ_SEXYAPPFRAMEWORK_SEXYAPP_H
-#define PVZ_SEXYAPPFRAMEWORK_SEXYAPP_H
+#ifndef PVZ_SEXYAPPFRAMEWORK_IGAMECENTER_H
+#define PVZ_SEXYAPPFRAMEWORK_IGAMECENTER_H
 
-#include "SexyAppBase.h"
+namespace Sexy::IGameCenter {
 
-namespace Sexy {
-
-class SexyApp : public SexyAppBase {
-protected:
-    SexyApp() = default;
-    ~SexyApp() = default;
+class Listener {
+public:
+    void **vTable;
 };
-} // namespace Sexy
 
-#endif // PVZ_SEXYAPPFRAMEWORK_SEXYAPP_H
+} // namespace Sexy::IGameCenter
+
+#endif // PVZ_SEXYAPPFRAMEWORK_IGAMECENTER_H

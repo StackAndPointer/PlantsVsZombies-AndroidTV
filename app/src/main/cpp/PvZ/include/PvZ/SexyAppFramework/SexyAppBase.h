@@ -39,6 +39,9 @@
 #include "Widget/ButtonListener.h"
 
 void InitHookFunction();
+struct SexyAtlasParserStorage32 {
+    char unk[0x30];
+};
 
 struct SexyOpaqueList32 {
     unsigned int next;
@@ -303,7 +306,6 @@ public:
     bool mFullScreenPageFlip;      // 0x2DF = true
 
     bool mTabletPC; // 0x2E0 = false，高置信
-    bool pad_2E1[3];
 
     void *mPlatformDriverOrQueue; // 0x2E4 = nullptr，准确类型未知
 
@@ -314,10 +316,8 @@ public:
     void *mResStreamsDriver; // 0x2F8
     void *mHttpDriver;       // 0x2FC
     bool mAlphaDisabled;     // 0x300
-    bool pad_301[3];
     void *mMusicInterface;  // 0x304
     bool mReadFromRegistry; // 0x308
-    bool pad_309[3];
     homura::Storage<pvzstl::string> mRegisterLink;   // 0x30C
     homura::Storage<pvzstl::string> mProductVersion; // 0x310
     void *mCursorImages[13];                         // 0x314, dword 197~209
@@ -339,7 +339,6 @@ public:
     int mAutoMuteCount;         // 0x3DC
     bool mDemoMute;             // 0x3E0
     bool mMuteOnLostFocus;      // 0x3E1
-    bool pad_3E2[2];
 
     pvzstl::set<Sexy::MemoryImage *> mMemoryImageSet;                               // 0x3E4
     SexyOpaqueCritSect32 mMemoryImageCritSect;                                      // 0x3FC, Android addition
@@ -356,7 +355,6 @@ public:
     bool mIsDrawing;        // 0x484
     bool mLastDrawWasEmpty; // 0x485
     bool mHasPendingDraw;   // 0x486
-    bool pad_487;
     double mPendingUpdatesAcc;       // 0x488
     double mUpdateFTimeAcc;          // 0x490
     unsigned int mLastTimeCheck;     // 0x498
@@ -371,11 +369,9 @@ public:
     int mUpdateFrameTime;            // 0x4BC, initialized to 10; name tentative
     double mUpdateMultiplier;        // 0x4C0
     bool mPaused;                    // 0x4C8
-    bool pad_4C9[3];
     int mFastForwardToUpdateNum; // 0x4CC
     bool mFastForwardToMarker;   // 0x4D0
     bool mFastForwardStep;       // 0x4D1
-    bool pad_4D2[2];
     unsigned int mLastDrawTick; // 0x4D4
     unsigned int mNextDrawTick; // 0x4D8
     int mStepMode;              // 0x4DC
@@ -407,7 +403,6 @@ public:
     int mFPSTime;               // 0x538
     int mFPSCount;              // 0x53C
     bool mShowFPS;              // 0x540
-    bool pad_541[3];
     int mShowFPSMode;   // 0x544
     int mScreenBltTime; // 0x548
     int unkPerf_54C[8]; // 0x54C ~ 0x56B
@@ -443,7 +438,6 @@ public:
     bool mRecordingDemoBuffer; // 0x590
     bool mPlayingDemoBuffer;   // 0x591
     bool mManualShutdown;      // 0x592
-    bool pad_593;
     homura::Storage<pvzstl::string> mDemoPrefix;   // 0x594
     homura::Storage<pvzstl::string> mDemoFileName; // 0x598
     char mDemoBuffer[0x1C];                        // 0x59C
@@ -453,12 +447,10 @@ public:
     int mLastDemoUpdateCnt;                        // 0x5C4
     bool mDemoNeedsCommand;                        // 0x5C8
     bool mDemoIsShortCmd;                          // 0x5C9
-    bool pad_5CA[2];
     int mDemoCmdNum;           // 0x5CC
     int mDemoCmdOrder;         // 0x5D0
     int mDemoCmdBitPos;        // 0x5D4
     bool mDemoLoadingComplete; // 0x5D8
-    bool pad_5D9[3];
     int mCurHandleNum;                // 0x5DC
     SexyOpaqueList32 mDemoMarkerList; // 0x5E0
 
@@ -482,7 +474,6 @@ public:
     bool mTest3D;                           // 0x607
     bool mIs3DAccelerated;                  // 0x608
     bool unk3D_609;                         // 0x609
-    bool pad_60A[2];
 
     unsigned int mMinVidMemory3D;         // 0x60C, unkMem5[0] = 6
     unsigned int mRecommendedVidMemory3D; // 0x610, unkMem5[1] = 14
@@ -494,7 +485,6 @@ public:
     SexyOpaqueRect32 mScreenBounds; // 0x618, unkMem5[3]~[6]
 
     bool mEnableWindowAspect; // 0x628, unkMem5[7].byte0
-    bool pad_629[3];
     SexyOpaqueRatio32 mWindowAspect;       // 0x62C, 4:3
     SexyOpaqueRatio32 mPresentationAspect; // 0x634, 4:3, Android addition
     SexyOpaqueRatio32 mWideScreenAspect;   // 0x63C, 16:10, Android addition
@@ -526,7 +516,6 @@ public:
     int mMaxFPS;                                   // 0x740, SEXY_MAX_FPS
     int unk_744[2];                                // 0x744
     bool unkFlag_74C;                              // 0x74C = true
-    bool pad_74D[3];
     homura::Storage<pvzstl::string> unkString_750; // 0x750
     SexyParameterStorage32 mParameterStorage;      // 0x754
     void *mParameterEntriesHeap;                   // 0x788, deleted in destructor
@@ -538,20 +527,6 @@ public:
     bool unkPreload_79D;                           // 0x79D
     bool mSafeReload;                              // 0x79E, SEXY_SAFE_RELOAD
     bool unkPreload_79F;                           // 0x79F
-
-    int unkTailToPartSize[SexyAppBasePartSize]; // 0x7A0~0x837, dword 488~525
-    Sexy::Gamepad *mGamepads[2];                // 0x828～0x82F
-
-    int unkTailAfterGamepads[2]; // 0x830～0x837
-    bool unkBool1;               // 0x838
-    bool mGamePad1IsOn;          // 0x839
-    bool pad_83A[2];
-    int unkMem7[22];    // 0x83C~0x893
-    bool unkBool2;      // 0x894
-    bool mGamePad2IsOn; // 0x895
-    bool pad_896[2];
-    int *mProfileEventListener;
-    int *mGameCenterListenerVTable;
     // 115： 552 , 111： 553
 
     Dialog *GetDialog(Dialogs theDialogId) { // vTable + 4 * 103

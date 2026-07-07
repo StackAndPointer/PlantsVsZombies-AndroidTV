@@ -26,10 +26,12 @@
 #include "PvZ/Lawn/System/TypingCheck.h"
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"
 #include "PvZ/SexyAppFramework/GamepadApp.h"
+#include "PvZ/SexyAppFramework/IGameCenter.h"
 #include "PvZ/SexyAppFramework/Level.h"
 #include "PvZ/SexyAppFramework/Misc/ProfileMgr.h"
 #include "PvZ/SexyAppFramework/SexyAppBase.h"
 #include "PvZ/SexyAppFramework/Thread.h"
+#include "PvZ/SexyAppFramework/Widget/ProfileEventListener.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodFoley.h"
 #include "PvZ/TodLib/Effect/EffectSystem.h"
@@ -82,7 +84,7 @@ struct QueryCoin {
     QueryCoinState mState;
 };
 
-class LawnApp : public Sexy::GamepadApp {
+class LawnApp : public Sexy::GamepadApp, public Sexy::ProfileEventListener, public Sexy::IGameCenter::Listener {
 public:
     struct LawnAppVTable {
         void (*completeDestructor)(LawnApp *self);                                                                                                                                    // 0x000
@@ -240,6 +242,9 @@ public:
         Sexy::Dialog *(*CreateWaitResultDialog)(SexyCommonApp *self);                                                                                                                // 0x25C
         Sexy::Dialog *(*CreateWaitMessageDialog)(SexyCommonApp *self);                                                                                                               // 0x260
         Sexy::Dialog *(*CreateNetworkFaultDialog)(SexyCommonApp *self);                                                                                                              // 0x264
+#if PVZ_VERSION == 111
+        int (*GamePaidStatus)(SexyCommonApp *self);
+#endif
         void (*setOfferRes)(SexyCommonApp *self, bool success);                                                                                                                      // 0x268
         void (*setOfferFullOpenRes)(SexyCommonApp *self, bool success);                                                                                                              // 0x26C
         void (*setPayItemsRes)(LawnApp *self, bool success, const char *itemId, int value, const char *message);                                                                     // 0x270
