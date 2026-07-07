@@ -118,15 +118,15 @@ public:
 
     bool InTransition() {
         return reinterpret_cast<bool (*)(MainMenu *)>(MainMenu_InTransitionAddr)(this);
-    };
+    }
     void SetScene(MainMenuScene theScene) {
         reinterpret_cast<void (*)(MainMenu *, MainMenuScene)>(MainMenu_SetSceneAddr)(this, theScene);
-    };
+    }
     void StartAdventureMode() {
         reinterpret_cast<void (*)(MainMenu *)>(MainMenu_StartAdventureModeAddr)(this);
-    };
+    }
     void DrawSpeechBubble(Sexy::Graphics *g) {
-        reinterpret_cast<void (*)(MainMenu *)>(MainMenu_DrawSpeechBubbleAddr)(this);
+        reinterpret_cast<void (*)(MainMenu *, Sexy::Graphics *)>(MainMenu_DrawSpeechBubbleAddr)(this, g);
     }
 
     static FoleyType GetFoleyTypeByScene(int theScene);
