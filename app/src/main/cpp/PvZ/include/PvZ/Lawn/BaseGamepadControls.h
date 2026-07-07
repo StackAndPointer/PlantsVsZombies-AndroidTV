@@ -86,10 +86,10 @@ public:
     };
 
 public:
-    Board *mBoard;                           // 14
-    bool mDrawCursorFrame;                   // 0x03C, 原 unknown_always_1
-    float mCursorHighlightAnimPhase;         // 16
-    int mGamepadFrameCounter;                // 17
+    Board *mBoard;                   // 14
+    bool mDrawCursorFrame;           // 0x03C
+    float mCursorHighlightAnimPhase; // 16
+    int mGamepadFrameCounter;        // 17
     float mGamepadAccLeftX;
     float mGamepadAccLeftY;
     float mGridCenterPositionX;    // 20
