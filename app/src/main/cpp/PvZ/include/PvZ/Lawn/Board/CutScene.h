@@ -55,7 +55,9 @@ public:
     bool mPreUpdatingBoard;                  // 72【场景布置阶段的关卡预更新】
     ReanimationID mPlantsWonReanim;
     Zombie *mZombieWonZombie;
-    int unk[9]; // 21 ~ 29
+    int mMPZombieWonPosition;
+    float mMPZombieWonPositions[2];
+    int unk[6];
     // 大小30个整数
 
     CutScene() {

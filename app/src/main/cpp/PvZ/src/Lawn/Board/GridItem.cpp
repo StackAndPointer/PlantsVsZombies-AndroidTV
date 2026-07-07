@@ -145,6 +145,17 @@ void GridItem::DrawGridItem(Graphics *g) {
 
     old_GridItem_DrawGridItem(this, g);
 
+
+    if (mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE && showZombieBodyHealth) {
+        if (!IsOnlineServerModeActive()) {
+            Reanimation *reanimation = mApp->ReanimationGet(mGridItemReanimID);
+            g->SetColor(gColorWhite);
+            g->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
+            g->DrawString(pvzstl::to_string(mVSTargetZombieHealth), reanimation->mOverlayMatrix.m[0][2] - 10, reanimation->mOverlayMatrix.m[1][2] + 80);
+            g->SetFont(nullptr);
+        }
+    }
+
     //    Reanimation *aGridItemReanim = mApp->ReanimationTryToGet(mGridItemReanimID);
     //
     //    switch (mGridItemType) {
@@ -722,7 +733,14 @@ void GridItem::DrawGraveStone(Graphics *g) const {
             aReanim->DrawRenderGroup(g, 1);
             g->mClipRect = Rect(g->mClipRect.mX, g->mClipRect.mY, g->mClipRect.mWidth, g->mClipRect.mHeight);
         }
-        g->DrawString(pvzstl::to_string(mVSGraveStoneHealth), x, y);
+        if (showZombieBodyHealth) {
+            if (!IsOnlineServerModeActive()) {
+                g->SetColor(gColorWhite);
+                g->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
+                g->DrawString(pvzstl::to_string(mVSGraveStoneHealth), x + 20, y - 30);
+                g->SetFont(nullptr);
+            }
+        }
     } else {
         g->DrawImage(IMAGE_TOMBSTONES, x, y - aVisibleHeight + aExtraTopClip, aSrcRect);
         g->DrawImage(IMAGE_TOMBSTONE_MOUNDS, x, y - aVisibleHeightDirt, aSrcRectDirt);
@@ -797,6 +815,14 @@ void GridItem::DrawBurialMound(Sexy::Graphics *g) const {
         aReanim->DrawRenderGroup(g, 1);
         g->mClipRect = Rect(g->mClipRect.mX, g->mClipRect.mY, g->mClipRect.mWidth, g->mClipRect.mHeight);
     }
+    if (showZombieBodyHealth) {
+        if (!IsOnlineServerModeActive()) {
+            g->SetColor(gColorWhite);
+            g->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
+            g->DrawString(pvzstl::to_string(mVSGraveStoneHealth), x + 20, y - 60);
+            g->SetFont(nullptr);
+        }
+    }
 }
 
 void GridItem::AddGraveStoneParticles() const {
@@ -850,9 +876,21 @@ void GridItem::DrawMPTarget(Graphics *g) {
 }
 
 Rect GridItem::GetItemRect() const {
-    if (mGridItemType == GridItemType::GRIDITEM_POLE) {
+    if (mGridItemType == GRIDITEM_POLE) {
         return {int(mPosX), int(mPosY), 30, 160};
     }
+    if (mApp->IsVSMode()) {
+        if (mGridItemType == GRIDITEM_MP_BURIAL_MOUND || mGridItemType == GRIDITEM_GRAVESTONE) {
+            return {mBoard->GridToPixelX(mGridX, mGridY), mBoard->GridToPixelY(mGridX, mGridY), (IMAGE_TOMBSTONES)->GetCelWidth(), (IMAGE_TOMBSTONES)->GetCelHeight()};
+        }
+        if (mGridItemType == GRIDITEM_MP_TARGET_ZOMBIE) {
+            return {mBoard->GridToPixelX(mGridX, mGridY) + mBoard->GridCellWidth(mGridX, mGridY) / 2,
+                    mBoard->GridToPixelY(mGridX, mGridY),
+                    (IMAGE_MP_TARGET)->GetCelWidth(),
+                    (IMAGE_MP_TARGET)->GetCelHeight()};
+        }
+    }
+
     return {mBoard->GridToPixelX(mGridX, mGridY), mBoard->GridToPixelY(mGridX, mGridY), 63, 80};
 }
 

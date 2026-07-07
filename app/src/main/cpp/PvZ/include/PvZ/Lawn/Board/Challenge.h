@@ -24,6 +24,7 @@
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Effect/FilterEffect.h"
+#include "GameObject.h"
 
 inline constexpr int BEGHOULED_MAX_GRIDSIZEX = 8;
 inline constexpr int BEGHOULED_MAX_GRIDSIZEY = 5;
@@ -63,7 +64,7 @@ struct BeghouledBoardState {
     SeedType mSeedType[9][6];
 };
 
-class Challenge {
+class Challenge : public SyncObject {
 public:
     static inline bool msVSShuffleMode = false; // 对战刷牌模式
     static int &gVSResourseDropMode;            // 常为0
@@ -71,8 +72,6 @@ public:
     static int &gVSWinMode;
     static int &gVSSuddenDeathMode;
 
-    void **vTable;                                          // 0
-    int unk1[3];                                            // 1 ~ 3
     LawnApp *mApp;                                          // 4
     Board *mBoard;                                          // 5
     HelpBarWidget *mHelpBar;                                // 6
@@ -101,7 +100,7 @@ public:
     int mTreeOfWisdomTalkIndex;                             // 52
     int mBeghouledMouseDown;                                // 53
     int mBeghouledMouseCaptureCountdown;                    // 54
-    int mUnknown55;                                         // 55
+    int mMPZombieConveyorTimer;                             // 55
     int mBobSledMPCounter;                                  // 56
     int mSuddenDeathStartTick;                              // 57, 废弃
     int mPauseStartTick;                                    // 58, 废弃

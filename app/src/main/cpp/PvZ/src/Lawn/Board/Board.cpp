@@ -644,6 +644,21 @@ void Board::DrawDebugObjectRects(Sexy::Graphics *g) {
         DebugTextMode tmp = mDebugTextMode;
         mDebugTextMode = DebugTextMode::DEBUG_TEXT_COLLISION;
         old_Board_DrawDebugObjectRects(this, g);
+        if (mApp->IsVSMode()) {
+            GridItem *aGridItem = nullptr;
+            while (IterateGridItems(aGridItem)) {
+                switch (aGridItem->mGridItemType) {
+                    case GRIDITEM_MP_TARGET_ZOMBIE:
+                    case GRIDITEM_MP_BURIAL_MOUND:
+                    case GRIDITEM_GRAVESTONE: {
+                        g->SetColor(Color{0, 255, 0});
+                        g->DrawRect(aGridItem->GetItemRect());
+                    } break;
+                    default:
+                        break;
+                }
+            }
+        }
         mDebugTextMode = tmp;
         return;
     }
