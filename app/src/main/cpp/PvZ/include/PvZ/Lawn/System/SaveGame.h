@@ -20,9 +20,11 @@
 #ifndef PVZ_LAWN_SYSTEM_SAVE_GAME_H
 #define PVZ_LAWN_SYSTEM_SAVE_GAME_H
 
+#include "PvZ/Lawn/Common/SyncObject.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Buffer.h"
 #include "PvZ/Symbols.h"
+#include "PvZ/TodLib/Common/DataArray.h"
 
 class Board;
 
@@ -56,10 +58,35 @@ public:
 
     void SyncReanimationDef(ReanimatorDefinition *&theDefinition);
 };
+
 inline void SyncBoard(SaveGameContext *theContext, Board *theBoard) {
     reinterpret_cast<void (*)(SaveGameContext *, Board *)>(SyncBoardAddr)(theContext, theBoard);
 }
 
+template <typename T>
+void SyncDataArray(DataArray<T> &theArray, SaveGameContext *theContext) {
+    theContext->SyncUint(theArray.mFreeListHead);
+    theContext->SyncUint(theArray.mMaxUsedCount);
+    theContext->SyncUint(theArray.mSize);
+
+    for (auto i = 0u; i < theArray.mMaxUsedCount; ++i) {
+        auto *anItem = &theArray.mBlock[i];
+        theContext->SyncBytes(&anItem->mID, sizeof(anItem->mID));
+
+        bool itemExists = (anItem->mID >> DATA_ARRAY_KEY_SHIFT) != 0u;
+        if (!itemExists) {
+            continue;
+        }
+
+        if (theContext->mReading) {
+            new (&anItem->mItem) T();
+        }
+        std::vector<SyncBlockInfo> &aSyncBlocks = *anItem->mItem.mSyncBlocks;
+        for (auto &aBlock : aSyncBlocks) {
+            theContext->SyncBytes(aBlock.mAddress, aBlock.mSize);
+        }
+    }
+}
 
 bool LawnSaveGame_Original(Board *theBoard, const pvzstl::string &theFilePath);
 bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext);
