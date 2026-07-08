@@ -244,7 +244,7 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     mIsZombieChooser = theIsZombieChooser;
     mToolTipSeed1 = -1;
     mToolTipSeed2 = -1;
-    mImitaterDialogOpened = 0;
+    mImitaterDialog = nullptr;
 
     if (mIsZombieChooser) {
         TodLoadResources("DelayLoad_Almanac");
@@ -1628,11 +1628,10 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
                 if (GetChosenSeed(SeedType::SEED_IMITATER).mSeedState == ChosenSeedState::SEED_IN_BANK) {
                     ClickedSeedInBank(GetChosenSeed(SeedType::SEED_IMITATER), 0);
                 } else {
-                    auto *imitaterDialog = new ImitaterDialog(0);
-                    AddWidget(imitaterDialog);
-                    imitaterDialog->LawnDialog::Resize((800 - imitaterDialog->mWidth) / 2, (600 - imitaterDialog->mHeight) / 2, imitaterDialog->mWidth, imitaterDialog->mHeight);
-                    mApp->mWidgetManager->SetFocus(imitaterDialog);
-                    mImitaterDialogOpened = reinterpret_cast<int>(imitaterDialog);
+                    mImitaterDialog = new ImitaterDialog(0);
+                    AddWidget(mImitaterDialog);
+                    mImitaterDialog->LawnDialog::Resize((800 - mImitaterDialog->mWidth) / 2, (600 - mImitaterDialog->mHeight) / 2, mImitaterDialog->mWidth, mImitaterDialog->mHeight);
+                    mApp->mWidgetManager->SetFocus(mImitaterDialog);
                 }
                 return;
             }
@@ -1869,10 +1868,10 @@ void SeedChooserScreen::GameButtonDown(GamepadButton theButton, int thePlayerInd
 
             if (cursorSeed == SeedType::SEED_IMITATER && mSeedsInBank < mSeedBank1->mNumPackets) {
                 if (GetChosenSeed(SeedType::SEED_IMITATER).mSeedState != ChosenSeedState::SEED_IN_BANK) {
-                    auto *imitaterDialog = new ImitaterDialog(static_cast<int>(gamepadIndex));
-                    AddWidget(imitaterDialog);
-                    imitaterDialog->LawnDialog::Resize((BOARD_WIDTH - imitaterDialog->mWidth) / 2, (BOARD_HEIGHT - imitaterDialog->mHeight) / 2, imitaterDialog->mWidth, imitaterDialog->mHeight);
-                    mApp->mWidgetManager->SetFocus(imitaterDialog);
+                    mImitaterDialog = new ImitaterDialog(static_cast<int>(gamepadIndex));
+                    AddWidget(mImitaterDialog);
+                    mImitaterDialog->LawnDialog::Resize((BOARD_WIDTH - mImitaterDialog->mWidth) / 2, (BOARD_HEIGHT - mImitaterDialog->mHeight) / 2, mImitaterDialog->mWidth, mImitaterDialog->mHeight);
+                    mApp->mWidgetManager->SetFocus(mImitaterDialog);
                     return;
                 }
 
@@ -2385,6 +2384,9 @@ void SeedChooserScreen::MouseMove(int x, int y) {
     if (mApp->IsVSMode() && !IsLocalChooserInputAllowed(this)) {
         return;
     }
+    if (mApp->GetDialogCount() != 0 || mImitaterDialog != nullptr) {
+        return; // 存在模仿者选框、不建议种子选框等时
+    }
     NormalizeLocalPoint(this, x, y);
     if (x < 0 || x >= mWidth || y < 0 || y >= mHeight) {
         return;
@@ -2428,6 +2430,9 @@ void SeedChooserScreen::MouseMove(int x, int y) {
 void SeedChooserScreen::MouseDown(int x, int y, int theClickCount) {
     if (gIsServerModeSpectator || gIsReplayMode) {
         return;
+    }
+    if (mApp->GetDialogCount() != 0 || mImitaterDialog != nullptr) {
+        return; // 存在模仿者选框、不建议种子选框等时
     }
     NormalizeLocalPoint(this, x, y);
     if (x < 0 || x >= mWidth || y < 0 || y >= mHeight) {
@@ -2577,6 +2582,9 @@ void SeedChooserScreen::MouseDrag(int x, int y) {
     if (mApp->IsVSMode() && !IsLocalChooserInputAllowed(this)) {
         return;
     }
+    if (mApp->GetDialogCount() != 0 || mImitaterDialog != nullptr) {
+        return; // 存在模仿者选框、不建议种子选框等时
+    }
     NormalizeLocalPoint(this, x, y);
     if (x < 0 || x >= mWidth || y < 0 || y >= mHeight) {
         return;
@@ -2660,6 +2668,9 @@ void SeedChooserScreen::MouseDrag(int x, int y) {
 }
 
 void SeedChooserScreen::MouseUp(int x, int y) {
+    if (mApp->GetDialogCount() != 0 || mImitaterDialog != nullptr) {
+        return; // 存在模仿者选框、不建议种子选框等时
+    }
     if (gIsServerModeSpectator || gIsReplayMode) {
         if (gSeedChooserTouchOwner == this) {
             gSeedChooserTouchState = SeedChooserTouchState::SEEDCHOOSER_TOUCHSTATE_NONE;

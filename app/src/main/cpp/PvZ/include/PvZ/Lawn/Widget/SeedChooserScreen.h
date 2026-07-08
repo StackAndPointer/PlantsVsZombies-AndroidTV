@@ -23,6 +23,7 @@
 #include "PvZ/Lawn/Board/ToolTipWidget.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/GamepadControls.h"
+#include "PvZ/Lawn/Widget/ImitaterDialog.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 #include "PvZ/Symbols.h"
@@ -132,7 +133,7 @@ public:
     SeedBank *mSeedBank1;                    // 954
     SeedBank *mSeedBank2;                    // 955
     int mDimCounter;                         // 956
-    int mImitaterDialogOpened;               // 957
+    ImitaterDialog *mImitaterDialog;         // 957
     GameButton *mViewLawnButton;             // 958
     GameButton *mStoreButton;                // 959
     GameButton *mStartButton;                // 960

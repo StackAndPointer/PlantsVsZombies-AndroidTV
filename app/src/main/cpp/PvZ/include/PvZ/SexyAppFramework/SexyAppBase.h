@@ -88,7 +88,7 @@ namespace Sexy {
 class Gamepad;
 class Dialog;
 struct Event;
-#pragma pack(push, 4)
+
 class SexyAppBase : public Sexy::ButtonListener, public Sexy::DialogListener, public Sexy::InputConnectListener {
 public:
     struct SexyAppBaseVTable {
@@ -527,7 +527,6 @@ public:
     bool unkPreload_79D;                           // 0x79D
     bool mSafeReload;                              // 0x79E, SEXY_SAFE_RELOAD
     bool unkPreload_79F;                           // 0x79F
-    // 115： 552 , 111： 553
 
     Dialog *GetDialog(Dialogs theDialogId) { // vTable + 4 * 103
         return reinterpret_cast<Dialog *(*)(SexyAppBase *, Dialogs)>(Sexy_SexyAppBase_GetDialogAddr)(this, theDialogId);
@@ -593,7 +592,7 @@ protected:
 
     void _constructor();
 };
-#pragma pack(pop)
+
 } // namespace Sexy
 
 inline void (*old_Sexy_SexyAppBase_SexyAppBase)(Sexy::SexyAppBase *appBase);
