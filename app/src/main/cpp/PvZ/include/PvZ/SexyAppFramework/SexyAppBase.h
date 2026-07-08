@@ -243,7 +243,7 @@ public:
     };
 
 public:
-    int mRandSeed;    // 0x00C, dword 3
+    int mRandSeed; // 0x00C, dword 3
 
     homura::Storage<pvzstl::string> mCompanyName;           // 0x010
     homura::Storage<pvzstl::string> mFullCompanyName;       // 0x014
@@ -285,7 +285,6 @@ public:
     int mNotifyGameMessage;                  // 0x08C, tentative name
     bool mBetaValidate;                      // 0x090
     unsigned char mAdd8BitMaxTable[512];     // 0x091, values 0..255 then 0xFF
-    unsigned char pad_291[3];                // 0x291
 
     WidgetManager *mWidgetManager; // 0x294, dword 165
 
@@ -309,15 +308,15 @@ public:
 
     void *mPlatformDriverOrQueue; // 0x2E4 = nullptr，准确类型未知
 
-    void *mFileDriver;       // 0x2E8
-    void *mAppDriver;        // 0x2EC
-    void *mDDInterface;      // 0x2F0, high-confidence slot
-    void *mAudioDriver;      // 0x2F4
-    void *mResStreamsDriver; // 0x2F8
-    void *mHttpDriver;       // 0x2FC
-    bool mAlphaDisabled;     // 0x300
-    void *mMusicInterface;  // 0x304
-    bool mReadFromRegistry; // 0x308
+    void *mFileDriver;                               // 0x2E8
+    void *mAppDriver;                                // 0x2EC
+    void *mDDInterface;                              // 0x2F0, high-confidence slot
+    void *mAudioDriver;                              // 0x2F4
+    void *mResStreamsDriver;                         // 0x2F8
+    void *mHttpDriver;                               // 0x2FC
+    bool mAlphaDisabled;                             // 0x300
+    void *mMusicInterface;                           // 0x304
+    bool mReadFromRegistry;                          // 0x308
     homura::Storage<pvzstl::string> mRegisterLink;   // 0x30C
     homura::Storage<pvzstl::string> mProductVersion; // 0x310
     void *mCursorImages[13];                         // 0x314, dword 197~209
@@ -326,35 +325,32 @@ public:
     bool mLawnMouseMode;     // 0x3B0
     bool mIsOpeningURL;      // 0x3B1
     bool mShutdownOnURLOpen; // 0x3B2, tentative
-    bool pad_3B3;
 
     homura::Storage<pvzstl::string> mOpeningURL; // 0x3B4
     unsigned int mOpeningURLTime;                // 0x3B8
     unsigned int mLastTimerTime;                 // 0x3BC
     unsigned int mLastBigDelayTime;              // 0x3C0
-    unsigned int pad_3C4;
-    double mUnmutedMusicVolume; // 0x3C8
-    double mUnmutedSfxVolume;   // 0x3D0
-    int mMuteCount;             // 0x3D8
-    int mAutoMuteCount;         // 0x3DC
-    bool mDemoMute;             // 0x3E0
-    bool mMuteOnLostFocus;      // 0x3E1
+    double mUnmutedMusicVolume;                  // 0x3C8
+    double mUnmutedSfxVolume;                    // 0x3D0
+    int mMuteCount;                              // 0x3D8
+    int mAutoMuteCount;                          // 0x3DC
+    bool mDemoMute;                              // 0x3E0
+    bool mMuteOnLostFocus;                       // 0x3E1
 
-    pvzstl::set<Sexy::MemoryImage *> mMemoryImageSet;                               // 0x3E4
-    SexyOpaqueCritSect32 mMemoryImageCritSect;                                      // 0x3FC, Android addition
-    pvzstl::set<void *> mPIEffectSet;                                               // 0x400, std::set<PIEffect*>
-    pvzstl::set<void *> mPopAnimSet;                                                // 0x418, std::set<PopAnim*>
-    pvzstl::map<std::pair<pvzstl::string, pvzstl::string>, void *> mSharedImageMap; // 0x430, map<pair<string,string>, SharedImage>
-    bool mCleanupSharedImages;                                                      // 0x448
-    bool pad_449[3];
+    pvzstl::set<Sexy::MemoryImage *> mMemoryImageSet;                                       // 0x3E4
+    SexyOpaqueCritSect32 mMemoryImageCritSect;                                              // 0x3FC, Android addition
+    pvzstl::set<void *> mPIEffectSet;                                                       // 0x400, std::set<PIEffect*>
+    pvzstl::set<void *> mPopAnimSet;                                                        // 0x418, std::set<PopAnim*>
+    pvzstl::map<std::pair<pvzstl::string, pvzstl::string>, void *> mSharedImageMap;         // 0x430, map<pair<string,string>, SharedImage>
+    bool mCleanupSharedImages;                                                              // 0x448
     pvzstl::map<pvzstl::string, pvzstl::map<pvzstl::string, Sexy::Image *>> mImageGroupMap; // 0x44C
     pvzstl::map<int, pvzstl::string> mImageIdStringMap;                                     // 0x464
 
-    int mNonDrawCount;      // 0x47C
-    int mFrameTime;         // 0x480
-    bool mIsDrawing;        // 0x484
-    bool mLastDrawWasEmpty; // 0x485
-    bool mHasPendingDraw;   // 0x486
+    int mNonDrawCount;               // 0x47C
+    int mFrameTime;                  // 0x480
+    bool mIsDrawing;                 // 0x484
+    bool mLastDrawWasEmpty;          // 0x485
+    bool mHasPendingDraw;            // 0x486
     double mPendingUpdatesAcc;       // 0x488
     double mUpdateFTimeAcc;          // 0x490
     unsigned int mLastTimeCheck;     // 0x498
@@ -369,14 +365,14 @@ public:
     int mUpdateFrameTime;            // 0x4BC, initialized to 10; name tentative
     double mUpdateMultiplier;        // 0x4C0
     bool mPaused;                    // 0x4C8
-    int mFastForwardToUpdateNum; // 0x4CC
-    bool mFastForwardToMarker;   // 0x4D0
-    bool mFastForwardStep;       // 0x4D1
-    unsigned int mLastDrawTick; // 0x4D4
-    unsigned int mNextDrawTick; // 0x4D8
-    int mStepMode;              // 0x4DC
-    int mCursorNum;             // 0x4E0
-    int unkCursorState_4E4;     // 0x4E4
+    int mFastForwardToUpdateNum;     // 0x4CC
+    bool mFastForwardToMarker;       // 0x4D0
+    bool mFastForwardStep;           // 0x4D1
+    unsigned int mLastDrawTick;      // 0x4D4
+    unsigned int mNextDrawTick;      // 0x4D8
+    int mStepMode;                   // 0x4DC
+    int mCursorNum;                  // 0x4E0
+    int unkCursorState_4E4;          // 0x4E4
 
     AudiereSoundManager *mSoundManager; // 0x4E8, dword 314
 
@@ -403,9 +399,9 @@ public:
     int mFPSTime;               // 0x538
     int mFPSCount;              // 0x53C
     bool mShowFPS;              // 0x540
-    int mShowFPSMode;   // 0x544
-    int mScreenBltTime; // 0x548
-    int unkPerf_54C[8]; // 0x54C ~ 0x56B
+    int mShowFPSMode;           // 0x544
+    int mScreenBltTime;         // 0x548
+    int unkPerf_54C[8];         // 0x54C ~ 0x56B
 
     bool mAutoStartLoadingThread; // 0x56C
     bool mLoadingThreadStarted;   // 0x56D
@@ -435,9 +431,9 @@ public:
     int mNumLoadingThreadTasks;       // 0x588, dword 354
     int mCompletedLoadingThreadTasks; // 0x58C, dword 355
 
-    bool mRecordingDemoBuffer; // 0x590
-    bool mPlayingDemoBuffer;   // 0x591
-    bool mManualShutdown;      // 0x592
+    bool mRecordingDemoBuffer;                     // 0x590
+    bool mPlayingDemoBuffer;                       // 0x591
+    bool mManualShutdown;                          // 0x592
     homura::Storage<pvzstl::string> mDemoPrefix;   // 0x594
     homura::Storage<pvzstl::string> mDemoFileName; // 0x598
     char mDemoBuffer[0x1C];                        // 0x59C
@@ -447,12 +443,12 @@ public:
     int mLastDemoUpdateCnt;                        // 0x5C4
     bool mDemoNeedsCommand;                        // 0x5C8
     bool mDemoIsShortCmd;                          // 0x5C9
-    int mDemoCmdNum;           // 0x5CC
-    int mDemoCmdOrder;         // 0x5D0
-    int mDemoCmdBitPos;        // 0x5D4
-    bool mDemoLoadingComplete; // 0x5D8
-    int mCurHandleNum;                // 0x5DC
-    SexyOpaqueList32 mDemoMarkerList; // 0x5E0
+    int mDemoCmdNum;                               // 0x5CC
+    int mDemoCmdOrder;                             // 0x5D0
+    int mDemoCmdBitPos;                            // 0x5D4
+    bool mDemoLoadingComplete;                     // 0x5D8
+    int mCurHandleNum;                             // 0x5DC
+    SexyOpaqueList32 mDemoMarkerList;              // 0x5E0
 
     bool mDebugKeysEnabled;     // 0x5E8
     bool mEnableMaximizeButton; // 0x5E9
@@ -484,7 +480,7 @@ public:
     bool unkDisplayFlag_617;        // 0x617
     SexyOpaqueRect32 mScreenBounds; // 0x618, unkMem5[3]~[6]
 
-    bool mEnableWindowAspect; // 0x628, unkMem5[7].byte0
+    bool mEnableWindowAspect;              // 0x628, unkMem5[7].byte0
     SexyOpaqueRatio32 mWindowAspect;       // 0x62C, 4:3
     SexyOpaqueRatio32 mPresentationAspect; // 0x634, 4:3, Android addition
     SexyOpaqueRatio32 mWideScreenAspect;   // 0x63C, 16:10, Android addition

@@ -1593,7 +1593,7 @@ bool LawnApp::HasBeatenChallenge(GameMode theGameMode) const {
         return false;
     }
     // 对战选关页设为未通关以取消绘制已通关奖杯贴图
-    if (mChallengeScreen && mChallengeScreen->mPageIndex == ChallengePage::CHALLENGE_PAGE_VS) {
+    if (mChallengeScreen && mChallengeScreen->mPage == ChallengePage::CHALLENGE_PAGE_VS) {
         return false;
     }
     return mPlayerInfo->mChallengeRecords[aChallengeIndex] > 0;

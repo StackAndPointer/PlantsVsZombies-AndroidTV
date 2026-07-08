@@ -172,17 +172,17 @@ void ChallengeScreen::_constructor(LawnApp *theApp, ChallengePage thePage) {
     //        mUtil = Curve1DUtil();
     //
     //        mApp = theApp;
-    //        mPageIndex = thePage;
+    //        mPage = thePage;
     //        mLockShakeX = 0.0f;
     //        mLockShakeY = 0.0f;
-    //        mUnkFloat = 0.0f;
+    //        mScrollAnimationTime = 0.0f;
     //        mClip = false;
     //        mCheatEnableChallenges = false;
     //        mUnlockState = UnlockingState::UNLOCK_OFF;
     //        mUnlockStateCounter = 0;
-    //        mScreenTopChallengeIndex = 0;
-    //        mSelectedChallengeIndex = 0;
-    //        mTotalGameInPage = 0;
+    //        mScrollPosition = 0;
+    //        mScrollTargetPosition = 0;
+    //        mPageChallengeCount = 0;
     //        mUnlockChallengeIndex = -1;
     //
     //        for (int aChallengeMode = 0; aChallengeMode < NUM_CHALLENGE_MODES; aChallengeMode++) {
@@ -191,45 +191,45 @@ void ChallengeScreen::_constructor(LawnApp *theApp, ChallengePage thePage) {
     //            mChallengeButtons[aChallengeMode] = aChallengeButton;
     //            aChallengeButton->mDoFinger = true;
     //            aChallengeButton->mFrameNoDraw = true;
-    //            if (aChlDef.mPage == mPageIndex) {
-    //                aChallengeButton->Resize(35, mTotalGameInPage * 120 + 80, 112, 65);
-    //                mTotalGameInPage++;
-    //                mUnk1[mTotalGameInPage] = GameMode(aChallengeMode);
+    //            if (aChlDef.mPage == mPage) {
+    //                aChallengeButton->Resize(35, mPageChallengeCount * 120 + 80, 112, 65);
+    //                mPageChallengeCount++;
+    //                mPageChallengeIndex[mPageChallengeCount] = GameMode(aChallengeMode);
     //            }
     //            if (MoreTrophiesNeeded(aChallengeMode)) {
     //                aChallengeButton->mDoFinger = false;
     //                aChallengeButton->mDisabled = true;
     //            }
-    //            mUnk2[aChallengeMode] = 0;
+    //            mPageChallengeAnimTime[aChallengeMode] = 0;
     //        }
     //
     //        mToolTip = new ToolTipWidget();
     //        mToolTip->mCenter = true;
     //        mToolTip->mVisible = false;
     //
-    //        mSelectedMode = GameMode::GAMEMODE_CHALLENGE_BUTTERED_POPCORN;
+    //        mSelectedChallengeIndex = GameMode::GAMEMODE_CHALLENGE_BUTTERED_POPCORN;
     //
     //        UpdateButtons();
     //
     //        if (mApp->mGameMode != GameMode::GAMEMODE_UPSELL || mApp->mGameScene != GameScenes::SCENE_LEVEL_INTRO) {
     //            mApp->mMusic->MakeSureMusicIsPlaying(MusicTune::MUSIC_TUNE_CHOOSE_YOUR_SEEDS);
     //
-    //            if (mPageIndex == CHALLENGE_PAGE_SURVIVAL) {
+    //            if (mPage == CHALLENGE_PAGE_SURVIVAL) {
     //                if (mApp->mPlayerInfo->GetFlag(512)) {
-    //                    SetUnlockChallengeIndex(mPageIndex, false);
+    //                    SetUnlockChallengeIndex(mPage, false);
     //                    mApp->mPlayerInfo->SetFlag(512, false);
     //                }
-    //            } else if (mPageIndex == CHALLENGE_PAGE_CHALLENGE) {
+    //            } else if (mPage == CHALLENGE_PAGE_CHALLENGE) {
     //                if (mApp->mPlayerInfo->GetFlag(64)) {
-    //                    SetUnlockChallengeIndex(mPageIndex, false);
+    //                    SetUnlockChallengeIndex(mPage, false);
     //                    mApp->mPlayerInfo->SetFlag(64, false);
     //                }
-    //            } else if (mPageIndex == CHALLENGE_PAGE_PUZZLE) {
+    //            } else if (mPage == CHALLENGE_PAGE_PUZZLE) {
     //                if (mApp->mPlayerInfo->GetFlag(128)) {
-    //                    SetUnlockChallengeIndex(mPageIndex, false);
+    //                    SetUnlockChallengeIndex(mPage, false);
     //                    mApp->mPlayerInfo->SetFlag(128, false);
     //                } else if (mApp->mPlayerInfo->GetFlag(256)) {
-    //                    SetUnlockChallengeIndex(mPageIndex, true);
+    //                    SetUnlockChallengeIndex(mPage, true);
     //                    mApp->mPlayerInfo->SetFlag(256, false);
     //                }
     //            }
@@ -258,15 +258,15 @@ void ChallengeScreen::_constructor(LawnApp *theApp, ChallengePage thePage) {
         button->Resize(button->mX, button->mY, 0, 0);
     }
 
-    if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS) {
-        mTotalGameInPage = NUM_VS_MODES - 1;
+    if (mPage == ChallengePage::CHALLENGE_PAGE_VS) {
+        mPageChallengeCount = NUM_VS_MODES - 1;
         Challenge::msVSShuffleMode = false;
         gChallengeScreenRequestState = 0;
 
         mApp->TryHelpTextScreen(HelpTextPage::HELP_TEXT_PAGE_VS);
     }
 
-    if (mPageIndex == ChallengePage::CHALLENGE_PAGE_COOP) {
+    if (mPage == ChallengePage::CHALLENGE_PAGE_COOP) {
         mApp->TryHelpTextScreen(HelpTextPage::HELP_TEXT_PAGE_COOP);
     }
 }
@@ -283,16 +283,16 @@ ChallengeDefinition &GetChallengeDefinition(int theChallengeMode) {
 void ChallengeScreen::Draw(Sexy::Graphics *g) {
     g->DrawImage(Sexy::IMAGE_CHALLENGE_BACKGROUND, LawnApp::FULLSCREEN_RECT.mX, -60);
 
-    pvzstl::string aTitleString = mPageIndex == CHALLENGE_PAGE_SURVIVAL ? "[PICK_AREA]"
-        : mPageIndex == CHALLENGE_PAGE_PUZZLE                           ? "[SCARY_POTTER]"
-        : mPageIndex == CHALLENGE_PAGE_VS                               ? "[VS_MODE]"
-        : mPageIndex == CHALLENGE_PAGE_COOP                             ? "[XBOX_COOP]"
-                                                                        : "[PICK_CHALLENGE]";
+    pvzstl::string aTitleString = mPage == CHALLENGE_PAGE_SURVIVAL ? "[PICK_AREA]"
+        : mPage == CHALLENGE_PAGE_PUZZLE                           ? "[SCARY_POTTER]"
+        : mPage == CHALLENGE_PAGE_VS                               ? "[VS_MODE]"
+        : mPage == CHALLENGE_PAGE_COOP                             ? "[XBOX_COOP]"
+                                                                   : "[PICK_CHALLENGE]";
     TodDrawString(g, aTitleString, 400, 45, Sexy::FONT_HOUSEOFTERROR28, Color(220, 220, 220), DS_ALIGN_CENTER);
 
-    int aTrophiesGot = mApp->GetNumTrophies(mPageIndex);
-    int aTrophiesTotal = (mPageIndex == CHALLENGE_PAGE_SURVIVAL || mPageIndex == CHALLENGE_PAGE_COOP) ? 10 : mPageIndex == CHALLENGE_PAGE_PUZZLE ? 18 : 0;
-    if (mPageIndex == CHALLENGE_PAGE_CHALLENGE) {
+    int aTrophiesGot = mApp->GetNumTrophies(mPage);
+    int aTrophiesTotal = (mPage == CHALLENGE_PAGE_SURVIVAL || mPage == CHALLENGE_PAGE_COOP) ? 10 : mPage == CHALLENGE_PAGE_PUZZLE ? 18 : 0;
+    if (mPage == CHALLENGE_PAGE_CHALLENGE) {
         for (int i = 0; i < 94; ++i) {
             if (GetChallengeDefinition(i).mPage == ChallengePage::CHALLENGE_PAGE_CHALLENGE) {
                 aTrophiesTotal++;
@@ -303,7 +303,7 @@ void ChallengeScreen::Draw(Sexy::Graphics *g) {
         pvzstl::string aTrophyString = StrFormat(TodStringTranslate("[NUMBER_OF_TROPHIES]").c_str(), aTrophiesGot, aTrophiesTotal);
         TodDrawString(g, aTrophyString, 711, 62, Sexy::FONT_BRIANNETOD16, Color(255, 240, 0), DS_ALIGN_CENTER);
     }
-    if (mPageIndex != CHALLENGE_PAGE_VS) {
+    if (mPage != CHALLENGE_PAGE_VS) {
         TodDrawImageScaledF(g, Sexy::IMAGE_TROPHY, 690.0f, 15.0f, 0.5f, 0.5f);
     }
 
@@ -316,17 +316,17 @@ void ChallengeScreen::Draw(Sexy::Graphics *g) {
     int scrollBarRectX = 766;
     int scrollBarRectY = 28;
 
-    float scrollPosition = float(mScreenTopChallengeIndex);
+    float scrollPosition = float(mScrollPosition);
     float scrollBarHeightFloat = float(scrollBarHeight);
 
-    if (mScreenTopChallengeIndex == mSelectedChallengeIndex) {
+    if (mScrollPosition == mScrollTargetPosition) {
         // 未滚动时的状态
         scrollBarHeightFloat = 448.0f;
         scrollBarHeight = 448;
         scrollBarY = 86;
     } else {
         // 滚动时的动画效果
-        scrollPosition = TodAnimateCurveFloatTime(0.0f, 0.15f, mUnkFloat, scrollPosition, mSelectedChallengeIndex, TodCurves::CURVE_LINEAR);
+        scrollPosition = TodAnimateCurveFloatTime(0.0f, 0.15f, mScrollAnimationTime, scrollPosition, mScrollTargetPosition, TodCurves::CURVE_LINEAR);
         scrollBarHeight = scrollBarHeight - 12;
         scrollBarY = scrollBarY + 6;
         scrollBarRectX = scrollBarX + 6;
@@ -334,8 +334,8 @@ void ChallengeScreen::Draw(Sexy::Graphics *g) {
         scrollBarHeightFloat = float(scrollBarHeight);
     }
 
-    int thumbPosition = int((scrollPosition / mTotalGameInPage) * scrollBarHeightFloat);
-    int thumbHeight = int(scrollBarHeightFloat * (5.0f / mTotalGameInPage));
+    int thumbPosition = int((scrollPosition / mPageChallengeCount) * scrollBarHeightFloat);
+    int thumbHeight = int(scrollBarHeightFloat * (5.0f / mPageChallengeCount));
 
     int thumbY = scrollBarY + thumbPosition;
     int actualThumbHeight = (thumbHeight > scrollBarHeight) ? scrollBarHeight : thumbHeight;
@@ -361,12 +361,9 @@ void ChallengeScreen::Draw(Sexy::Graphics *g) {
     g->ClipRect(-20, 80, 1000, 475);
     g->TranslateF(0.0f, -(scrollPosition * 120.0f));
 
-    if (mTotalGameInPage > 0) {
-        float *unkFloatPtr = &mUnkFloat;
-        for (int aChallengeMode = 0; aChallengeMode < mTotalGameInPage; ++aChallengeMode) {
-            int aChallengeId = *reinterpret_cast<int *>(unkFloatPtr + 1);
-            DrawButton(g, aChallengeId, aChallengeMode);
-            unkFloatPtr += 1;
+    if (mPageChallengeCount > 0) {
+        for (int i = 0; i < mPageChallengeCount; ++i) {
+            DrawButton(g, mPageChallengeIndex[i], i);
         }
     }
 
@@ -379,7 +376,7 @@ void ChallengeScreen::Draw(Sexy::Graphics *g) {
     g->PopState();
 
 
-    if (mPageIndex == CHALLENGE_PAGE_VS) {
+    if (mPage == CHALLENGE_PAGE_VS) {
 
         Color aColor = Color(0, 205, 0, 255);
 
@@ -493,7 +490,7 @@ void ChallengeScreen::Update() {
     // 记录当前游戏状态
     old_ChallengeScreen_Update(this);
 
-    if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS) {
+    if (mPage == ChallengePage::CHALLENGE_PAGE_VS) {
         if (mConnectDialog == nullptr && mApp->mHelpTextScreen == nullptr && !gTcpConnected && gTcpClientSocket < 0) {
             mConnectDialog = new WaitForSecondPlayerDialog(mApp);
             mApp->AddDialog(mConnectDialog);
@@ -551,7 +548,7 @@ void ChallengeScreen::ButtonDepress(int theId) {
 
     int aPageIndex = theId - ChallengeScreen::ChallengeScreen_Page;
     if (aPageIndex >= 0 && aPageIndex < MAX_CHALLANGE_PAGES) {
-        mPageIndex = (ChallengePage)aPageIndex;
+        mPage = (ChallengePage)aPageIndex;
         UpdateButtons();
     }
 }
@@ -587,16 +584,16 @@ void ChallengeScreen::MouseDown(int x, int y, int theClickCount) {
     gChallengeScreenTouchDownY = y;
     gChallengeItemHeight = (Sexy::IMAGE_CHALLENGE_NAME_BACK)->GetHeight() + 2; // 2为缝隙大小
 
-    gChallengeScreenGameIndex = mScreenTopChallengeIndex;
+    gChallengeScreenGameIndex = mScrollPosition;
 
     // int totalGamesInThisPage = a[376];//如果这个值是33
     // int currentSelectedGameIndex = ChallengeScreen_GetCurrentSelectedGameIndex(
     // a);//这里取值就是0~32。种子雨是32。
 
-    // int firstGameInPageIndex = a->mScreenTopChallengeIndex;
+    // int firstGameInPageIndex = a->mScrollPosition;
     // int firstGameInPageIndex2 = a[186];
-    // a->mSelectedMode = a[currentSelectedGameIndex + 1 + 188];//向下移动绿色光标，不可循环滚动
-    // a->mSelectedMode = a[currentSelectedGameIndex - 1 + 188];//向上移动绿色光标，不可循环滚动
+    // a->mSelectedChallengeIndex = a[currentSelectedGameIndex + 1 + 188];//向下移动绿色光标，不可循环滚动
+    // a->mSelectedChallengeIndex = a[currentSelectedGameIndex - 1 + 188];//向上移动绿色光标，不可循环滚动
 
     // LOGD("dOWN:%d %d %d %d", x, y, firstGameInPageIndex, firstGameInPageIndex2);
 }
@@ -609,7 +606,7 @@ void ChallengeScreen::MouseDrag(int x, int y) {
         return;
     int triggerHeight = gChallengeItemHeight / 2; // 调节此处以修改小游戏列表的滚动速度。滚动太快就会有BUG，好烦。
     if (gChallengeScreenTouchDownY - y > triggerHeight) {
-        int totalGamesInThisPage = mTotalGameInPage;
+        int totalGamesInThisPage = mPageChallengeCount;
         gChallengeScreenGameIndex += 1;
         gChallengeScreenTouchDownY -= triggerHeight;
         int gameIndexToScroll = gChallengeScreenGameIndex >= totalGamesInThisPage - 4 ? totalGamesInThisPage - 4 : gChallengeScreenGameIndex;
@@ -639,21 +636,21 @@ void ChallengeScreen::MouseUp(int x, int y) {
             gChallengeItemMoved = false;
             return;
         }
-        int gameIndex = mScreenTopChallengeIndex + (y - mPageTop) / gChallengeItemHeight;
-        if (gameIndex < 0 || gameIndex >= mTotalGameInPage) {
-            LOG_WARN("[ChallengeScreen] drop MouseUp out-of-range gameIndex={} top={} y={} total={}", gameIndex, mScreenTopChallengeIndex, y, mTotalGameInPage);
+        int gameIndex = mScrollPosition + (y - mPageTop) / gChallengeItemHeight;
+        if (gameIndex < 0 || gameIndex >= mPageChallengeCount) {
+            LOG_WARN("[ChallengeScreen] drop MouseUp out-of-range gameIndex={} top={} y={} total={}", gameIndex, mScrollPosition, y, mPageChallengeCount);
             gTouchOutSide = false;
             gChallengeItemMoved = false;
             return;
         }
-        int nextMode = mUnk1[gameIndex];
-        if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(nextMode)) {
+        int nextMode = mPageChallengeIndex[gameIndex];
+        if (mPage == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(nextMode)) {
             LOG_WARN("[ChallengeScreen] drop MouseUp invalid VS mode={} gameIndex={}", nextMode, gameIndex);
             gTouchOutSide = false;
             gChallengeItemMoved = false;
             return;
         }
-        if (mSelectedMode == nextMode) {
+        if (mSelectedChallengeIndex == nextMode) {
             KeyDown(Sexy::KEYCODE_RETURN);
         } else {
             mApp->PlaySample(Sexy::SOUND_BUTTONCLICK);
@@ -664,12 +661,12 @@ void ChallengeScreen::MouseUp(int x, int y) {
                 gChallengeScreenRequestState = nextMode;
             } else if (gTcpClientSocket >= 0) {
                 // 房主
-                mSelectedMode = GameMode(nextMode);
-                U16_Event event = {{EventType::EVENT_SERVER_CHALLENGESCREEN_SELECT_MODE}, uint16_t(mSelectedMode)};
+                mSelectedChallengeIndex = GameMode(nextMode);
+                U16_Event event = {{EventType::EVENT_SERVER_CHALLENGESCREEN_SELECT_MODE}, uint16_t(mSelectedChallengeIndex)};
                 netplay::PutEvent(event);
             } else {
                 // 单机
-                mSelectedMode = GameMode(nextMode);
+                mSelectedChallengeIndex = GameMode(nextMode);
             }
         }
     }
@@ -681,16 +678,16 @@ void ChallengeScreen::KeyDown(Sexy::KeyCode theKey) {
     if (gIsReplayMode && (theKey == Sexy::KEYCODE_BACK || theKey == Sexy::KEYCODE_ESCAPE || theKey == Sexy::KEYCODE_GAMEPAD_B)) {
         return;
     }
-    if (theKey == Sexy::KEYCODE_RETURN && mPageIndex == ChallengePage::CHALLENGE_PAGE_VS) {
+    if (theKey == Sexy::KEYCODE_RETURN && mPage == ChallengePage::CHALLENGE_PAGE_VS) {
         if (gTcpConnected) {
-            U16_Event event = {{EventType::EVENT_CLIENT_CHALLENGESCREEN_SELECT_MODE}, uint16_t(mSelectedMode)};
+            U16_Event event = {{EventType::EVENT_CLIENT_CHALLENGESCREEN_SELECT_MODE}, uint16_t(mSelectedChallengeIndex)};
             netplay::PutEvent(event);
-            gChallengeScreenRequestState = mSelectedMode;
+            gChallengeScreenRequestState = mSelectedChallengeIndex;
             return;
         }
 
         if (gTcpClientSocket >= 0) {
-            U16_Event event = {{EventType::EVENT_SERVER_CHALLENGESCREEN_BUTTON_DEPRESS}, uint16_t(mSelectedMode)};
+            U16_Event event = {{EventType::EVENT_SERVER_CHALLENGESCREEN_BUTTON_DEPRESS}, uint16_t(mSelectedChallengeIndex)};
             netplay::PutEvent(event);
         }
     }
@@ -701,12 +698,12 @@ void ChallengeScreen::KeyDown(Sexy::KeyCode theKey) {
 void ChallengeScreen::KeyDown_Origin(Sexy::KeyCode theKey) {
     if (theKey == Sexy::KEYCODE_RETURN) {
         // 更新对战战场选择
-        if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS) {
-            if (gChallengeScreenRequestState == mSelectedMode) {
+        if (mPage == ChallengePage::CHALLENGE_PAGE_VS) {
+            if (gChallengeScreenRequestState == mSelectedChallengeIndex) {
                 gChallengeScreenRequestState = 0;
             }
 
-            switch (mSelectedMode) {
+            switch (mSelectedChallengeIndex) {
                 case GAMEMODE_MP_VS_DAY:
                     gVSBackground = BackgroundType::BACKGROUND_1_DAY;
                     break;
@@ -740,7 +737,7 @@ void ChallengeScreen::processClientEvent(const BaseEvent *event) const {
     switch (event->type) {
         case EVENT_CLIENT_CHALLENGESCREEN_SELECT_MODE: {
             auto *eventButtonDepress = static_cast<const U16_Event *>(event);
-            if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(eventButtonDepress->data)) {
+            if (mPage == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(eventButtonDepress->data)) {
                 LOG_WARN("[ChallengeScreen] ignore invalid client VS request mode={}", eventButtonDepress->data);
                 break;
             }
@@ -758,16 +755,16 @@ void ChallengeScreen::processServerEvent(const BaseEvent *event) {
         case EVENT_SERVER_CHALLENGESCREEN_BUTTON_DEPRESS: {
             auto *eventBtnDepress = static_cast<const U16_Event *>(event);
             int theId = eventBtnDepress->data;
-            if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(theId)) {
+            if (mPage == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(theId)) {
                 LOG_WARN("[ChallengeScreen] ignore invalid VS button depress mode={}", theId);
                 break;
             }
-            mSelectedMode = GameMode(theId);
-            if (gChallengeScreenRequestState == mSelectedMode) {
+            mSelectedChallengeIndex = GameMode(theId);
+            if (gChallengeScreenRequestState == mSelectedChallengeIndex) {
                 gChallengeScreenRequestState = 0;
             }
 
-            switch (mSelectedMode) {
+            switch (mSelectedChallengeIndex) {
                 case GAMEMODE_MP_VS_DAY:
                     gVSBackground = BackgroundType::BACKGROUND_1_DAY;
                     break;
@@ -796,11 +793,11 @@ void ChallengeScreen::processServerEvent(const BaseEvent *event) {
         case EVENT_SERVER_CHALLENGESCREEN_SELECT_MODE: {
             auto *event1 = static_cast<const U16_Event *>(event);
             int theId = event1->data;
-            if (mPageIndex == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(theId)) {
+            if (mPage == ChallengePage::CHALLENGE_PAGE_VS && !IsValidVsMode(theId)) {
                 LOG_WARN("[ChallengeScreen] ignore invalid VS select mode={}", theId);
                 break;
             }
-            mSelectedMode = GameMode(theId);
+            mSelectedChallengeIndex = GameMode(theId);
         } break;
         default:
             break;

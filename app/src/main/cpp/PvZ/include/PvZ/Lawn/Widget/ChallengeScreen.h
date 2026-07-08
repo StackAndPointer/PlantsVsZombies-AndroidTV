@@ -52,7 +52,7 @@ public:
     Sexy::ButtonWidget *mChallengeButtons[NUM_CHALLENGE_MODES]; // 65 ~ 158
     LawnApp *mApp;                                              // 159
     ToolTipWidget *mToolTip;                                    // 160
-    ChallengePage mPageIndex;                                   // 161
+    ChallengePage mPage;                                        // 161
     bool mCheatEnableChallenges;                                // 648
     UnlockingState mUnlockState;                                // 163
     int mUnlockStateCounter;                                    // 164
@@ -61,15 +61,15 @@ public:
     float mLockShakeY;                                          // 167
     Sexy::Curve1DUtil mUtil;                                    // 168 ~ 183
     HelpBarWidget *mHelpBarWidget;                              // 184
-    int mScreenTopChallengeIndex;                               // 185
-    int mSelectedChallengeIndex;                                // 186
-    float mUnkFloat;                                            // 187
-    GameMode mUnk1[NUM_CHALLENGE_MODES];                        // 188 ~ 281
-    int mUnk2[NUM_CHALLENGE_MODES];                             // 282 ~ 375
-    int mTotalGameInPage;                                       // 376
-    int mSelectedChallenge;                                     // 377 其值固定比mSelectedMode小2
-    GameMode mSelectedMode;                                     // 378
-    int unk4;                                                   // 379
+    int mScrollPosition;                                        // 185
+    int mScrollTargetPosition;                                  // 186
+    float mScrollAnimationTime;                                 // 187
+    int mPageChallengeIndex[NUM_CHALLENGE_MODES];               // 188 ~ 281
+    float mPageChallengeAnimTime[NUM_CHALLENGE_MODES];          // 282 ~ 375
+    int mPageChallengeCount;                                    // 376
+    GameMode mSelectedGameMode;                                 // 377 其值固定比mSelectedMode小2
+    int mSelectedChallengeIndex;                                // 378
+    int mSurvivalCount;                                         // 379
     // 大小380个整数, 以下是新增成员!
     NewLawnButton *mBackButton = nullptr;
     WaitForSecondPlayerDialog *mConnectDialog = nullptr;

@@ -245,30 +245,30 @@ public:
 #if PVZ_VERSION == 111
         int (*GamePaidStatus)(SexyCommonApp *self);
 #endif
-        void (*setOfferRes)(SexyCommonApp *self, bool success);                                                                                                                      // 0x268
-        void (*setOfferFullOpenRes)(SexyCommonApp *self, bool success);                                                                                                              // 0x26C
-        void (*setPayItemsRes)(LawnApp *self, bool success, const char *itemId, int value, const char *message);                                                                     // 0x270
-        void (*setQueryBalanceRes)(LawnApp *self, bool success, int balance);                                                                                                        // 0x274
-        void (*adBarClick)(SexyCommonApp *self);                                                                                                                                     // 0x278
-        void (*setLoginRes)(SexyCommonApp *self, bool success, const char *userName);                                                                                                // 0x27C
-        void (*setFullVersion)(SexyCommonApp *self, bool fullVersion);                                                                                                               // 0x280
-        void (*messageBoxRes)(SexyCommonApp *self, int result);                                                                                                                      // 0x284
-        void (*setErrorCode)(LawnApp *self, pvzstl::string errorCode);                                                                                                               // 0x288
-        void (*showRechargeBoard)(LawnApp *self, pvzstl::string message);                                                                                                            // 0x28C
-        void (*DeviceAdded)(Sexy::GamepadApp *self, int *driver);                                                                                                                    // 0x290
-        void (*DeviceRemoved)(Sexy::GamepadApp *self, int *driver);                                                                                                                  // 0x294
-        void (*GamepadConnected)(LawnApp *self);                                                                                                                                     // 0x298
-        void (*GamepadDisconnected)(LawnApp *self);                                                                                                                                  // 0x29C
-        void (*LoadingCompleted)(LawnApp *self);                                                                                                                                     // 0x2A0
-        void (*PlaySampleWithLoopFlag)(LawnApp *self, int soundId, bool flag);                                                                                                       // 0x2A4
-        void (*DrawPost)(LawnApp *self);                                                                                                                                             // 0x2A8
-        void (*OnButtonDown)(LawnApp *self, int button, int playerIndex, unsigned int flags);                                                                                        // 0x2AC
-        void (*ShowResourceError)(LawnApp *self, bool show);                                                                                                                         // 0x2B0
-        int (*GetProfileVersion)(LawnApp *self);                                                                                                                                     // 0x2B4
-        Sexy::PlayerInfo *(*CreatePlayerInfo)(LawnApp *self);                                                                                                                        // 0x2B8
-        void (*NotifyProfileChanged)(LawnApp *self, Sexy::PlayerInfo *playerInfo);                                                                                                   // 0x2BC
-        void (*OnProfileSaveError)(LawnApp *self, Sexy::PlayerInfo *playerInfo);                                                                                                     // 0x2C0
-        void (*onPay)(LawnApp *self, int result);                                                                                                                                    // 0x2C4
+        void (*setOfferRes)(SexyCommonApp *self, bool success);                                                  // 0x268
+        void (*setOfferFullOpenRes)(SexyCommonApp *self, bool success);                                          // 0x26C
+        void (*setPayItemsRes)(LawnApp *self, bool success, const char *itemId, int value, const char *message); // 0x270
+        void (*setQueryBalanceRes)(LawnApp *self, bool success, int balance);                                    // 0x274
+        void (*adBarClick)(SexyCommonApp *self);                                                                 // 0x278
+        void (*setLoginRes)(SexyCommonApp *self, bool success, const char *userName);                            // 0x27C
+        void (*setFullVersion)(SexyCommonApp *self, bool fullVersion);                                           // 0x280
+        void (*messageBoxRes)(SexyCommonApp *self, int result);                                                  // 0x284
+        void (*setErrorCode)(LawnApp *self, pvzstl::string errorCode);                                           // 0x288
+        void (*showRechargeBoard)(LawnApp *self, pvzstl::string message);                                        // 0x28C
+        void (*DeviceAdded)(Sexy::GamepadApp *self, int *driver);                                                // 0x290
+        void (*DeviceRemoved)(Sexy::GamepadApp *self, int *driver);                                              // 0x294
+        void (*GamepadConnected)(LawnApp *self);                                                                 // 0x298
+        void (*GamepadDisconnected)(LawnApp *self);                                                              // 0x29C
+        void (*LoadingCompleted)(LawnApp *self);                                                                 // 0x2A0
+        void (*PlaySampleWithLoopFlag)(LawnApp *self, int soundId, bool flag);                                   // 0x2A4
+        void (*DrawPost)(LawnApp *self);                                                                         // 0x2A8
+        void (*OnButtonDown)(LawnApp *self, int button, int playerIndex, unsigned int flags);                    // 0x2AC
+        void (*ShowResourceError)(LawnApp *self, bool show);                                                     // 0x2B0
+        int (*GetProfileVersion)(LawnApp *self);                                                                 // 0x2B4
+        Sexy::PlayerInfo *(*CreatePlayerInfo)(LawnApp *self);                                                    // 0x2B8
+        void (*NotifyProfileChanged)(LawnApp *self, Sexy::PlayerInfo *playerInfo);                               // 0x2BC
+        void (*OnProfileSaveError)(LawnApp *self, Sexy::PlayerInfo *playerInfo);                                 // 0x2C0
+        void (*onPay)(LawnApp *self, int result);                                                                // 0x2C4
     };
 
 public:
