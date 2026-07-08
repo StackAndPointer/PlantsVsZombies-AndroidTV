@@ -44,7 +44,7 @@ public:
     bool mFailed;
     bool mReading;
 
-    ~SaveGameContext() = default;
+    SaveGameContext() = default;
 
     void SyncInt(int &theInt) {
         reinterpret_cast<void (*)(SaveGameContext *, int &)>(SaveGameContext_SyncIntAddr)(this, theInt);
