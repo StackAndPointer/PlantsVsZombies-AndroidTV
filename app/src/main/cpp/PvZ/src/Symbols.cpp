@@ -229,6 +229,7 @@ bool LoadGameMain() {
     SyncReanimationAddr = libGameMain.GetSymbol("_Z15SyncReanimationP5BoardP11ReanimationP15SaveGameContext");
     LawnSaveGameAddr = libGameMain.GetSymbol("_Z12LawnSaveGameP5BoardRKSs");
     LawnLoadGameAddr = libGameMain.GetSymbol("_Z12LawnLoadGameP5BoardP15SaveGameContext");
+    SyncDataArray_ProjectileAddr = libGameMain.GetSymbol("_Z13SyncDataArrayI10ProjectileEvR9DataArrayIT_EP15SaveGameContext");
 
 
     CutScene_CutSceneAddr = libGameMain.GetSymbol("_ZN8CutSceneC2Ev");
@@ -1408,6 +1409,7 @@ bool LoadGameMain() {
     MakeNewButtonAddr = libGameMain.GetSymbol("_Z13MakeNewButtoniPN4Sexy14ButtonListenerEPNS_6WidgetERKSsPNS_4FontEPNS_5ImageES9_S9_");
     MakeNewCheckboxAddr = libGameMain.GetSymbol("_Z15MakeNewCheckboxiPN4Sexy16CheckboxListenerEPNS_6WidgetEb");
     SaveGameContext_SyncIntAddr = libGameMain.GetSymbol("_ZN15SaveGameContext7SyncIntERi");
+    SaveGameContext_SyncUintAddr = libGameMain.GetSymbol("_ZN15SaveGameContext8SyncUintERj");
     SaveGameContext_SyncBytesAddr = libGameMain.GetSymbol("_ZN15SaveGameContext9SyncBytesEPvi");
     SaveGameContext_SyncReanimationDefAddr = libGameMain.GetSymbol("_ZN15SaveGameContext18SyncReanimationDefERP20ReanimatorDefinition");
     EffectSystem_EffectSystemInitializeAddr = libGameMain.GetSymbol("_ZN12EffectSystem22EffectSystemInitializeEv");

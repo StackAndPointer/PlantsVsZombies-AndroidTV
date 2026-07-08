@@ -231,6 +231,7 @@ inline void *FixBoardAfterLoadAddr;
 inline void *SyncReanimationAddr;
 inline void *LawnSaveGameAddr;
 inline void *LawnLoadGameAddr;
+inline void *SyncDataArray_ProjectileAddr;
 
 inline void *CutScene_UpdateAddr;
 inline void *CutScene_CutSceneAddr;
@@ -1416,6 +1417,7 @@ inline void *Mailbox_GetMessageByIndexAddr;
 inline void *Mailbox_UpdateAddr;
 inline void *Mailbox_RefreshMessagesAddr;
 inline void *SaveGameContext_SyncIntAddr;
+inline void *SaveGameContext_SyncUintAddr;
 inline void *SaveGameContext_SyncBytesAddr;
 inline void *SaveGameContext_SyncReanimationDefAddr;
 inline void *EffectSystem_EffectSystemInitializeAddr;

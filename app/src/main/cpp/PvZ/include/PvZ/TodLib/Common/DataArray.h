@@ -21,6 +21,9 @@
 #define PVZ_SEXYAPPFRAMEWORK_TODLIB_COMMON_DATA_ARRAY_H
 
 #include "Homura/Assert.h"
+#include "PvZ/Lawn/Board/Projectile.h"
+#include "PvZ/Lawn/Common/SyncObject.h"
+#include "PvZ/Lawn/System/SaveGame.h"
 
 #include <cstdint>
 #include <cstring>
@@ -153,6 +156,39 @@ public:
 
         return &mBlock[uint16_t(theId)].mItem;
     }
+
+    static void SyncDataArray(DataArray<T> &theArray, SaveGameContext *theContext) noexcept {
+        //        static_assert(std::is_base_of<SyncObject, T>::value, "SyncDataArray<T>: T must inherit from SyncObject");
+
+        theContext->SyncUint(theArray.mFreeListHead);
+        theContext->SyncUint(theArray.mMaxUsedCount);
+        theContext->SyncUint(theArray.mSize);
+
+        for (uint32_t i = 0; i < theArray.mMaxUsedCount; i++) {
+            typename DataArray<T>::DataArrayItem *anItem = &theArray.mBlock[i];
+
+            theContext->SyncBytes(&anItem->mID, sizeof(anItem->mID));
+
+            bool itemExists = (anItem->mID >> 16) != 0;
+            if (!itemExists) {
+                continue;
+            }
+
+            if (theContext->mReading) {
+                new (&anItem->mItem) T();
+            }
+
+            std::vector<SyncBlockInfo> &aSyncBlocks = *static_cast<SyncObject *>(&anItem->mItem)->mSyncBlocks;
+
+            for (auto &aBlock : aSyncBlocks) {
+                theContext->SyncBytes(aBlock.mAddress, aBlock.mSize);
+            }
+        }
+    }
 };
+
+inline void SyncDataArray_Projectile(DataArray<Projectile> &theArray, SaveGameContext *theContext) {
+    DataArray<Projectile>::SyncDataArray(theArray, theContext);
+}
 
 #endif // PVZ_SEXYAPPFRAMEWORK_TODLIB_COMMON_DATA_ARRAY_H

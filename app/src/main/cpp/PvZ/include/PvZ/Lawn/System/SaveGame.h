@@ -50,6 +50,9 @@ public:
     void SyncBytes(void *theDest, int theReadSize) {
         reinterpret_cast<void (*)(SaveGameContext *, void *, int)>(SaveGameContext_SyncBytesAddr)(this, theDest, theReadSize);
     }
+    void SyncUint(unsigned int &theUint) {
+        reinterpret_cast<void (*)(SaveGameContext *, unsigned int &)>(SaveGameContext_SyncUintAddr)(this, theUint);
+    }
 
     void SyncReanimationDef(ReanimatorDefinition *&theDefinition);
 };
