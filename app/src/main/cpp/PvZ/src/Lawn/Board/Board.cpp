@@ -1250,7 +1250,7 @@ bool Board::KeyDown(KeyCode theKey) {
 void Board::GameButtonUp(GamepadButton theButton, int thePlayerIndex, unsigned int theFlags) {
     // 作弊菜单已由修改器实现，故移除实现呼出 DoCheatCodeDialog 的部分
     for (GamepadControls *controls : mGamepadControls) {
-        if (controls != nullptr && controls->mPlayerIndex1 == thePlayerIndex) {
+        if (controls != nullptr && controls->mPlayerIndex == thePlayerIndex) {
             controls->OnButtonUp(theButton, thePlayerIndex, theFlags);
         }
     }
@@ -5342,7 +5342,7 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
                 } else if ((aGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && mChallenge->mChallengeState == ChallengeState::STATECHALLENGE_NORMAL
                             && mApp->mGameScene == GameScenes::SCENE_PLAYING)
                            || aGameMode == GameMode::GAMEMODE_MP_VS) {
-                    mGamepadControls[0]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[0]->mPlayerIndex1, 0);
+                    mGamepadControls[0]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[0]->mPlayerIndex, 0);
                 } else {
                     if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) { // 重型武器关卡需要设置为状态6才能种植猫尾草
                         mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_SELECT_SEED;
@@ -5381,7 +5381,7 @@ void Board::__MouseUp(int x, int y, int theClickCount) {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
                 } else if ((aGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && mChallengeState == ChallengeState::STATECHALLENGE_NORMAL && mApp->mGameScene == GameScenes::SCENE_PLAYING)
                            || aGameMode == GameMode::GAMEMODE_MP_VS) {
-                    mGamepadControls[1]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[1]->mPlayerIndex1, 0);
+                    mGamepadControls[1]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[1]->mPlayerIndex, 0);
                 } else {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                 }
@@ -6004,7 +6004,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                     mGamepadControls[0]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
                 } else if ((aGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && aChallengeState == ChallengeState::STATECHALLENGE_NORMAL && aGameScene == GameScenes::SCENE_PLAYING)
                            || aGameMode == GameMode::GAMEMODE_MP_VS) {
-                    mGamepadControls[0]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[0]->mPlayerIndex1, 0);
+                    mGamepadControls[0]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[0]->mPlayerIndex, 0);
                 } else {
                     if (aGameMode == GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON) { // 重型武器关卡需要设置为状态6才能种植猫尾草
                         mGamepadControls[0]->mGamepadState = BaseGamepadControls::MOVEMENT_STATE_SELECT_SEED;
@@ -6032,7 +6032,7 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_ESCAPE, 1096);
                 } else if ((aGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND && aChallengeState == ChallengeState::STATECHALLENGE_NORMAL && aGameScene == GameScenes::SCENE_PLAYING)
                            || aGameMode == GameMode::GAMEMODE_MP_VS) {
-                    mGamepadControls[1]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[1]->mPlayerIndex1, 0);
+                    mGamepadControls[1]->OnButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, mGamepadControls[1]->mPlayerIndex, 0);
                 } else {
                     mGamepadControls[1]->OnKeyDown(KeyCode::KEYCODE_RETURN, 1096);
                 }
@@ -7107,9 +7107,9 @@ Zombie *Board::GetBossZombie() {
 
 GamepadControls *Board::GetGamepadControlsByPlayerIndex(int thePlayerIndex) {
     GamepadControls *aGamepad = mGamepadControls[0];
-    if (aGamepad->mPlayerIndex1 != thePlayerIndex) {
+    if (aGamepad->mPlayerIndex != thePlayerIndex) {
         aGamepad = mGamepadControls[1];
-        if (aGamepad->mPlayerIndex1 != thePlayerIndex)
+        if (aGamepad->mPlayerIndex != thePlayerIndex)
             return nullptr;
     }
     return aGamepad;

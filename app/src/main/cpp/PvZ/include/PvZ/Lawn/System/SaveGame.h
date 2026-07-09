@@ -97,6 +97,4 @@ inline void GetSavedGameName(const pvzstl::string &name, GameMode theGameMode, i
     reinterpret_cast<void (*)(const pvzstl::string &, GameMode, int, int)>(GetSavedGameNameAddr)(name, theGameMode, theProfileId, theId);
 }
 
-inline void (*old_FixBoardAfterLoad)(Board *board);
-
 #endif // PVZ_LAWN_SYSTEM_SAVE_GAME_H

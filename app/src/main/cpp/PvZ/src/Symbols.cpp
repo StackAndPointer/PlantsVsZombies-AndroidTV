@@ -578,6 +578,7 @@ bool LoadGameMain() {
     Zombie_GetDrawPosAddr = libGameMain.GetSymbol("_ZN6Zombie10GetDrawPosER18ZombieDrawPosition");
     Zombie_ZombieNotWalkingAddr = libGameMain.GetSymbol("_ZN6Zombie16ZombieNotWalkingEv");
     Zombie_TrySpawnLevelAwardAddr = libGameMain.GetSymbol("_ZN6Zombie18TrySpawnLevelAwardEv");
+    Zombie_StartZombieSoundAddr = libGameMain.GetSymbol("_ZN6Zombie16StartZombieSoundEv");
 
 
     SeedChooserScreen_UpdateAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen6UpdateEv");
@@ -1460,6 +1461,7 @@ bool LoadGameMain() {
     StringIntMap_M_eraseAddr = libGameMain.GetSymbol("_ZNSt8_Rb_treeISsSt4pairIKSsiESt10_Select1stIS2_ESt4lessISsESaIS2_EE8_M_eraseEPSt13_Rb_tree_nodeIS2_E");
     StringSet_M_eraseAddr = libGameMain.GetSymbol("_ZNSt8_Rb_treeISsSsSt9_IdentityISsESt4lessISsESaISsEE8_M_eraseEPSt13_Rb_tree_nodeISsE");
     PlantPtrSet_M_eraseAddr = libGameMain.GetSymbol("_ZNSt8_Rb_treeIP5PlantS1_St9_IdentityIS1_ESt4lessIS1_ESaIS1_EE8_M_eraseEPSt13_Rb_tree_nodeIS1_E");
+    PlantPtrSet_M_insert_uniqueAddr = libGameMain.GetSymbol("_ZNSt8_Rb_treeIP5PlantS1_St9_IdentityIS1_ESt4lessIS1_ESaIS1_EE16_M_insert_uniqueERKS1_");
 
     return true;
 }

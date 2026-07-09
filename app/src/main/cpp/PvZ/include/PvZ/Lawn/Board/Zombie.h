@@ -340,6 +340,9 @@ public:
     void TrySpawnLevelAward() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_TrySpawnLevelAwardAddr)(this);
     }
+    void StartZombieSound() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_StartZombieSoundAddr)(this);
+    }
 
 
     Zombie() {

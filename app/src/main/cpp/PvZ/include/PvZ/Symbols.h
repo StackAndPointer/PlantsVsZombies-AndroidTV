@@ -579,6 +579,7 @@ inline void *Zombie_UpdateLadderAddr;
 inline void *Zombie_GetDrawPosAddr;
 inline void *Zombie_ZombieNotWalkingAddr;
 inline void *Zombie_TrySpawnLevelAwardAddr;
+inline void *Zombie_StartZombieSoundAddr;
 
 
 inline void *SeedChooserScreen_UpdateAddr;
@@ -2252,6 +2253,7 @@ inline void *vTableForSexy_SexyAppBaseAddr;
 inline void *StringIntMap_M_eraseAddr;
 inline void *StringSet_M_eraseAddr;
 inline void *PlantPtrSet_M_eraseAddr;
+inline void *PlantPtrSet_M_insert_uniqueAddr;
 
 
 inline void *Native_AudioOutput_setupAddr;

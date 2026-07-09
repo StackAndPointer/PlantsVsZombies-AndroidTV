@@ -197,7 +197,7 @@ void InitHookFunction() {
     homura::HookFunc(Board_IsZombieTypePoolOnlyAddr, &Board::IsZombieTypePoolOnly, nullptr);
 
 
-    homura::HookFunc(FixBoardAfterLoadAddr, &FixBoardAfterLoad, &old_FixBoardAfterLoad);
+    homura::HookFunc(FixBoardAfterLoadAddr, &FixBoardAfterLoad, nullptr);
     homura::HookFunc(LawnSaveGameAddr, &LawnSaveGame, nullptr);
     homura::HookFunc(LawnLoadGameAddr, &LawnLoadGame, nullptr);
     homura::HookFunc(SyncDataArray_ProjectileAddr, &SyncDataArray<Projectile>, nullptr);

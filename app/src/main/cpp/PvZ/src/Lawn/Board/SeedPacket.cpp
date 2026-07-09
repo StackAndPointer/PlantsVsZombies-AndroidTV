@@ -101,7 +101,7 @@ void SeedPacket::UpdateSelected() {
         GamepadControls *theGamepad = GetPlayerIndex() ? mBoard->mGamepadControls[1] : mBoard->mGamepadControls[0];
 
         mSelected = theGamepad->mSelectedSeedIndex == mIndex;
-        mSelectedBy2P = theGamepad->mPlayerIndex1 == 1 && theGamepad->mSelectedSeedIndex == mIndex;
+        mSelectedBy2P = theGamepad->mPlayerIndex == 1 && theGamepad->mSelectedSeedIndex == mIndex;
 
 
         return;

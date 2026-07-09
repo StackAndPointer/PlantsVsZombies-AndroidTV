@@ -109,7 +109,7 @@ public:
     float mInputLeftStickY;        // 0x088, 原 unk2[1]
     float mInputRightStickX;       // 0x08C, 原 unk2[2]
     float mInputRightStickY;       // 0x090, 原 unk2[3]
-    int mPlayerIndex1;             // 37，只是个index，GamepadControls[0]->mPlayerIndex1 == 0，GamepadControls[1]->mPlayerIndex1 == 1。用于找到对应index的CursorObject和CursorPreview
+    int mPlayerIndex;              // 37，只是个index，GamepadControls[0]->mPlayerIndex == 0，GamepadControls[1]->mPlayerIndex == 1。用于找到对应index的CursorObject和CursorPreview
     int mGamepadIndex;             // 38，与mPlayerIndex完全相等，没有区别
     float mCursorPositionYJitter;  // 39
     float mCursorJitterAnimPhase;  // 40

@@ -113,9 +113,6 @@ struct BungeeDropGrid {
 };
 
 using PlantRbTree = pvzstl::set<Plant *>;
-
-using SyncBlockInfoVector = std::vector<SyncBlockInfo>;
-
 using StringIntMap = pvzstl::map<pvzstl::string, int>;
 using StringSetLayout = pvzstl::set<pvzstl::string>;
 

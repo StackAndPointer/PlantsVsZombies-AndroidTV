@@ -180,8 +180,8 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
                 }
             } else if (gameMode != GameMode::GAMEMODE_CHALLENGE_HEAVY_WEAPON && gamepadControls->mGamepadState != BaseGamepadControls::MOVEMENT_STATE_DIG_HOLD
                        && coin->mType == CoinType::COIN_USABLE_SEED_PACKET) {
-                gamepadControls->mBoard->RefreshSeedPacketFromCursor(gamepadControls->mPlayerIndex1);
-                coin->GamepadCursorOver(gamepadControls->mPlayerIndex1);
+                gamepadControls->mBoard->RefreshSeedPacketFromCursor(gamepadControls->mPlayerIndex);
+                coin->GamepadCursorOver(gamepadControls->mPlayerIndex);
             }
         }
 
@@ -253,12 +253,12 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
             if (dx * dx + dy * dy >= 40000.0f) {
                 continue;
             }
-            coin->GamepadCursorOver(gamepadControls->mPlayerIndex1);
+            coin->GamepadCursorOver(gamepadControls->mPlayerIndex);
         }
     }
 
-    CursorPreview *cursorPreview = gamepadControls->mBoard->mCursorPreview[gamepadControls->mPlayerIndex1];
-    CursorObject *cursorObject = gamepadControls->mBoard->mCursorObject[gamepadControls->mPlayerIndex1];
+    CursorPreview *cursorPreview = gamepadControls->mBoard->mCursorPreview[gamepadControls->mPlayerIndex];
+    CursorObject *cursorObject = gamepadControls->mBoard->mCursorObject[gamepadControls->mPlayerIndex];
     if (cursorObject->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
         cursorPreview->mVisible = true;
         gamepadControls->mCanPickUp = true;
@@ -380,7 +380,7 @@ void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) 
         uint32_t cobPlantId = static_cast<uint32_t>(gamepadControls->mCobCannonPlantIndexInList);
         if (cobPlantId == 0 || gamepadControls->mBoard->mPlants.DataArrayTryToGet(cobPlantId) == nullptr) {
             gamepadControls->mIsCobCannonSelected = false;
-            gamepadControls->mBoard->ClearCursor(gamepadControls->mPlayerIndex1);
+            gamepadControls->mBoard->ClearCursor(gamepadControls->mPlayerIndex);
             gamepadControls->mBoard->mCobCannonCursorDelayCounter = 0;
             gamepadControls->mCobCannonAnimCounter = 0;
             gamepadControls->mCobCannonPlantIndexInList = 0;
@@ -408,7 +408,7 @@ void GamepadControls::_constructor(Board *theBoard, int thePlayerIndex1, int the
 
 void GamepadControls::pickUpCobCannon(Plant *cobCannon) {
     Plant *otherSelectedCob = nullptr;
-    GamepadControls *otherGamepadControls = (mPlayerIndex1 != 0) ? mBoard->mGamepadControls[0] : mBoard->mGamepadControls[1];
+    GamepadControls *otherGamepadControls = (mPlayerIndex != 0) ? mBoard->mGamepadControls[0] : mBoard->mGamepadControls[1];
 
     if (otherGamepadControls != nullptr && otherGamepadControls->mGamepadIndex != -1 && otherGamepadControls->mIsCobCannonSelected) {
         const uint32_t otherCobPlantId = static_cast<uint32_t>(otherGamepadControls->mCobCannonPlantIndexInList);
@@ -419,7 +419,7 @@ void GamepadControls::pickUpCobCannon(Plant *cobCannon) {
 
     if (cobCannon != otherSelectedCob && cobCannon->mState == PlantState::STATE_COBCANNON_READY && mGamepadState != MOVEMENT_STATE_DIG_HOLD) {
         if (!mIsCobCannonSelected) {
-            mBoard->ClearCursor(mPlayerIndex1);
+            mBoard->ClearCursor(mPlayerIndex);
             mBoard->mCobCannonCursorDelayCounter = 30;
             mBoard->mCobCannonMouseX = static_cast<int>(mCursorPositionX);
             mBoard->mCobCannonMouseY = static_cast<int>(mCursorPositionY);
@@ -436,7 +436,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
 
     if (mGamepadIndex != -1) {
         LawnApp *anApp = mApp;
-        bool is2P = mPlayerIndex1 == 1;
+        bool is2P = mPlayerIndex == 1;
         CursorObject *aCursorObject = is2P ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
 
 
@@ -511,7 +511,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
     if (gTcpConnected || gTcpClientSocket >= 0 || gIsReplayMode) {
         const char *hostName = gIsReplayMode ? ((gReplayHostName[0] != '\0') ? gReplayHostName : gServerHostName) : ((gServerHostName[0] != '\0') ? gServerHostName : mBoard->mApp->mPlayerInfo->mName);
         const char *guestName = gIsReplayMode ? ((gReplayGuestName[0] != '\0') ? gReplayGuestName : gSecondPlayerName) : ((gSecondPlayerName[0] != '\0') ? gSecondPlayerName : "Guest");
-        if (mPlayerIndex1 == 0 && guestName[0] != '\0') {
+        if (mPlayerIndex == 0 && guestName[0] != '\0') {
             Image *tmp1 = Sexy::IMAGE_CURSOR_P1_TEXT;
             Sexy::IMAGE_CURSOR_P1_TEXT = IMAGE_BLANK;
             old_GamepadControls_Draw(this, g);
@@ -521,7 +521,7 @@ void GamepadControls::Draw(Sexy::Graphics *g) {
             Sexy::IMAGE_CURSOR_P1_TEXT = tmp1;
             return;
         }
-        if (mPlayerIndex1 == 1 && guestName[0] != '\0') {
+        if (mPlayerIndex == 1 && guestName[0] != '\0') {
             Image *tmp = Sexy::IMAGE_CURSOR_P2_TEXT;
             Sexy::IMAGE_CURSOR_P2_TEXT = IMAGE_BLANK;
             old_GamepadControls_Draw(this, g);
@@ -544,7 +544,7 @@ void GamepadControls::Update(float a2) {
     // 键盘双人模式 平滑移动光标
     const bool readOnlyReplayOrSpectate = (gIsReplayMode || gIsServerModeSpectator);
     if (isKeyboardTwoPlayerMode && !readOnlyReplayOrSpectate) {
-        int aGamepadIndex = mApp->PlayerToGamepadIndex(mPlayerIndex1);
+        int aGamepadIndex = mApp->PlayerToGamepadIndex(mPlayerIndex);
         if (aGamepadIndex == 0) {
             mGamepadVelocityLeftX = gGamepadP1VelX;
             mGamepadVelocityLeftY = gGamepadP1VelY;
@@ -634,7 +634,7 @@ void GamepadControls::UpdatePreviewReanim() {
     // TV后续版本仅在PreviewingSeedType切换时进行一次Reanimation::Update，而TV 1.0.1则是无时无刻进行Reanimation::Update。我们恢复1.0.1的逻辑即可。
 
     LawnApp *anApp = mApp;
-    CursorObject *aCursorObject = mPlayerIndex1 ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
+    CursorObject *aCursorObject = mPlayerIndex ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
     SeedBank *aSeedBank = GetSeedBank();
 
     if (!dynamicPreview) { // 如果没开启动态预览，则开启砸罐子无尽和锤僵尸关卡的预览，并执行旧游戏函数。
@@ -1016,7 +1016,7 @@ void GamepadControls::DrawPreview(Sexy::Graphics *g) {
     LawnApp *anApp = mApp;
     GameMode mGameMode = anApp->mGameMode;
     if (mGameMode == GameMode::GAMEMODE_CHALLENGE_RAINING_SEEDS) { // 为种子雨添加种植预览
-        CursorObject *cursorObject = mPlayerIndex1 ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
+        CursorObject *cursorObject = mPlayerIndex ? mBoard->mCursorObject[1] : mBoard->mCursorObject[0];
         if (cursorObject->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
             mGamepadState = MOVEMENT_STATE_PLANT_CURSOR;
             old_GamepadControls_DrawPreview(this, g);
@@ -1219,7 +1219,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 }
 
                 aSeedPacket->Deactivate();
-                aSeedPacket->WasPlanted(mPlayerIndex1);
+                aSeedPacket->WasPlanted(mPlayerIndex);
                 mGamepadState = MOVEMENT_STATE_NORMAL;
                 return;
             }
@@ -1231,7 +1231,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
                 aGraveStone->mIsSpecialGrave = false;
                 aGraveStone->mVSGraveStoneHealth = 350;
                 aSeedPacket->Deactivate();
-                aSeedPacket->WasPlanted(mPlayerIndex1);
+                aSeedPacket->WasPlanted(mPlayerIndex);
                 mGamepadState = MOVEMENT_STATE_NORMAL;
                 return;
             }
@@ -1293,9 +1293,9 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
         }
 
         if (aPacketType < SeedType::NUM_SEED_TYPES || (aPacketType >= SeedType::SEED_ICEBERG_LETTUCE && aPacketType < SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED)) {
-            //            LOG_DEBUG("before MouseDownWithPlant {}", mPlayerIndex1);
-            mBoard->MouseDownWithPlant(mCursorPositionX, mCursorPositionY, 1, mPlayerIndex1);
-            mBoard->ClearCursor(mPlayerIndex1);
+            //            LOG_DEBUG("before MouseDownWithPlant {}", mPlayerIndex);
+            mBoard->MouseDownWithPlant(mCursorPositionX, mCursorPositionY, 1, mPlayerIndex);
+            mBoard->ClearCursor(mPlayerIndex);
             mGamepadState = MOVEMENT_STATE_NORMAL;
             return;
         }
@@ -1311,7 +1311,7 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             }
             mBoard->TakeSunMoney(aPacketCost, 0);
             aSeedPacket->Deactivate();
-            aSeedPacket->WasPlanted(mPlayerIndex1);
+            aSeedPacket->WasPlanted(mPlayerIndex);
         }
     }
 }

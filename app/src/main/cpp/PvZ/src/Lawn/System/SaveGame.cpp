@@ -20,8 +20,12 @@
 #include "PvZ/Lawn/System/SaveGame.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
+#include "PvZ/Lawn/Board/Challenge.h"
+#include "PvZ/Lawn/Board/CursorObject.h"
+#include "PvZ/Lawn/Board/MessageWidget.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/System/Music.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
 
 bool LawnSaveGame_Original(Board *theBoard, const pvzstl::string &theFilePath) {
@@ -135,8 +139,100 @@ bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext) {
 }
 
 void FixBoardAfterLoad(Board *theBoard) {
+    LawnApp *app = theBoard->mApp;
+
+    using RbTreeEraseFn = void (*)(PlantRbTree *theTree, void *theRoot);
+    auto PlantTreeErase = reinterpret_cast<RbTreeEraseFn>(PlantPtrSet_M_eraseAddr);
+    PlantTreeErase(&theBoard->mTangleKelpTree, theBoard->mPumpkinTree.mRoot);
+    PlantTreeErase(&theBoard->mFlowerPotTree, theBoard->mPumpkinTree.mRoot);
+    PlantTreeErase(&theBoard->mPumpkinTree, theBoard->mPumpkinTree.mRoot);
+
+    auto PlantRbTreeInsertUnique = [](PlantRbTree *tree, Plant *plant) {
+        using RbTreeInsertUniqueFn = void (*)(void *retStorage, PlantRbTree *tree, Plant **value);
+        auto RbTreeInsertUnique = reinterpret_cast<RbTreeInsertUniqueFn>(PlantPtrSet_M_insert_uniqueAddr);
+        // IDB 里 v39 是返回对象存储，实际需要至少容纳 pair<iterator,bool>。
+        uintptr_t retStorage[2] = {};
+
+        Plant *value = plant;
+        RbTreeInsertUnique(retStorage, tree, &value);
+    };
+
+    Plant *aPlant = nullptr;
+    while (theBoard->mPlants.IterateNext(aPlant)) {
+        aPlant->mApp = app;
+        aPlant->mBoard = theBoard;
+
+        switch (aPlant->mSeedType) {
+            case SeedType::SEED_TANGLEKELP:
+                PlantRbTreeInsertUnique(&theBoard->mTangleKelpTree, aPlant);
+                break;
+
+            case SeedType::SEED_FLOWERPOT:
+                PlantRbTreeInsertUnique(&theBoard->mFlowerPotTree, aPlant);
+                break;
+
+            case SeedType::SEED_PUMPKINSHELL:
+                PlantRbTreeInsertUnique(&theBoard->mPumpkinTree, aPlant);
+                break;
+
+            default:
+                break;
+        }
+    }
+
+    Zombie *aZombie = nullptr;
+    while (theBoard->mZombies.IterateNext(aZombie)) {
+        aZombie->mApp = app;
+        aZombie->mBoard = theBoard;
+
+        aZombie->StartZombieSound();
+    }
+
+    Projectile *aProjectile = nullptr;
+    while (theBoard->mProjectiles.IterateNext(aProjectile)) {
+        aProjectile->mApp = app;
+        aProjectile->mBoard = theBoard;
+    }
+
+    Coin *aCoin = nullptr;
+    while (theBoard->mCoins.IterateNext(aCoin)) {
+        aCoin->mApp = app;
+        aCoin->mBoard = theBoard;
+    }
+
+    LawnMower *aLawnMower = nullptr;
+    while (theBoard->mLawnMowers.IterateNext(aLawnMower)) {
+        aLawnMower->mApp = app;
+        aLawnMower->mBoard = theBoard;
+    }
+
+    GridItem *aGridItem = nullptr;
+    while (theBoard->mGridItems.IterateNext(aGridItem)) {
+        aGridItem->mApp = app;
+        aGridItem->mBoard = theBoard;
+    }
+
+    theBoard->mAdvice->mApp = app;
+    theBoard->mCursorObject[0]->mApp = app;
+    theBoard->mCursorObject[0]->mBoard = theBoard;
+    theBoard->mCursorPreview[0]->mApp = app;
+    theBoard->mCursorPreview[0]->mBoard = theBoard;
+    SeedBank *aSeedBank = theBoard->mSeedBank[0];
+    aSeedBank->mApp = app;
+    aSeedBank->mBoard = theBoard;
+    for (int i = 0; i < SEEDBANK_MAX; ++i) {
+        SeedPacket &aPacket = aSeedBank->mSeedPackets[i];
+        aPacket.mApp = app;
+        aPacket.mBoard = theBoard;
+        aPacket.mSeedBank = aSeedBank;
+    }
+    theBoard->mChallenge->mApp = app;
+    theBoard->mChallenge->mBoard = theBoard;
+    theBoard->mGamepadControls[0]->mGamepadIndex = app->PlayerToGamepadIndex(theBoard->mGamepadControls[0]->mPlayerIndex);
+    app->mMusic->mApp = app;
+    app->mMusic->mMusicInterface = app->mMusicInterface;
+
     // 修复读档后的各种问题
-    old_FixBoardAfterLoad(theBoard);
     theBoard->FixReanimErrorAfterLoad();
 }
 

@@ -87,6 +87,7 @@ struct SexyParameterStorage32 {
 namespace Sexy {
 class Gamepad;
 class Dialog;
+class MusicInterface;
 struct Event;
 
 class SexyAppBase : public Sexy::ButtonListener, public Sexy::DialogListener, public Sexy::InputConnectListener {
@@ -315,7 +316,7 @@ public:
     void *mResStreamsDriver;                         // 0x2F8
     void *mHttpDriver;                               // 0x2FC
     bool mAlphaDisabled;                             // 0x300
-    void *mMusicInterface;                           // 0x304
+    MusicInterface *mMusicInterface;                 // 0x304
     bool mReadFromRegistry;                          // 0x308
     homura::Storage<pvzstl::string> mRegisterLink;   // 0x30C
     homura::Storage<pvzstl::string> mProductVersion; // 0x310

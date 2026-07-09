@@ -1366,7 +1366,7 @@ void SeedChooserScreen::ClickedSeedInBank(ChosenSeed &theChosenSeed, unsigned in
     int chosenPlayerIndex = 0;
     GamepadControls *controls = mBoard->mGamepadControls[thePlayerIndex];
     if (controls != nullptr) {
-        chosenPlayerIndex = controls->mPlayerIndex1;
+        chosenPlayerIndex = controls->mPlayerIndex;
     }
 
 
@@ -2966,7 +2966,7 @@ void SeedChooserScreen::Draw(Graphics *g) { // Early returns for dialogsif (mApp
         }
 
         // Check if being dragged
-        if (mSeedIndex1 == seedIndex && mBoard->mGamepadControls[0]->mPlayerIndex1 != -1 && aSeedState == SEED_IN_CHOOSER) {
+        if (mSeedIndex1 == seedIndex && mBoard->mGamepadControls[0]->mPlayerIndex != -1 && aSeedState == SEED_IN_CHOOSER) {
             mSeedIndex1 = seedIndex;
         }
 
