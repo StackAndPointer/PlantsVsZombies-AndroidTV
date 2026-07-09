@@ -177,7 +177,7 @@ public:
     Sexy::Color mColorOverride;                 // 22 ~ 25
     ReanimatorTrackInstance *mTrackInstances;   // 26
     int mLoopCount;                             // 27
-    int *mReanimationHolder;                    // 28
+    ReanimationHolder *mReanimationHolder;      // 28
     bool mIsAttachment;                         // 116
     int mRenderOrder;                           // 30
     Sexy::Color mExtraAdditiveColor;            // 31 ~ 34

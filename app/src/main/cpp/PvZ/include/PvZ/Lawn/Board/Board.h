@@ -814,7 +814,6 @@ protected:
 
 int GetRectOverlap(const Sexy::Rect &rect1, const Sexy::Rect &rect2);
 bool GetCircleRectOverlap(int theCircleX, int theCircleY, int theRadius, const Sexy::Rect &theRect);
-void SyncReanimation(Board *a1, Reanimation *a2, int *theSaveGameContext);
 
 const char *GetNameByAchievementId(AchievementType theAchievementId);
 Sexy::Image *GetIconByAchievementId(AchievementType theAchievementId);

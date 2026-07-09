@@ -25,6 +25,7 @@
 #include "PvZ/SexyAppFramework/Buffer.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/DataArray.h"
+#include "PvZ/TodLib/Effect/Reanimator.h"
 
 class Board;
 
@@ -54,6 +55,9 @@ public:
     }
     void SyncUint(unsigned int &theUint) {
         reinterpret_cast<void (*)(SaveGameContext *, unsigned int &)>(SaveGameContext_SyncUintAddr)(this, theUint);
+    }
+    void SyncImage(Sexy::Image *&theImage) {
+        reinterpret_cast<void (*)(SaveGameContext *, Sexy::Image *&)>(SaveGameContext_SyncImageAddr)(this, theImage);
     }
 
     void SyncReanimationDef(ReanimatorDefinition *&theDefinition);
@@ -96,5 +100,6 @@ bool LawnLoadGame(Board *theBoard, SaveGameContext *theContext);
 inline void GetSavedGameName(const pvzstl::string &name, GameMode theGameMode, int theProfileId, int theId) {
     reinterpret_cast<void (*)(const pvzstl::string &, GameMode, int, int)>(GetSavedGameNameAddr)(name, theGameMode, theProfileId, theId);
 }
+void SyncReanimation(Board *theBoard, Reanimation *theReanimation, SaveGameContext &theContext);
 
 #endif // PVZ_LAWN_SYSTEM_SAVE_GAME_H

@@ -1420,6 +1420,7 @@ inline void *Mailbox_RefreshMessagesAddr;
 inline void *SaveGameContext_SyncIntAddr;
 inline void *SaveGameContext_SyncUintAddr;
 inline void *SaveGameContext_SyncBytesAddr;
+inline void *SaveGameContext_SyncImageAddr;
 inline void *SaveGameContext_SyncReanimationDefAddr;
 inline void *EffectSystem_EffectSystemInitializeAddr;
 inline void *EffectSystem_EffectSystemFreeAllAddr;

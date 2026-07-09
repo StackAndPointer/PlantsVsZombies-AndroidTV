@@ -699,6 +699,7 @@ void InitHookFunction() {
     homura::HookFunc(ReanimatorLoadDefinitionsAddr, &ReanimatorLoadDefinitions, &old_ReanimatorLoadDefinitions);
     homura::HookFunc(DefinitionGetCompiledFilePathFromXMLFilePathAddr, &DefinitionGetCompiledFilePathFromXMLFilePath, &old_DefinitionGetCompiledFilePathFromXMLFilePath);
     homura::HookFunc(SaveGameContext_SyncReanimationDefAddr, &SaveGameContext::SyncReanimationDef, nullptr);
+    homura::HookFunc(SyncReanimationAddr, &SyncReanimation, nullptr);
     homura::HookFunc(PoolEffect_PoolEffectDrawAddr, &PoolEffect::PoolEffectDraw, nullptr);
     homura::HookFunc(Sexy_MemoryImage_ClearRectAddr, &Sexy::MemoryImage::ClearRect, nullptr);
 

@@ -1412,6 +1412,7 @@ bool LoadGameMain() {
     SaveGameContext_SyncIntAddr = libGameMain.GetSymbol("_ZN15SaveGameContext7SyncIntERi");
     SaveGameContext_SyncUintAddr = libGameMain.GetSymbol("_ZN15SaveGameContext8SyncUintERj");
     SaveGameContext_SyncBytesAddr = libGameMain.GetSymbol("_ZN15SaveGameContext9SyncBytesEPvi");
+    SaveGameContext_SyncImageAddr = libGameMain.GetSymbol("_ZN15SaveGameContext9SyncImageERPN4Sexy5ImageE");
     SaveGameContext_SyncReanimationDefAddr = libGameMain.GetSymbol("_ZN15SaveGameContext18SyncReanimationDefERP20ReanimatorDefinition");
     EffectSystem_EffectSystemInitializeAddr = libGameMain.GetSymbol("_ZN12EffectSystem22EffectSystemInitializeEv");
     EffectSystem_EffectSystemFreeAllAddr = libGameMain.GetSymbol("_ZN12EffectSystem19EffectSystemFreeAllEv");

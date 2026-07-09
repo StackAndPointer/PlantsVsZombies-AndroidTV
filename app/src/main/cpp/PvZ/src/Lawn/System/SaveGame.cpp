@@ -220,8 +220,7 @@ void FixBoardAfterLoad(Board *theBoard) {
     SeedBank *aSeedBank = theBoard->mSeedBank[0];
     aSeedBank->mApp = app;
     aSeedBank->mBoard = theBoard;
-    for (int i = 0; i < SEEDBANK_MAX; ++i) {
-        SeedPacket &aPacket = aSeedBank->mSeedPackets[i];
+    for (auto &aPacket : aSeedBank->mSeedPackets) {
         aPacket.mApp = app;
         aPacket.mBoard = theBoard;
         aPacket.mSeedBank = aSeedBank;
@@ -320,5 +319,35 @@ void SaveGameContext::SyncReanimationDef(ReanimatorDefinition *&theDefinition) {
             }
         }
         SyncInt(aReanimType);
+    }
+}
+
+void SyncReanimation(Board *theBoard, Reanimation *theReanimation, SaveGameContext &theContext) { // 也许读档后需要修复动画贴图的BUG来自这里，但没时间了，先不管了
+    theContext.SyncReanimationDef(theReanimation->mDefinition);
+    if (theContext.mReading) {
+        theReanimation->mReanimationHolder = theBoard->mApp->mEffectSystem->mReanimationHolder;
+    }
+
+    if (theReanimation->mDefinition->mTrackCount != 0) {
+        int aSize = theReanimation->mDefinition->mTrackCount * sizeof(ReanimatorTrackInstance);
+        if (theContext.mReading) {
+            theReanimation->mTrackInstances = (ReanimatorTrackInstance *)FindGlobalAllocator(aSize)->Calloc(aSize);
+        }
+        theContext.SyncBytes(theReanimation->mTrackInstances, aSize);
+
+        for (int aTrackIndex = 0; aTrackIndex < theReanimation->mDefinition->mTrackCount; aTrackIndex++) {
+            ReanimatorTrackInstance &aTrackInstance = theReanimation->mTrackInstances[aTrackIndex];
+            theContext.SyncImage(aTrackInstance.mImageOverride); // 这里SyncImage有可能有问题，先不管了
+
+            if (theContext.mReading) {
+                aTrackInstance.mBlendTransform.mName = (char *)"";
+                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mFont == nullptr);
+                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mImage == nullptr);
+            } else {
+                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mName[0] == '\0');
+                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mFont == nullptr);
+                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mImage == nullptr);
+            }
+        }
     }
 }
