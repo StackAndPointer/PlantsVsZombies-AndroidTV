@@ -27,6 +27,7 @@
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/System/ReanimationLawn.h"
+#include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
@@ -42,6 +43,10 @@ using namespace Sexy;
 
 void GridItem::_constructor() {
     old_GridItem_GridItem(this);
+
+    if (mGridItemType == GridItemType::GRIDITEM_GRAVESTONE && (VSSetupAddonWidget::msExtraPacketMode || Challenge::msVSShuffleMode)) {
+        mLaunchRate = 2500; // 额外卡槽和刷牌模式普通墓碑产能上调，生产间隔由30秒下调至25秒，与向日葵持平
+    }
 }
 
 void GridItem::GridItemDie() {

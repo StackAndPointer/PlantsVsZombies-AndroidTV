@@ -1266,6 +1266,13 @@ void Zombie::UpdateZombieJackInTheBox() {
             if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
                 if (mApp->IsVSMode()) {
                     if (VSSetupAddonWidget::msBalancePatchMode) {
+                        if (mIsEating) {
+                            Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
+                            if (aPlant != nullptr
+                                && !(aPlant->mSeedType == SeedType::SEED_WALLNUT || aPlant->mSeedType == SeedType::SEED_TALLNUT || aPlant->mSeedType == SeedType::SEED_PUMPKINSHELL)) {
+                                ++mPhaseCounter;
+                            }
+                        }
                         if (mPhaseCounter <= 0) {
                             if (mMindControlled) {
                                 doPop = true;
