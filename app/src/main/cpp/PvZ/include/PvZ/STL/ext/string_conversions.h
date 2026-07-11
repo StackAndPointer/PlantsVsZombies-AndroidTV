@@ -31,7 +31,7 @@
 
 #include <limits>
 
-namespace pvzstl::details {
+namespace pvzcxx {
 
 // Helper for the to_string / to_wstring functions.
 template <typename String, std::size_t N, typename CharT = typename String::value_type>
@@ -44,6 +44,6 @@ template <typename String, std::size_t N, typename CharT = typename String::valu
     return String(buf, len);
 }
 
-} // namespace pvzstl::details
+} // namespace pvzcxx
 
 #endif // PVZ_STL_EXT_STRING_CONVERSIONS_H

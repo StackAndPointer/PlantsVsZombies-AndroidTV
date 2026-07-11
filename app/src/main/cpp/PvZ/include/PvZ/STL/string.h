@@ -24,7 +24,7 @@
 #include "PvZ/MagicNumbers.h"
 #endif
 
-#include "ext/string_conversions.h"
+#include "PvZ/STL/ext/string_conversions.h"
 
 #include <cassert>
 
@@ -1183,75 +1183,75 @@ using u16string = basic_string<char16_t>;
 #endif
 
 [[nodiscard]] inline string to_string(int val) {
-    return details::to_xstring<string, 4 * sizeof(int)>(std::vsnprintf, "%d", val);
+    return pvzcxx::to_xstring<string, 4 * sizeof(int)>(std::vsnprintf, "%d", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned val) {
-    return details::to_xstring<string, 4 * sizeof(unsigned)>(std::vsnprintf, "%u", val);
+    return pvzcxx::to_xstring<string, 4 * sizeof(unsigned)>(std::vsnprintf, "%u", val);
 }
 
 [[nodiscard]] inline string to_string(long val) {
-    return details::to_xstring<string, 4 * sizeof(long)>(std::vsnprintf, "%ld", val);
+    return pvzcxx::to_xstring<string, 4 * sizeof(long)>(std::vsnprintf, "%ld", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned long val) {
-    return details::to_xstring<string, 4 * sizeof(unsigned long)>(std::vsnprintf, "%lu", val);
+    return pvzcxx::to_xstring<string, 4 * sizeof(unsigned long)>(std::vsnprintf, "%lu", val);
 }
 
 [[nodiscard]] inline string to_string(long long val) {
-    return details::to_xstring<string, 4 * sizeof(long long)>(std::vsnprintf, "%lld", val);
+    return pvzcxx::to_xstring<string, 4 * sizeof(long long)>(std::vsnprintf, "%lld", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned long long val) {
-    return details::to_xstring<string, 4 * sizeof(unsigned long long)>(std::vsnprintf, "%llu", val);
+    return pvzcxx::to_xstring<string, 4 * sizeof(unsigned long long)>(std::vsnprintf, "%llu", val);
 }
 
 [[nodiscard]] inline string to_string(float val) {
-    return details::to_xstring<string, std::numeric_limits<float>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
+    return pvzcxx::to_xstring<string, std::numeric_limits<float>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
 }
 
 [[nodiscard]] inline string to_string(double val) {
-    return details::to_xstring<string, std::numeric_limits<double>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
+    return pvzcxx::to_xstring<string, std::numeric_limits<double>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
 }
 
 [[nodiscard]] inline string to_string(long double val) {
-    return details::to_xstring<string, std::numeric_limits<long double>::max_exponent10 + 20>(std::vsnprintf, "%Lf", val);
+    return pvzcxx::to_xstring<string, std::numeric_limits<long double>::max_exponent10 + 20>(std::vsnprintf, "%Lf", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(int val) {
-    return details::to_xstring<wstring, 4 * sizeof(int)>(std::vswprintf, L"%d", val);
+    return pvzcxx::to_xstring<wstring, 4 * sizeof(int)>(std::vswprintf, L"%d", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned val) {
-    return details::to_xstring<wstring, 4 * sizeof(unsigned)>(std::vswprintf, L"%u", val);
+    return pvzcxx::to_xstring<wstring, 4 * sizeof(unsigned)>(std::vswprintf, L"%u", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long val) {
-    return details::to_xstring<wstring, 4 * sizeof(long)>(std::vswprintf, L"%ld", val);
+    return pvzcxx::to_xstring<wstring, 4 * sizeof(long)>(std::vswprintf, L"%ld", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned long val) {
-    return details::to_xstring<wstring, 4 * sizeof(unsigned long)>(std::vswprintf, L"%lu", val);
+    return pvzcxx::to_xstring<wstring, 4 * sizeof(unsigned long)>(std::vswprintf, L"%lu", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long long val) {
-    return details::to_xstring<wstring, 4 * sizeof(long long)>(std::vswprintf, L"%lld", val);
+    return pvzcxx::to_xstring<wstring, 4 * sizeof(long long)>(std::vswprintf, L"%lld", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned long long val) {
-    return details::to_xstring<wstring, 4 * sizeof(unsigned long long)>(std::vswprintf, L"%llu", val);
+    return pvzcxx::to_xstring<wstring, 4 * sizeof(unsigned long long)>(std::vswprintf, L"%llu", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(float val) {
-    return details::to_xstring<wstring, std::numeric_limits<float>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
+    return pvzcxx::to_xstring<wstring, std::numeric_limits<float>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(double val) {
-    return details::to_xstring<wstring, std::numeric_limits<double>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
+    return pvzcxx::to_xstring<wstring, std::numeric_limits<double>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long double val) {
-    return details::to_xstring<wstring, std::numeric_limits<long double>::max_exponent10 + 20>(std::vswprintf, L"%Lf", val);
+    return pvzcxx::to_xstring<wstring, std::numeric_limits<long double>::max_exponent10 + 20>(std::vswprintf, L"%Lf", val);
 }
 
 } // namespace pvzstl
