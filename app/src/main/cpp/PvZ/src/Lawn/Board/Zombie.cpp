@@ -2486,8 +2486,10 @@ void Zombie::UpdateZombieJalapenoHead() {
                 mZombiePhase = ZombiePhase::PHASE_JALAPENO_PRE_BURN;
 
                 Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
-                aHeadReanim->SetFramesForLayer("anim_explode");
-                aHeadReanim->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD;
+                if (aHeadReanim) {
+                    aHeadReanim->SetFramesForLayer("anim_explode");
+                    aHeadReanim->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD;
+                }
 
                 mApp->PlayFoley(FoleyType::FOLEY_REVERSE_EXPLOSION);
             }
@@ -2527,16 +2529,18 @@ void Zombie::UpdateZombieSquashHead() {
         PlayZombieReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 20, 12.0f);
         mHasHead = false;
 
-        Reanimation *aHeadReanim = mApp->ReanimationGet(mSpecialHeadReanimID);
-        aHeadReanim->PlayReanim("anim_jumpup", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
-        aHeadReanim->mRenderOrder = mRenderOrder + 1;
-        aHeadReanim->SetPosition(mPosX + 6.0f, mPosY - 21.0f);
+        Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+        if (aHeadReanim) {
+            aHeadReanim->PlayReanim("anim_jumpup", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+            aHeadReanim->mRenderOrder = mRenderOrder + 1;
+            aHeadReanim->SetPosition(mPosX + 6.0f, mPosY - 21.0f);
 
-        Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
-        ReanimatorTrackInstance *aTrackInstance = aBodyReanim->GetTrackInstanceByName("anim_head1");
-        AttachmentDetach(aTrackInstance->mAttachmentID);
-        aHeadReanim->OverrideScale(0.75f, 0.75f);
-        aHeadReanim->mOverlayMatrix.m10 = 0.0f;
+            Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+            ReanimatorTrackInstance *aTrackInstance = aBodyReanim->GetTrackInstanceByName("anim_head1");
+            AttachmentDetach(aTrackInstance->mAttachmentID);
+            aHeadReanim->OverrideScale(0.75f, 0.75f);
+            aHeadReanim->mOverlayMatrix.m10 = 0.0f;
+        }
 
         mZombiePhase = ZombiePhase::PHASE_SQUASH_RISING;
         mPhaseCounter = 95;
@@ -2664,7 +2668,9 @@ void Zombie::UpdateZombieSquashHead() {
 
     if (mZombiePhase == ZombiePhase::PHASE_SQUASH_DONE_FALLING && mPhaseCounter == 0) {
         Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
-        aHeadReanim->ReanimationDie();
+        if (aHeadReanim) {
+            aHeadReanim->ReanimationDie();
+        }
         mSpecialHeadReanimID = ReanimationID::REANIMATIONID_NULL;
 
         TakeDamage(1800, 9U);
@@ -2889,7 +2895,10 @@ void Zombie::PlayDeathAnim(unsigned int theDamageFlags) {
         DropShield(1U);
     }
     if (mZombieType == ZombieType::ZOMBIE_SQUASH_HEAD && !mHasHead) {
-        mApp->RemoveReanimation(mSpecialHeadReanimID);
+        Reanimation *aReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+        if (aReanim) {
+            aReanim->ReanimationDie();
+        }
         mSpecialHeadReanimID = ReanimationID::REANIMATIONID_NULL;
     }
 
@@ -2919,8 +2928,10 @@ void Zombie::PlayDeathAnim(unsigned int theDamageFlags) {
         aDeathAnimRate = 18.0f;
 
         BossDie();
-        Reanimation *aHeadReanim = mApp->ReanimationGet(mSpecialHeadReanimID);
-        aHeadReanim->PlayReanim("anim_death", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, aDeathAnimRate);
+        Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+        if (aHeadReanim) {
+            aHeadReanim->PlayReanim("anim_death", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, aDeathAnimRate);
+        }
     } else {
         aDeathAnimRate = RandRangeFloat(24.0f, 30.0f);
     }
@@ -4574,9 +4585,9 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
 
         if (Zombie::IsZombotany(mZombieType) && mSpecialHeadReanimID != ReanimationID::REANIMATIONID_NULL) {
             Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
-            if (aHeadReanim)
+            if (aHeadReanim) {
                 aHeadReanim->ReanimationDie();
-
+            }
             mSpecialHeadReanimID = ReanimationID::REANIMATIONID_NULL;
             return;
         }
@@ -4645,7 +4656,10 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
     }
 
     if (Zombie::IsZombotany(mZombieType)) {
-        mApp->ReanimationGet(mSpecialHeadReanimID)->ReanimationDie();
+        Reanimation *aReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+        if (aReanim) {
+            aReanim->ReanimationDie();
+        }
         mSpecialHeadReanimID = ReanimationID::REANIMATIONID_NULL;
         return;
     }
@@ -5967,7 +5981,10 @@ void Zombie::ApplyBurn() {
     }
 
     if (mZombieType == ZombieType::ZOMBIE_SQUASH_HEAD && !mHasHead) {
-        mApp->RemoveReanimation(mSpecialHeadReanimID);
+        Reanimation *aReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
+        if (aReanim) {
+            aReanim->ReanimationDie();
+        }
         mSpecialHeadReanimID = ReanimationID::REANIMATIONID_NULL;
     }
 
