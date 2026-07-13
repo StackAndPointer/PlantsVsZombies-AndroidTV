@@ -857,6 +857,8 @@ ZombieType Challenge::IZombieSeedTypeToZombieType(SeedType theSeedType) {
             return ZOMBIE_SUNDAY_EDITION;
         case SEED_ZOMBIE_EXPLORER:
             return ZOMBIE_EXPLORER;
+        case SEED_ZOMBIE_ZOMBLOB:
+            return ZOMBIE_ZOMBLOB;
         default:
             return ZOMBIE_INVALID;
     }

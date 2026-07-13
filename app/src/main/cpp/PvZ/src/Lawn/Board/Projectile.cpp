@@ -27,6 +27,7 @@
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 #include "PvZ/Misc.h"
+#include "PvZ/NetPlay.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodCommon.h"
 #include "PvZ/TodLib/Effect/Attachment.h"
@@ -82,10 +83,11 @@ ProjectileDefinition gProjectileDefinition[] = {
 ProjectileDefinition gExtendedProjectileDefinition[] = {
     {ProjectileType::PROJECTILE_ZOMBIE_POLE, 0, 2400},
     {ProjectileType::PROJECTILE_ZOMBIE_FIREBALL, 0, 40},
+    {ProjectileType::PROJECTILE_ZOMBLOB, 0, 0},
 };
 
 void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
-    if (!isOnlyTouchFireWood) {
+    if (!isOnlyTouchFireWood && theProjectileType != ProjectileType::PROJECTILE_ZOMBLOB) {
         // 僵尸子弹与加农炮子弹NULL
         if (theProjectileType == ProjectileType::PROJECTILE_COBBIG || theProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
             old_Projectile_ProjectileInitialize(this, theX, theY, theRenderOrder, theRow, theProjectileType);
@@ -112,6 +114,12 @@ void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, in
     }
 
     old_Projectile_ProjectileInitialize(this, theX, theY, theRenderOrder, theRow, theProjectileType);
+
+    if (theProjectileType == ProjectileType::PROJECTILE_ZOMBLOB) {
+        mMotionType = ProjectileMotion::MOTION_LOBBED;
+        mRotation = 0.0f;
+        mRotationSpeed = 0.0f;
+    }
 
     mPierceHitCount = 0;
     for (ZombieID &aZombieID : mHitZombieIDs) {
@@ -312,106 +320,169 @@ void Projectile::UpdateNormalMotion() {
 
 
 void Projectile::UpdateLobMotion() {
-    //    if (mProjectileType == ProjectileType::PROJECTILE_COBBIG && mPosZ < -700.0f) {
-    //        mVelZ = 8.0f;
-    //        mRow = mCobTargetRow;
-    //        mPosX = mCobTargetX;
-    //        int cobTargetCol = mBoard->PixelToGridXKeepOnBoard((int)mCobTargetX, 0);
-    //        mPosY = (float)mBoard->GridToPixelY(cobTargetCol, mCobTargetRow);
-    //        mShadowY = mPosY + 67.0f;
-    //        mRotation = -1.5708f;
-    //    }
-    //
-    //    mVelZ += mAccZ;
-    //    if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_HIGH_GRAVITY) {
-    //        mVelZ += mAccZ;
-    //    }
-    //    mPosX += mVelX;
-    //    mPosY += mVelY;
-    //    mPosZ += mVelZ;
-    //
-    //    const bool isRising = (mVelZ < 0.0f);
-    //    if (isRising && (mProjectileType == ProjectileType::PROJECTILE_BASKETBALL || mProjectileType == ProjectileType::PROJECTILE_COBBIG)) {
-    //        return;
-    //    }
-    //    if (mProjectileAge > 20) {
-    //        if (isRising) {
-    //            return;
-    //        }
-    //
-    //        float minCollisionZ = 0.0f;
-    //        if (mProjectileType == ProjectileType::PROJECTILE_BUTTER) {
-    //            minCollisionZ = -32.0f;
-    //        } else if (mProjectileType == ProjectileType::PROJECTILE_BASKETBALL) {
-    //            minCollisionZ = 60.0f;
-    //        } else if (mProjectileType == ProjectileType::PROJECTILE_MELON || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON) {
-    //            minCollisionZ = -35.0f;
-    //        } else if (mProjectileType == ProjectileType::PROJECTILE_CABBAGE || mProjectileType == ProjectileType::PROJECTILE_KERNEL) {
-    //            minCollisionZ = -30.0f;
-    //        } else if (mProjectileType == ProjectileType::PROJECTILE_COBBIG) {
-    //            minCollisionZ = -60.0f;
-    //        }
-    //        if (mBoard->mPlantRow[mRow] == PlantRowType::PLANTROW_POOL) {
-    //            minCollisionZ += 40.0f;
-    //        }
-    //        if (mPosZ <= minCollisionZ) {
-    //            return;
-    //        }
-    //    }
-    //
-    //    Plant *plantTarget = nullptr;
-    //    Zombie *zombieTarget = nullptr;
-    //    GridItem *gridTarget = nullptr;
-    //    if (mProjectileType == ProjectileType::PROJECTILE_BASKETBALL || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
-    //        plantTarget = FindCollisionTargetPlant();
-    //    } else {
-    //        zombieTarget = FindCollisionTarget();
-    //        if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-    //            gridTarget = FindCollisionTargetGridItem();
-    //        }
-    //    }
-    //
-    //    float groundZ = (mProjectileType == ProjectileType::PROJECTILE_COBBIG) ? -40.0f : 80.0f;
-    //    bool hitGround = (mPosZ > groundZ);
-    //    if (zombieTarget == nullptr && plantTarget == nullptr && gridTarget == nullptr && !hitGround) {
-    //        return;
-    //    }
-    //
-    //    if (plantTarget != nullptr) {
-    //        Plant *umbrella = mBoard->FindUmbrellaPlant(plantTarget->mPlantCol, plantTarget->mRow);
-    //        if (umbrella != nullptr) {
-    //            if (umbrella->mState == PlantState::STATE_UMBRELLA_REFLECTING) {
-    //                mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
-    //                int renderPos = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_TOP, 0, 1);
-    //                mApp->AddTodParticle(mPosX + 20.0f, mPosY + 20.0f, renderPos, ParticleEffect::PARTICLE_UMBRELLA_REFLECT);
-    //                Die();
-    //            } else if (umbrella->mState != PlantState::STATE_UMBRELLA_TRIGGERED) {
-    //                mApp->PlayFoley(FoleyType::FOLEY_UMBRELLA);
-    //                umbrella->DoSpecial();
-    //            }
-    //            return;
-    //        }
-    //
-    //        plantTarget->mPlantHealth -= GetProjectileDef().mDamage;
-    //        plantTarget->mEatenFlashCountdown = std::max(plantTarget->mEatenFlashCountdown, 25);
-    //        mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
-    //        Die();
-    //        return;
-    //    }
-    //
-    //    if (mProjectileType == ProjectileType::PROJECTILE_COBBIG) {
-    //        mBoard->KillAllZombiesInRadius_Custom(mRow, (int)(mPosX + 80.0f), (int)(mPosY + 40.0f), 115, 1, true, mDamageRangeFlags);
-    //        DoImpact(nullptr);
-    //        return;
-    //    }
-    //
-    //    if (zombieTarget != nullptr) {
-    //        DoImpact(zombieTarget);
-    //    } else if (gridTarget != nullptr) {
-    //        DoImpactGridItem(gridTarget);
-    //    } else {
-    //        DoImpact(nullptr);
-    //    }
+    if (mProjectileType == ProjectileType::PROJECTILE_ZOMBLOB) {
+        float aAccZ = mAccZ;
+        if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_HIGH_GRAVITY) {
+            aAccZ *= 2.0f;
+        }
+
+        mPosZ += mVelZ + 0.5f * aAccZ;
+        mVelZ += aAccZ;
+        mPosX += mVelX;
+        mPosY += mVelY;
+        mShadowY += mVelY;
+        mRow = mBoard->PixelToGridYKeepOnBoard(int(mPosX), int(mShadowY));
+
+        // 上升阶段不落地；下降并回到地面高度后生成下一阶段僵尸。
+        if (mProjectileAge <= 1 || mVelZ <= 0.0f || mPosZ < 0.0f) {
+            return;
+        }
+
+        const int aLastRow = mBoard->StageHas6Rows() ? 5 : 4;
+        const int aTargetRow = std::max(0, std::min(aLastRow, mCobTargetRow));
+        const int aTargetGridX = mBoard->PixelToGridXKeepOnBoard(int(mCobTargetX + 20.0f), int(mShadowY));
+        const auto aTargetGroundY = float(mBoard->GridToPixelY(aTargetGridX, aTargetRow) + 67);
+
+        mRow = aTargetRow;
+        mPosX = mCobTargetX;
+        mPosY = aTargetGroundY - 40.0f;
+        mShadowY = aTargetGroundY;
+        mPosZ = 0.0f;
+
+        const auto aZombieType = ZombieType(mHitTorchwoodGridX);
+        if (aZombieType == ZombieType::ZOMBIE_ZOMBLOB_MIDDLE || aZombieType == ZombieType::ZOMBIE_ZOMBLOB_SMALL) {
+            Zombie *aZombie = mBoard->AddZombieInRow(aZombieType, aTargetRow, mDamageRangeFlags, false);
+            if (aZombie) {
+                aZombie->mPosX = mPosX + 20.0f - float(aZombie->mWidth) * 0.5f;
+                aZombie->mPosY = aZombie->GetPosYBasedOnRow(aTargetRow);
+                aZombie->mX = int(aZombie->mPosX);
+                aZombie->mY = int(aZombie->mPosY);
+                aZombie->mVariant = false;
+
+                if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
+                    U16U16U16UNI32UNI32_Event event{};
+                    event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PICK_SPEED;
+                    event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(aZombie));
+                    event.data2 = uint16_t(aZombie->mAnimTicksPerFrame);
+                    event.data4.f32 = aZombie->mVelX;
+                    event.data5.f32 = aZombie->mPosX;
+                    netplay::PutEvent(event);
+                }
+
+                if (mLastPortalX != 0) {
+                    aZombie->StartMindControlled();
+                }
+            }
+        }
+
+        Die();
+        return;
+    }
+
+    if (mProjectileType == ProjectileType::PROJECTILE_COBBIG && mPosZ < -700.0f) {
+        mVelZ = 8.0f;
+        mRow = mCobTargetRow;
+        mPosX = mCobTargetX;
+        int aCobTargetCol = mBoard->PixelToGridXKeepOnBoard(int(mCobTargetX), 0);
+        mPosY = float(mBoard->GridToPixelY(aCobTargetCol, mCobTargetRow));
+        mShadowY = mPosY + 67.0f;
+        mRotation = -1.5708f;
+    }
+
+    mVelZ += mAccZ;
+    if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_HIGH_GRAVITY) {
+        mVelZ += mAccZ;
+    }
+    mPosX += mVelX;
+    mPosY += mVelY;
+    mPosZ += mVelZ;
+
+    const bool aIsRising = mVelZ < 0.0f;
+    if (aIsRising && (mProjectileType == ProjectileType::PROJECTILE_BASKETBALL || mProjectileType == ProjectileType::PROJECTILE_COBBIG)) {
+        return;
+    }
+
+    if (mProjectileAge > 20) {
+        if (aIsRising) {
+            return;
+        }
+
+        float aMinCollisionZ = 0.0f;
+        if (mProjectileType == ProjectileType::PROJECTILE_BUTTER) {
+            aMinCollisionZ = -32.0f;
+        } else if (mProjectileType == ProjectileType::PROJECTILE_BASKETBALL) {
+            aMinCollisionZ = 60.0f;
+        } else if (mProjectileType == ProjectileType::PROJECTILE_MELON || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON) {
+            aMinCollisionZ = -35.0f;
+        } else if (mProjectileType == ProjectileType::PROJECTILE_CABBAGE || mProjectileType == ProjectileType::PROJECTILE_KERNEL) {
+            aMinCollisionZ = -30.0f;
+        } else if (mProjectileType == ProjectileType::PROJECTILE_COBBIG) {
+            aMinCollisionZ = -60.0f;
+        }
+
+        if (mBoard->mPlantRow[mRow] == PlantRowType::PLANTROW_POOL) {
+            aMinCollisionZ += 40.0f;
+        }
+
+        if (mPosZ <= aMinCollisionZ) {
+            return;
+        }
+    }
+
+    Plant *aPlantTarget = nullptr;
+    Zombie *aZombieTarget = nullptr;
+    GridItem *aGridTarget = nullptr;
+
+    if (mProjectileType == ProjectileType::PROJECTILE_BASKETBALL || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
+        aPlantTarget = FindCollisionTargetPlant();
+    } else {
+        aZombieTarget = FindCollisionTarget();
+        if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+            aGridTarget = FindCollisionTargetGridItem();
+        }
+    }
+
+    const float aGroundZ = mProjectileType == ProjectileType::PROJECTILE_COBBIG ? -40.0f : 80.0f;
+    const bool aHitGround = mPosZ > aGroundZ;
+    if (!aZombieTarget && !aPlantTarget && !aGridTarget && !aHitGround) {
+        return;
+    }
+
+    if (aPlantTarget) {
+        Plant *aUmbrella = mBoard->FindUmbrellaPlant(aPlantTarget->mPlantCol, aPlantTarget->mRow);
+        if (aUmbrella) {
+            if (aUmbrella->mState == PlantState::STATE_UMBRELLA_REFLECTING) {
+                mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
+                int aRenderPos = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_TOP, 0, 1);
+                mApp->AddTodParticle(mPosX + 20.0f, mPosY + 20.0f, aRenderPos, ParticleEffect::PARTICLE_UMBRELLA_REFLECT);
+                Die();
+            } else if (aUmbrella->mState != PlantState::STATE_UMBRELLA_TRIGGERED) {
+                mApp->PlayFoley(FoleyType::FOLEY_UMBRELLA);
+                aUmbrella->DoSpecial();
+            }
+            return;
+        }
+
+        aPlantTarget->mPlantHealth -= GetProjectileDef().mDamage;
+        aPlantTarget->mEatenFlashCountdown = std::max(aPlantTarget->mEatenFlashCountdown, 25);
+        mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
+        Die();
+        return;
+    }
+
+    if (mProjectileType == ProjectileType::PROJECTILE_COBBIG) {
+        mBoard->KillAllZombiesInRadius_Custom(mRow, int(mPosX + 80.0f), int(mPosY + 40.0f), 115, 1, true, mDamageRangeFlags);
+        DoImpact(nullptr);
+        return;
+    }
+
+    if (aZombieTarget) {
+        DoImpact(aZombieTarget);
+    } else if (aGridTarget) {
+        DoImpactGridItem(aGridTarget);
+    } else {
+        DoImpact(nullptr);
+    }
 }
 
 void Projectile::DoSplashDamage(Zombie *theZombie, GridItem *theGridItem) {
@@ -551,6 +622,13 @@ void Projectile::DoImpact(Zombie *theZombie) {
             }
             return;
         } else {
+            if (Zombie::IsZomblob(theZombie->mZombieType) && mProjectileType == ProjectileType::PROJECTILE_BUTTER) {
+                if (!theZombie->mButtered) {
+                    theZombie->mButtered = true;
+                    theZombie->SetupButteredZomblobReanim();
+                }
+            }
+
             theZombie->TakeDamage(GetProjectileDef().mDamage, aDamageFlags);
         }
     }
@@ -799,6 +877,11 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
 }
 
 void Projectile::CheckForCollision() {
+    // 史莱姆弹只在 UpdateLobMotion 的落地点生效，不参与普通碰撞。
+    if (mProjectileType == ProjectileType::PROJECTILE_ZOMBLOB) {
+        return;
+    }
+
     // 修复豌豆僵尸的子弹无法击中魅惑僵尸、修复随机子弹飞出屏幕不自动消失导致闪退。
     if (mMotionType == ProjectileMotion::MOTION_PUFF && mProjectileAge >= 75) {
         Die();
@@ -998,11 +1081,10 @@ unsigned int Projectile::GetDamageFlags(Zombie *theZombie) {
 }
 
 ProjectileDefinition &Projectile::GetProjectileDef() const {
-    ProjectileDefinition &aProjectileDef = gProjectileDefinition[(int)mProjectileType];
     if (mProjectileType >= NUM_PROJECTILES) {
-        aProjectileDef = gExtendedProjectileDefinition[mProjectileType - NUM_PROJECTILES];
+        return gExtendedProjectileDefinition[mProjectileType - NUM_PROJECTILES];
     }
-    return aProjectileDef;
+    return gProjectileDefinition[(int)mProjectileType];
 }
 
 void Projectile::Draw(Graphics *g) {
@@ -1024,6 +1106,8 @@ void Projectile::Draw(Graphics *g) {
         aImage = addonImages.IMAGE_PROJECTILEPOLE;
     } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
         aImage = nullptr;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBLOB) {
+        aImage = addonImages.IMAGE_PROJECTILEZOMBLOB;
     }
 
     bool aMirror = false;

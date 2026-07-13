@@ -812,6 +812,7 @@ inline void *Plant_UpdateMagnetShroomAddr;
 
 inline void *Projectile_UpdateAddr;
 inline void *Projectile_UpdateNormalMotionAddr;
+inline void *Projectile_UpdateLobMotionAddr;
 inline void *Projectile_ProjectileCtorAddr;
 inline void *Projectile_ProjectileDtorAddr;
 inline void *Projectile_ProjectileInitializeAddr;

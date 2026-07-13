@@ -810,6 +810,7 @@ bool LoadGameMain() {
 
     Projectile_UpdateAddr = libGameMain.GetSymbol("_ZN10Projectile6UpdateEv");
     Projectile_UpdateNormalMotionAddr = libGameMain.GetSymbol("_ZN10Projectile18UpdateNormalMotionEv");
+    Projectile_UpdateLobMotionAddr = libGameMain.GetSymbol("_ZN10Projectile15UpdateLobMotionEv");
     Projectile_ProjectileCtorAddr = libGameMain.GetSymbol("_ZN10ProjectileC2Ev");
     Projectile_ProjectileDtorAddr = libGameMain.GetSymbol("_ZN10ProjectileD2Ev");
     Projectile_ProjectileInitializeAddr = libGameMain.GetSymbol("_ZN10Projectile20ProjectileInitializeEiiii14ProjectileType");

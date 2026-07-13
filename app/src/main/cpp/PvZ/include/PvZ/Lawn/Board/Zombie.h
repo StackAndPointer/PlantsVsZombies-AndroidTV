@@ -142,6 +142,7 @@ public:
     bool mDroppedLoot;                                // 128
     bool mIsRevived;                                  // 新增成员，用于复生僵尸着色
     bool mCanRevived;                                 // 新增成员，用于计入复生池
+    bool mButtered;                                   // 新增成员，用于史莱姆黄优化
     int mZombieFade;                                  // 33
     bool mFlatTires;                                  // 136
     bool mPoisoned;                                   // 新增成员，判定僵尸是否中毒
@@ -209,9 +210,6 @@ public:
 
     void RemoveColdEffects() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_RemoveColdEffectsAddr)(this);
-    }
-    void ApplyButter() {
-        reinterpret_cast<void (*)(Zombie *)>(Zombie_ApplyButterAddr)(this);
     }
     TodParticleSystem *AddAttachedParticle(int thePosX, int thePosY, ParticleEffect theEffect) {
         return reinterpret_cast<TodParticleSystem *(*)(Zombie *, int, int, ParticleEffect)>(Zombie_AddAttachedParticleAddr)(this, thePosX, thePosY, theEffect);
@@ -404,6 +402,7 @@ public:
     void CheckForBoardEdge();
     void DrawBossPart(Sexy::Graphics *g, int theBossPart);
     static bool IsZombotany(ZombieType theZombieType);
+    static bool IsZomblob(ZombieType theZombieType);
     static bool ZombieTypeCanGoInPool(ZombieType theZombieType);
     void BossSpawnAttack();
     void DrawBungeeCord(Sexy::Graphics *graphics, int theOffsetX, int theOffsetY);
@@ -485,6 +484,7 @@ public:
     void ApplySyncedSpeed(float theVelX, short theAnimTicks);
     float ZombieTargetLeadX(float theTime);
     void ApplyBurn();
+    void ApplyButter();
     void ApplyChill(bool theIsIceTrap);
     void HitIceTrap();
     void ApplySyncedIceTrap(int theIceTrapCounter);
@@ -506,6 +506,8 @@ public:
     void BungeeLanding();
     void UpdateLadder();
     void PlayDeathAnim(unsigned int theDamageFlags);
+    void ZomblobSplit();
+    void SetupButteredZomblobReanim();
 
 protected:
     void _constructor() {

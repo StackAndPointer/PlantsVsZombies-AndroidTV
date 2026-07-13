@@ -93,7 +93,8 @@ auto GetNewLawnFoleyParamArray() -> FoleyParams (&)[FoleyType::EXTENDED_NUM_FOLE
             {FoleyType::FOLEY_MENU_RIGHT, 0.0f, {&Sexy::SOUND_MENU_R_ST}, 1U},
             {FoleyType::FOLEY_ALLSTAR_TACKLE, 10.0f, {&addonSounds.allstardbl}, 0U},
             {FoleyType::FOLEY_THRILLER, 0.0f, {&addonSounds.thriller}, 6U},
-            {FOLEY_EXPLORER_IGNITE, 0.0f, {&addonSounds.explorer}, 0U},
+            {FoleyType::FOLEY_EXPLORER_IGNITE, 0.0f, {&addonSounds.explorer}, 0U},
+            {FoleyType::FOLEY_ZOMBLOB, 0.0f, {&addonSounds.zomblob}, 0U},
             {FoleyType::FOLEY_ICEBERG, 0.0f, {&addonSounds.iceberg}, 0U},
         };
         std::ranges::copy(extendedArray, newArray + FoleyType::NUM_FOLEY);

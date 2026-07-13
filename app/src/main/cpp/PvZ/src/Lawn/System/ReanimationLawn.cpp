@@ -223,21 +223,20 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
 
     if (theZombieType >= ZombieType::NUM_CACHED_ZOMBIE_TYPES && theZombieType < EXTENDED_NUM_ZOMBIE_TYPES) {
         int aExtendedIndex = theZombieType - NUM_CACHED_ZOMBIE_TYPES;
-        if (theZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL || theZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP || theZombieType == ZombieType::ZOMBIE_JACKSON
-            || theZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION || theZombieType == ZombieType::ZOMBIE_EXPLORER) {
-            Reanimation aReanim;
-            aReanim.ReanimationInitializeType(aPosX, aPosY, aZombieDef.mReanimationType);
-            aReanim.PlayReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
-            aReanim.Update();
-            aReanim.Draw(&aMemoryGraphics);
-            msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
-        } else if (theZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
+        if (theZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
             Reanimation aReanim;
             aReanim.ReanimationInitializeType(aPosX, aPosY, aZombieDef.mReanimationType);
             aReanim.PlayReanim("anim_walk", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
             aReanim.AssignRenderGroupToPrefix("anim_pole1", RENDER_GROUP_HIDDEN);
             aReanim.AssignRenderGroupToPrefix("anim_pole2", RENDER_GROUP_HIDDEN);
             aReanim.AssignRenderGroupToPrefix("anim_pole3", RENDER_GROUP_HIDDEN);
+            aReanim.Update();
+            aReanim.Draw(&aMemoryGraphics);
+            msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
+        } else {
+            Reanimation aReanim;
+            aReanim.ReanimationInitializeType(aPosX, aPosY, aZombieDef.mReanimationType);
+            aReanim.PlayReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
             aReanim.Update();
             aReanim.Draw(&aMemoryGraphics);
             msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
