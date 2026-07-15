@@ -136,7 +136,7 @@ public:
     Sexy::Image *mImage;  // 8
     Sexy::Image *mImage2; // 9
     int *mFont;           // 10
-    char *mName;          // 11
+    const char *mText;    // 11
     // 大小12个整数
 
     ReanimatorTransform() {

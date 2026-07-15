@@ -351,12 +351,12 @@ void SyncReanimation(Board *theBoard, Reanimation *theReanimation, SaveGameConte
         theContext.SyncImage(aTrackInstance.mImageOverride);
 
         if (theContext.mReading) {
-            aTrackInstance.mBlendTransform.mName = (char *)"";
+            aTrackInstance.mBlendTransform.mText = "";
 
             HOMURA_ASSERT(aTrackInstance.mBlendTransform.mFont == nullptr);
             HOMURA_ASSERT(aTrackInstance.mBlendTransform.mImage == nullptr);
         } else {
-            HOMURA_ASSERT(aTrackInstance.mBlendTransform.mName[0] == '\0');
+            HOMURA_ASSERT(aTrackInstance.mBlendTransform.mText[0] == '\0');
             HOMURA_ASSERT(aTrackInstance.mBlendTransform.mFont == nullptr);
             HOMURA_ASSERT(aTrackInstance.mBlendTransform.mImage == nullptr);
         }
