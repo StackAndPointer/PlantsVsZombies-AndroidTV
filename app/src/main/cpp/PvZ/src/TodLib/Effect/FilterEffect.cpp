@@ -45,7 +45,7 @@ MemoryImage *FilterEffectCreateImage(Image *theImage, FilterEffect theFilterEffe
             FilterEffectDoWhite(aImage);
             break;
         case FilterEffect::FILTEREFFECT_CUSTOM:
-            FilterEffectDoLumSat(aImage, 1.05, 0.8); // 仅MainMenu显示房子雾蒙蒙效果时用到。数值是自己瞎调的
+            FilterEffectDoCustom(aImage, {142, 146, 232, 92}); // 仅MainMenu显示房子雾蒙蒙效果时用到
             break;
         default:
             break;
@@ -60,8 +60,8 @@ MemoryImage *FilterEffectCreateImage(Image *theImage, FilterEffect theFilterEffe
 static std::unordered_map<Sexy::Image *, Sexy::Image *> gFilterEffectMaps[FilterEffect::NUM_FILTEREFFECT];
 Image *FilterEffectGetImage(Image *theImage, FilterEffect theFilterEffect) {
     // 变灰的植物贴图在这里处理
-    if (!theImage) {
-        return theImage;
+    if (theImage == nullptr) {
+        return nullptr;
     }
 
     if (theFilterEffect == FilterEffect::FILTEREFFECT_NONE) {
@@ -76,6 +76,28 @@ Image *FilterEffectGetImage(Image *theImage, FilterEffect theFilterEffect) {
         Sexy::Image *aFilterEffectImage = FilterEffectCreateImage(theImage, theFilterEffect);
         currentMap.emplace(theImage, aFilterEffectImage);
         return aFilterEffectImage;
+    }
+}
+
+void FilterEffectDoCustom(Sexy::MemoryImage *image, const Sexy::Color &color) {
+    const int mix = color.mAlpha; // 92
+    const int keep = 255 - mix;   // 163
+
+    for (int y = 0; y < image->mHeight; ++y) {
+        for (int x = 0; x < image->mWidth; ++x) {
+            unsigned long &pixel = image->mBits[y * image->mWidth + x];
+
+            const unsigned int a = (pixel >> 24) & 0xFF;
+            const unsigned int r = (pixel >> 16) & 0xFF;
+            const unsigned int g = (pixel >> 8) & 0xFF;
+            const unsigned int b = pixel & 0xFF;
+
+            const unsigned int outR = (r * keep + color.mRed * mix + 127) / 255;
+            const unsigned int outG = (g * keep + color.mGreen * mix + 127) / 255;
+            const unsigned int outB = (b * keep + color.mBlue * mix + 127) / 255;
+
+            pixel = (a << 24) | (outR << 16) | (outG << 8) | outB;
+        }
     }
 }
 

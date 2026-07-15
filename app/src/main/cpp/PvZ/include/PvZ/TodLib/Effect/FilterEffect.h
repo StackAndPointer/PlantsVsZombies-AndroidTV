@@ -21,6 +21,7 @@
 #define PVZ_SEXYAPPFRAMEWORK_EFFECT_FILTER_EFFECT_H
 
 #include "PvZ/Lawn/Common/ConstEnums.h"
+#include "PvZ/SexyAppFramework/Graphics/Color.h"
 #include "PvZ/Symbols.h"
 
 namespace Sexy {
@@ -58,5 +59,8 @@ inline void FilterEffectDoWhite(Sexy::MemoryImage *theImage) {
 inline void FilterEffectDoLumSat(Sexy::MemoryImage *theImage, float theLum, float theSat) {
     reinterpret_cast<void (*)(Sexy::MemoryImage *, float, float)>(FilterEffectDoLumSatAddr)(theImage, theLum, theSat);
 }
+
+void FilterEffectDoCustom(Sexy::MemoryImage *theImage, const Sexy::Color &theColor);
+
 
 #endif // PVZ_SEXYAPPFRAMEWORK_EFFECT_FILTER_EFFECT_H

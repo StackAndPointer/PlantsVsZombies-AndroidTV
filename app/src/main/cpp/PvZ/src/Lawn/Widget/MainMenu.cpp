@@ -565,8 +565,7 @@ void MainMenu::Draw(Sexy::Graphics *g) {
 
     if (mWidgetManager == nullptr)
         return;
-    if ((*(int (**)(LawnApp *, int))(*(uint32_t *)mApp + 412))(mApp, 6) || (*(int (**)(LawnApp *, int))(*(uint32_t *)mApp + 412))(mApp, 5)
-        || (*(int (**)(LawnApp *, int))(*(uint32_t *)mApp + 412))(mApp, 60))
+    if (mApp->GetVTable()->GetDialog(mApp, DIALOG_STORE) || mApp->GetVTable()->GetDialog(mApp, DIALOG_ALMANAC) || mApp->GetVTable()->GetDialog(mApp, DIALOG_MAIL))
         return;
 
     Reanimation *mainMenuReanim = mApp->ReanimationTryToGet(mMainMenuReanimID);
