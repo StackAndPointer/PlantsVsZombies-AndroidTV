@@ -24,6 +24,8 @@
 #include "PvZ/MagicNumbers.h"
 #endif
 
+#include "PvZ/STL/bits/ranges_base.h"
+
 #include "PvZ/STL/ext/string_conversions.h"
 
 #include <cassert>
@@ -39,13 +41,10 @@ extern uintptr_t gLibGameMainBaseAddr;
 
 namespace pvzstl {
 
-namespace details {
+namespace detail {
     template <typename SV, typename CharT>
     concept convertible_to_string_view = std::is_convertible_v<const SV &, std::basic_string_view<CharT>> && !std::is_convertible_v<const SV &, const CharT *>;
-
-    template <typename Range, typename Tp>
-    concept container_compatible_range = std::ranges::input_range<Range> && std::convertible_to<std::ranges::range_reference_t<Range>, Tp>;
-} // namespace details
+} // namespace detail
 
 /**
  * @class basic_string
@@ -120,7 +119,7 @@ public:
         m_dataplus = construct(sv.begin(), sv.end());
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     explicit basic_string(const SV &t) {
         const sv_type sv = t;
         m_dataplus = construct(sv.begin(), sv.end());
@@ -141,7 +140,7 @@ public:
     basic_string(InputIt first, InputIt last)
         : m_dataplus{construct(first, last)} {}
 
-    template <details::container_compatible_range<CharT> Range>
+    template <detail::container_compatible_range<CharT> Range>
     basic_string(std::from_range_t, Range &&range)
         : m_dataplus{construct(std::ranges::begin(range), std::ranges::end(range))} {}
 
@@ -169,7 +168,7 @@ public:
         return *this;
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &operator=(const SV &t) {
         const sv_type sv = t;
         return assign(sv);
@@ -202,13 +201,13 @@ public:
         return *this = std::move(str);
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &assign(const SV &t, size_type pos, size_type n = npos) {
         const sv_type sv = t;
         return assign(sv.substr(pos, n));
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &assign(const SV &t) {
         const sv_type sv = t;
         return assign(sv.data(), sv.size());
@@ -371,13 +370,13 @@ public:
         return insert(pos, str.c_str(), str.size());
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &insert(size_type pos1, const SV &t, size_type pos2, size_type n = npos) {
         const sv_type sv = t;
         return insert(pos1, sv.substr(pos2, n));
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &insert(size_type pos, const SV &t) {
         const sv_type sv = t;
         return insert(pos, sv.data(), sv.size());
@@ -441,13 +440,13 @@ public:
         return append(str.c_str(), str.size());
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &append(const SV &t, size_type pos, size_type n = npos) {
         const sv_type sv = t;
         return append(sv.substr(pos, n));
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &append(const SV &t) {
         const sv_type sv = t;
         return append(sv.data(), sv.size());
@@ -496,7 +495,7 @@ public:
         return append(str);
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &operator+=(const SV &t) {
         const sv_type sv = t;
         return append(sv);
@@ -524,13 +523,13 @@ public:
         return replace(pos, n, str.c_str(), str.size());
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &replace(size_type pos1, size_type n1, const SV &t, size_type pos2, size_type n2 = npos) {
         const sv_type sv = t;
         return replace(pos1, n1, sv.substr(pos2, n2));
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     basic_string &replace(size_type pos, size_type n, const SV &t) {
         const sv_type sv = t;
         return replace(pos, n, sv.data(), sv.size());
@@ -626,7 +625,7 @@ public:
         return find(sv_type{str}, pos);
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
         const sv_type sv = t;
         return sv_type{*this}.find(sv, pos);
@@ -650,7 +649,7 @@ public:
         return rfind(sv_type{str}, pos);
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type rfind(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
         const sv_type sv = t;
         return sv_type{*this}.rfind(sv, pos);
@@ -674,7 +673,7 @@ public:
         return find_first_of(sv_type{str}, pos);
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find_first_of(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
         const sv_type sv = t;
         return sv_type{*this}.find_first_of(sv, pos);
@@ -698,7 +697,7 @@ public:
         return find_first_not_of(sv_type{str}, pos);
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find_first_not_of(const SV &t, size_type pos = 0) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
         const sv_type sv = t;
         return sv_type{*this}.find_first_not_of(sv, pos);
@@ -722,7 +721,7 @@ public:
         return find_last_of(sv_type{str}, pos);
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find_last_of(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
         const sv_type sv = t;
         return sv_type{*this}.find_last_of(sv, pos);
@@ -746,7 +745,7 @@ public:
         return find_last_not_of(sv_type{str}, pos);
     }
 
-    template <details::convertible_to_string_view<CharT> SV>
+    template <detail::convertible_to_string_view<CharT> SV>
     [[nodiscard]] size_type find_last_not_of(const SV &t, size_type pos = npos) const noexcept(std::is_nothrow_convertible_v<const SV &, sv_type>) {
         const sv_type sv = t;
         return sv_type{*this}.find_last_not_of(sv, pos);

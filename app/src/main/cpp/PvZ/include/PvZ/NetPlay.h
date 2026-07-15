@@ -456,9 +456,9 @@ struct SettleEvent {
     int seedType;
 };
 
-namespace details {
+namespace detail {
     void PutEventData(const std::byte *data, std::size_t n);
-} // namespace details
+} // namespace detail
 
 template <typename T>
     requires(std::is_same_v<std::remove_reference_t<T>, std::remove_cvref_t<T>> && std::derived_from<std::remove_reference_t<T>, BaseEvent>)
@@ -466,7 +466,7 @@ void PutEvent(T &&event) {
     static_assert(std::is_trivially_copyable_v<std::remove_reference_t<T>>, "Event must be trivially copyable");
     static_assert(std::in_range<decltype(BaseEvent::size)>(sizeof(T)), "'BaseEvent::size' is too small");
     event.BaseEvent::size = sizeof(T);
-    details::PutEventData(reinterpret_cast<std::byte *>(&event), sizeof(T));
+    detail::PutEventData(reinterpret_cast<std::byte *>(&event), sizeof(T));
 }
 
 bool FlushSendBuffer(int socket);

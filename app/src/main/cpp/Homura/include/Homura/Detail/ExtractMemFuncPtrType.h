@@ -24,7 +24,7 @@
 
 namespace homura {
 
-namespace details {
+namespace detail {
     template <typename>
     struct ExtractMemFuncPtrTypeHelper;
 
@@ -234,25 +234,25 @@ namespace details {
 
     template <typename T>
     struct ExtractMemFuncPtrTypeCvWrapper {
-        using Type = typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+        using Type = typename detail::ExtractMemFuncPtrTypeHelper<T>::Type;
     };
     template <typename T>
     struct ExtractMemFuncPtrTypeCvWrapper<const T> {
-        using Type = const typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+        using Type = const typename detail::ExtractMemFuncPtrTypeHelper<T>::Type;
     };
     template <typename T>
     struct ExtractMemFuncPtrTypeCvWrapper<volatile T> {
-        using Type = volatile typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+        using Type = volatile typename detail::ExtractMemFuncPtrTypeHelper<T>::Type;
     };
     template <typename T>
     struct ExtractMemFuncPtrTypeCvWrapper<const volatile T> {
-        using Type = const volatile typename details::ExtractMemFuncPtrTypeHelper<T>::Type;
+        using Type = const volatile typename detail::ExtractMemFuncPtrTypeHelper<T>::Type;
     };
-} // namespace details
+} // namespace detail
 
 template <typename T>
     requires std::is_member_function_pointer_v<T>
-using ExtractMemFuncPtrType = typename details::ExtractMemFuncPtrTypeCvWrapper<T>::Type;
+using ExtractMemFuncPtrType = typename detail::ExtractMemFuncPtrTypeCvWrapper<T>::Type;
 
 } // namespace homura
 

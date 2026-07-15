@@ -22,12 +22,12 @@
 #include <stdexcept>
 
 // https://itanium-cxx-abi.github.io/cxx-abi/abi.html#member-function-pointers
-struct homura::details::CppMemFuncPtr {
+struct homura::detail::CppMemFuncPtr {
     void *ptr;
     std::ptrdiff_t adj;
 };
 
-void homura::details::CheckPmfBeforeExtract(const CppMemFuncPtr *pmfPtr) {
+void homura::detail::CheckPmfBeforeExtract(const CppMemFuncPtr *pmfPtr) {
 #if defined(__GNUC__) || defined(__clang__)
 
 #if defined(__arm__) || defined(__aarch64__)

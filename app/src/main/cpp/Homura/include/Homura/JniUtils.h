@@ -33,7 +33,7 @@ inline std::string JStringToString(JNIEnv *env, jstring jstr) {
     return result;
 }
 
-namespace details {
+namespace detail {
     inline std::string GetLocaleField(JNIEnv *env, const char *methodName) {
         jclass localeClass = env->FindClass("java/util/Locale");
 
@@ -47,18 +47,18 @@ namespace details {
         env->DeleteLocalRef(fieldJStr);
         return field;
     }
-} // namespace details
+} // namespace detail
 
 inline std::string GetLocaleLanguage(JNIEnv *env) {
-    return details::GetLocaleField(env, "getLanguage");
+    return detail::GetLocaleField(env, "getLanguage");
 }
 
 inline std::string GetLocaleScript(JNIEnv *env) {
-    return details::GetLocaleField(env, "getScript");
+    return detail::GetLocaleField(env, "getScript");
 }
 
 inline std::string GetLocaleCountry(JNIEnv *env) {
-    return details::GetLocaleField(env, "getCountry");
+    return detail::GetLocaleField(env, "getCountry");
 }
 
 } // namespace homura

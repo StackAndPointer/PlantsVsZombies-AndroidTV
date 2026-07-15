@@ -71,7 +71,7 @@ static std::string UrlEncode(std::string_view s) {
     return out;
 }
 
-void netplay::details::PutEventData(const std::byte *data, std::size_t n) {
+void netplay::detail::PutEventData(const std::byte *data, std::size_t n) {
     sendBuffer.append_range(std::views::counted(data, n));
     const std::uint32_t replayTick = static_cast<std::uint32_t>(gLawnApp->mAppCounter);
     replay::RecordPacket(ReplayPacketDir::Outbound, data, n, replayTick);

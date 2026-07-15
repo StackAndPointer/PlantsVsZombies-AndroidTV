@@ -30,11 +30,11 @@
 
 namespace homura {
 
-namespace details {
+namespace detail {
     void HookFuncImpl(void *symbol, void *newFunc, void **oldFuncAddr);
     bool HookVirtualFuncImpl(void *vTableSymbol, std::size_t index, void *newFunc, void **oldFuncAddr);
     bool HookPltFuncImpl(std::string_view libName, std::uintptr_t offset, void *newFunc, void **oldFuncAddr);
-} // namespace details
+} // namespace detail
 
 /**
  * @brief 替换全局函数/静态成员函数.
@@ -46,7 +46,7 @@ namespace details {
 template <typename T>
     requires std::is_function_v<T>
 void HookFunc(void *symbol, T *newFunc, std::type_identity_t<T **> oldFuncAddr) {
-    details::HookFuncImpl(symbol, reinterpret_cast<void *>(newFunc), reinterpret_cast<void **>(oldFuncAddr));
+    detail::HookFuncImpl(symbol, reinterpret_cast<void *>(newFunc), reinterpret_cast<void **>(oldFuncAddr));
 }
 
 /**
@@ -59,7 +59,7 @@ void HookFunc(void *symbol, T *newFunc, std::type_identity_t<T **> oldFuncAddr) 
 template <typename T>
     requires(std::is_member_function_pointer_v<T> && std::is_same_v<T, std::remove_cv_t<T>>)
 void HookFunc(void *symbol, T newFunc, ExtractMemFuncPtrType<T> *oldFuncAddr) {
-    details::HookFuncImpl(symbol, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
+    detail::HookFuncImpl(symbol, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
 }
 
 /**
@@ -75,7 +75,7 @@ void HookFunc(void *symbol, T newFunc, ExtractMemFuncPtrType<T> *oldFuncAddr) {
 template <typename T>
     requires std::is_function_v<T>
 bool HookVirtualFunc(void *vTableSymbol, std::size_t index, T *newFunc, std::type_identity_t<T **> oldFuncAddr) {
-    return details::HookVirtualFuncImpl(vTableSymbol, index, reinterpret_cast<void *>(newFunc), reinterpret_cast<void **>(oldFuncAddr));
+    return detail::HookVirtualFuncImpl(vTableSymbol, index, reinterpret_cast<void *>(newFunc), reinterpret_cast<void **>(oldFuncAddr));
 }
 
 /**
@@ -91,7 +91,7 @@ bool HookVirtualFunc(void *vTableSymbol, std::size_t index, T *newFunc, std::typ
 template <typename T>
     requires(std::is_member_function_pointer_v<T> && std::is_same_v<T, std::remove_cv_t<T>>)
 bool HookVirtualFunc(void *vTableSymbol, std::size_t index, T newFunc, ExtractMemFuncPtrType<T> *oldFuncAddr) {
-    return details::HookVirtualFuncImpl(vTableSymbol, index, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
+    return detail::HookVirtualFuncImpl(vTableSymbol, index, reinterpret_cast<void *>(ExtractMemFuncPtr(newFunc)), reinterpret_cast<void **>(oldFuncAddr));
 }
 
 /**
@@ -107,7 +107,7 @@ bool HookVirtualFunc(void *vTableSymbol, std::size_t index, T newFunc, ExtractMe
 template <typename T>
     requires std::is_function_v<T>
 bool HookPltFunc(std::string_view libName, std::uintptr_t offset, T *newFunc, std::type_identity_t<T **> oldFuncAddr) {
-    return details::HookPltFuncImpl(libName, offset, reinterpret_cast<void *>(newFunc), reinterpret_cast<void **>(oldFuncAddr));
+    return detail::HookPltFuncImpl(libName, offset, reinterpret_cast<void *>(newFunc), reinterpret_cast<void **>(oldFuncAddr));
 }
 
 } // namespace homura

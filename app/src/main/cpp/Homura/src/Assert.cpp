@@ -25,7 +25,7 @@
 #include <cinttypes>
 #include <cstdlib>
 
-void homura::details::AssertionFailedImpl(std::source_location location, const char *expression) {
+void homura::detail::AssertionFailedImpl(std::source_location location, const char *expression) {
     __android_log_print(ANDROID_LOG_FATAL,
                         Logger::PVZ_LOG_TAG,
                         "[%s(%" PRIuLEAST32 ":%" PRIuLEAST32 ")][%s] Assertion \"%s\" failed",
@@ -37,7 +37,7 @@ void homura::details::AssertionFailedImpl(std::source_location location, const c
     std::abort();
 }
 
-void homura::details::AssertionFailedImpl(std::source_location location, const char *expression, const char *message) {
+void homura::detail::AssertionFailedImpl(std::source_location location, const char *expression, const char *message) {
     __android_log_print(ANDROID_LOG_FATAL,
                         Logger::PVZ_LOG_TAG,
                         "[%s(%" PRIuLEAST32 ":%" PRIuLEAST32 ")][%s] Assertion \"%s\" failed: %s",

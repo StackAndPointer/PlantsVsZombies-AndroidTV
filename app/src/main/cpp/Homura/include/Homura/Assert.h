@@ -25,18 +25,18 @@
 
 namespace homura {
 
-namespace details {
+namespace detail {
     [[noreturn]] void AssertionFailedImpl(std::source_location location, const char *expression);
     [[noreturn]] void AssertionFailedImpl(std::source_location location, const char *expression, const char *message);
-} // namespace details
+} // namespace detail
 
 [[noreturn]] inline void AssertionFailed(std::source_location location, const char *expression) {
-    details::AssertionFailedImpl(location, expression);
+    detail::AssertionFailedImpl(location, expression);
 }
 
 template <typename... Args>
 [[noreturn]] void AssertionFailed(std::source_location location, const char *expression, std::format_string<Args...> format, Args &&...args) {
-    details::AssertionFailedImpl(location, expression, std::vformat(format.get(), std::make_format_args(args...)).c_str());
+    detail::AssertionFailedImpl(location, expression, std::vformat(format.get(), std::make_format_args(args...)).c_str());
 }
 
 } // namespace homura

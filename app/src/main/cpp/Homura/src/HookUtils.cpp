@@ -27,12 +27,12 @@
 #include <cerrno>
 #include <cstring>
 
-void homura::details::HookFuncImpl(void *symbol, void *newFunc, void **oldFuncAddr) {
+void homura::detail::HookFuncImpl(void *symbol, void *newFunc, void **oldFuncAddr) {
     assert((symbol != nullptr) && (newFunc != nullptr));
     MSHookFunction(symbol, newFunc, oldFuncAddr);
 }
 
-bool homura::details::HookVirtualFuncImpl(void *vTableSymbol, std::size_t index, void *newFunc, void **oldFuncAddr) {
+bool homura::detail::HookVirtualFuncImpl(void *vTableSymbol, std::size_t index, void *newFunc, void **oldFuncAddr) {
     assert((vTableSymbol != nullptr) && (newFunc != nullptr));
 
     auto funcPtrAddr = reinterpret_cast<void **>(vTableSymbol) + index;
@@ -50,7 +50,7 @@ bool homura::details::HookVirtualFuncImpl(void *vTableSymbol, std::size_t index,
     return true;
 }
 
-bool homura::details::HookPltFuncImpl(std::string_view libName, std::uintptr_t offset, void *newFunc, void **oldFuncAddr) {
+bool homura::detail::HookPltFuncImpl(std::string_view libName, std::uintptr_t offset, void *newFunc, void **oldFuncAddr) {
     assert(offset > 0);
     assert(newFunc != nullptr);
 
