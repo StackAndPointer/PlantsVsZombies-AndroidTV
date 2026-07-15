@@ -310,32 +310,55 @@ void SaveGameContext::SyncReanimationDef(ReanimatorDefinition *&theDefinition) {
     }
 }
 
-void SyncReanimation(Board *theBoard, Reanimation *theReanimation, SaveGameContext &theContext) { // 也许读档后需要修复动画贴图的BUG来自这里，但没时间了，先不管了
+void SyncReanimation(Board *theBoard, Reanimation *theReanimation, SaveGameContext &theContext) {
     theContext.SyncReanimationDef(theReanimation->mDefinition);
+
     if (theContext.mReading) {
         theReanimation->mReanimationHolder = theBoard->mApp->mEffectSystem->mReanimationHolder;
     }
 
-    if (theReanimation->mDefinition->mTrackCount != 0) {
-        int aSize = theReanimation->mDefinition->mTrackCount * sizeof(ReanimatorTrackInstance);
+    const int aTrackCount = theReanimation->mDefinition->mTrackCount;
+    if (aTrackCount == 0) {
+        return;
+    }
+
+    const std::size_t aTrackInstancesSize = static_cast<std::size_t>(aTrackCount) * sizeof(ReanimatorTrackInstance);
+
+    const std::size_t aTransformsSize = static_cast<std::size_t>(aTrackCount) * sizeof(ReanimatorTransform);
+
+    const std::size_t aAllocationSize = aTrackInstancesSize + aTransformsSize;
+
+    if (theContext.mReading) {
+        auto *aMemory = static_cast<unsigned char *>(FindGlobalAllocator(aAllocationSize)->Calloc(aAllocationSize));
+
+        HOMURA_ASSERT(aMemory != nullptr);
+
+        theReanimation->mTrackInstances = reinterpret_cast<ReanimatorTrackInstance *>(aMemory);
+
+        theReanimation->mReanimatorTransforms = reinterpret_cast<ReanimatorTransform *>(aMemory + aTrackInstancesSize);
+
+        theReanimation->unk2[0] = 7;
+
+        theReanimation->SetAnimRate(theReanimation->mAnimRate);
+    }
+
+    // 原版存档只同步 TrackInstance，不同步后面的 ReanimatorTransform。
+    theContext.SyncBytes(theReanimation->mTrackInstances, static_cast<int>(aTrackInstancesSize));
+
+    for (int aTrackIndex = 0; aTrackIndex < aTrackCount; ++aTrackIndex) {
+        ReanimatorTrackInstance &aTrackInstance = theReanimation->mTrackInstances[aTrackIndex];
+
+        theContext.SyncImage(aTrackInstance.mImageOverride);
+
         if (theContext.mReading) {
-            theReanimation->mTrackInstances = (ReanimatorTrackInstance *)FindGlobalAllocator(aSize)->Calloc(aSize);
-        }
-        theContext.SyncBytes(theReanimation->mTrackInstances, aSize);
+            aTrackInstance.mBlendTransform.mName = (char *)"";
 
-        for (int aTrackIndex = 0; aTrackIndex < theReanimation->mDefinition->mTrackCount; aTrackIndex++) {
-            ReanimatorTrackInstance &aTrackInstance = theReanimation->mTrackInstances[aTrackIndex];
-            theContext.SyncImage(aTrackInstance.mImageOverride); // 这里SyncImage有可能有问题，先不管了
-
-            if (theContext.mReading) {
-                aTrackInstance.mBlendTransform.mName = (char *)"";
-                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mFont == nullptr);
-                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mImage == nullptr);
-            } else {
-                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mName[0] == '\0');
-                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mFont == nullptr);
-                HOMURA_ASSERT(aTrackInstance.mBlendTransform.mImage == nullptr);
-            }
+            HOMURA_ASSERT(aTrackInstance.mBlendTransform.mFont == nullptr);
+            HOMURA_ASSERT(aTrackInstance.mBlendTransform.mImage == nullptr);
+        } else {
+            HOMURA_ASSERT(aTrackInstance.mBlendTransform.mName[0] == '\0');
+            HOMURA_ASSERT(aTrackInstance.mBlendTransform.mFont == nullptr);
+            HOMURA_ASSERT(aTrackInstance.mBlendTransform.mImage == nullptr);
         }
     }
 }

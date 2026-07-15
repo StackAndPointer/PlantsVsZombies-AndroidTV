@@ -40,11 +40,6 @@ inline constexpr uintptr_t ZOMBIE_ISTANGLEKELPTARGET2_ADDR_RELATIVE = 0x1A8338; 
 inline constexpr uintptr_t J_AUDIOWRITE_ADDR_RELATIVE = 0x12E6C4;
 inline constexpr uintptr_t PVZSTL_STRING_EMPTY_REP = 0x71BB54;
 inline constexpr uintptr_t PVZSTL_WSTRING_EMPTY_REP = 0x69E45C;
-inline constexpr uintptr_t AGVideoOpenOffset = 0x69394C;
-inline constexpr uintptr_t AGVideoShowOffset = 0x69393C;
-inline constexpr uintptr_t AGVideoEnableOffset = 0x693940;
-inline constexpr uintptr_t AGVideoIsPlayingOffset = 0x693944;
-inline constexpr uintptr_t AGVideoPlayOffset = 0x693950;
 #endif // PVZ_VERSION
 
 #endif // PVZ_MAGICNUMBERS_H
