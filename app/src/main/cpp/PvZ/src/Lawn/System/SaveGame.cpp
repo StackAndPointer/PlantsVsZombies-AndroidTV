@@ -141,21 +141,9 @@ bool LawnLoadGame_Original(Board *theBoard, SaveGameContext *theContext) {
 void FixBoardAfterLoad(Board *theBoard) {
     LawnApp *app = theBoard->mApp;
 
-    using RbTreeEraseFn = void (*)(PlantRbTree *theTree, void *theRoot);
-    auto PlantTreeErase = reinterpret_cast<RbTreeEraseFn>(PlantPtrSet_M_eraseAddr);
-    PlantTreeErase(&theBoard->mTangleKelpTree, theBoard->mPumpkinTree.mRoot);
-    PlantTreeErase(&theBoard->mFlowerPotTree, theBoard->mPumpkinTree.mRoot);
-    PlantTreeErase(&theBoard->mPumpkinTree, theBoard->mPumpkinTree.mRoot);
-
-    auto PlantRbTreeInsertUnique = [](PlantRbTree *tree, Plant *plant) {
-        using RbTreeInsertUniqueFn = void (*)(void *retStorage, PlantRbTree *tree, Plant **value);
-        auto RbTreeInsertUnique = reinterpret_cast<RbTreeInsertUniqueFn>(PlantPtrSet_M_insert_uniqueAddr);
-        // IDB 里 v39 是返回对象存储，实际需要至少容纳 pair<iterator,bool>。
-        uintptr_t retStorage[2] = {};
-
-        Plant *value = plant;
-        RbTreeInsertUnique(retStorage, tree, &value);
-    };
+    theBoard->mTangleKelpTree->clear();
+    theBoard->mFlowerPotTree->clear();
+    theBoard->mPumpkinTree->clear();
 
     Plant *aPlant = nullptr;
     while (theBoard->mPlants.IterateNext(aPlant)) {
@@ -164,15 +152,15 @@ void FixBoardAfterLoad(Board *theBoard) {
 
         switch (aPlant->mSeedType) {
             case SeedType::SEED_TANGLEKELP:
-                PlantRbTreeInsertUnique(&theBoard->mTangleKelpTree, aPlant);
+                theBoard->mTangleKelpTree->emplace(aPlant);
                 break;
 
             case SeedType::SEED_FLOWERPOT:
-                PlantRbTreeInsertUnique(&theBoard->mFlowerPotTree, aPlant);
+                theBoard->mFlowerPotTree->emplace(aPlant);
                 break;
 
             case SeedType::SEED_PUMPKINSHELL:
-                PlantRbTreeInsertUnique(&theBoard->mPumpkinTree, aPlant);
+                theBoard->mPumpkinTree->emplace(aPlant);
                 break;
 
             default:

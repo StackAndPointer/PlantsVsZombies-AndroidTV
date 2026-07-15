@@ -122,20 +122,6 @@ void SendPeriodicNetPing() {
     netplay::PutEvent(eventPing);
 }
 
-Sexy::Dialog *GetLastDialogInMap(pvzstl::map<int, Sexy::Dialog *> &theDialogMap) {
-    using NodeBase = pvzstl::detail::rb_tree_node_base;
-
-    auto *aNode = reinterpret_cast<NodeBase *>(theDialogMap.mLeftmost);
-    auto *aHeader = reinterpret_cast<NodeBase *>(&theDialogMap.mHeaderColor);
-    Sexy::Dialog *aLastDialog = nullptr;
-
-    while (aNode != aHeader) {
-        aLastDialog = *reinterpret_cast<Sexy::Dialog **>(reinterpret_cast<std::uint8_t *>(aNode) + 0x14);
-        aNode = pvzstl::detail::rb_tree_increment(aNode);
-    }
-
-    return aLastDialog;
-}
 } // namespace
 
 // 此处写明具体每个贴图对应哪个文件.
@@ -635,7 +621,7 @@ void LawnApp::FinishLoadGame() {
 
     mBoard->Pause(true);
 
-    Sexy::Dialog *aDialog = GetLastDialogInMap(mDialogMap);
+    Sexy::Dialog *aDialog = mDialogMap->empty() ? nullptr : (--mDialogMap->end())->second;
     if (aDialog != nullptr) {
         mWidgetManager->SetFocus(aDialog);
     }

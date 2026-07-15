@@ -135,26 +135,26 @@ public:
     };
 
 public:
-    void **vTable;                 // 0
-    WidgetListHead mWidgets;       // 1 ~ 5
-    WidgetManager *mWidgetManager; // 6
-    WidgetContainer *mParent;      // 7
-    bool mUpdateIteratorModified;  // 32
-    int *mUpdateIterator;          // 9
-    int mLastWMUpdateCount;        // 10
-    int mUpdateCnt;                // 11
-    bool mDirty;                   // 12
-    int mX;                        // 13
-    int mY;                        // 14
-    int mWidth;                    // 15
-    int mHeight;                   // 16
-    bool mHasAlpha;                // 68
-    bool mClip;                    // 69
-    FlagsMod mWidgetFlagsMod;      // 18 ~ 19
-    int mPriority;                 // 20
-    int mZOrder;                   // 21
-    WidgetUserDataMap32 mUserData; // 22 ~ 27
-    int mWidgetId;                 // 28
+    void **vTable;                                  // 0
+    WidgetListHead mWidgets;                        // 1 ~ 5
+    WidgetManager *mWidgetManager;                  // 6
+    WidgetContainer *mParent;                       // 7
+    bool mUpdateIteratorModified;                   // 32
+    int *mUpdateIterator;                           // 9
+    int mLastWMUpdateCount;                         // 10
+    int mUpdateCnt;                                 // 11
+    bool mDirty;                                    // 12
+    int mX;                                         // 13
+    int mY;                                         // 14
+    int mWidth;                                     // 15
+    int mHeight;                                    // 16
+    bool mHasAlpha;                                 // 68
+    bool mClip;                                     // 69
+    FlagsMod mWidgetFlagsMod;                       // 18 ~ 19
+    int mPriority;                                  // 20
+    int mZOrder;                                    // 21
+    homura::Storage<WidgetUserDataMap32> mUserData; // 22 ~ 27
+    int mWidgetId;                                  // 28
     // 大小未知，目前认为是29个整数。反正Widget是64个整数，足够了。
 
     void SetFocus(Widget *theWidget) { // vTable + 48

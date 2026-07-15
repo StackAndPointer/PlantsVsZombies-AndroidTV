@@ -21,6 +21,7 @@
 #define PVZ_SEXYAPPFRAMEWORK_GRAPHICS_MEMORY_IMAGE_H
 
 #include "PvZ/STL/map.h"
+#include "PvZ/STL/set.h"
 #include "Image.h"
 
 namespace Sexy {
@@ -252,4 +253,4 @@ inline void (*old_Sexy_MemoryImage_PushTransform)(Sexy::MemoryImage *image, cons
 inline void (*old_Sexy_MemoryImage_PopTransform)(Sexy::MemoryImage *image);
 
 
-#endif // PVZ_SEXYAPPFRAMEWORK_GRAPHICS_MEMORY_IMAGE_H
+#endif // PVZ_SEXYAPPFRAMEWORK

@@ -17,9 +17,22 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PVZ_STL_MAP_H
-#define PVZ_STL_MAP_H
+#ifndef PVZ_STL_CONCEPTS_H
+#define PVZ_STL_CONCEPTS_H
 
-#include "bits/stl_map.h"
+#include <concepts>
 
-#endif // PVZ_STL_MAP_H
+namespace pvzstl::detail {
+
+// [concept.booleantestable], Boolean testability
+template <typename Tp>
+concept boolean_testable_impl = std::convertible_to<Tp, bool>;
+
+template <typename Tp>
+concept boolean_testable = boolean_testable_impl<Tp> && requires(Tp &&t) {
+    { !static_cast<Tp &&>(t) } -> boolean_testable_impl;
+};
+
+} // namespace pvzstl::detail
+
+#endif // PVZ_STL_CONCEPTS_H

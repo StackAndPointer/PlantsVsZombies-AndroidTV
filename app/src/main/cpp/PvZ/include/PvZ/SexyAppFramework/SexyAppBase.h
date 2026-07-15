@@ -22,6 +22,7 @@
 
 #include "PvZ/MagicNumbers.h"
 #include "PvZ/STL/map.h"
+#include "PvZ/STL/set.h"
 #include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Thread.h"
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
@@ -62,13 +63,6 @@ struct SexyOpaqueRect32 {
     int y;
     int width;
     int height; // 0x10
-};
-
-// ARM32 std::vector<pvzstl::string> storage.
-struct SexyStringVector32 {
-    unsigned int mBegin;
-    unsigned int mEnd;
-    unsigned int mCapacityEnd;
 };
 
 // Exact 0x34-byte footprint observed around AddParameterEntries().
@@ -289,10 +283,10 @@ public:
 
     WidgetManager *mWidgetManager; // 0x294, dword 165
 
-    pvzstl::map<int, Sexy::Dialog *> mDialogMap; // 0x298
-    SexyOpaqueList32 mDialogList;                // 0x2B0
-    unsigned int mPrimaryThreadId;               // 0x2B8
-    Sexy::Thread mPrimaryThread;                 // 0x2BC, Android addition
+    homura::Storage<pvzstl::map<int, Sexy::Dialog *>> mDialogMap; // 0x298
+    SexyOpaqueList32 mDialogList;                                 // 0x2B0
+    unsigned int mPrimaryThreadId;                                // 0x2B8
+    Sexy::Thread mPrimaryThread;                                  // 0x2BC, Android addition
 
     bool unkAppState_2C4;          // 0x2C4, likely mSEHOccured from PC member order
     bool mShutDown;                // 0x2C5, confirmed by external xref
@@ -338,14 +332,14 @@ public:
     bool mDemoMute;                              // 0x3E0
     bool mMuteOnLostFocus;                       // 0x3E1
 
-    pvzstl::set<Sexy::MemoryImage *> mMemoryImageSet;                                       // 0x3E4
-    SexyOpaqueCritSect32 mMemoryImageCritSect;                                              // 0x3FC, Android addition
-    pvzstl::set<void *> mPIEffectSet;                                                       // 0x400, std::set<PIEffect*>
-    pvzstl::set<void *> mPopAnimSet;                                                        // 0x418, std::set<PopAnim*>
-    pvzstl::map<std::pair<pvzstl::string, pvzstl::string>, void *> mSharedImageMap;         // 0x430, map<pair<string,string>, SharedImage>
-    bool mCleanupSharedImages;                                                              // 0x448
-    pvzstl::map<pvzstl::string, pvzstl::map<pvzstl::string, Sexy::Image *>> mImageGroupMap; // 0x44C
-    pvzstl::map<int, pvzstl::string> mImageIdStringMap;                                     // 0x464
+    homura::Storage<pvzstl::set<Sexy::MemoryImage *>> mMemoryImageSet;                                       // 0x3E4
+    SexyOpaqueCritSect32 mMemoryImageCritSect;                                                               // 0x3FC, Android addition
+    homura::Storage<pvzstl::set<void *>> mPIEffectSet;                                                       // 0x400, std::set<PIEffect*>
+    homura::Storage<pvzstl::set<void *>> mPopAnimSet;                                                        // 0x418, std::set<PopAnim*>
+    homura::Storage<pvzstl::map<std::pair<pvzstl::string, pvzstl::string>, void *>> mSharedImageMap;         // 0x430, map<pair<string,string>, SharedImage>
+    bool mCleanupSharedImages;                                                                               // 0x448
+    homura::Storage<pvzstl::map<pvzstl::string, pvzstl::map<pvzstl::string, Sexy::Image *>>> mImageGroupMap; // 0x44C
+    homura::Storage<pvzstl::map<int, pvzstl::string>> mImageIdStringMap;                                     // 0x464
 
     int mNonDrawCount;               // 0x47C
     int mFrameTime;                  // 0x480
@@ -490,40 +484,40 @@ public:
     int mScreenHeight;                     // 0x64C = 600
     bool unkDisplayFlags_650[4];           // 0x650
 
-    pvzstl::map<pvzstl::string, pvzstl::string> mStringProperties;           // 0x654, map<string, SexyString>
-    pvzstl::map<pvzstl::string, bool> mBoolProperties;                       // 0x66C
-    pvzstl::map<pvzstl::string, int> mIntProperties;                         // 0x684
-    pvzstl::map<pvzstl::string, double> mDoubleProperties;                   // 0x69C
-    pvzstl::map<pvzstl::string, SexyStringVector32> mStringVectorProperties; // 0x6B4, map<string, vector<string>>
-    ResourceManager *mResourceManager;                                       // 0x6CC, unkMem5[48]
+    homura::Storage<pvzstl::map<pvzstl::string, pvzstl::string>> mStringProperties;                    // 0x654, map<string, SexyString>
+    homura::Storage<pvzstl::map<pvzstl::string, bool>> mBoolProperties;                                // 0x66C
+    homura::Storage<pvzstl::map<pvzstl::string, int>> mIntProperties;                                  // 0x684
+    homura::Storage<pvzstl::map<pvzstl::string, double>> mDoubleProperties;                            // 0x69C
+    homura::Storage<pvzstl::map<pvzstl::string, std::vector<pvzstl::string>>> mStringVectorProperties; // 0x6B4, map<string, vector<string>>
+    ResourceManager *mResourceManager;                                                                 // 0x6CC, unkMem5[48]
 
-    char mPopLoc[0x30];                            // 0x6D0, unkMem5[49]~[60]
-    int *mAuthManager;                             // 0x700, unkMem5[61]
-    int unkAuth_704[3];                            // 0x704, unkMem5[62]~[64]
-    int *mInputManager;                            // 0x710, unkMem5[65]
-    int *mInputConnectManager;                     // 0x714, unkMem5[66]
-    homura::Storage<pvzstl::string> unkString_718; // 0x718
-    SexyStringVector32 mUnknownStringVector;       // 0x71C, vector<string>
-    void *mUnknownHeap_728;                        // 0x728, separately deleted
-    int unk_72C;                                   // 0x72C
-    int unk_730;                                   // 0x730
-    float unkFloat_734;                            // 0x734 = 100.0f
-    float unkFloat_738;                            // 0x738 = 100.0f
-    int unkInt_73C;                                // 0x73C = 100
-    int mMaxFPS;                                   // 0x740, SEXY_MAX_FPS
-    int unk_744[2];                                // 0x744
-    bool unkFlag_74C;                              // 0x74C = true
-    homura::Storage<pvzstl::string> unkString_750; // 0x750
-    SexyParameterStorage32 mParameterStorage;      // 0x754
-    void *mParameterEntriesHeap;                   // 0x788, deleted in destructor
-    int unk_78C;                                   // 0x78C
-    int unk_790;                                   // 0x790
-    bool unkFlags_794[4];                          // 0x794
-    int unk_798;                                   // 0x798
-    bool mThreadedPreload;                         // 0x79C, default true
-    bool unkPreload_79D;                           // 0x79D
-    bool mSafeReload;                              // 0x79E, SEXY_SAFE_RELOAD
-    bool unkPreload_79F;                           // 0x79F
+    char mPopLoc[0x30];                                                // 0x6D0, unkMem5[49]~[60]
+    int *mAuthManager;                                                 // 0x700, unkMem5[61]
+    int unkAuth_704[3];                                                // 0x704, unkMem5[62]~[64]
+    int *mInputManager;                                                // 0x710, unkMem5[65]
+    int *mInputConnectManager;                                         // 0x714, unkMem5[66]
+    homura::Storage<pvzstl::string> unkString_718;                     // 0x718
+    homura::Storage<std::vector<pvzstl::string>> mUnknownStringVector; // 0x71C, vector<string>
+    void *mUnknownHeap_728;                                            // 0x728, separately deleted
+    int unk_72C;                                                       // 0x72C
+    int unk_730;                                                       // 0x730
+    float unkFloat_734;                                                // 0x734 = 100.0f
+    float unkFloat_738;                                                // 0x738 = 100.0f
+    int unkInt_73C;                                                    // 0x73C = 100
+    int mMaxFPS;                                                       // 0x740, SEXY_MAX_FPS
+    int unk_744[2];                                                    // 0x744
+    bool unkFlag_74C;                                                  // 0x74C = true
+    homura::Storage<pvzstl::string> unkString_750;                     // 0x750
+    SexyParameterStorage32 mParameterStorage;                          // 0x754
+    void *mParameterEntriesHeap;                                       // 0x788, deleted in destructor
+    int unk_78C;                                                       // 0x78C
+    int unk_790;                                                       // 0x790
+    bool unkFlags_794[4];                                              // 0x794
+    int unk_798;                                                       // 0x798
+    bool mThreadedPreload;                                             // 0x79C, default true
+    bool unkPreload_79D;                                               // 0x79D
+    bool mSafeReload;                                                  // 0x79E, SEXY_SAFE_RELOAD
+    bool unkPreload_79F;                                               // 0x79F
 
     Dialog *GetDialog(Dialogs theDialogId) { // vTable + 4 * 103
         return reinterpret_cast<Dialog *(*)(SexyAppBase *, Dialogs)>(Sexy_SexyAppBase_GetDialogAddr)(this, theDialogId);

@@ -24,6 +24,7 @@
 #include "PvZ/Lawn/Widget/AchievementsWidget.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/STL/map.h"
+#include "PvZ/STL/set.h"
 #include "PvZ/SexyAppFramework/Misc/KeyCodes.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/TodLib/Common/DataArray.h"
@@ -272,13 +273,13 @@ public:
     DataArray<Coin> mCoins;                                           // 91 ~ 97
     DataArray<LawnMower> mLawnMowers;                                 // 98 ~ 104
     DataArray<GridItem> mGridItems;                                   // 105 ~ 111
-    PlantRbTree mTangleKelpTree;                                      // 112 ~ 117
-    PlantRbTree mFlowerPotTree;                                       // 118 ~ 123
-    PlantRbTree mPumpkinTree;                                         // 124 ~ 129
+    homura::Storage<PlantRbTree> mTangleKelpTree;                     // 112 ~ 117
+    homura::Storage<PlantRbTree> mFlowerPotTree;                      // 118 ~ 123
+    homura::Storage<PlantRbTree> mPumpkinTree;                        // 124 ~ 129
     CustomMessageWidget *mAdvice;                                     // 130
     SeedBank *mSeedBank[2];                                           // 131 ~ 132
     int mUnknown214;                                                  // 133
-    StringIntMap mUnknownStringIntMap;                                // 134 ~ 139
+    homura::Storage<StringIntMap> mUnknownStringIntMap;               // 134 ~ 139
     GamepadControls *mGamepadControls[2];                             // 140 ~ 141
     CursorObject *mCursorObject[2];                                   // 142 ~ 143
     CursorPreview *mCursorPreview[2];                                 // 144 ~ 145
@@ -402,10 +403,10 @@ public:
     bool mUnknown58E8;                                                // 0x58E8
     bool mUnknown58E9;                                                // 0x58E9
     std::uint8_t mPadding58EA[2];
-    StringSetLayout mUnknownStringSet;       // 0x58EC
-    int mUnknown5904;                        // 0x5904
-    GameButton *mBoardMenuButton = nullptr;  // 新增成员
-    GameButton *mBoardStoreButton = nullptr; // 新增成员
+    homura::Storage<StringSetLayout> mUnknownStringSet; // 0x58EC
+    int mUnknown5904;                                   // 0x5904
+    GameButton *mBoardMenuButton = nullptr;             // 新增成员
+    GameButton *mBoardStoreButton = nullptr;            // 新增成员
     ShovelRedirectWidget *mShovelWidget = nullptr;
     ReplayControlsWidget *mReplayControlsWidget = nullptr;
 

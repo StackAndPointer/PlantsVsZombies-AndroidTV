@@ -17,9 +17,19 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PVZ_STL_MAP_H
-#define PVZ_STL_MAP_H
+#ifndef PVZ_STL_BITS_STL_PAIR_H
+#define PVZ_STL_BITS_STL_PAIR_H
 
-#include "bits/stl_map.h"
+#include <utility>
 
-#endif // PVZ_STL_MAP_H
+namespace pvzstl::detail {
+
+template <typename Tp>
+inline constexpr bool is_pair = false;
+
+template <typename Tp, typename Up>
+inline constexpr bool is_pair<std::pair<Tp, Up>> = true;
+
+} // namespace pvzstl::detail
+
+#endif // PVZ_STL_BITS_STL_PAIR_H

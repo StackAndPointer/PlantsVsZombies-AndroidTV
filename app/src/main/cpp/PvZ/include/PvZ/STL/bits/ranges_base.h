@@ -17,9 +17,16 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PVZ_STL_MAP_H
-#define PVZ_STL_MAP_H
+#ifndef PVZ_STL_BITS_STL_RANGES_BASE_H
+#define PVZ_STL_BITS_STL_RANGES_BASE_H
 
-#include "bits/stl_map.h"
+#include <ranges>
 
-#endif // PVZ_STL_MAP_H
+namespace pvzstl::detail {
+
+template <typename Rg, typename Tp>
+concept container_compatible_range = std::ranges::input_range<Rg> && std::convertible_to<std::ranges::range_reference_t<Rg>, Tp>;
+
+} // namespace pvzstl::detail
+
+#endif // PVZ_STL_BITS_STL_RANGES_BASE_H

@@ -95,10 +95,10 @@ void Board::_constructor(LawnApp *theApp) {
     SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVTableOffset2);
     auto &syncBlocks = mSyncBlocks.Construct();
 
-    mFlowerPotTree.reset();
-    mTangleKelpTree.reset();
-    mPumpkinTree.reset();
-    mUnknownStringIntMap.reset();
+    mFlowerPotTree.Construct();
+    mTangleKelpTree.Construct();
+    mPumpkinTree.Construct();
+    mUnknownStringIntMap.Construct();
 
     constexpr std::uintptr_t kBoardSyncStart = 0x259;
     constexpr std::uintptr_t kBoardSyncEnd = 0x58D2;
@@ -264,7 +264,7 @@ void Board::_constructor(LawnApp *theApp) {
     mUnknown214 = 0;
     mUnknown58E8 = true;
     mUnknown58E9 = false;
-    mUnknownStringSet.reset();
+    mUnknownStringSet.Construct();
     mUnknown5904 = 0;
 
     pvzstl::string str = (theApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || theApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) ? "[MAIN_MENU_BUTTON]" : "[MENU_BUTTON]";
@@ -305,13 +305,6 @@ void Board::_constructor(LawnApp *theApp) {
 }
 
 void Board::_destructor() {
-    using StringSetEraseFn = void (*)(StringSetLayout *theTree, void *theRoot);
-    using StringIntMapEraseFn = void (*)(StringIntMap *theTree, void *theRoot);
-    using PlantTreeEraseFn = void (*)(PlantRbTree *theTree, void *theRoot);
-    auto StringSetErase = reinterpret_cast<StringSetEraseFn>(StringSet_M_eraseAddr);
-    auto StringIntMapErase = reinterpret_cast<StringIntMapEraseFn>(StringIntMap_M_eraseAddr);
-    auto PlantTreeErase = reinterpret_cast<PlantTreeEraseFn>(PlantPtrSet_M_eraseAddr);
-
     Widget::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(vTableForBoardAddr) + 8);
     ButtonListener::vTable = reinterpret_cast<const Sexy::ButtonListener::VTable *>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVtableOffset);
     SyncObject::vTable = reinterpret_cast<void **>(reinterpret_cast<uintptr_t>(Widget::vTable) + kBoardButtonListenerVTableOffset2);
@@ -353,57 +346,17 @@ void Board::_destructor() {
 
     std::memset(mCoverLayerAnimIDs, 0, sizeof(mCoverLayerAnimIDs));
 
-    struct LegacyRbTreeNodeBase {
-        std::int32_t mColor;
-        LegacyRbTreeNodeBase *mParent;
-        LegacyRbTreeNodeBase *mLeft;
-        LegacyRbTreeNodeBase *mRight;
-    };
-
-    auto RbTreeIncrement = [](LegacyRbTreeNodeBase *theNode) -> LegacyRbTreeNodeBase * {
-        if (theNode->mRight != nullptr) {
-            theNode = theNode->mRight;
-
-            while (theNode->mLeft != nullptr) {
-                theNode = theNode->mLeft;
-            }
-        } else {
-            LegacyRbTreeNodeBase *aParent = theNode->mParent;
-
-            while (theNode == aParent->mRight) {
-                theNode = aParent;
-                aParent = aParent->mParent;
-            }
-
-            if (theNode->mRight != aParent) {
-                theNode = aParent;
-            }
-        }
-
-        return theNode;
-    };
-
-    auto *aNode = reinterpret_cast<LegacyRbTreeNodeBase *>(mUnknownStringSet.mLeftmost);
-
-    auto *aHeader = reinterpret_cast<LegacyRbTreeNodeBase *>(&mUnknownStringSet.mHeaderColor);
-
-    while (aNode != aHeader) {
-        auto &aResourceName = *reinterpret_cast<pvzstl::string *>(reinterpret_cast<std::uint8_t *>(aNode) + 0x10);
-
+    for (const auto &aResourceName : *mUnknownStringSet) {
         TodDeleteResources(aResourceName);
-
-        aNode = RbTreeIncrement(aNode);
     }
-
-    StringSetErase(&mUnknownStringSet, mUnknownStringSet.mRoot);
+    mUnknownStringSet.Destruct();
+    mUnknownStringIntMap.Destruct();
 
     mStringSecondPlayer.Destruct();
 
-    StringIntMapErase(&mUnknownStringIntMap, mUnknownStringIntMap.mRoot);
-
-    PlantTreeErase(&mPumpkinTree, mPumpkinTree.mRoot);
-    PlantTreeErase(&mFlowerPotTree, mFlowerPotTree.mRoot);
-    PlantTreeErase(&mTangleKelpTree, mTangleKelpTree.mRoot);
+    mPumpkinTree.Destruct();
+    mFlowerPotTree.Destruct();
+    mTangleKelpTree.Destruct();
 
     mSyncBlocks.Destruct();
 

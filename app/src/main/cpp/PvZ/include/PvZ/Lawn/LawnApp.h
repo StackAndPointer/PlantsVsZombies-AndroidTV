@@ -325,10 +325,10 @@ public:
     bool mUnknownDrawFlag;                         // 600
     Sexy::DefaultProfileMgr *mProfileMgr;          // 601
     bool mSkipProfileSaving;                       // 602 * 4
-    Sexy::Level mLevel;                            // 603 ~ 636
+    homura::Storage<Sexy::Level> mLevel;           // 603 ~ 636
     Sexy::Image *mQRCodeImage;                     // 637
     Sexy::Image *mQRCodeImageBackground;           // 638
-    StringIntMap mKeyValueData;                    // 639 ~ 644
+    homura::Storage<StringIntMap> mKeyValueData;   // 639 ~ 644
     int mInitialSunMoney;                          // 645     // 这个数据能给玩家加初始阳光
     bool mIsFullVersion;                           // 2584
     int mPendingBuyToolId;                         // 647

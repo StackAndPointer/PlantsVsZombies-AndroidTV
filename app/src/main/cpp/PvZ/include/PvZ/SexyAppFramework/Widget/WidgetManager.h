@@ -108,7 +108,7 @@ public:
     int mDownButtons;
     int mActualDownButtons;
     int mLastInputUpdateCnt;
-    KeyDownMapLayout mKeyDown;
+    homura::Storage<KeyDownMapLayout> mKeyDown;
     int mLastDownButtonId;
     int mWidgetFlags;
     char unkMem6[60]; // 推测和AxisMove有关

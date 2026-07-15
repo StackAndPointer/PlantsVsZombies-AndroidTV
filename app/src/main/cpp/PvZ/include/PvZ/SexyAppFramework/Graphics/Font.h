@@ -30,30 +30,32 @@ namespace Sexy {
 
 class Graphics;
 
+class Glyph {};
+
 class Font {
 public:
     struct FontVTable {
-        void (*completeDestructor)(Font *self);                                                                                                                                              // 0x00
-        void (*deletingDestructor)(Font *self);                                                                                                                                              // 0x04
-        int (*GetAscent)(Font *self);                                                                                                                                                        // 0x08
-        int (*GetAscentPadding)(Font *self);                                                                                                                                                 // 0x0C
-        int (*GetDescent)(Font *self);                                                                                                                                                       // 0x10
-        int (*GetHeight)(Font *self);                                                                                                                                                        // 0x14
-        int (*GetLineSpacingOffset)(Font *self);                                                                                                                                             // 0x18
-        int (*GetLineSpacing)(Font *self);                                                                                                                                                   // 0x1C
-        int (*StringWidth)(Font *self, const pvzstl::string &text);                                                                                                                          // 0x20
-        int (*StringWidthUnicode)(Font *self, const pvzstl::basic_string<int> &text);                                                                                                        // 0x24
-        int (*CharWidth)(Font *self, int character);                                                                                                                                         // 0x28
-        int (*CharWidthKern)(Font *self, int character, int nextCharacter);                                                                                                                  // 0x2C
-        void (*DrawString)(Font *self, Graphics *graphics, int x, int y, const pvzstl::string &text, const Color &color, const TRect<int> &clipRect);                                        // 0x30
-        void (*DrawStringUnicode)(Font *self, Graphics *graphics, int x, int y, const pvzstl::basic_string<int> &text, const Color &color, const TRect<int> &clipRect);                      // 0x34
-        void (*StringToGlyphs)(Font *self, const pvzstl::basic_string<int> &text, std::vector<void> &glyphs);                                                                                // 0x38
-        void (*DrawGlyphs)(Font *self, Graphics *graphics, int x, int y, std::vector<void> &glyphs, unsigned int start, unsigned int count, const Color &color, const TRect<int> &clipRect); // 0x3C
-        void (*GlyphExtentsVector)(Font *self, const std::vector<void> &glyphs, int &extents);                                                                                               // 0x40
-        void (*GlyphExtentsList)(Font *self, const int &glyphsList, int &extents);                                                                                                           // 0x44
-        void (*StringExtents)(Font *self, const pvzstl::string &text, int &extents);                                                                                                         // 0x48
-        void (*StringExtentsUnicode)(Font *self, const pvzstl::basic_string<int> &text, int &extents);                                                                                       // 0x4C
-        bool (*IsComposited)(Font *self);                                                                                                                                                    // 0x50
+        void (*completeDestructor)(Font *self);                                                                                                                                               // 0x00
+        void (*deletingDestructor)(Font *self);                                                                                                                                               // 0x04
+        int (*GetAscent)(Font *self);                                                                                                                                                         // 0x08
+        int (*GetAscentPadding)(Font *self);                                                                                                                                                  // 0x0C
+        int (*GetDescent)(Font *self);                                                                                                                                                        // 0x10
+        int (*GetHeight)(Font *self);                                                                                                                                                         // 0x14
+        int (*GetLineSpacingOffset)(Font *self);                                                                                                                                              // 0x18
+        int (*GetLineSpacing)(Font *self);                                                                                                                                                    // 0x1C
+        int (*StringWidth)(Font *self, const pvzstl::string &text);                                                                                                                           // 0x20
+        int (*StringWidthUnicode)(Font *self, const pvzstl::basic_string<int> &text);                                                                                                         // 0x24
+        int (*CharWidth)(Font *self, int character);                                                                                                                                          // 0x28
+        int (*CharWidthKern)(Font *self, int character, int nextCharacter);                                                                                                                   // 0x2C
+        void (*DrawString)(Font *self, Graphics *graphics, int x, int y, const pvzstl::string &text, const Color &color, const TRect<int> &clipRect);                                         // 0x30
+        void (*DrawStringUnicode)(Font *self, Graphics *graphics, int x, int y, const pvzstl::basic_string<int> &text, const Color &color, const TRect<int> &clipRect);                       // 0x34
+        void (*StringToGlyphs)(Font *self, const pvzstl::basic_string<int> &text, std::vector<Glyph> &glyphs);                                                                                // 0x38
+        void (*DrawGlyphs)(Font *self, Graphics *graphics, int x, int y, std::vector<Glyph> &glyphs, unsigned int start, unsigned int count, const Color &color, const TRect<int> &clipRect); // 0x3C
+        void (*GlyphExtentsVector)(Font *self, const std::vector<Glyph> &glyphs, int &extents);                                                                                               // 0x40
+        void (*GlyphExtentsList)(Font *self, const int &glyphsList, int &extents);                                                                                                            // 0x44
+        void (*StringExtents)(Font *self, const pvzstl::string &text, int &extents);                                                                                                          // 0x48
+        void (*StringExtentsUnicode)(Font *self, const pvzstl::basic_string<int> &text, int &extents);                                                                                        // 0x4C
+        bool (*IsComposited)(Font *self);                                                                                                                                                     // 0x50
     };
 
     void **vTable;
@@ -102,17 +104,17 @@ public:
         int (*CharWidthKern)(ImageFont *self, int character, int previousCharacter);                                                                                         // 0x2C
         void (*DrawString)(ImageFont *self, Graphics *graphics, int x, int y, const pvzstl::string &text, const Color &color, const TRect<int> &clipRect);                   // 0x30
         void (*DrawStringUnicode)(ImageFont *self, Graphics *graphics, int x, int y, const pvzstl::basic_string<int> &text, const Color &color, const TRect<int> &clipRect); // 0x34
-        void (*StringToGlyphs)(ImageFont *self, const pvzstl::basic_string<int> &text, std::vector<void> &glyphs);                                                           // 0x38
+        void (*StringToGlyphs)(ImageFont *self, const pvzstl::basic_string<int> &text, std::vector<Glyph> &glyphs);                                                          // 0x38
         void (*DrawGlyphs)(
-            ImageFont *self, Graphics *graphics, int x, int y, std::vector<void> &glyphs, unsigned int startIndex, unsigned int glyphCount, const Color &color, const TRect<int> &clipRect); // 0x3C
-        void (*GlyphExtentsVector)(Font *self, const std::vector<void> &glyphs, int &extents);                                                                                               // 0x40
-        void (*GlyphExtentsList)(ImageFont *self, const int &glyphs, int &extents);                                                                                                          // 0x44
-        void (*StringExtents)(Font *self, const pvzstl::string &text, int &extents);                                                                                                         // 0x48
-        void (*StringExtentsUnicode)(Font *self, const pvzstl::basic_string<int> &text, int &extents);                                                                                       // 0x4C
-        bool (*IsComposited)(ImageFont *self);                                                                                                                                               // 0x50
-        ImageFont *(*Duplicate)(ImageFont *self);                                                                                                                                            // 0x54
-        void (*GenerateActiveFontLayers)(ImageFont *self);                                                                                                                                   // 0x58
-        void (*DrawStringEx)(ImageFont *self, Graphics *graphics, int x, int y, const pvzstl::string &text, const Color &color, const TRect<int> *clipRect, int *drawnRects, int *width);    // 0x5C
+            ImageFont *self, Graphics *graphics, int x, int y, std::vector<Glyph> &glyphs, unsigned int startIndex, unsigned int glyphCount, const Color &color, const TRect<int> &clipRect); // 0x3C
+        void (*GlyphExtentsVector)(Font *self, const std::vector<Glyph> &glyphs, int &extents);                                                                                               // 0x40
+        void (*GlyphExtentsList)(ImageFont *self, const int &glyphs, int &extents);                                                                                                           // 0x44
+        void (*StringExtents)(Font *self, const pvzstl::string &text, int &extents);                                                                                                          // 0x48
+        void (*StringExtentsUnicode)(Font *self, const pvzstl::basic_string<int> &text, int &extents);                                                                                        // 0x4C
+        bool (*IsComposited)(ImageFont *self);                                                                                                                                                // 0x50
+        ImageFont *(*Duplicate)(ImageFont *self);                                                                                                                                             // 0x54
+        void (*GenerateActiveFontLayers)(ImageFont *self);                                                                                                                                    // 0x58
+        void (*DrawStringEx)(ImageFont *self, Graphics *graphics, int x, int y, const pvzstl::string &text, const Color &color, const TRect<int> *clipRect, int *drawnRects, int *width);     // 0x5C
         void (*DrawStringExUnicode)(ImageFont *self,
                                     Graphics *graphics,
                                     int x,

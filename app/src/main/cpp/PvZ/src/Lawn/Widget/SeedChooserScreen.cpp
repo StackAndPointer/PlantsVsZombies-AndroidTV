@@ -394,10 +394,10 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     }
 
     auto pickSeedsFromLevelConfig = [&]() {
-        Sexy::Level &level = mApp->mLevel;
+        Sexy::Level &level = *mApp->mLevel;
 
-        int *seedConfigBegin = level.mSeedConfig.mBegin;
-        int *seedConfigEnd = level.mSeedConfig.mEnd;
+        int *seedConfigBegin = std::to_address(level.mSeedConfig.begin());
+        int *seedConfigEnd = std::to_address(level.mSeedConfig.end());
 
         int bankIndex = 0;
 
@@ -427,9 +427,9 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     };
 
     if (mBoard->IsLevelDataLoaded()) {
-        const Sexy::Level &level = mApp->mLevel;
+        const Sexy::Level &level = *mApp->mLevel;
 
-        if (level.mSeedConfig.mBegin != level.mSeedConfig.mEnd) {
+        if (!level.mSeedConfig.empty()) {
             pickSeedsFromLevelConfig();
         }
     } else if (mApp->IsAdventureMode() && !mApp->IsFirstTimeAdventureMode()) {
