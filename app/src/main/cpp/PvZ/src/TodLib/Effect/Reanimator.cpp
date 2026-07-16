@@ -114,6 +114,7 @@ static ReanimationParams gExtendedReanimationParamArray[] = {
     {ReanimationType::REANIM_ZOMBLOB_MIDDLE, "addonFiles/compiled/reanim/Zombie_zomblob_middle.reanim", 0},
     {ReanimationType::REANIM_ZOMBLOB_SMALL, "addonFiles/compiled/reanim/Zombie_zomblob_small.reanim", 0},
     {ReanimationType::REANIM_ICEBERG_LETTUCE, "addonFiles/compiled/reanim/iceberg_lettuce.reanim", 0},
+    {ReanimationType::REANIM_CELERY_STALKER, "addonFiles/compiled/reanim/CeleryStalker.reanim", 0},
     {ReanimationType::REANIM_IMP_PEAR, "addonFiles/compiled/reanim/imp_pear.reanim", 0},
     {ReanimationType::REANIM_APPLE_CLOCK, "addonFiles/compiled/reanim/apple_clock.reanim", 0},
 };

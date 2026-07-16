@@ -373,9 +373,12 @@ void InitHookFunction() {
     homura::HookFunc(Plant_UpdateAddr, &Plant::Update, &old_Plant_Update);
     homura::HookFunc(Plant_UpdateAbilitiesAddr, &Plant::UpdateAbilities, &old_Plant_UpdateAbilities);
     homura::HookFunc(Plant_SquishAddr, &Plant::Squish, nullptr);
+    homura::HookFunc(Plant_AnimateAddr, &Plant::Animate, nullptr);
+    homura::HookFunc(Plant_GetPlantRectAddr, &Plant::GetPlantRect, nullptr);
     homura::HookFunc(Plant_GetRefreshTimeAddr, &Plant::GetRefreshTime, &old_Plant_GetRefreshTime);
     homura::HookFunc(Plant_DoSpecialAddr, &Plant::DoSpecial, nullptr);
     homura::HookFunc(Plant_DrawAddr, &Plant::Draw, &old_Plant_Draw);
+    homura::HookFunc(Plant_DrawShadowAddr, &Plant::DrawShadow, nullptr);
     homura::HookFunc(Plant_DrawSeedTypeAddr, &Plant::DrawSeedType, nullptr);
     homura::HookFunc(Plant_GetNameStringAddr, &Plant::GetNameString, nullptr);
     homura::HookFunc(Plant_GetToolTipAddr, &Plant::GetToolTip, nullptr);

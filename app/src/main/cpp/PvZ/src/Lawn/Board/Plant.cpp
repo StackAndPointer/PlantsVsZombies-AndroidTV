@@ -26,6 +26,7 @@
 #include "PvZ/Lawn/Board/GridItem.h"
 #include "PvZ/Lawn/Board/OpeningEncounter.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
+#include "PvZ/Lawn/Board/ZenGarden.h"
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/System/ReanimationLawn.h"
@@ -103,6 +104,7 @@ PlantDefinition gPlantDefs[SeedType::NUM_SEED_TYPES] = {
 
 PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_ICEBERG_LETTUCE, nullptr, ReanimationType::REANIM_ICEBERG_LETTUCE, 0, 0, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "ICEBERG_LETTUCE"},
+    {SeedType::SEED_CELERY_STALKER, nullptr, ReanimationType::REANIM_CELERY_STALKER, 0, 75, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "CELERY_STALKER"},
     {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
 
@@ -113,6 +115,9 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
 
     switch (theSeedType) {
         case SeedType::SEED_ICEBERG_LETTUCE:
+            break;
+        case SeedType::SEED_CELERY_STALKER:
+            mPlantMaxHealth = 1200;
             break;
         default:
             break;
@@ -143,8 +148,9 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
             default:
                 break;
         }
-        mPlantHealth = mPlantMaxHealth;
     }
+
+    mPlantHealth = mPlantMaxHealth;
 }
 
 void Plant::SetSleeping(bool theIsAsleep) {
@@ -277,6 +283,77 @@ bool Plant::IsInPlay() {
     return IsOnBoard() && mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN && mApp->mGameMode != GameMode::GAMEMODE_TREE_OF_WISDOM;
 }
 
+void Plant::Animate() {
+    if ((mSeedType == SeedType::SEED_CHERRYBOMB || mSeedType == SeedType::SEED_JALAPENO) && mApp->mGameMode != GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN) {
+        mShakeOffsetX = RandRangeFloat(-1.0f, 1.0f);
+        mShakeOffsetY = RandRangeFloat(-1.0f, 1.0f);
+    } else if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN && mPottedPlantIndex != -1) {
+        UpdateNeedsFood();
+    }
+
+    if (mRecentlyEatenCountdown > 0) {
+        mRecentlyEatenCountdown--;
+    }
+    if (mEatenFlashCountdown > 0) {
+        mEatenFlashCountdown--;
+    }
+    if (mBeghouledFlashCountdown > 0) {
+        mBeghouledFlashCountdown--;
+    }
+
+    if (mSquished) {
+        mFrame = 0;
+        return;
+    }
+
+    if (mSeedType == SeedType::SEED_WALLNUT || mSeedType == SeedType::SEED_TALLNUT) {
+        AnimateNuts();
+    } else if (mSeedType == SeedType::SEED_GARLIC) {
+        AnimateGarlic();
+    } else if (mSeedType == SeedType::SEED_PUMPKINSHELL) {
+        AnimatePumpkin();
+    } else if (mSeedType == SeedType::SEED_CELERY_STALKER) {
+        AnimateCeleryStalker();
+    }
+
+    UpdateBlink();
+
+    if (mAnimPing) {
+        if (mAnimCounter < mFrameLength * mNumFrames - 1) {
+            mAnimCounter++;
+        } else {
+            mAnimPing = false;
+            mAnimCounter -= mFrameLength;
+        }
+    } else if (mAnimCounter > 0) {
+        mAnimCounter--;
+    } else {
+        mAnimPing = true;
+        mAnimCounter += mFrameLength;
+    }
+
+    mFrame = mAnimCounter / mFrameLength;
+}
+
+void Plant::AnimateCeleryStalker() {
+    Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+    Image *aImageOverride = aBodyReanim->GetImageOverride("CeleryStalker_arm2_upper");
+    if (mPlantHealth < mPlantMaxHealth / 3) {
+        if (aImageOverride != addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER3) {
+            aBodyReanim->SetImageOverride("CeleryStalker_arm2_upper", addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER3);
+            aBodyReanim->SetImageOverride("CeleryStalker_arm2_lower", addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER3);
+        }
+    } else if (mPlantHealth < mPlantMaxHealth * 2 / 3) {
+        if (aImageOverride != addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER2) {
+            aBodyReanim->SetImageOverride("CeleryStalker_arm2_upper", addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER2);
+            aBodyReanim->SetImageOverride("CeleryStalker_arm2_lower", addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER2);
+        }
+    } else {
+        aBodyReanim->SetImageOverride("CeleryStalker_arm2_upper", nullptr);
+        aBodyReanim->SetImageOverride("CeleryStalker_arm2_lower", nullptr);
+    }
+}
+
 void Plant::Update() {
     // 用于修复植物受击闪光、生产发光、铲子下方植物发光，同时实现技能无冷却
 
@@ -325,8 +402,11 @@ void Plant::Update() {
 void Plant::UpdateAbilities() {
     old_Plant_UpdateAbilities(this);
 
-    if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE)
+    if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
         UpdateIcebergLettuce();
+    } else if (mSeedType == SeedType::SEED_CELERY_STALKER) {
+        UpdateCeleryStalker();
+    }
 }
 
 void Plant::Squish() {
@@ -380,6 +460,8 @@ void Plant::Draw(Sexy::Graphics *g) {
     int theCelRow = 0;
     float aOffsetX = 0.0f;
     float aOffsetY = PlantDrawHeightOffset(mBoard, nullptr, mSeedType, mPlantCol, mRow);
+    Rect aOldClipRect = g->mClipRect;
+    bool aCeleryClipApplied = false;
     if (IsFlying(mSeedType) && mSquished) {
         aOffsetY += 30.0f;
     }
@@ -460,6 +542,17 @@ void Plant::Draw(Sexy::Graphics *g) {
     } else if (mBodyReanimID != 0) {
         Reanimation *reanimation2 = mApp->ReanimationTryToGet(mBodyReanimID);
         if (reanimation2 != nullptr) {
+            if (mSeedType == SeedType::SEED_CELERY_STALKER) {
+                Rect aPlantRect = GetPlantRect();
+                int aClipLeft = std::min(aOldClipRect.mX, int(aOffsetX) + (aPlantRect.mX - mX) - 100);
+                int aClipRight = std::max(aOldClipRect.mX + aOldClipRect.mWidth, int(aOffsetX) + (aPlantRect.mX - mX) + aPlantRect.mWidth + 20);
+                int aClipTop = std::min(aOldClipRect.mY, aOldClipRect.mY - 40);
+                int aClipBottom = std::min(aOldClipRect.mY + aOldClipRect.mHeight, int(aOffsetY) + (aPlantRect.mY - mY) + aPlantRect.mHeight);
+                if (aClipRight > aClipLeft && aClipBottom > aClipTop) {
+                    g->SetClipRect(aClipLeft, aClipTop, aClipRight - aClipLeft, aClipBottom - aClipTop);
+                    aCeleryClipApplied = true;
+                }
+            }
             // if (plant->mGloveGrabbed)
             // {
             // SetColorizeImages(g,true);
@@ -467,6 +560,9 @@ void Plant::Draw(Sexy::Graphics *g) {
             // SetColor(g,&color);
             // }
             reanimation2->DrawRenderGroup(g, 0);
+            if (aCeleryClipApplied) {
+                g->mClipRect = aOldClipRect;
+            }
             // if (plant->mGloveGrabbed)
             // {
             // SetColorizeImages(g,false);
@@ -568,6 +664,96 @@ void Plant::Draw(Sexy::Graphics *g) {
             }
             g->SetFont(nullptr);
         }
+    }
+}
+
+void Plant::DrawShadow(Sexy::Graphics *g, float theOffsetX, float theOffsetY) {
+    if (mSeedType == SeedType::SEED_LILYPAD || mSeedType == SeedType::SEED_STARFRUIT || mSeedType == SeedType::SEED_TANGLEKELP || mSeedType == SeedType::SEED_SEASHROOM
+        || mSeedType == SeedType::SEED_COBCANNON || mSeedType == SeedType::SEED_SPIKEWEED || mSeedType == SeedType::SEED_SPIKEROCK || mSeedType == SeedType::SEED_GRAVEBUSTER
+        || mSeedType == SeedType::SEED_CATTAIL || mOnBungeeState == PlantOnBungeeState::RISING_WITH_BUNGEE)
+        return;
+
+    if (IsOnBoard() && mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN && mApp->mZenGarden->mGardenType == GardenType::GARDEN_MAIN)
+        return;
+
+    int aShadowType = 0;
+    float aShadowOffsetX = -3.0f;
+    float aShadowOffsetY = 51.0f;
+    float aScale = 1.0f;
+    if (mBoard && mBoard->StageIsNight()) {
+        aShadowType = 1;
+    }
+
+    if (mSeedType == SeedType::SEED_SQUASH) {
+        if (mBoard) {
+            aShadowOffsetY += mBoard->GridToPixelY(mPlantCol, mRow) - mY;
+        }
+        aShadowOffsetY += 5.0f;
+    } else if (mSeedType == SeedType::SEED_PUFFSHROOM) {
+        aScale = 0.5f;
+        aShadowOffsetY = 42.0f;
+    } else if (mSeedType == SeedType::SEED_SUNSHROOM) {
+        aShadowOffsetY = 42.0f;
+        if (mState == PlantState::STATE_SUNSHROOM_SMALL) {
+            aScale = 0.5f;
+        } else if (mState == PlantState::STATE_SUNSHROOM_GROWING) {
+            Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+            aScale = 0.5f + 0.5f * aBodyReanim->mAnimTime;
+        }
+    } else if (mSeedType == SeedType::SEED_UMBRELLA) {
+        aScale = 0.5f;
+        aShadowOffsetX = -7.0f;
+        aShadowOffsetY = 52.0f;
+    } else if (mSeedType == SeedType::SEED_FUMESHROOM || mSeedType == SeedType::SEED_GLOOMSHROOM) {
+        aScale = 1.3f;
+        aShadowOffsetY = 47.0f;
+    } else if (mSeedType == SeedType::SEED_CABBAGEPULT || mSeedType == SeedType::SEED_MELONPULT || mSeedType == SeedType::SEED_WINTERMELON) {
+        aShadowOffsetY = 47.0f;
+    } else if (mSeedType == SeedType::SEED_KERNELPULT) {
+        aShadowOffsetX = 0.0f;
+        aShadowOffsetY = 47.0f;
+    } else if (mSeedType == SeedType::SEED_SCAREDYSHROOM) {
+        aShadowOffsetX = -9.0f;
+        aShadowOffsetY = 55.0f;
+    } else if (mSeedType == SeedType::SEED_CHOMPER) {
+        aShadowOffsetX = -21.0f;
+        aShadowOffsetY = 57.0f;
+    } else if (mSeedType == SeedType::SEED_FLOWERPOT) {
+        aShadowOffsetX = -4.0f;
+        aShadowOffsetY = 46.0f;
+    } else if (mSeedType == SeedType::SEED_TALLNUT) {
+        aShadowOffsetY = 54.0f;
+        aScale = 1.3f;
+    } else if (mSeedType == SeedType::SEED_PUMPKINSHELL) {
+        aShadowOffsetY = 46.0f;
+        aScale = 1.4f;
+    } else if (mSeedType == SeedType::SEED_CACTUS) {
+        aShadowOffsetX = -8.0f;
+        aShadowOffsetY = 50.0f;
+    } else if (mSeedType == SeedType::SEED_PLANTERN) {
+        aShadowOffsetY = 57.0f;
+    } else if (mSeedType == SeedType::SEED_INSTANT_COFFEE) {
+        aShadowOffsetY = 71.0f;
+    } else if (mSeedType == SeedType::SEED_GIANT_WALLNUT) {
+        aShadowOffsetX = -33.0f;
+        aShadowOffsetY = 56.0f;
+        aScale = 1.7f;
+    } else if (mSeedType == SeedType::SEED_CELERY_STALKER) {
+        aShadowOffsetX = -3.0f;
+        aShadowOffsetY = 57.0f;
+        aScale = 1.3f;
+    }
+
+    if (Plant::IsFlying(mSeedType)) {
+        aShadowOffsetY += 10.0f;
+        if (mBoard && (mBoard->GetTopPlantAt(mPlantCol, mRow, TOPPLANT_ONLY_NORMAL_POSITION) || mBoard->GetTopPlantAt(mPlantCol, mRow, TOPPLANT_ONLY_PUMPKIN)))
+            return;
+    }
+
+    if (aShadowType == 0) {
+        TodDrawImageCelCenterScaledF(g, IMAGE_PLANTSHADOW, theOffsetX + aShadowOffsetX, theOffsetY + aShadowOffsetY, 0, aScale, aScale);
+    } else {
+        TodDrawImageCelCenterScaledF(g, IMAGE_PLANTSHADOW2, theOffsetX + aShadowOffsetX, theOffsetY + aShadowOffsetY, 0, aScale, aScale);
     }
 }
 
@@ -1184,7 +1370,8 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
         }
 
         if (!aZombie->mHasHead || aZombie->IsTangleKelpTarget()) {
-            if (mSeedType == SeedType::SEED_POTATOMINE || mSeedType == SeedType::SEED_CHOMPER || mSeedType == SeedType::SEED_TANGLEKELP || mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+            if (mSeedType == SeedType::SEED_POTATOMINE || mSeedType == SeedType::SEED_CHOMPER || mSeedType == SeedType::SEED_TANGLEKELP || mSeedType == SeedType::SEED_ICEBERG_LETTUCE
+                || mSeedType == SeedType::SEED_CELERY_STALKER) {
                 continue;
             }
         }
@@ -1857,7 +2044,7 @@ bool Plant::IsUpgrade(SeedType theSeedType) {
 
 Rect Plant::GetPlantRect() {
     Rect aRect;
-    if (mSeedType == SeedType::SEED_TALLNUT) {
+    if (mSeedType == SeedType::SEED_TALLNUT || mSeedType == SeedType::SEED_CELERY_STALKER) {
         aRect = Rect(mX + 10, mY, mWidth, mHeight);
     } else if (mSeedType == SeedType::SEED_PUMPKINSHELL) {
         aRect = Rect(mX, mY, mWidth - 20, mHeight);
@@ -1915,6 +2102,9 @@ Rect Plant::GetPlantAttackRect(PlantWeapon thePlantWeapon) {
                 break;
             case SeedType::SEED_ICEBERG_LETTUCE:
                 aRect = Rect(mX, mY, mWidth, mHeight);
+                break;
+            case SeedType::SEED_CELERY_STALKER:
+                aRect = Rect(mX - 80, mY, 60, mHeight);
                 break;
             default:
                 aRect = Rect(mX + 60, mY, BOARD_WIDTH, mHeight);
@@ -2816,5 +3006,132 @@ void Plant::UpdateIcebergLettuce() {
         if (aBodyReanim->ShouldTriggerTimedEvent(0.35f)) {
             DoSpecial();
         }
+    }
+}
+
+void Plant::UpdateCeleryStalker() {
+    static constexpr int kCeleryAttackDamage = 30;
+    static constexpr int kCeleryHitInterval = 50;
+    static constexpr int kCeleryRetreatDelay = 300;
+
+    Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+    Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
+
+    if (mState == PlantState::STATE_CELERY_STALKER_LOWERING) {
+        if (aBodyReanim->mLoopCount > 0) {
+            mState = PlantState::STATE_CELERY_STALKER_LOW;
+            PlayBodyReanim("anim_idlelow", ReanimLoopType::REANIM_LOOP, 20, 0.0f);
+            if (mApp->IsIZombieLevel()) {
+                aBodyReanim->mAnimRate = 0.0f;
+            }
+        }
+        return;
+    }
+
+    if (mState == PlantState::STATE_CELERY_STALKER_LOW) {
+        if (aZombie != nullptr) {
+            mState = PlantState::STATE_CELERY_STALKER_RISING;
+            PlayBodyReanim("anim_rise", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, aBodyReanim->mDefinition->mFPS);
+            mApp->PlayFoley(FoleyType::FOLEY_DIRT_RISE);
+        }
+        return;
+    }
+
+    if (mState == PlantState::STATE_CELERY_STALKER_RISING) {
+        if (aBodyReanim->mLoopCount > 0) {
+            if (aZombie != nullptr) {
+                mState = PlantState::STATE_CELERY_STALKER_PUNCHING;
+                mLaunchCounter = 0;
+                mStateCountdown = 0;
+                PlayBodyReanim("anim_punch", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 18.0f);
+            } else {
+                mState = PlantState::STATE_CELERY_STALKER_HIGH;
+                mLaunchCounter = 0;
+                mStateCountdown = 0;
+                PlayBodyReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 20, 0.0f);
+                if (mApp->IsIZombieLevel()) {
+                    aBodyReanim->mAnimRate = 0.0f;
+                }
+            }
+        }
+        return;
+    }
+
+    if (mState == PlantState::STATE_CELERY_STALKER_PUNCHING) {
+        if (aZombie == nullptr) {
+            mState = PlantState::STATE_CELERY_STALKER_STOPPING;
+            PlayBodyReanim("anim_stop", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 18.0f);
+            return;
+        }
+
+        if (aBodyReanim->mLoopCount > 0) {
+            mState = PlantState::STATE_CELERY_STALKER_ATTACKING;
+            mLaunchCounter = 0;
+            PlayBodyReanim("anim_attack", ReanimLoopType::REANIM_LOOP, 0, 18.0f);
+        }
+        return;
+    }
+
+    if (mState == PlantState::STATE_CELERY_STALKER_ATTACKING) {
+        if (aZombie == nullptr) {
+            mState = PlantState::STATE_CELERY_STALKER_STOPPING;
+            PlayBodyReanim("anim_stop", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 18.0f);
+            return;
+        }
+
+        if (mLaunchCounter <= 0) {
+            unsigned int aDamageFlags = 0U;
+            SetBit(aDamageFlags, int(DamageFlags::DAMAGE_BYPASSES_SHIELD), true);
+            aZombie->TakeDamage(kCeleryAttackDamage, aDamageFlags);
+            mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
+            mLaunchCounter = kCeleryHitInterval;
+        } else {
+            mLaunchCounter--;
+        }
+        return;
+    }
+
+    if (mState == PlantState::STATE_CELERY_STALKER_STOPPING) {
+        if (aBodyReanim->mLoopCount > 0) {
+            mState = PlantState::STATE_CELERY_STALKER_HIGH;
+            mLaunchCounter = 0;
+            mStateCountdown = kCeleryRetreatDelay;
+            PlayBodyReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 20, 0.0f);
+            if (mApp->IsIZombieLevel()) {
+                aBodyReanim->mAnimRate = 0.0f;
+            }
+        }
+        return;
+    }
+
+    if (mState == PlantState::STATE_CELERY_STALKER_HIGH) {
+        if (aZombie == nullptr) {
+            if (mStateCountdown == 1) {
+                mState = PlantState::STATE_CELERY_STALKER_LOWERING;
+                PlayBodyReanim("anim_lower", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, aBodyReanim->mDefinition->mFPS);
+            } else if (mStateCountdown <= 0) {
+                mStateCountdown = kCeleryRetreatDelay;
+            }
+            return;
+        }
+
+        mStateCountdown = 0;
+        mState = PlantState::STATE_CELERY_STALKER_PUNCHING;
+        mLaunchCounter = 0;
+        PlayBodyReanim("anim_punch", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 18.0f);
+        return;
+    }
+
+    if (aZombie != nullptr) {
+        mState = PlantState::STATE_CELERY_STALKER_HIGH;
+        mLaunchCounter = 0;
+        mStateCountdown = 0;
+        PlayBodyReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 20, 0.0f);
+        if (mApp->IsIZombieLevel()) {
+            aBodyReanim->mAnimRate = 0.0f;
+        }
+    } else {
+        mState = PlantState::STATE_CELERY_STALKER_LOWERING;
+        PlayBodyReanim("anim_lower", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, aBodyReanim->mDefinition->mFPS);
     }
 }

@@ -781,6 +781,11 @@ bool LoadGameMain() {
     Plant_UpdateAbilitiesAddr = libGameMain.GetSymbol("_ZN5Plant15UpdateAbilitiesEv");
     Plant_SquishAddr = libGameMain.GetSymbol("_ZN5Plant6SquishEv");
     Plant_AnimateAddr = libGameMain.GetSymbol("_ZN5Plant7AnimateEv");
+    Plant_UpdateNeedsFoodAddr = libGameMain.GetSymbol("_ZN5Plant15UpdateNeedsFoodEv");
+    Plant_AnimateNutsAddr = libGameMain.GetSymbol("_ZN5Plant11AnimateNutsEv");
+    Plant_AnimateGarlicAddr = libGameMain.GetSymbol("_ZN5Plant13AnimateGarlicEv");
+    Plant_AnimatePumpkinAddr = libGameMain.GetSymbol("_ZN5Plant14AnimatePumpkinEv");
+    Plant_UpdateBlinkAddr = libGameMain.GetSymbol("_ZN5Plant11UpdateBlinkEv");
     GetPlantDefinitionAddr = libGameMain.GetSymbol("_Z18GetPlantDefinition8SeedType");
     Plant_PlayBodyReanimAddr = libGameMain.GetSymbol("_ZN5Plant14PlayBodyReanimEPKc14ReanimLoopTypeif");
     Plant_UpdateProductionPlantAddr = libGameMain.GetSymbol("_ZN5Plant21UpdateProductionPlantEv");

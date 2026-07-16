@@ -5248,13 +5248,20 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
         return false;
 
     if (mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING) {
-        return thePlant->mSeedType == SeedType::SEED_POTATOMINE && thePlant->mState == PlantState::STATE_NOTREADY;
+        return (thePlant->mSeedType == SeedType::SEED_POTATOMINE && thePlant->mState == PlantState::STATE_NOTREADY)
+            || (thePlant->mSeedType == SeedType::SEED_CELERY_STALKER && thePlant->mState == PlantState::STATE_CELERY_STALKER_LOW);
     }
 
     if (mZombieType == ZombieType::ZOMBIE_EXPLORER && mHasObject) {
         if (thePlant->mSeedType == SeedType::SEED_POTATOMINE || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
             return false;
         }
+    }
+
+    if (thePlant->mSeedType == SeedType::SEED_CELERY_STALKER) {
+        return mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_ZAMBONI
+            || (thePlant->mState != PlantState::STATE_CELERY_STALKER_LOW && thePlant->mState != PlantState::STATE_CELERY_STALKER_LOWERING
+                && thePlant->mState != PlantState::STATE_CELERY_STALKER_RISING);
     }
 
     if (thePlant->IsSpiky()) {

@@ -250,6 +250,10 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER3 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_paper3");
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_leftarm_upper2");
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_LOWER = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_leftarm_lower");
+    addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower2");
+    addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower3");
+    addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_upper2");
+    addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_upper3");
     addonImages.IMAGE_SHOVELBANK_VERTICAL = GetImageByFileName("addonFiles/images/shovel_bank_vertical");
     addonImages.IMAGE_SHOVEL_VERTICAL = GetImageByFileName("addonFiles/images/shovel_vertical");
 

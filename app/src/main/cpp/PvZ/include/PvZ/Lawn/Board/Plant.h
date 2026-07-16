@@ -94,7 +94,14 @@ enum PlantState // Prefix: STATE
     STATE_ZEN_GARDEN_HAPPY,
     STATE_MARIGOLD_ENDING,
     STATE_FLOWERPOT_INVULNERABLE,
-    STATE_LILYPAD_INVULNERABLE
+    STATE_LILYPAD_INVULNERABLE,
+    STATE_CELERY_STALKER_LOW,
+    STATE_CELERY_STALKER_RISING,
+    STATE_CELERY_STALKER_HIGH,
+    STATE_CELERY_STALKER_LOWERING,
+    STATE_CELERY_STALKER_ATTACKING,
+    STATE_CELERY_STALKER_PUNCHING,
+    STATE_CELERY_STALKER_STOPPING
 };
 
 enum PLANT_LAYER {
@@ -208,15 +215,9 @@ public:
     int unk;                                   // 86
     // 大小87个整数
 
-    void Animate() {
-        reinterpret_cast<void (*)(Plant *)>(Plant_AnimateAddr)(this);
-    }
     void UpdateReanim() {
         reinterpret_cast<void (*)(Plant *)>(Plant_UpdateReanimAddr)(this);
     };
-    void DrawShadow(Sexy::Graphics *g, float theOffsetX, float theOffsetY) {
-        reinterpret_cast<void (*)(Plant *, Sexy::Graphics *, float, float)>(Plant_DrawShadowAddr)(this, g, theOffsetX, theOffsetY);
-    }
     bool IsPartOfUpgradableTo(SeedType theUpgradedType) {
         return reinterpret_cast<bool (*)(Plant *, SeedType)>(Plant_IsPartOfUpgradableToAddr)(this, theUpgradedType);
     }
@@ -257,12 +258,28 @@ public:
     Zombie *FindSquashTarget() {
         return reinterpret_cast<Zombie *(*)(Plant *)>(Plant_FindSquashTargetAddr)(this);
     }
+    void UpdateNeedsFood() {
+        reinterpret_cast<void (*)(Plant *)>(Plant_UpdateNeedsFoodAddr)(this);
+    }
+    void AnimateNuts() {
+        reinterpret_cast<void (*)(Plant *)>(Plant_AnimateNutsAddr)(this);
+    }
+    void AnimateGarlic() {
+        reinterpret_cast<void (*)(Plant *)>(Plant_AnimateGarlicAddr)(this);
+    }
+    void AnimatePumpkin() {
+        reinterpret_cast<void (*)(Plant *)>(Plant_AnimatePumpkinAddr)(this);
+    }
+    void UpdateBlink() {
+        reinterpret_cast<void (*)(Plant *)>(Plant_UpdateBlinkAddr)(this);
+    }
 
     void PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, SeedType theImitaterType, int a6);
     void Update();
     void UpdateAbilities();
     void Squish();
     void Draw(Sexy::Graphics *g);
+    void DrawShadow(Sexy::Graphics *g, float theOffsetX, float theOffsetY);
     void KillAllPlantsNearDoom();
     void DoSpecial();
     void DoSpecial_Origin();
@@ -289,6 +306,8 @@ public:
     bool IsOnBoard() const;
     bool IsOnHighGround();
     bool IsInPlay();
+    void Animate();
+    void AnimateCeleryStalker();
     void PlayBodyReanim(const char *theTrackName, ReanimLoopType theLoopType, int theBlendTime, float theAnimRate);
     void SpikeweedAttack();
     void SpikeRockTakeDamage();
@@ -316,6 +335,7 @@ public:
     void UpdateMagnetShroom();
     void UpdateSquash();
     void UpdateIcebergLettuce();
+    void UpdateCeleryStalker();
 };
 
 inline float PlantDrawHeightOffset(Board *theBoard, Plant *thePlant, SeedType theSeedType, int theCol, int theRow) {

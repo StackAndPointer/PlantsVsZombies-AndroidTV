@@ -482,6 +482,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_ICEBERG_LETTUCE:
         case SeedType::SEED_IMP_PEAR:
+        case SeedType::SEED_CELERY_STALKER:
             offsetY = 12.0f;
             offsetX = 8.0f;
             theDrawScale = 0.4f;
