@@ -77,7 +77,7 @@ constexpr int kSpectatorsTextX = 140;
 constexpr int kSpectatorsTextWidth = 520;
 constexpr int kSpectatorsTextHeight = 120;
 constexpr int kMaxSpectatorNamesShown = 6;
-constexpr const char *kOfficialServer1Addr = "8.163.89.131:26667";
+constexpr const char *kOfficialServer1Addr = "8.134.55.112:26667";
 constexpr const char *kOfficialServer2Addr = "39.107.81.44:26667";
 
 static void CloseSocketFd(int &fd, bool do_shutdown = true) {
