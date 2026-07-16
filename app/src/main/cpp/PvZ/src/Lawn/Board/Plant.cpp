@@ -105,6 +105,7 @@ PlantDefinition gPlantDefs[SeedType::NUM_SEED_TYPES] = {
 PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_ICEBERG_LETTUCE, nullptr, ReanimationType::REANIM_ICEBERG_LETTUCE, 0, 0, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "ICEBERG_LETTUCE"},
     {SeedType::SEED_CELERY_STALKER, nullptr, ReanimationType::REANIM_CELERY_STALKER, 0, 75, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "CELERY_STALKER"},
+    {SeedType::SEED_SPORESHROOM, nullptr, ReanimationType::REANIM_SPORE_SHROOM, 0, 125, 750, PlantSubClass::SUBCLASS_SHOOTER, 300, "SPORE_SHROOM"},
     {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
 
@@ -175,6 +176,7 @@ int Plant::GetDamageRangeFlags(PlantWeapon thePlantWeapon) const {
         case SeedType::SEED_CABBAGEPULT:
         case SeedType::SEED_KERNELPULT:
         case SeedType::SEED_WINTERMELON:
+        case SeedType::SEED_SPORESHROOM:
             return 13;
         case SeedType::SEED_POTATOMINE:
             return 77;
@@ -1162,6 +1164,9 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
         case SeedType::SEED_SEASHROOM:
             aProjectileType = ProjectileType::PROJECTILE_PUFF;
             break;
+        case SeedType::SEED_SPORESHROOM:
+            aProjectileType = ProjectileType::PROJECTILE_SPORE;
+            break;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_CATTAIL:
             aProjectileType = ProjectileType::PROJECTILE_SPIKE;
@@ -1202,7 +1207,7 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
     } else if (mSeedType == SeedType::SEED_SEASHROOM) {
         aOriginX = mX + 45;
         aOriginY = mY + 63;
-    } else if (mSeedType == SeedType::SEED_CABBAGEPULT) {
+    } else if (mSeedType == SeedType::SEED_CABBAGEPULT || mSeedType == SeedType::SEED_SPORESHROOM) {
         aOriginX = mX + 5;
         aOriginY = mY - 12;
     } else if (mSeedType == SeedType::SEED_MELONPULT || mSeedType == SeedType::SEED_WINTERMELON) {
@@ -1281,7 +1286,8 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
     Projectile *aProjectile = mBoard->AddProjectile(aOriginX, aOriginY, mRenderOrder - 1, theRow, aProjectileType);
     aProjectile->mDamageRangeFlags = GetDamageRangeFlags(thePlantWeapon);
 
-    if (mSeedType == SeedType::SEED_CABBAGEPULT || mSeedType == SeedType::SEED_KERNELPULT || mSeedType == SeedType::SEED_MELONPULT || mSeedType == SeedType::SEED_WINTERMELON) {
+    if (mSeedType == SeedType::SEED_CABBAGEPULT || mSeedType == SeedType::SEED_KERNELPULT || mSeedType == SeedType::SEED_MELONPULT || mSeedType == SeedType::SEED_WINTERMELON
+        || mSeedType == SeedType::SEED_SPORESHROOM) {
         float aRangeX = NAN, aRangeY = NAN;
         if (theTargetZombie) {
             Rect aZombieRect = theTargetZombie->GetZombieRect();
@@ -2014,7 +2020,7 @@ int Plant::GetRefreshTime(SeedType theSeedType, SeedType theImitaterType) {
 bool Plant::IsNocturnal(SeedType theSeedType) {
     return theSeedType == SeedType::SEED_PUFFSHROOM || theSeedType == SeedType::SEED_SEASHROOM || theSeedType == SeedType::SEED_SUNSHROOM || theSeedType == SeedType::SEED_FUMESHROOM
         || theSeedType == SeedType::SEED_HYPNOSHROOM || theSeedType == SeedType::SEED_DOOMSHROOM || theSeedType == SeedType::SEED_ICESHROOM || theSeedType == SeedType::SEED_MAGNETSHROOM
-        || theSeedType == SeedType::SEED_SCAREDYSHROOM || theSeedType == SeedType::SEED_GLOOMSHROOM;
+        || theSeedType == SeedType::SEED_SCAREDYSHROOM || theSeedType == SeedType::SEED_GLOOMSHROOM || theSeedType == SeedType::SEED_SPORESHROOM;
 }
 
 bool Plant::IsAquatic(SeedType theSeedType) {
@@ -2333,17 +2339,18 @@ void Plant::UpdateShooting() {
     } else if (mSeedType == SeedType::SEED_CATTAIL) {
         if (mShootingCounter == 19) {
             Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
+            GridItem *aGridItem = FindTargetGridItem(mRow, PlantWeapon::WEAPON_PRIMARY);
             if (aZombie) {
-                Fire(aZombie, mRow, PlantWeapon::WEAPON_PRIMARY, nullptr);
+                Fire(aZombie, mRow, PlantWeapon::WEAPON_PRIMARY, aGridItem);
             }
         }
     } else if (mShootingCounter == 1) {
         if (mSeedType == SeedType::SEED_THREEPEATER) {
             int rowAbove = mRow - 1;
             int rowBelow = mRow + 1;
-            Reanimation *aHeadReanim2 = mApp->ReanimationGet(mHeadReanimID2);
-            Reanimation *aHeadReanim3 = mApp->ReanimationGet(mHeadReanimID3);
-            Reanimation *aHeadReanim1 = mApp->ReanimationGet(mHeadReanimID);
+            Reanimation *aHeadReanim2 = mApp->ReanimationTryToGet(mHeadReanimID2);
+            Reanimation *aHeadReanim3 = mApp->ReanimationTryToGet(mHeadReanimID3);
+            Reanimation *aHeadReanim1 = mApp->ReanimationTryToGet(mHeadReanimID);
 
             if (aHeadReanim1->mLoopType == ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD) {
                 Fire(nullptr, rowBelow, PlantWeapon::WEAPON_PRIMARY, nullptr);
@@ -2365,7 +2372,8 @@ void Plant::UpdateShooting() {
             }
         } else if (mState == PlantState::STATE_CACTUS_LOW) {
             Fire(nullptr, mRow, PlantWeapon::WEAPON_SECONDARY, nullptr);
-        } else if (mSeedType == SeedType::SEED_CABBAGEPULT || mSeedType == SeedType::SEED_KERNELPULT || mSeedType == SeedType::SEED_MELONPULT || mSeedType == SeedType::SEED_WINTERMELON) {
+        } else if (mSeedType == SeedType::SEED_CABBAGEPULT || mSeedType == SeedType::SEED_KERNELPULT || mSeedType == SeedType::SEED_MELONPULT || mSeedType == SeedType::SEED_WINTERMELON
+                   || mSeedType == SeedType::SEED_SPORESHROOM) {
             PlantWeapon aPlantWeapon = PlantWeapon::WEAPON_PRIMARY;
             if (mState == PlantState::STATE_KERNELPULT_BUTTER) {
                 Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
@@ -2391,8 +2399,8 @@ void Plant::UpdateShooting() {
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
     Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mHeadReanimID);
     if (mSeedType == SeedType::SEED_THREEPEATER) {
-        Reanimation *aHeadReanim2 = mApp->ReanimationGet(mHeadReanimID2);
-        Reanimation *aHeadReanim3 = mApp->ReanimationGet(mHeadReanimID3);
+        Reanimation *aHeadReanim2 = mApp->ReanimationTryToGet(mHeadReanimID2);
+        Reanimation *aHeadReanim3 = mApp->ReanimationTryToGet(mHeadReanimID3);
 
         if (aHeadReanim2->mLoopCount > 0) {
             if (aHeadReanim->mLoopType == ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD) {

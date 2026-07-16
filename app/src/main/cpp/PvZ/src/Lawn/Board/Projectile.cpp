@@ -33,6 +33,8 @@
 #include "PvZ/TodLib/Effect/Attachment.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
 
+#include <numbers>
+
 using namespace Sexy;
 
 namespace {
@@ -84,6 +86,7 @@ ProjectileDefinition gExtendedProjectileDefinition[] = {
     {ProjectileType::PROJECTILE_ZOMBIE_POLE, 0, 2400},
     {ProjectileType::PROJECTILE_ZOMBIE_FIREBALL, 0, 40},
     {ProjectileType::PROJECTILE_ZOMBLOB, 0, 0},
+    {ProjectileType::PROJECTILE_SPORE, 0, 50},
 };
 
 void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
@@ -119,6 +122,9 @@ void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, in
         mMotionType = ProjectileMotion::MOTION_LOBBED;
         mRotation = 0.0f;
         mRotationSpeed = 0.0f;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_SPORE) {
+        mRotation = -7 * std::numbers::pi / 25; // DEG_TO_RAD(-50.4f);
+        mRotationSpeed = RandRangeFloat(-0.08f, -0.02f);
     }
 
     mPierceHitCount = 0;
@@ -414,7 +420,7 @@ void Projectile::UpdateLobMotion() {
             aMinCollisionZ = 60.0f;
         } else if (mProjectileType == ProjectileType::PROJECTILE_MELON || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON) {
             aMinCollisionZ = -35.0f;
-        } else if (mProjectileType == ProjectileType::PROJECTILE_CABBAGE || mProjectileType == ProjectileType::PROJECTILE_KERNEL) {
+        } else if (mProjectileType == ProjectileType::PROJECTILE_CABBAGE || mProjectileType == ProjectileType::PROJECTILE_KERNEL || mProjectileType == ProjectileType::PROJECTILE_SPORE) {
             aMinCollisionZ = -30.0f;
         } else if (mProjectileType == ProjectileType::PROJECTILE_COBBIG) {
             aMinCollisionZ = -60.0f;
@@ -576,6 +582,32 @@ void Projectile::DoImpact(Zombie *theZombie) {
         return;
     }
 
+    const bool aIsSporeImpact = mProjectileType == ProjectileType::PROJECTILE_SPORE && theZombie != nullptr;
+
+    bool aWasAliveBeforeImpact = false;
+    bool aCouldLoseBodyPartsBeforeImpact = false;
+    bool aHadHeadBeforeImpact = false;
+    bool aWasAboveHeadDropThreshold = false;
+    int aHeadDropThreshold = 0;
+    int aSporeGridX = -1;
+    int aSporeGridY = -1;
+
+    if (aIsSporeImpact) {
+        aWasAliveBeforeImpact = !theZombie->IsDeadOrDying();
+        aCouldLoseBodyPartsBeforeImpact = theZombie->CanLoseBodyParts();
+        aHadHeadBeforeImpact = theZombie->mHasHead;
+
+        if (aCouldLoseBodyPartsBeforeImpact) {
+            // Zombie::UpdateDamageStates() 仅在 mBodyHealth < mBodyMaxHealth / 3 时掉头。
+            // 命中前已经低于阈值但尚未来得及更新掉头状态的僵尸，不归功于本发孢子弹。
+            aHeadDropThreshold = theZombie->mBodyMaxHealth / 3;
+            aWasAboveHeadDropThreshold = theZombie->mBodyHealth >= aHeadDropThreshold;
+        }
+
+        aSporeGridX = mBoard->PixelToGridXKeepOnBoard(theZombie->mX + theZombie->mWidth / 2, theZombie->mY);
+        aSporeGridY = theZombie->mRow;
+    }
+
     PlayImpactSound(theZombie);
 
     if (IsSplashDamage(theZombie)) {
@@ -633,6 +665,25 @@ void Projectile::DoImpact(Zombie *theZombie) {
         }
     }
 
+    bool aShouldSpawnSporeShroom = false;
+    if (aIsSporeImpact && aWasAliveBeforeImpact) {
+        if (aCouldLoseBodyPartsBeforeImpact) {
+            // 要求同时满足：命中前有头、命中前尚未进入掉头区间、
+            // 命中后生命低于阈值且头已经掉落。这样不会在临界状态补刀时重复生成。
+            aShouldSpawnSporeShroom = aHadHeadBeforeImpact && aWasAboveHeadDropThreshold && theZombie->mBodyHealth < aHeadDropThreshold && !theZombie->mHasHead;
+        } else {
+            // 巨人、冰车、投石车、Boss 等不会走普通掉头逻辑，改为死亡时生成。
+            aShouldSpawnSporeShroom = theZombie->IsDeadOrDying();
+        }
+    }
+
+    if (aShouldSpawnSporeShroom && mBoard->CanPlantAt(aSporeGridX, aSporeGridY, SeedType::SEED_SPORESHROOM) == PlantingReason::PLANTING_OK) {
+        Plant *aPlant = mBoard->AddPlant(aSporeGridX, aSporeGridY, SeedType::SEED_SPORESHROOM, SeedType::SEED_NONE, -1, false);
+        if (aPlant != nullptr) {
+            aPlant->PlayBodyReanim("anim_grow", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
+        }
+    }
+
     float aLastPosX = mPosX - mVelX;
     float aLastPosY = mPosY + mPosZ - mVelY - mVelZ;
     ParticleEffect aEffect = ParticleEffect::PARTICLE_NONE;
@@ -673,7 +724,7 @@ void Projectile::DoImpact(Zombie *theZombie) {
         }
     } else if (mProjectileType == ProjectileType::PROJECTILE_STAR) {
         aEffect = ParticleEffect::PARTICLE_STAR_SPLAT;
-    } else if (mProjectileType == ProjectileType::PROJECTILE_PUFF) {
+    } else if (mProjectileType == ProjectileType::PROJECTILE_PUFF || mProjectileType == ProjectileType::PROJECTILE_SPORE) {
         aSplatPosX -= 20.0f;
         aEffect = ParticleEffect::PARTICLE_PUFF_SPLAT;
     } else if (mProjectileType == ProjectileType::PROJECTILE_CABBAGE) {
@@ -789,7 +840,7 @@ void Projectile::DoImpactGridItem(GridItem *theGridItem) {
     } else if (mProjectileType == ProjectileType::PROJECTILE_PUFF) {
         aSplatPosX -= 20.0f;
         aEffect = ParticleEffect::PARTICLE_PUFF_SPLAT;
-    } else if (mProjectileType == ProjectileType::PROJECTILE_CABBAGE) {
+    } else if (mProjectileType == ProjectileType::PROJECTILE_CABBAGE || mProjectileType == ProjectileType::PROJECTILE_SPORE) {
         aSplatPosX = aLastPosX - 38.0f;
         aSplatPosY = aLastPosY + 23.0f;
         aEffect = ParticleEffect::PARTICLE_CABBAGE_SPLAT;
@@ -1108,6 +1159,8 @@ void Projectile::Draw(Graphics *g) {
         aImage = nullptr;
     } else if (mProjectileType == ProjectileType::PROJECTILE_ZOMBLOB) {
         aImage = addonImages.IMAGE_PROJECTILEZOMBLOB;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_SPORE) {
+        aImage = addonImages.IMAGE_PROJECTILESPORE;
     }
 
     bool aMirror = false;
@@ -1188,6 +1241,7 @@ void Projectile::DrawShadow(Graphics *g) {
         case ProjectileType::PROJECTILE_BUTTER:
         case ProjectileType::PROJECTILE_MELON:
         case ProjectileType::PROJECTILE_WINTERMELON:
+        case ProjectileType::PROJECTILE_SPORE:
             aOffsetX += 3.0f;
             aOffsetY += 10.0f;
             aScale = 1.6f;

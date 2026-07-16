@@ -384,6 +384,7 @@ void InitHookFunction() {
     homura::HookFunc(Plant_GetToolTipAddr, &Plant::GetToolTip, nullptr);
     homura::HookFunc(Plant_IsUpgradeAddr, &Plant::IsUpgrade, &old_Plant_IsUpgrade);
     homura::HookFunc(Plant_PlantInitializeAddr, &Plant::PlantInitialize, &old_Plant_PlantInitialize);
+    homura::HookFunc(Plant_IsNocturnalAddr, &Plant::IsNocturnal, nullptr);
     homura::HookFunc(Plant_SetSleepingAddr, &Plant::SetSleeping, &old_Plant_SetSleeping);
     homura::HookFunc(Plant_UpdateReanimColorAddr, &Plant::UpdateReanimColor, &old_Plant_UpdateReanimColor);
     homura::HookFunc(Plant_FindTargetZombieAddr, &Plant::FindTargetZombie, nullptr);
@@ -393,6 +394,7 @@ void InitHookFunction() {
     homura::HookFunc(GetPlantDefinitionAddr, &GetPlantDefinition, nullptr);
     homura::HookFunc(Plant_PlayBodyReanimAddr, &Plant::PlayBodyReanim, &old_Plant_PlayBodyReanim);
     homura::HookFunc(Plant_UpdateProductionPlantAddr, &Plant::UpdateProductionPlant, &old_Plant_UpdateProductionPlant);
+    homura::HookFunc(Plant_UpdateShootingAddr, &Plant::UpdateShooting, nullptr);
     homura::HookFunc(Plant_FireAddr, &Plant::Fire, nullptr);
     homura::HookFunc(Plant_DoRowAreaDamageAddr, &Plant::DoRowAreaDamage, nullptr);
     //    homura::HookFunc(Plant_UpdateShootingAddr, &Plant::UpdateShooting, nullptr);
