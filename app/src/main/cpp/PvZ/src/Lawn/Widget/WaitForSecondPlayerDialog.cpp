@@ -28,6 +28,7 @@
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
+#include "PvZ/SexyAppFramework/Misc/Common.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 
 #include <arpa/inet.h>
@@ -35,6 +36,7 @@
 #include <sys/endian.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <algorithm>
 
 #include <ifaddrs.h>
 #include <net/if.h>
@@ -64,6 +66,8 @@ constexpr int kServerRoomListNextPageX = 610;
 constexpr int kServerRoomListPageArrowY = 325;
 constexpr int kServerRoomListPageNumberY = 440;
 constexpr int kServerP2PConnectRetryTicks = 8;
+constexpr int kServerP2PProbeAttempts = 3;
+constexpr int kServerP2PProbeTimeoutMs = 5000;
 [[maybe_unused]] constexpr int kMode3ServerOfficialTitleY = 150;
 constexpr int kMode3ServerOfficialItemStartY = 190;
 constexpr int kMode3ServerRecentTitleY = 266;
@@ -71,8 +75,11 @@ constexpr int kMode3ServerRecentItemStartY = 304;
 constexpr int kMode3ServerTargetLineH = 38;
 constexpr int kMode3ServerTargetMaxLen = 22; // "255.255.255.255:65535" + '\0'
 constexpr int kMode3ServerRecentCount = 3;
+constexpr int kMode3ServerTargetCountMax = 2 + kMode3ServerRecentCount;
 constexpr int kMode3StartTimeoutTicks = 1000;       // ~10s
 constexpr int kMode3SpectateReserveWarnTicks = 300; // ~3s
+constexpr int kMode3ServerProbeRefreshTicks = 500;  // ~5s
+constexpr int kMode3ServerProbeTimeoutMs = 2500;
 constexpr int kSpectatorsTextX = 140;
 constexpr int kSpectatorsTextWidth = 520;
 constexpr int kSpectatorsTextHeight = 120;
@@ -470,6 +477,146 @@ static bool Mode3CanSwitchSpectatorToGuest(const WaitForSecondPlayerDialog *dial
     }
     return gSecondPlayerName[0] == '\0';
 }
+
+static void Mode3ResetTargetLatencyProbes(WaitForSecondPlayerDialog *dialog) {
+    if (!dialog) {
+        return;
+    }
+    for (int i = 0; i < kMode3ServerTargetCountMax; ++i) {
+        CloseSocketFd(dialog->mServerTargetProbeSock[i]);
+        dialog->mServerTargetLatencyMs[i] = -1;
+        dialog->mServerTargetProbeStartTick[i] = 0;
+    }
+    dialog->mServerTargetNextRefreshTick = 0;
+}
+
+static pvzstl::string Mode3FormatLatencyLabel(int latencyMs) {
+    if (latencyMs < 0) {
+        return " (--ms)";
+    }
+    return StrFormat(" (%dms)", latencyMs);
+}
+
+static void Mode3DrawListTextWithShadow(Sexy::Graphics *g, const pvzstl::string &text, int x, int y, Sexy::Font *font, const Sexy::Color &color) {
+    // Keep the centered layout identical for both passes, with the shadow one pixel down and right.
+    TodDrawString(g, text, x - 1, y - 1, font, Sexy::Color(0, 0, 0, color.mAlpha), DS_ALIGN_CENTER);
+    TodDrawString(g, text, x, y, font, color, DS_ALIGN_CENTER);
+}
+
+static void Mode3StartTargetLatencyProbe(WaitForSecondPlayerDialog *dialog, int targetIndex) {
+    if (!dialog || targetIndex < 0 || targetIndex >= kMode3ServerTargetCountMax) {
+        return;
+    }
+
+    std::string targetAddr;
+    const int selectedIndex = dialog->mSelectedRoomIndex_Server;
+    dialog->mSelectedRoomIndex_Server = targetIndex;
+    const bool hasTarget = Mode3GetSelectedTargetAddr(dialog, targetAddr);
+    dialog->mSelectedRoomIndex_Server = selectedIndex;
+    if (!hasTarget) {
+        dialog->mServerTargetLatencyMs[targetIndex] = -1;
+        return;
+    }
+
+    std::string ip;
+    int port = 0;
+    if (!ParseMode3IpPort(targetAddr, ip, port)) {
+        dialog->mServerTargetLatencyMs[targetIndex] = -1;
+        return;
+    }
+
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        dialog->mServerTargetLatencyMs[targetIndex] = -1;
+        return;
+    }
+    ConfigureTcpSocket(sock);
+
+    sockaddr_in sa{
+        .sin_family = AF_INET,
+        .sin_port = htons(uint16_t(port)),
+    };
+    if (inet_pton(AF_INET, ip.c_str(), &sa.sin_addr) != 1) {
+        CloseSocketFd(sock);
+        dialog->mServerTargetLatencyMs[targetIndex] = -1;
+        return;
+    }
+
+    dialog->mServerTargetProbeStartTick[targetIndex] = Sexy::GetTickCount();
+    dialog->mServerTargetProbeSock[targetIndex] = sock;
+
+    const int ret = connect(sock, (sockaddr *)&sa, sizeof(sa));
+    if (ret == 0) {
+        dialog->mServerTargetLatencyMs[targetIndex] = std::max(0, Sexy::GetTickCount() - dialog->mServerTargetProbeStartTick[targetIndex]);
+        CloseSocketFd(dialog->mServerTargetProbeSock[targetIndex]);
+        dialog->mServerTargetProbeStartTick[targetIndex] = 0;
+        return;
+    }
+
+    if (errno != EINPROGRESS) {
+        dialog->mServerTargetLatencyMs[targetIndex] = -1;
+        CloseSocketFd(dialog->mServerTargetProbeSock[targetIndex]);
+        dialog->mServerTargetProbeStartTick[targetIndex] = 0;
+    }
+}
+
+static void Mode3UpdateTargetLatencyProbes(WaitForSecondPlayerDialog *dialog) {
+    if (!dialog) {
+        return;
+    }
+    if (dialog->mUIMode != UIMode::MODE3_SERVER || dialog->mServerConnected || dialog->mServerConnecting) {
+        Mode3ResetTargetLatencyProbes(dialog);
+        return;
+    }
+
+    const int targetCount = Mode3ServerTargetCount(dialog);
+    if (targetCount <= 0) {
+        Mode3ResetTargetLatencyProbes(dialog);
+        return;
+    }
+
+    if (dialog->mServerTargetNextRefreshTick <= 0) {
+        for (int i = 0; i < kMode3ServerTargetCountMax; ++i) {
+            CloseSocketFd(dialog->mServerTargetProbeSock[i]);
+            dialog->mServerTargetProbeStartTick[i] = 0;
+        }
+        for (int i = 0; i < targetCount; ++i) {
+            Mode3StartTargetLatencyProbe(dialog, i);
+        }
+        dialog->mServerTargetNextRefreshTick = kMode3ServerProbeRefreshTicks;
+    } else {
+        --dialog->mServerTargetNextRefreshTick;
+    }
+
+    const int nowTick = Sexy::GetTickCount();
+    for (int i = 0; i < targetCount; ++i) {
+        const int sock = dialog->mServerTargetProbeSock[i];
+        if (sock < 0) {
+            continue;
+        }
+
+        fd_set wfds;
+        FD_ZERO(&wfds);
+        FD_SET(sock, &wfds);
+        timeval tv{0, 0};
+        const int ready = select(sock + 1, nullptr, &wfds, nullptr, &tv);
+        if (ready > 0 && FD_ISSET(sock, &wfds)) {
+            int err = 0;
+            socklen_t errLen = sizeof(err);
+            getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &errLen);
+            dialog->mServerTargetLatencyMs[i] = (err == 0) ? std::max(0, nowTick - dialog->mServerTargetProbeStartTick[i]) : -1;
+            CloseSocketFd(dialog->mServerTargetProbeSock[i]);
+            dialog->mServerTargetProbeStartTick[i] = 0;
+            continue;
+        }
+
+        if (dialog->mServerTargetProbeStartTick[i] > 0 && nowTick - dialog->mServerTargetProbeStartTick[i] >= kMode3ServerProbeTimeoutMs) {
+            dialog->mServerTargetLatencyMs[i] = -1;
+            CloseSocketFd(dialog->mServerTargetProbeSock[i]);
+            dialog->mServerTargetProbeStartTick[i] = 0;
+        }
+    }
+}
 } // namespace
 
 bool WaitForSecondPlayerDialog::ServerHostRoomLocked() const {
@@ -810,6 +957,13 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     mInputPurpose = InputPurpose::NONE;
     mServerConnected = false;
     mSelectedRoomIndex_Server = 0;
+    mServerLatencyMs = -1;
+    mServerQuerySentTick = 0;
+    mServerQueryPending = false;
+    std::fill_n(mServerTargetLatencyMs, kMode3ServerTargetCountMax, -1);
+    std::fill_n(mServerTargetProbeSock, kMode3ServerTargetCountMax, -1);
+    std::fill_n(mServerTargetProbeStartTick, kMode3ServerTargetCountMax, 0);
+    mServerTargetNextRefreshTick = 0;
     mServerRoomPage = 0;
 
 
@@ -867,6 +1021,15 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     mServerP2PProbePort2 = 0;
     mServerP2PProbeToken = 0;
     mServerP2PProbeDone = false;
+    mServerP2PProbeActive = false;
+    mServerP2PProbeSocketConnected = false;
+    mServerP2PProbeTargetOk[0] = false;
+    mServerP2PProbeTargetOk[1] = false;
+    mServerP2PProbeSock = -1;
+    mServerP2PProbeAttempt = 0;
+    mServerP2PProbeTargetIndex = 0;
+    mServerP2PProbeStartTick = 0;
+    mServerP2PProbeTokenBytesSent = 0;
     mServerP2PDeadlineTick = 0;
     mServerP2PNextRetryTick = 0;
     mServerP2PTick = 0;
@@ -923,8 +1086,8 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
     } else if (mUIMode == UIMode::MODE2_WIFI) {
         // MODE2_WIFI: Host（创建房间）
         if (mIsCreatingRoom) {
-            pvzstl::string fmt = TodStringTranslate("[ROOM_CREATED_FMT]");
-            pvzstl::string str = StrFormat(fmt.c_str(), mApp->mPlayerInfo->mName);
+            pvzstl::string fmtRoom = TodStringTranslate("[ROOM_CREATED_FMT]");
+            pvzstl::string str = StrFormat(fmtRoom.c_str(), mApp->mPlayerInfo->mName);
             TodDrawString(g, str, 400, 150, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
 
             int lineY = 250;
@@ -1054,7 +1217,7 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
         pvzstl::string head = TodStringTranslate(mServerConnected ? "[SERVER_CONNECTED]" : (mServerConnecting ? "[SERVER_CONNECTING]" : "[SERVER_NOT_CONNECTED]"));
         pvzstl::string fmtSt = TodStringTranslate("[STATUS_FMT]");
         pvzstl::string st = StrFormat(fmtSt.c_str(), mServerStatusText.c_str());
-        pvzstl::string strServer = StrFormat("%s  %s", head.c_str(), st.c_str());
+        pvzstl::string strServer = mServerLatencyMs > 0 ? StrFormat("%s  %s (%dms)", head.c_str(), st.c_str(), mServerLatencyMs) : StrFormat("%s  %s", head.c_str(), st.c_str());
         TodDrawString(g, strServer, 400, 150, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
 
 
@@ -1081,11 +1244,13 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                 TodDrawImageScaledF(g, addonImages.leaderboard_selector, hasRecentServers ? 230 : 120, y0 - selectorOffsetY, selectorScale, selectorScale);
                 g->SetColor(mSelectedRoomIndex_Server == officialRow0 ? Sexy::Color(0, 205, 0, 255) : oldColor);
                 pvzstl::string fmt = TodStringTranslate("[OFFICIAL_SERVER_NAME]");
-                TodDrawString(g, StrFormat(fmt.c_str(), 1, kOfficialServer1Addr), 400, y0, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+                pvzstl::string officialServer1Text = StrFormat(fmt.c_str(), 1, kOfficialServer1Addr);
+                Mode3DrawListTextWithShadow(g, officialServer1Text + Mode3FormatLatencyLabel(mServerTargetLatencyMs[officialRow0]), 400, y0, g->GetFont(), g->GetColor());
 
                 TodDrawImageScaledF(g, addonImages.leaderboard_selector, hasRecentServers ? 230 : 120, y1 - selectorOffsetY, selectorScale, selectorScale);
                 g->SetColor(mSelectedRoomIndex_Server == officialRow1 ? Sexy::Color(0, 205, 0, 255) : oldColor);
-                TodDrawString(g, StrFormat(fmt.c_str(), 2, kOfficialServer2Addr), 400, y1, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+                pvzstl::string officialServer2Text = StrFormat(fmt.c_str(), 2, kOfficialServer2Addr);
+                Mode3DrawListTextWithShadow(g, officialServer2Text + Mode3FormatLatencyLabel(mServerTargetLatencyMs[officialRow1]), 400, y1, g->GetFont(), g->GetColor());
                 if (hasRecentServers) {
                     pvzstl::string iFmt = TodStringTranslate("[CUSTOM_SERVER_NAME]");
                     TodDrawString(g, TodStringTranslate("[CUSTOM_SERVER_LIST]"), 400, kMode3ServerRecentTitleY, g->GetFont(), oldColor, DS_ALIGN_CENTER);
@@ -1098,7 +1263,8 @@ void WaitForSecondPlayerDialog::Draw(Graphics *g) {
                         const int rowIndex = 2 + i;
                         TodDrawImageScaledF(g, addonImages.leaderboard_selector, 230, rowY - 25, 0.45, 0.45);
                         g->SetColor(mSelectedRoomIndex_Server == rowIndex ? Sexy::Color(0, 205, 0, 255) : oldColor);
-                        TodDrawString(g, iCustomServerName, 400, rowY, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+                        const pvzstl::string recentServerText = hasRecent ? (iCustomServerName + Mode3FormatLatencyLabel(mServerTargetLatencyMs[rowIndex])) : iCustomServerName;
+                        Mode3DrawListTextWithShadow(g, recentServerText, 400, rowY, g->GetFont(), g->GetColor());
                     }
                 }
                 g->SetColor(oldColor);
@@ -1380,7 +1546,9 @@ void WaitForSecondPlayerDialog::Update() {
         }
         // 网络 IO（你实现：包含 connect 完成检测、收包解析等）
         ServerUpdateIO();
+        ServerUpdateP2PProbe();
         ServerUpdateP2P();
+        Mode3UpdateTargetLatencyProbes(this);
         if (mServerGameStarting) {
             mServerGameStartingTick++;
             if (mServerGameStartingTick >= kMode3StartTimeoutTicks) {
@@ -1437,7 +1605,7 @@ void WaitForSecondPlayerDialog::Update() {
         mServerLastQueryTick++;
         if (mServerConnected && !mServerGameStarting && !mServerCreatePending && mServerSock >= 0) {
             const bool inRoom = mServerHosting || mServerJoined || mServerSpectating;
-            const int queryInterval = inRoom ? 1500 : 100; // ~15s in-room keepalive, ~1s list refresh.
+            const int queryInterval = inRoom ? 1500 : 100; // ~15s in-room keepalive, ~1s room-list refresh.
             if (mServerLastQueryTick >= queryInterval) {
                 mServerLastQueryTick = 0;
                 ServerSendQuery();
@@ -2474,6 +2642,10 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
             }
             case 0x82: { // ROOM_LIST
                 // payload: [count:1] + count*([roomId:4][flags:1][version:4][nameLen:1][nameBytes])
+                if (mServerQueryPending) {
+                    mServerLatencyMs = std::max(0, Sexy::GetTickCount() - mServerQuerySentTick);
+                    mServerQueryPending = false;
+                }
                 if (mServerHosting || mServerJoined || mServerSpectating || mServerCreatePending) {
                     mServerRoomCount = 0;
                     mSelectedRoomIndex_Server = 0;
@@ -2770,8 +2942,8 @@ void WaitForSecondPlayerDialog::ServerUpdateIO() {
 
                         LOG_DEBUG("[P2P_READY] probePort1={} probePort2={} token={} localPort={}", mServerP2PProbePort, mServerP2PProbePort2, mServerP2PProbeToken, mServerP2PLocalPort);
 
-                        bool ok = ServerSendP2PProbe();
-                        LOG_DEBUG("[P2P_READY] probe result ok={} probeDone={}", ok, mServerP2PProbeDone);
+                        const bool started = ServerSendP2PProbe();
+                        LOG_DEBUG("[P2P_READY] probe started={} probeDone={}", started, mServerP2PProbeDone);
                     }
 
                     if (!mServerGameStarting) {
@@ -2977,6 +3149,7 @@ void WaitForSecondPlayerDialog::ServerResetP2PState(bool keepListener) {
 
     if (!keepListener) {
         CloseSocketFd(mServerP2PListenSock, false);
+        CloseSocketFd(mServerP2PProbeSock, false);
         mServerP2PLocalPort = 0;
         mServerP2PNatSent = false;
         mServerP2PListenerFailed = false;
@@ -2984,6 +3157,14 @@ void WaitForSecondPlayerDialog::ServerResetP2PState(bool keepListener) {
         mServerP2PProbePort2 = 0;
         mServerP2PProbeToken = 0;
         mServerP2PProbeDone = false;
+        mServerP2PProbeActive = false;
+        mServerP2PProbeSocketConnected = false;
+        mServerP2PProbeTargetOk[0] = false;
+        mServerP2PProbeTargetOk[1] = false;
+        mServerP2PProbeAttempt = 0;
+        mServerP2PProbeTargetIndex = 0;
+        mServerP2PProbeStartTick = 0;
+        mServerP2PProbeTokenBytesSent = 0;
     }
 
     mServerP2POkSent = false;
@@ -3096,152 +3277,147 @@ bool WaitForSecondPlayerDialog::ServerSendNatPort() {
 }
 
 bool WaitForSecondPlayerDialog::ServerSendP2PProbe() {
-#if 0
     if (mServerP2PProbePort2 <= 0) {
         mServerP2PProbePort2 = mServerP2PProbePort;
     }
-    for (int attempt = 1; attempt <= 3; ++attempt) {
-        bool allOk = true;
-        for (int targetIdx = 0; targetIdx < 2; ++targetIdx) {
-            int targetPort = targetIdx == 0 ? mServerP2PProbePort : mServerP2PProbePort2;
-        int sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (sock < 0)
-            return false;
-
-        EnableReuseOptions(sock);
-
-        int one = 1;
-        setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-
-        if (!BindSocketToAnyPort(sock, mServerP2PLocalPort)) {
-            CloseSocketFd(sock, false);
-            allOk = false;
-            break;
-        }
-
-        int flags = fcntl(sock, F_GETFL, 0);
-        fcntl(sock, F_SETFL, flags | O_NONBLOCK);
-
-        sockaddr_in probeSa{
-            .sin_family = AF_INET,
-            .sin_port = htons((uint16_t)targetPort),
-        };
-        inet_pton(AF_INET, mServerIp, &probeSa.sin_addr);
-
-        int ret = connect(sock, (sockaddr *)&probeSa, sizeof(probeSa));
-        if (ret != 0 && errno != EINPROGRESS) {
-            CloseSocketFd(sock, false);
-            continue;
-        }
-
-        fd_set wfds;
-        FD_ZERO(&wfds);
-        FD_SET(sock, &wfds);
-        timeval tv{5, 0}; // 关键：不要只等 1 秒
-
-        int sel = select(sock + 1, nullptr, &wfds, nullptr, &tv);
-        if (sel <= 0 || !FD_ISSET(sock, &wfds)) {
-            CloseSocketFd(sock, false);
-            continue;
-        }
-
-        int err = 0;
-        socklen_t elen = sizeof(err);
-        getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &elen);
-        if (err != 0) {
-            CloseSocketFd(sock, false);
-            continue;
-        }
-
-        uint8_t tokenBuf[4];
-        homura::WriteBEI32(tokenBuf, (int32_t)mServerP2PProbeToken);
-        if (!SendAll(sock, tokenBuf, sizeof(tokenBuf))) {
-            CloseSocketFd(sock, false);
-            continue;
-        }
-
-        CloseSocketFd(sock, false);
-        mServerP2PProbeDone = true;
-        return true;
+    if (mServerP2PLocalPort <= 0 || mServerP2PProbePort <= 0 || mServerP2PProbePort2 <= 0) {
+        return false;
     }
 
-    return false;
-#endif
+    CloseSocketFd(mServerP2PProbeSock, false);
+    mServerP2PProbeDone = false;
+    mServerP2PProbeActive = true;
+    mServerP2PProbeSocketConnected = false;
+    mServerP2PProbeTargetOk[0] = false;
+    mServerP2PProbeTargetOk[1] = false;
+    mServerP2PProbeAttempt = 1;
+    mServerP2PProbeTargetIndex = 0;
+    mServerP2PProbeStartTick = 0;
+    mServerP2PProbeTokenBytesSent = 0;
+    return true;
+}
 
-    auto probeOnce = [&](int targetPort, int attempt) -> bool {
-        int sock = socket(AF_INET, SOCK_STREAM, 0);
-        if (sock < 0)
-            return false;
+bool WaitForSecondPlayerDialog::ServerStartP2PProbeTarget() {
+    const int targetPort = mServerP2PProbeTargetIndex == 0 ? mServerP2PProbePort : mServerP2PProbePort2;
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0) {
+        return false;
+    }
 
-        EnableReuseOptions(sock);
-
-        int one = 1;
-        setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(one));
-
-        if (!BindSocketToAnyPort(sock, mServerP2PLocalPort)) {
-            CloseSocketFd(sock, false);
-            return false;
-        }
-
-        int flags = fcntl(sock, F_GETFL, 0);
-        fcntl(sock, F_SETFL, flags | O_NONBLOCK);
-
-        sockaddr_in probeSa{
-            .sin_family = AF_INET,
-            .sin_port = htons((uint16_t)targetPort),
-        };
-        inet_pton(AF_INET, mServerIp, &probeSa.sin_addr);
-
-        int ret = connect(sock, (sockaddr *)&probeSa, sizeof(probeSa));
-        if (ret != 0 && errno != EINPROGRESS) {
-            CloseSocketFd(sock, false);
-            return false;
-        }
-
-        fd_set wfds;
-        FD_ZERO(&wfds);
-        FD_SET(sock, &wfds);
-        timeval tv{5, 0};
-
-        int sel = select(sock + 1, nullptr, &wfds, nullptr, &tv);
-        if (sel <= 0 || !FD_ISSET(sock, &wfds)) {
-            CloseSocketFd(sock, false);
-            return false;
-        }
-
-        int err = 0;
-        socklen_t elen = sizeof(err);
-        getsockopt(sock, SOL_SOCKET, SO_ERROR, &err, &elen);
-        if (err != 0) {
-            CloseSocketFd(sock, false);
-            return false;
-        }
-
-        uint8_t tokenBuf[4];
-        homura::WriteBEI32(tokenBuf, (int32_t)mServerP2PProbeToken);
-        if (!SendAll(sock, tokenBuf, sizeof(tokenBuf))) {
-            CloseSocketFd(sock, false);
-            return false;
-        }
-
+    EnableReuseOptions(sock);
+    ConfigureTcpSocket(sock);
+    if (!BindSocketToAnyPort(sock, mServerP2PLocalPort)) {
         CloseSocketFd(sock, false);
-        return true;
+        return false;
+    }
+
+    sockaddr_in probeSa{
+        .sin_family = AF_INET,
+        .sin_port = htons((uint16_t)targetPort),
     };
-
-    if (mServerP2PProbePort2 <= 0) {
-        mServerP2PProbePort2 = mServerP2PProbePort;
+    if (inet_pton(AF_INET, mServerIp, &probeSa.sin_addr) != 1) {
+        CloseSocketFd(sock, false);
+        return false;
     }
 
-    for (int attempt = 1; attempt <= 3; ++attempt) {
-        bool ok1 = probeOnce(mServerP2PProbePort, attempt);
-        bool ok2 = probeOnce(mServerP2PProbePort2, attempt);
-        if (ok1 && ok2) {
-            mServerP2PProbeDone = true;
-            return true;
+    const int ret = connect(sock, (sockaddr *)&probeSa, sizeof(probeSa));
+    if (ret != 0 && errno != EINPROGRESS) {
+        CloseSocketFd(sock, false);
+        return false;
+    }
+
+    mServerP2PProbeSock = sock;
+    mServerP2PProbeSocketConnected = ret == 0;
+    mServerP2PProbeStartTick = Sexy::GetTickCount();
+    mServerP2PProbeTokenBytesSent = 0;
+    LOG_DEBUG("[P2P_PROBE] attempt={} target={} port={} started", mServerP2PProbeAttempt, mServerP2PProbeTargetIndex, targetPort);
+    return true;
+}
+
+void WaitForSecondPlayerDialog::ServerAdvanceP2PProbe(bool success) {
+    CloseSocketFd(mServerP2PProbeSock, false);
+    mServerP2PProbeSocketConnected = false;
+    mServerP2PProbeTokenBytesSent = 0;
+    mServerP2PProbeTargetOk[mServerP2PProbeTargetIndex] = success;
+
+    LOG_DEBUG("[P2P_PROBE] attempt={} target={} success={}", mServerP2PProbeAttempt, mServerP2PProbeTargetIndex, success);
+    if (++mServerP2PProbeTargetIndex < 2) {
+        return;
+    }
+
+    if (mServerP2PProbeTargetOk[0] && mServerP2PProbeTargetOk[1]) {
+        mServerP2PProbeDone = true;
+        mServerP2PProbeActive = false;
+        if (!mServerGameStarting) {
+            mServerP2PStatusText = StrFormat("P2P: server registered %d, probe complete", mServerP2PLocalPort);
         }
+        return;
     }
 
-    return false;
+    if (++mServerP2PProbeAttempt > kServerP2PProbeAttempts) {
+        mServerP2PProbeActive = false;
+        LOG_DEBUG("[P2P_PROBE] exhausted all attempts");
+        return;
+    }
+
+    mServerP2PProbeTargetOk[0] = false;
+    mServerP2PProbeTargetOk[1] = false;
+    mServerP2PProbeTargetIndex = 0;
+}
+
+void WaitForSecondPlayerDialog::ServerUpdateP2PProbe() {
+    if (!mServerP2PProbeActive) {
+        return;
+    }
+    if (mServerP2PProbeSock < 0) {
+        if (!ServerStartP2PProbeTarget()) {
+            ServerAdvanceP2PProbe(false);
+        }
+        return;
+    }
+
+    if (Sexy::GetTickCount() - mServerP2PProbeStartTick >= kServerP2PProbeTimeoutMs) {
+        ServerAdvanceP2PProbe(false);
+        return;
+    }
+
+    fd_set wfds;
+    FD_ZERO(&wfds);
+    FD_SET(mServerP2PProbeSock, &wfds);
+    timeval tv{0, 0};
+    const int sel = select(mServerP2PProbeSock + 1, nullptr, &wfds, nullptr, &tv);
+    if (sel < 0) {
+        ServerAdvanceP2PProbe(false);
+        return;
+    }
+    if (sel == 0 || !FD_ISSET(mServerP2PProbeSock, &wfds)) {
+        return;
+    }
+
+    if (!mServerP2PProbeSocketConnected) {
+        int err = 0;
+        socklen_t errLen = sizeof(err);
+        if (getsockopt(mServerP2PProbeSock, SOL_SOCKET, SO_ERROR, &err, &errLen) != 0 || err != 0) {
+            ServerAdvanceP2PProbe(false);
+            return;
+        }
+        mServerP2PProbeSocketConnected = true;
+    }
+
+    uint8_t tokenBuf[4];
+    homura::WriteBEI32(tokenBuf, (int32_t)mServerP2PProbeToken);
+    const ssize_t sent = send(mServerP2PProbeSock, tokenBuf + mServerP2PProbeTokenBytesSent, sizeof(tokenBuf) - (size_t)mServerP2PProbeTokenBytesSent, 0);
+    if (sent > 0) {
+        mServerP2PProbeTokenBytesSent += (int)sent;
+        if (mServerP2PProbeTokenBytesSent == (int)sizeof(tokenBuf)) {
+            ServerAdvanceP2PProbe(true);
+        }
+        return;
+    }
+    if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+        return;
+    }
+    ServerAdvanceP2PProbe(false);
 }
 
 void WaitForSecondPlayerDialog::ServerHandleP2PInfo(const uint8_t *payload, uint16_t len) {
@@ -3522,7 +3698,10 @@ bool WaitForSecondPlayerDialog::ServerSendRelayReady(std::uint32_t relayEpoch) c
 
 void WaitForSecondPlayerDialog::ServerSendQuery() {
     // MsgType.QUERY = 0x02
-    ServerSendU8(0x02);
+    if (ServerSendU8(0x02)) {
+        mServerQuerySentTick = Sexy::GetTickCount();
+        mServerQueryPending = true;
+    }
 }
 
 void WaitForSecondPlayerDialog::ServerSendCreate() {
@@ -3632,7 +3811,7 @@ void WaitForSecondPlayerDialog::DrawServerRoomList(Sexy::Graphics *g) {
 
         pvzstl::string roomTitle = StrFormat(TodStringTranslate("[SERVER_ROOM_JOINED]").c_str(), r.name);
         pvzstl::string line = tag.empty() ? roomTitle : StrFormat("%s [%s]", roomTitle.c_str(), tag.c_str());
-        TodDrawString(g, line, 400, yPos, g->GetFont(), g->GetColor(), DS_ALIGN_CENTER);
+        Mode3DrawListTextWithShadow(g, line, 400, yPos, g->GetFont(), g->GetColor());
         yPos += kServerRoomListLineH;
     }
 
@@ -3954,6 +4133,7 @@ bool WaitForSecondPlayerDialog::ServerConnectFromInput() {
 void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *why) {
     const bool hasActiveVsSocket = (gTcpClientSocket >= 0) || gTcpConnected || (gTcpServerSocket >= 0);
     CloseSocketFd(mServerSock);
+    Mode3ResetTargetLatencyProbes(this);
     ServerResetP2PState(false);
 
     gIsConnectedToServer = false;
@@ -3976,6 +4156,9 @@ void WaitForSecondPlayerDialog::ServerDisconnect([[maybe_unused]] const char *wh
     mServerSpectateReservationActive = false;
     mServerHostedRoomId = 0;
     mServerJoinedRoomId = 0;
+    mServerLatencyMs = -1;
+    mServerQuerySentTick = 0;
+    mServerQueryPending = false;
     netplay::MetricsResetSettlementEvents();
     mServerHostedRoomName[0] = '\0';
     mServerJoinedRoomName[0] = '\0';

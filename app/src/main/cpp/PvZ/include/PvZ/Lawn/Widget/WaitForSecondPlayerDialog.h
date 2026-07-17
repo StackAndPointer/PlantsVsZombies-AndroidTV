@@ -99,6 +99,13 @@ public:
 
     // （可选）模式3：服务器房间列表选择
     int mSelectedRoomIndex_Server;
+    int mServerLatencyMs;
+    int mServerQuerySentTick;
+    bool mServerQueryPending;
+    int mServerTargetLatencyMs[5];
+    int mServerTargetProbeSock[5];
+    int mServerTargetProbeStartTick[5];
+    int mServerTargetNextRefreshTick;
 
     int mServerSock;        // TCP socket to server
     bool mServerConnecting; // non-blocking connect in progress
@@ -155,6 +162,14 @@ public:
     int mServerP2PProbePort2;
     std::uint32_t mServerP2PProbeToken;
     bool mServerP2PProbeDone;
+    bool mServerP2PProbeActive;
+    bool mServerP2PProbeSocketConnected;
+    bool mServerP2PProbeTargetOk[2];
+    int mServerP2PProbeSock;
+    int mServerP2PProbeAttempt;
+    int mServerP2PProbeTargetIndex;
+    int mServerP2PProbeStartTick;
+    int mServerP2PProbeTokenBytesSent;
     int mServerP2PDeadlineTick;
     int mServerP2PNextRetryTick;
     int mServerP2PTick;
@@ -186,6 +201,9 @@ public:
     void ServerSendReserveSpectate(bool reserve);
     bool ServerSendNatPort();
     bool ServerSendP2PProbe();
+    void ServerUpdateP2PProbe();
+    bool ServerStartP2PProbeTarget();
+    void ServerAdvanceP2PProbe(bool success);
     bool ServerOpenP2PListener();
     void ServerResetP2PState(bool keepListener);
     void ServerHandleP2PInfo(const uint8_t *payload, uint16_t len);

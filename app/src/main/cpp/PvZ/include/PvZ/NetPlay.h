@@ -445,6 +445,7 @@ inline bool IsOnlineModeActive() noexcept {
 }
 
 inline bool IsOnlineServerModeActive() noexcept {
+    //    return false; // 测试时用到
     return IsOnlineModeActive() && gIsServerModeNetplay;
 }
 

@@ -20,6 +20,7 @@
 #ifndef PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H
 #define PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H
 
+#include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
@@ -152,6 +153,7 @@ public:
         mSendPlayerNameCheckbox->Resize(-60, 580, 175, 50);
         mSendPlayerNameCheckbox->SetChecked(gLawnApp->mPlayerInfo->mVSResultsSendPlayerName, false);
         mParentMenu->AddWidget(mSendPlayerNameCheckbox);
+        SetCheckboxVisible(gIsServerModeNetplay && gServerModeTransport == ServerModeTransport::RELAY && !gIsServerModeSpectator);
     }
 
     void DrawCheckboxLabel(Sexy::Graphics *g) const {
