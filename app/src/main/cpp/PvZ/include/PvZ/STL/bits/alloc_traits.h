@@ -17,30 +17,19 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef PVZ_STL_EXT_STRING_CONVERSIONS_H
-#define PVZ_STL_EXT_STRING_CONVERSIONS_H
+#ifndef PVZ_STL_BITS_ALLOC_TRAITS_H
+#define PVZ_STL_BITS_ALLOC_TRAITS_H
 
-/**
- * @file string_conversions.h
- * https://gcc.gnu.org/onlinedocs/gcc-4.9.4/libstdc++/api/a01277.html#aa2909347e3b9614ab08f9493159eadac
- */
-
-#include <cstdarg>
 #include <cstddef>
 
-namespace pvzcxx {
+namespace pvzstl::detail {
 
-// Helper for the to_string / to_wstring functions.
-template <typename String, std::size_t N, typename CharT = typename String::value_type>
-[[nodiscard]] String to_xstring(int (*convf)(CharT *, std::size_t, const CharT *, std::va_list), const CharT *fmt, ...) {
-    CharT buf[N];
-    std::va_list args;
-    va_start(args, fmt);
-    const int len = convf(buf, N, fmt, args);
-    va_end(args);
-    return String(buf, len);
-}
+template <typename Tp>
+constexpr bool is_allocator = requires(Tp &a) {
+    typename Tp::value_type;
+    { a.allocate(std::size_t{}) };
+};
 
-} // namespace pvzcxx
+} // namespace pvzstl::detail
 
-#endif // PVZ_STL_EXT_STRING_CONVERSIONS_H
+#endif // PVZ_STL_BITS_ALLOC_TRAITS_H

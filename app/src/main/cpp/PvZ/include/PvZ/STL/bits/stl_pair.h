@@ -25,10 +25,10 @@
 namespace pvzstl::detail {
 
 template <typename Tp>
-inline constexpr bool is_pair = false;
+constexpr bool is_pair = false;
 
 template <typename Tp, typename Up>
-inline constexpr bool is_pair<std::pair<Tp, Up>> = true;
+constexpr bool is_pair<std::pair<Tp, Up>> = true;
 
 } // namespace pvzstl::detail
 
