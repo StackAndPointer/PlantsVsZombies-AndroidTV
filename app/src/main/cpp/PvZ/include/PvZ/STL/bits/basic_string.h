@@ -117,7 +117,7 @@ public:
     basic_string(const basic_string &other, const Alloc &a)
         : m_dataplus(other.get_rep()->grab(a, other.get_allocator()), a) {}
 
-    basic_string(basic_string &&other, const Alloc &a) noexcept
+    basic_string(basic_string &&other, const Alloc &a)
         : m_dataplus(other._data(), a) {
         if (a == other.get_allocator()) {
             other._data(empty_rep().refdata());
@@ -246,7 +246,7 @@ public:
         return *this;
     }
 
-    basic_string &assign(basic_string &&str) noexcept {
+    basic_string &assign(basic_string &&str) noexcept(std::allocator_traits<Alloc>::is_always_equal::value) {
         swap(str);
         return *this;
     }
