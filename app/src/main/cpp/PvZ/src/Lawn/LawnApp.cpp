@@ -1120,7 +1120,13 @@ void LawnApp::LoadingThreadProc() {
     TodFoleyInitialize(GetNewLawnFoleyParamArray(), std::size(GetNewLawnFoleyParamArray()));
 
     // 加载新增 字体文件
-    addonFonts.FANGZHENG_JIANZHI = new FreeTypeFont(this, "addonFiles/FangZhengJianZhi.ttf", 28, false, false, false);
+    addonFonts.BRIANNETOD = new FreeTypeFont(this, "addonFiles/data/BRIANNETOD.ttf", 16, false, false, false);
+    addonFonts.CONTINUUM_BOLD = new FreeTypeFont(this, "addonFiles/data/ContinuumBold.ttf", 16, false, false, false);
+    addonFonts.DWARVEN_TODCRAFT = new FreeTypeFont(this, "addonFiles/data/DwarvenTodcraft.ttf", 16, false, false, false);
+    addonFonts.HOUSE_OF_TERROR = new FreeTypeFont(this, "addonFiles/data/HouseofTerror.ttf", 16, false, false, false);
+    addonFonts.JN_BOBO_HEI = new FreeTypeFont(this, "addonFiles/data/JNBoBoHei.ttf", 22, false, false, false);
+    addonFonts.PICO = new FreeTypeFont(this, "addonFiles/data/Pico.ttf", 16, false, false, false);
+    addonFonts.TIEJILI_SC = new FreeTypeFont(this, "addonFiles/data/TiejiliSC.ttf", 16, false, false, false);
 
     // //试图修复偶现的地图错位现象。不知道是否有效
     // LawnApp_Load(lawnApp,"DelayLoad_Background1");

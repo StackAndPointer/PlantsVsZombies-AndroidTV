@@ -241,6 +241,11 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     mToolTip1 = new ToolTipWidget();
     mToolTip2 = new ToolTipWidget();
 
+    if (VSSetupAddonWidget::msExtendedSeedsMode) {
+        mToolTip1->mTitleFont = mToolTip2->mTitleFont = addonFonts.JN_BOBO_HEI;
+        mToolTip1->mWarningTextFont = mToolTip2->mWarningTextFont = addonFonts.JN_BOBO_HEI;
+    }
+
     mIsZombieChooser = theIsZombieChooser;
     mToolTipSeed1 = -1;
     mToolTipSeed2 = -1;
@@ -2316,37 +2321,18 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
             if (GetChosenSeed(aSeedType - SEED_ZOMBIE_GRAVESTONE).mSeedState == ChosenSeedState::SEED_IN_BANK && GetChosenSeed(aSeedType - SEED_ZOMBIE_GRAVESTONE).mCrazyDavePicked) {
                 aToolTip->SetWarningText(aToolTipSeed == SEED_ZOMBIE_GRAVESTONE ? "[ZOMBIE_BOSS_WANTS]" : "");
             }
-            // 对战显示隐藏僵尸卡信息
-            if (aSeedType > SeedType::SEED_ZOMBIE_GARGANTUAR && aSeedType < SeedType::NUM_ZOMBIE_SEEDS_IN_CHOOSER) {
-                const char *aTitle = nullptr;
-                const char *aLabel = nullptr;
-                switch (aSeedType) {
-                    case SeedType::SEED_ZOMBIE_PEA_HEAD: // 豌豆射手僵尸
-                        aTitle = "[PEA_HEAD_ZOMBIE]";
-                        aLabel = "[PEA_HEAD_ZOMBIE_DESCRIPTION_HEADER]";
-                        break;
-                    case SeedType::SEED_ZOMBIE_JALAPENO_HEAD: // 火爆辣椒僵尸
-                        aTitle = "[JALAPENO_HEAD_ZOMBIE]";
-                        aLabel = "[JALAPENO_HEAD_ZOMBIE_DESCRIPTION_HEADER]";
-                        break;
-                    case SeedType::SEED_ZOMBIE_GATLINGPEA_HEAD: // 机枪射手僵尸
-                        aTitle = "[GATLING_HEAD_ZOMBIE]";
-                        aLabel = "[GATLING_HEAD_ZOMBIE_DESCRIPTION_HEADER]";
-                        break;
-                    case SeedType::SEED_ZOMBIE_SQUASH_HEAD: // 窝瓜僵尸
-                        aTitle = "[SQUASH_HEAD_ZOMBIE]";
-                        aLabel = "[SQUASH_HEAD_ZOMBIE_DESCRIPTION_HEADER]";
-                        break;
-                    case SeedType::SEED_ZOMBIE_TALLNUT_HEAD: // 高坚果僵尸
-                        aTitle = "[TALLNUT_HEAD_ZOMBIE]";
-                        aLabel = "[TALLNUT_HEAD_ZOMBIE_DESCRIPTION_HEADER]";
-                        aToolTip->mX = aSeedX + 2 * (SEED_PACKET_WIDTH + 6);
-                        break;
-                    default:
-                        return;
-                }
-                aToolTip->SetTitle(aTitle);
-                aToolTip->SetLabel(aLabel);
+
+            switch (aSeedType) {
+                case SeedType::SEED_ZOMBIE_IMP:
+                    aToolTip->mX = aSeedX + 5 * (SEED_PACKET_WIDTH + 12);
+                    break;
+                case SeedType::SEED_ZOMBIE_POLEVAULTER:
+                case SeedType::SEED_ZOMBIE_BALLOON:
+                case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
+                    aToolTip->mX = aSeedX + 4 * (SEED_PACKET_WIDTH + 12);
+                    break;
+                default:
+                    return;
             }
 
             // 已选的卡不再展示描述文本

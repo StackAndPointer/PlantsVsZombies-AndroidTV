@@ -2167,6 +2167,10 @@ pvzstl::string Plant::GetNameString(SeedType theSeedType, SeedType theImitaterTy
 }
 
 pvzstl::string Plant::GetToolTip(SeedType theSeedType) {
+    if (theSeedType == SeedType::SEED_CACTUS && VSSetupAddonWidget::msBalancePatchMode) {
+        return TodStringTranslate("[CACTUS_TOOLTIP_VS]");
+    }
+
     const PlantDefinition &aPlantDef = GetPlantDefinition(theSeedType);
     pvzstl::string aToolTip = StrFormat("[%s_TOOLTIP]", aPlantDef.mPlantName);
     return TodStringTranslate(aToolTip.c_str());

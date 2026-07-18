@@ -70,6 +70,7 @@ VSSetupAddonWidget::VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu) {
     mBalancePatchMode = mApp->mPlayerInfo->mVSBalancePatchMode;
     msBalancePatchMode = mBalancePatchMode;
     msExtraPacketMode = mExtraPacketMode;
+    msExtendedSeedsMode = mExtendedSeedsMode;
 
     mExtraPacketCheckbox = MakeNewCheckbox(VSSetupAddonWidget_ExtraPacket, this, theVSSetupMenu, mExtraPacketMode);
     mExtendedSeedsCheckbox = MakeNewCheckbox(VSSetupAddonWidget_ExtendedSeeds, this, theVSSetupMenu, mExtendedSeedsMode);
@@ -251,6 +252,7 @@ void VSSetupAddonWidget::SetAddonMode(int theId, bool checked, bool saveDetails)
         case VSSetupAddonWidget_ExtendedSeeds:
             mExtendedSeedsMode = checked;
             mExtendedSeedsCheckbox->SetChecked(mExtendedSeedsMode, false);
+            msExtendedSeedsMode = mExtendedSeedsMode;
             if (saveDetails) {
                 mApp->mPlayerInfo->mVSExtendedSeedsMode = mExtendedSeedsMode;
             }

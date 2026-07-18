@@ -532,7 +532,13 @@ struct AddonZombatarImages {
 } inline addonZombatarImages; // 此处是新增贴图的列表；
 
 struct AddonFonts {
-    Sexy::Font *FANGZHENG_JIANZHI;
+    Sexy::Font *BRIANNETOD;
+    Sexy::Font *CONTINUUM_BOLD;
+    Sexy::Font *DWARVEN_TODCRAFT;
+    Sexy::Font *HOUSE_OF_TERROR;
+    Sexy::Font *JN_BOBO_HEI; // 含中文
+    Sexy::Font *PICO;
+    Sexy::Font *TIEJILI_SC; // 含中文
 } inline addonFonts;
 
 #endif // PVZ_GLOBAL_VARIABLE_H
