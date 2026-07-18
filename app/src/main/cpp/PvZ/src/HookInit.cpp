@@ -151,7 +151,7 @@ void InitHookFunction() {
     homura::HookFunc(Board_DrawFogAddr, &Board::DrawFog, &old_Board_DrawFog);
     homura::HookFunc(Board_UpdateIceAddr, &Board::UpdateIce, &old_Board_UpdateIce);
     homura::HookFunc(Board_DrawBackdropAddr, &Board::DrawBackdrop, &old_Board_DrawBackdrop);
-    homura::HookFunc(Board_RowCanHaveZombieTypeAddr, &Board::RowCanHaveZombieType, &old_Board_RowCanHaveZombieType);
+    homura::HookFunc(Board_RowCanHaveZombieTypeAddr, &Board::RowCanHaveZombieType, nullptr);
     homura::HookFunc(Board_DrawDebugTextAddr, &Board::DrawDebugText, &old_Board_DrawDebugText);
     homura::HookFunc(Board_DrawDebugObjectRectsAddr, &Board::DrawDebugObjectRects, &old_Board_DrawDebugObjectRects);
     homura::HookFunc(Board_DrawFadeOutAddr, &Board::DrawFadeOut, nullptr);

@@ -341,6 +341,9 @@ public:
     void StartZombieSound() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_StartZombieSoundAddr)(this);
     }
+    static bool ZombieTypeCanGoOnHighGround(ZombieType theZombieType) {
+        return reinterpret_cast<bool (*)(ZombieType)>(ZombieTypeCanGoOnHighGroundAddr)(theZombieType);
+    }
 
 
     Zombie() {

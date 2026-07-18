@@ -640,6 +640,9 @@ public:
     unsigned int SeedNotRecommendedForLevel(SeedType theSeedType) {
         return reinterpret_cast<unsigned int (*)(Board *, SeedType)>(Board_SeedNotRecommendedForLevelAddr)(this, theSeedType);
     }
+    bool GetNumWavesPerSurvivalStage() {
+        return reinterpret_cast<bool (*)(Board *)>(Board_GetNumWavesPerSurvivalStageAddr)((this));
+    }
 
     Board(LawnApp *theApp) {
         _constructor(theApp);
@@ -960,8 +963,6 @@ inline void (*old_Board_UpdateGridItems)(Board *board);
 inline void (*old_Board_StartLevel)(Board *board);
 
 inline void (*old_Board_DrawUITop)(Board *board, Sexy::Graphics *graphics);
-
-inline bool (*old_Board_RowCanHaveZombieType)(Board *board, int theRow, ZombieType theZombieType);
 
 inline void (*old_Board_ShakeBoard)(Board *board, int theShakeAmountX, int theShakeAmountY);
 

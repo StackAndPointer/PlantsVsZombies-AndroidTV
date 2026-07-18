@@ -402,6 +402,17 @@ void Plant::Update() {
 }
 
 void Plant::UpdateAbilities() {
+    if (!IsInPlay())
+        return;
+
+    if (mSeedType == SeedType::SEED_SPORESHROOM && mIsAsleep) {
+        Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+        if (aBodyReanim && aBodyReanim->IsAnimPlaying("anim_grow") && aBodyReanim->mLoopCount > 0) {
+            PlayBodyReanim("anim_sleep", ReanimLoopType::REANIM_LOOP, 20, aBodyReanim->mDefinition->mFPS);
+            return;
+        }
+    }
+
     old_Plant_UpdateAbilities(this);
 
     if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {

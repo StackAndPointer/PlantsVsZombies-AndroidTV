@@ -224,6 +224,7 @@ inline void *Board_FreezeEffectsForCutsceneAddr;
 inline void *Board_FindUmbrellaPlantAddr;
 inline void *Board_IsZombieTypePoolOnlyAddr;
 inline void *Board_SeedNotRecommendedForLevelAddr;
+inline void *Board_GetNumWavesPerSurvivalStageAddr;
 
 inline void *SyncBoardAddr;
 inline void *GetSavedGameNameAddr;
@@ -580,6 +581,7 @@ inline void *Zombie_GetDrawPosAddr;
 inline void *Zombie_ZombieNotWalkingAddr;
 inline void *Zombie_TrySpawnLevelAwardAddr;
 inline void *Zombie_StartZombieSoundAddr;
+inline void *ZombieTypeCanGoOnHighGroundAddr;
 
 
 inline void *SeedChooserScreen_UpdateAddr;

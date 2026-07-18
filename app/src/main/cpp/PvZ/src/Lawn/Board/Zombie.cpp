@@ -133,64 +133,61 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     }
 
     // 为其余位于水路的僵尸添加鸭子救生圈
-    if ((mBoard && mBoard->mPlantRow[mRow] == PlantRowType::PLANTROW_POOL)) {
-        // 普通僵尸类不绘制
-        if (GetZombieDefinition(theType).mReanimationType == REANIM_ZOMBIE)
-            return;
-        // 潜水僵尸、海豚僵尸、气球僵尸、蹦极僵尸不绘制
-        if (mZombieType == ZombieType::ZOMBIE_SNORKEL || mZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER || mZombieType == ZombieType::ZOMBIE_BALLOON || mZombieType == ZombieType::ZOMBIE_BUNGEE)
-            return;
-
-        int offsetX = 20;
-        int offsetY = -8;
-        float scale = 1.0f;
-        if (theType == ZombieType::ZOMBIE_FOOTBALL) {
-            offsetX = 30;
-            offsetY = -45;
-            scale = 1.2f;
-        } else if (theType == ZombieType::ZOMBIE_IMP) {
-            offsetX = 35;
-            offsetY = 22;
-            scale = 0.8f;
-        } else if (theType == ZombieType::ZOMBIE_GARGANTUAR) {
-            offsetX = 0;
-            offsetY = -50;
-            scale = 1.5f;
+    if (mBoard && mBoard->mPlantRow[mRow] == PlantRowType::PLANTROW_POOL) {
+        const bool shouldAttachDuckyTube = GetZombieDefinition(theType).mReanimationType != REANIM_ZOMBIE && mZombieType != ZombieType::ZOMBIE_SNORKEL
+            && mZombieType != ZombieType::ZOMBIE_DOLPHIN_RIDER && mZombieType != ZombieType::ZOMBIE_BALLOON && mZombieType != ZombieType::ZOMBIE_BUNGEE;
+        if (shouldAttachDuckyTube) {
+            int offsetX = 20;
+            int offsetY = -8;
+            float scale = 1.0f;
+            if (theType == ZombieType::ZOMBIE_FOOTBALL) {
+                offsetX = 30;
+                offsetY = -45;
+                scale = 1.2f;
+            } else if (theType == ZombieType::ZOMBIE_IMP) {
+                offsetX = 35;
+                offsetY = 22;
+                scale = 0.8f;
+            } else if (theType == ZombieType::ZOMBIE_GARGANTUAR) {
+                offsetX = 0;
+                offsetY = -50;
+                scale = 1.5f;
+            }
+            Reanimation *reanim = AddAttachedReanim(offsetX, offsetY, ReanimationType::REANIM_ZOMBIE);
+            SetupReanimLayers(reanim, theType);
+            reanim->OverrideScale(scale, scale);
+            reanim->PlayReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
+            reanim->AssignRenderGroupToPrefix("zombie_duckytube", RENDER_GROUP_NORMAL);
+            ReanimIgnoreClipRect("Zombie_duckytube", true);
+            ReanimatorTrackInstance *aTrackInstance = reanim->GetTrackInstanceByName("Zombie_whitewater");
+            aTrackInstance->mIgnoreExtraAdditiveColor = true;
+            aTrackInstance->mIgnoreColorOverride = true;
+            aTrackInstance->mIgnoreClipRect = true;
+            ReanimatorTrackInstance *aTrackInstance2 = reanim->GetTrackInstanceByName("Zombie_whitewater2");
+            aTrackInstance2->mIgnoreExtraAdditiveColor = true;
+            aTrackInstance2->mIgnoreColorOverride = true;
+            aTrackInstance2->mIgnoreClipRect = true;
+            // 隐藏非鸭子救生圈轨道
+            reanim->AssignRenderGroupToPrefix("anim_head", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("anim_hair", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("anim_tongue", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("anim_head1", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_neck", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_tie", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_body", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_outerarm_upper", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_outerarm_hand", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("anim_innerarm1", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("anim_innerarm2", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("anim_innerarm3", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_outerleg_lower", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_outerleg_foot", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_outerleg_upper", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_innerleg_lower", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_innerleg_foot", RENDER_GROUP_HIDDEN);
+            reanim->AssignRenderGroupToPrefix("Zombie_innerleg_upper", RENDER_GROUP_HIDDEN);
         }
-        Reanimation *reanim = AddAttachedReanim(offsetX, offsetY, ReanimationType::REANIM_ZOMBIE);
-        SetupReanimLayers(reanim, theType);
-        reanim->OverrideScale(scale, scale);
-        reanim->PlayReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 0.0f);
-        reanim->AssignRenderGroupToPrefix("zombie_duckytube", RENDER_GROUP_NORMAL);
-        ReanimIgnoreClipRect("Zombie_duckytube", true);
-        ReanimatorTrackInstance *aTrackInstance = reanim->GetTrackInstanceByName("Zombie_whitewater");
-        aTrackInstance->mIgnoreExtraAdditiveColor = true;
-        aTrackInstance->mIgnoreColorOverride = true;
-        aTrackInstance->mIgnoreClipRect = true;
-        ReanimatorTrackInstance *aTrackInstance2 = reanim->GetTrackInstanceByName("Zombie_whitewater2");
-        aTrackInstance2->mIgnoreExtraAdditiveColor = true;
-        aTrackInstance2->mIgnoreColorOverride = true;
-        aTrackInstance2->mIgnoreClipRect = true;
-        // 隐藏非鸭子救生圈轨道
-        reanim->AssignRenderGroupToPrefix("anim_head", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("anim_hair", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("anim_tongue", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("anim_head1", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_neck", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_tie", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_body", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_outerarm_upper", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_outerarm_hand", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("anim_innerarm1", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("anim_innerarm2", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("anim_innerarm3", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_outerleg_lower", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_outerleg_foot", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_outerleg_upper", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_innerleg_lower", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_innerleg_foot", RENDER_GROUP_HIDDEN);
-        reanim->AssignRenderGroupToPrefix("Zombie_innerleg_upper", RENDER_GROUP_HIDDEN);
     }
 
     switch (theType) {
@@ -5244,6 +5241,10 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
     if (thePlant->NotOnGround() || thePlant->mSeedType == SeedType::SEED_TANGLEKELP)
         return false;
 
+    if (mApp->IsVSMode() && IsFlying() && mBoard->IsPoolSquare(thePlant->mPlantCol, thePlant->mRow) && thePlant->mSeedType != SeedType::SEED_LILYPAD) {
+        return true;
+    }
+
     if (!mInPool && mBoard->IsPoolSquare(thePlant->mPlantCol, thePlant->mRow))
         return false;
 
@@ -5259,8 +5260,8 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
     }
 
     if (thePlant->mSeedType == SeedType::SEED_CELERY_STALKER) {
-        return mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_ZAMBONI
-            || (thePlant->mState != PlantState::STATE_CELERY_STALKER_LOW && thePlant->mState != PlantState::STATE_CELERY_STALKER_LOWERING
+        return mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || theAttackType == ZombieAttackType::ATTACKTYPE_DRIVE_OVER
+            || (theAttackType != ZombieAttackType::ATTACKTYPE_LADDER && thePlant->mState != PlantState::STATE_CELERY_STALKER_LOW && thePlant->mState != PlantState::STATE_CELERY_STALKER_LOWERING
                 && thePlant->mState != PlantState::STATE_CELERY_STALKER_RISING);
     }
 

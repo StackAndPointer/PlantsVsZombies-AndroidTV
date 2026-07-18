@@ -820,8 +820,8 @@ PlantingReason Board::CanPlantAt(int theGridX, int theGridY, SeedType theSeedTyp
 
         return PlantingReason::PLANTING_NOT_HERE;
     }
-    // 土豆地雷只能种在陆地上
-    if (aHasLilypad && theSeedType == SeedType::SEED_POTATOMINE) {
+    // 土豆地雷/潜伏芹菜只能种在陆地上
+    if (aHasLilypad && (theSeedType == SeedType::SEED_POTATOMINE || theSeedType == SeedType::SEED_CELERY_STALKER)) {
         return PlantingReason::PLANTING_ONLY_ON_GROUND;
     }
 
@@ -6406,15 +6406,57 @@ void Board::DrawBackdrop(Sexy::Graphics *g) {
 }
 
 bool Board::RowCanHaveZombieType(int theRow, ZombieType theZombieType) {
+    if (!RowCanHaveZombies(theRow)) {
+        return false;
+    }
+
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_POOL_PARTY) {
         return Zombie::ZombieTypeCanGoInPool(theZombieType);
     }
 
-    if (mApp->IsVSMode() && mPlantRow[theRow] == PlantRowType::PLANTROW_POOL) {
+    if (mApp->IsVSMode() && mPlantRow[theRow] == PlantRowType::PLANTROW_POOL
+        && (theZombieType == ZombieType::ZOMBIE_NORMAL || theZombieType == ZombieType::ZOMBIE_TRAFFIC_CONE || theZombieType == ZombieType::ZOMBIE_PAIL || theZombieType == ZombieType::ZOMBIE_FLAG)) {
         return true; // 修复泳池对战放置旗帜僵尸在水路不出怪
     }
 
-    return old_Board_RowCanHaveZombieType(this, theRow, theZombieType);
+    if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_RESODDED && mPlantRow[theRow] == PlantRowType::PLANTROW_DIRT && mCurrentWave < 5) {
+        return false; // 无草皮之地关卡，无草皮的行在前 5 波不刷出僵尸
+    }
+    if (mPlantRow[theRow] == PlantRowType::PLANTROW_POOL && !Zombie::ZombieTypeCanGoInPool(theZombieType)) {
+        return false; // 水路不会刷出不能进入泳池的僵尸
+    }
+    if (mPlantRow[theRow] == PlantRowType::PLANTROW_HIGH_GROUND && !Zombie::ZombieTypeCanGoOnHighGround(theZombieType)) {
+        return false; // 高地不会刷出不能走上高地的僵尸
+    }
+
+    int aCurrentWave = mCurrentWave;
+    if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_LAST_STAND) {
+        aCurrentWave += mChallenge->mSurvivalStage * GetNumWavesPerSurvivalStage();
+    }
+    // 非水路不能刷出水路僵尸；前 5 小波，水面仅刷出潜水僵尸或海豚骑士僵尸
+    if (mPlantRow[theRow] == PlantRowType::PLANTROW_POOL) {
+        if (aCurrentWave < 5 && !IsZombieTypePoolOnly(theZombieType)) {
+            return false;
+        }
+    } else if (IsZombieTypePoolOnly(theZombieType)) {
+        return false;
+    }
+    // 雪橇僵尸小队仅能在有冰道的行刷出
+    if (theZombieType == ZOMBIE_BOBSLED && !mIceTimer[theRow]) {
+        return false;
+    }
+    // “自古一路无巨人”（生存模式除外）
+    if (theRow == 0 && !LawnApp::IsSurvivalEndless(mApp->mGameMode)) {
+        if (theZombieType == ZombieType::ZOMBIE_GARGANTUAR || theZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR) {
+            return false;
+        }
+    }
+    // 非舞王僵尸或当前为泳池关卡，则可以刷出该僵尸
+    if (theZombieType != ZombieType::ZOMBIE_DANCER || StageHasPool()) {
+        return true;
+    }
+    // 舞王僵尸在非泳池关卡中，为保证能召唤伴舞僵尸，仅在中间三行刷出
+    return RowCanHaveZombies(theRow - 1) && RowCanHaveZombies(theRow + 1);
 }
 
 void Board::ShakeBoard(int theShakeAmountX, int theShakeAmountY) {

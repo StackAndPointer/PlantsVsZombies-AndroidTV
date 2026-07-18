@@ -221,6 +221,7 @@ bool LoadGameMain() {
     Board_FindUmbrellaPlantAddr = libGameMain.GetSymbol("_ZN5Board17FindUmbrellaPlantEii");
     Board_IsZombieTypePoolOnlyAddr = libGameMain.GetSymbol("_ZN5Board20IsZombieTypePoolOnlyE10ZombieType");
     Board_SeedNotRecommendedForLevelAddr = libGameMain.GetSymbol("_ZN5Board26SeedNotRecommendedForLevelE8SeedType");
+    Board_GetNumWavesPerSurvivalStageAddr = libGameMain.GetSymbol("_ZN5Board27GetNumWavesPerSurvivalStageEv");
 
 
     SyncBoardAddr = libGameMain.GetSymbol("_Z9SyncBoardP15SaveGameContextP5Board");
@@ -579,6 +580,7 @@ bool LoadGameMain() {
     Zombie_ZombieNotWalkingAddr = libGameMain.GetSymbol("_ZN6Zombie16ZombieNotWalkingEv");
     Zombie_TrySpawnLevelAwardAddr = libGameMain.GetSymbol("_ZN6Zombie18TrySpawnLevelAwardEv");
     Zombie_StartZombieSoundAddr = libGameMain.GetSymbol("_ZN6Zombie16StartZombieSoundEv");
+    ZombieTypeCanGoOnHighGroundAddr = libGameMain.GetSymbol("_Z27ZombieTypeCanGoOnHighGround10ZombieType");
 
 
     SeedChooserScreen_UpdateAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen6UpdateEv");

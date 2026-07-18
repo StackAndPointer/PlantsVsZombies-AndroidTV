@@ -147,7 +147,7 @@ Plant *Projectile::FindCollisionTargetPlant() {
         if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
             if (aPlant->mSeedType == SeedType::SEED_PUFFSHROOM || aPlant->mSeedType == SeedType::SEED_SUNSHROOM || aPlant->mSeedType == SeedType::SEED_POTATOMINE
                 || aPlant->mSeedType == SeedType::SEED_SPIKEWEED || aPlant->mSeedType == SeedType::SEED_SPIKEROCK || aPlant->mSeedType == SeedType::SEED_LILYPAD
-                || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) // 僵尸豌豆和杆子不能击中低矮植物
+                || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE || aPlant->mState == PlantState::STATE_CELERY_STALKER_LOW) // 僵尸子弹不能击中低矮植物
                 continue;
         }
 
@@ -356,7 +356,8 @@ void Projectile::UpdateLobMotion() {
         mPosZ = 0.0f;
 
         const auto aZombieType = ZombieType(mHitTorchwoodGridX);
-        if (aZombieType == ZombieType::ZOMBIE_ZOMBLOB_MIDDLE || aZombieType == ZombieType::ZOMBIE_ZOMBLOB_SMALL) {
+        const bool aIsAuthoritativeZomblobSpawn = !mApp->IsVSMode() || (!gTcpConnected && !gIsServerModeSpectator && !gIsReplayMode);
+        if (aIsAuthoritativeZomblobSpawn && (aZombieType == ZombieType::ZOMBIE_ZOMBLOB_MIDDLE || aZombieType == ZombieType::ZOMBIE_ZOMBLOB_SMALL)) {
             Zombie *aZombie = mBoard->AddZombieInRow(aZombieType, aTargetRow, mDamageRangeFlags, false);
             if (aZombie) {
                 aZombie->mPosX = mPosX + 20.0f - float(aZombie->mWidth) * 0.5f;
@@ -377,6 +378,13 @@ void Projectile::UpdateLobMotion() {
 
                 if (mLastPortalX != 0) {
                     aZombie->StartMindControlled();
+                }
+
+                if (mBoard->mPlantRow[mRow] == PlantRowType::PLANTROW_POOL) {
+                    mApp->AddReanimation(aZombie->mPosX + 23.0f, aZombie->mPosY + 78.0f, aZombie->mRenderOrder + 1, ReanimationType::REANIM_SPLASH)->OverrideScale(0.8f, 0.8f);
+                    mApp->AddTodParticle(aZombie->mPosX + 23.0f + 37.0f, aZombie->mPosY + 78.0f + 42.0f, aZombie->mRenderOrder + 1, ParticleEffect::PARTICLE_PLANTING_POOL);
+                    mApp->PlayFoley(FoleyType::FOLEY_ZOMBIESPLASH);
+                    aZombie->DieNoLoot();
                 }
             }
         }
