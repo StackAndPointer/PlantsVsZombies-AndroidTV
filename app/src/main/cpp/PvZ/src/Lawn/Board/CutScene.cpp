@@ -95,7 +95,7 @@ void CutScene::PlaceStreetZombies() {
         return;
 
     mPlacedZombies = true;
-    if (mApp->IsFinalBossLevel() || mApp->IsScaryPotterLevel() || mApp->IsIZombieLevel() || mApp->IsWhackAZombieLevel() || mApp->IsWallnutBowlingLevel() || mApp->IsVSMode()) {
+    if (mApp->IsFinalBossLevel() || mApp->IsScaryPotterLevel() || mApp->IsIZombieLevel() || mApp->IsWhackAZombieLevel() || mApp->IsWallnutBowlingLevel()) {
         return;
     }
 
