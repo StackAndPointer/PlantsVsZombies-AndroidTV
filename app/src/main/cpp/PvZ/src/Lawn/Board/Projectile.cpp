@@ -21,6 +21,7 @@
 #include "Homura/Logger.h"
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
+#include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/GridItem.h"
 #include "PvZ/Lawn/Board/Plant.h"
 #include "PvZ/Lawn/Board/Zombie.h"
@@ -41,7 +42,7 @@ namespace {
 constexpr int SPIKE_PIERCE_DAMAGE[MAX_PIERCE_HIT_COUNT] = {30, 15, 10};
 
 bool IsPiercingSpike(const Projectile *theProjectile) {
-    return theProjectile->mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode && theProjectile->mProjectileType == ProjectileType::PROJECTILE_SPIKE;
+    return theProjectile->mApp->IsVSMode() && (VSSetupAddonWidget::msBalancePatchMode || Challenge::msVSShuffleMode) && theProjectile->mProjectileType == ProjectileType::PROJECTILE_SPIKE;
 }
 
 bool HasHitZombie(const Projectile *theProjectile, Zombie *theZombie) {
@@ -637,7 +638,7 @@ void Projectile::DoImpact(Zombie *theZombie) {
                 return;
             }
 
-            if (VSSetupAddonWidget::msBalancePatchMode) {
+            if (VSSetupAddonWidget::msBalancePatchMode || Challenge::msVSShuffleMode) {
                 int aHitIndex = mPierceHitCount;
                 int aDamage = SPIKE_PIERCE_DAMAGE[aHitIndex];
                 if (theZombie->mShieldType == ShieldType::SHIELDTYPE_DOOR || theZombie->mShieldType == ShieldType::SHIELDTYPE_LADDER || theZombie->mShieldType == ShieldType::SHIELDTYPE_TRASHCAN

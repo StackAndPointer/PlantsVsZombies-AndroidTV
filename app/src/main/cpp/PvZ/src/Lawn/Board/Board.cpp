@@ -1263,6 +1263,10 @@ void Board::UpdateSunSpawning() {
             mSunCountDown /= 3;
         }
 
+        if (mSeedBank[0]->mNumPackets == 7) {
+            mSunCountDown *= 0.8f; // 多槽模式自然掉落的阳光产能提高至 1.25 倍
+        }
+
         // 刷牌模式阳光雨
         if (gOpeningEncounter) {
             if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_SUN_RAIN && gOpeningEncounter->mDoEffect)

@@ -336,7 +336,7 @@ void PickMPRandomSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, st
         const int poolBase = theIsZombie ? 6 + pool : poolGroupOffset + pool;
 
         int numSeedsInPool = 0;
-        for (int i = 0; i < 8; ++i) {
+        for (int i = 0; i < MAX_SEEDS_IN_POOL; ++i) {
             const SeedType aSeedType = VSSetupMenu::msShufflePools[poolBase][i];
             if (aSeedType == SeedType::SEED_NONE)
                 break;
@@ -410,12 +410,12 @@ void PickMPRandomSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, st
                 *it = SeedType::SEED_MAGNETSHROOM;
             }
         }
-        if (NeedSeedSplitPea(theApp)) {
-            auto it = std::ranges::find(aSeeds, SeedType::SEED_PEASHOOTER);
-            if (it != aSeeds.end()) {
-                *it = SeedType::SEED_SPLITPEA;
-            }
-        }
+        //        if (NeedSeedSplitPea(theApp)) {
+        //            auto it = std::ranges::find(aSeeds, SeedType::SEED_PEASHOOTER);
+        //            if (it != aSeeds.end()) {
+        //                *it = SeedType::SEED_SPLITPEA;
+        //            }
+        //        }
     }
 }
 
