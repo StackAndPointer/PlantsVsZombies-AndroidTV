@@ -890,12 +890,41 @@ void Plant::DoSpecial() {
             return;
 
         if (gTcpClientSocket >= 0) {
+            if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+                Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
+                U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_PLANT_ICEBERG_LETTUCE_DO_SPECIAL},
+                                      uint16_t(mBoard->mPlants.DataArrayGetID(this)),
+                                      aZombie == nullptr ? uint16_t(ZOMBIEID_NULL) : uint16_t(mBoard->mZombies.DataArrayGetID(aZombie))};
+                netplay::PutEvent(event);
+                IcebergLettuceDoSpecial(aZombie);
+                return;
+            }
+
             U16_Event event = {{EventType::EVENT_SERVER_BOARD_PLANT_DO_SPECIAL}, uint16_t(mBoard->mPlants.DataArrayGetID(this))};
             netplay::PutEvent(event);
         }
     }
 
     DoSpecial_Origin();
+}
+
+void Plant::IcebergLettuceDoSpecial(Zombie *theZombie) {
+    if (theZombie != nullptr) {
+        theZombie->mIceTrapCounter = 1000;
+        theZombie->StopZombieSound();
+        if (theZombie->mZombieType == ZombieType::ZOMBIE_BALLOON) {
+            theZombie->BalloonPropellerHatSpin(false);
+        }
+        if (theZombie->mZombiePhase == ZombiePhase::PHASE_BOSS_HEAD_SPIT) {
+            mBoard->RemoveParticleByType(ParticleEffect::PARTICLE_ZOMBIE_BOSS_FIREBALL);
+        }
+        if (theZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && theZombie->mHasObject) {
+            theZombie->ExplorerTorchConvert(false);
+        }
+        theZombie->UpdateAnimSpeed();
+    }
+
+    Die();
 }
 
 void Plant::DoSpecial_Origin() {
@@ -1000,22 +1029,7 @@ void Plant::DoSpecial_Origin() {
             break;
         }
         case SeedType::SEED_ICEBERG_LETTUCE: {
-            if (Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY)) {
-                aZombie->mIceTrapCounter = 1000;
-                aZombie->StopZombieSound();
-                if (aZombie->mZombieType == ZombieType::ZOMBIE_BALLOON) {
-                    aZombie->BalloonPropellerHatSpin(false);
-                }
-                if (aZombie->mZombiePhase == ZombiePhase::PHASE_BOSS_HEAD_SPIT) {
-                    mBoard->RemoveParticleByType(ParticleEffect::PARTICLE_ZOMBIE_BOSS_FIREBALL);
-                }
-                if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && aZombie->mHasObject) {
-                    aZombie->ExplorerTorchConvert(false);
-                }
-                aZombie->UpdateAnimSpeed();
-            }
-
-            Die();
+            IcebergLettuceDoSpecial(FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY));
             break;
         }
         default:
@@ -3012,17 +3026,16 @@ void Plant::UpdateSquash() {
 }
 
 void Plant::UpdateIcebergLettuce() {
-    Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
-
     if (mState == PlantState::STATE_NOTREADY) {
         Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
         if (aZombie != nullptr) {
             mApp->PlayFoley(FoleyType::FOLEY_ICEBERG);
             PlayBodyReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
             mState = PlantState::STATE_READY;
+            mStateCountdown = 50;
         }
     } else if (mState == PlantState::STATE_READY) {
-        if (aBodyReanim->ShouldTriggerTimedEvent(0.35f)) {
+        if (mStateCountdown <= 0) {
             DoSpecial();
         }
     }

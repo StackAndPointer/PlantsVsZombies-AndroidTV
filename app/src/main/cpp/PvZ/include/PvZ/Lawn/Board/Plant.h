@@ -283,6 +283,7 @@ public:
     void KillAllPlantsNearDoom();
     void DoSpecial();
     void DoSpecial_Origin();
+    void IcebergLettuceDoSpecial(Zombie *theZombie);
     Zombie *FindTargetZombie(int theRow, PlantWeapon thePlantWeapon);
     GridItem *FindTargetGridItem(int theRow, PlantWeapon thePlantWeapon);
     void Die();

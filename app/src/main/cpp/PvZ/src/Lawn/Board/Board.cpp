@@ -2174,6 +2174,22 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aPlant->DoSpecial_Origin();
             }
         } break;
+        case EVENT_SERVER_BOARD_PLANT_ICEBERG_LETTUCE_DO_SPECIAL: {
+            auto *eventIcebergLettuceDoSpecial = static_cast<const U16U16_Event *>(event);
+            uint16_t serverPlantID = eventIcebergLettuceDoSpecial->data1;
+            uint16_t clientPlantID = 0;
+            if (homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
+                Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
+                Zombie *aZombie = nullptr;
+                if (eventIcebergLettuceDoSpecial->data2 != uint16_t(ZOMBIEID_NULL)) {
+                    uint16_t clientZombieID = 0;
+                    if (homura::FindInMap(serverZombieIDMap, eventIcebergLettuceDoSpecial->data2, clientZombieID)) {
+                        aZombie = mZombies.DataArrayGet(clientZombieID);
+                    }
+                }
+                aPlant->IcebergLettuceDoSpecial(aZombie);
+            }
+        } break;
         case EVENT_SERVER_BOARD_PLANT_FINDTARGETANDFIRE: {
             auto *event1 = static_cast<const U8U8U16_Event *>(event);
             uint16_t serverPlantID = event1->data3;
