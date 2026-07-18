@@ -1103,7 +1103,7 @@ void Challenge::DrawBackdrop(Sexy::Graphics *g) {
 }
 
 void Challenge::DrawVSSuddenDeathClock(Graphics *g) {
-    if (mApp->mGameScene == SCENE_ZOMBIES_WON || mApp->mGameScene == SCENE_PLANTS_WON) {
+    if (mApp->mGameScene != SCENE_PLAYING) {
         return;
     }
 
