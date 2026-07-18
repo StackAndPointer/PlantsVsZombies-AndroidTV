@@ -504,6 +504,7 @@ public:
     void UpdateZombieBobsled();
     void UpdateZombiePool();
     void DoSpecial();
+    void ExplorerBurnPlant(Plant *thePlant);
     void UpdateZombieBungee();
     void UpdateZombieCatapult();
     void BungeeLanding();

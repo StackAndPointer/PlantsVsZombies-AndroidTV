@@ -2899,6 +2899,20 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aZombie->DoSpecial();
             }
         } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_EXPLORER_BURN_PLANT: {
+            auto *eventExplorerBurnPlant = static_cast<const U16U16_Event *>(event);
+            uint16_t serverZombieID = eventExplorerBurnPlant->data1;
+            uint16_t clientZombieID = 0;
+            if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                Plant *aPlant = nullptr;
+                uint16_t clientPlantID = 0;
+                if (homura::FindInMap(serverPlantIDMap, eventExplorerBurnPlant->data2, clientPlantID)) {
+                    aPlant = mPlants.DataArrayGet(clientPlantID);
+                }
+                aZombie->ExplorerBurnPlant(aPlant);
+            }
+        } break;
         case EVENT_SERVER_BOARD_ZOMBIE_SQUISH_ALL_IN_SQUARE: {
             auto *eventZombieSquishAllInSquare = static_cast<const U16UNI32_Event *>(event);
             uint16_t serverZombieID = eventZombieSquishAllInSquare->data1;

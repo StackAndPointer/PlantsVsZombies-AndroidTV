@@ -2023,28 +2023,19 @@ void Zombie::UpdateZombieExplorer() {
                     return;
                 }
             }
-
-            mApp->PlayFoley(FoleyType::FOLEY_EXPLORER_IGNITE);
-            int aRenderOrder = mBoard->MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, mRow, 1);
-            Reanimation *aOriReanim = mApp->ReanimationTryToGet(mBoard->mFwooshID[mRow][aPlant->mRow]);
-            if (aOriReanim) {
-                aOriReanim->ReanimationDie();
+            if (mApp->IsVSMode()) {
+                if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
+                    return;
+                }
             }
 
-            float aPosX = mBoard->GridToPixelX(aPlant->mPlantCol, aPlant->mRow) + 40.0f;
-            float aPosY = mBoard->GridToPixelY(aPlant->mPlantCol, aPlant->mRow);
-            Reanimation *aFwoosh = mApp->AddReanimation(aPosX, aPosY, aRenderOrder, ReanimationType::REANIM_JALAPENO_FIRE);
-            aFwoosh->SetFramesForLayer("anim_flame");
-            aFwoosh->mLoopType = ReanimLoopType::REANIM_LOOP_FULL_LAST_FRAME;
-            aFwoosh->mAnimRate *= RandRangeFloat(0.7f, 1.3f);
+            if (gTcpClientSocket >= 0) {
+                U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_EXPLORER_BURN_PLANT}, uint16_t(mBoard->mZombies.DataArrayGetID(this)), uint16_t(mBoard->mPlants.DataArrayGetID(aPlant))};
+                netplay::PutEvent(event);
+            }
 
-            float aScale = RandRangeFloat(0.9f, 1.1f);
-            float aFlip = Rand(2) ? 1.0f : -1.0f;
-            aFwoosh->OverrideScale(aScale * aFlip, 1);
-
-            mBoard->mFwooshID[mRow][aPlant->mRow] = mApp->ReanimationGetID(aFwoosh);
-            mBoard->mFwooshCountDown = 100;
-            aPlant->Die();
+            ExplorerBurnPlant(aPlant);
+            return;
         } else {
             if (aPlant->mSeedType == SeedType::SEED_TORCHWOOD) {
                 ExplorerTorchConvert(true);
@@ -2075,6 +2066,34 @@ void Zombie::UpdateZombieExplorer() {
             }
         }
     }
+}
+
+void Zombie::ExplorerBurnPlant(Plant *thePlant) {
+    if (thePlant == nullptr) {
+        return;
+    }
+
+    mApp->PlayFoley(FoleyType::FOLEY_EXPLORER_IGNITE);
+    int aRenderOrder = mBoard->MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, mRow, 1);
+    Reanimation *aOriReanim = mApp->ReanimationTryToGet(mBoard->mFwooshID[mRow][thePlant->mRow]);
+    if (aOriReanim) {
+        aOriReanim->ReanimationDie();
+    }
+
+    float aPosX = mBoard->GridToPixelX(thePlant->mPlantCol, thePlant->mRow) + 40.0f;
+    float aPosY = mBoard->GridToPixelY(thePlant->mPlantCol, thePlant->mRow);
+    Reanimation *aFwoosh = mApp->AddReanimation(aPosX, aPosY, aRenderOrder, ReanimationType::REANIM_JALAPENO_FIRE);
+    aFwoosh->SetFramesForLayer("anim_flame");
+    aFwoosh->mLoopType = ReanimLoopType::REANIM_LOOP_FULL_LAST_FRAME;
+    aFwoosh->mAnimRate *= RandRangeFloat(0.7f, 1.3f);
+
+    float aScale = RandRangeFloat(0.9f, 1.1f);
+    float aFlip = Rand(2) ? 1.0f : -1.0f;
+    aFwoosh->OverrideScale(aScale * aFlip, 1);
+
+    mBoard->mFwooshID[mRow][thePlant->mRow] = mApp->ReanimationGetID(aFwoosh);
+    mBoard->mFwooshCountDown = 100;
+    thePlant->Die();
 }
 
 void Zombie::ExplorerTorchConvert(bool theBurn) {
