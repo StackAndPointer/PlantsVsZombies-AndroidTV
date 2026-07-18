@@ -2738,7 +2738,7 @@ void Plant::UpdateChomper() {
             bool doBite = false;
             if (aZombie) {
                 if (aZombie->mZombieType == ZombieType::ZOMBIE_GARGANTUAR || aZombie->mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || aZombie->mZombieType == ZombieType::ZOMBIE_BOSS
-                    || Zombie::IsZomblob(aZombie->mZombieType)) {
+                    || aZombie->mZombieType == ZombieType::ZOMBIE_ZOMBLOB_SMALL) {
                     doBite = true;
                 }
             }
