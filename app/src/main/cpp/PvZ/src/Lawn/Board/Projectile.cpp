@@ -1116,8 +1116,9 @@ bool Projectile::IsGridItemHitBySplash(GridItem *theGridItem) {
 }
 
 bool Projectile::IsSplashDamage(Zombie *theZombie) const {
-    if (mProjectileType && theZombie && theZombie->IsFireResistant())
+    if (mProjectileType == ProjectileType::PROJECTILE_FIREBALL && theZombie && theZombie->IsFireResistant()) {
         return false;
+    }
 
     return mProjectileType == ProjectileType::PROJECTILE_MELON || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON || mProjectileType == ProjectileType::PROJECTILE_FIREBALL;
 }
