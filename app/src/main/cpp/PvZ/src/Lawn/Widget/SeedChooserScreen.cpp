@@ -2332,7 +2332,7 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
                     aToolTip->mX = aSeedX + 4 * (SEED_PACKET_WIDTH + 12);
                     break;
                 default:
-                    return;
+                    break;
             }
 
             // 已选的卡不再展示描述文本
