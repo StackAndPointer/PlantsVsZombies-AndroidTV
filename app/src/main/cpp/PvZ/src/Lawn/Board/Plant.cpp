@@ -1063,14 +1063,14 @@ void Plant::Fire(Zombie *theTargetZombie, int theRow, PlantWeapon thePlantWeapon
 
             event.type = EventType::EVENT_SERVER_BOARD_PLANT_FIRE;
             event.data1 = uint16_t(mBoard->mPlants.DataArrayGetID(this));
-            event.data2 = theTargetZombie == nullptr ? uint16_t(ZOMBIEID_NULL) : uint16_t(mBoard->mZombies.DataArrayGetID(theTargetZombie));
+            event.data2 = theTargetZombie == nullptr ? NETPLAY_ZOMBIE_ID_NULL : uint16_t(mBoard->mZombies.DataArrayGetID(theTargetZombie));
             event.data4.u16x2.u16_1 = uint16_t(theRow);
             event.data4.u16x2.u16_2 = uint16_t(thePlantWeapon);
             // 如果同时传入有效的 theTargetZombie 和 theTargetGridItem 会导致投手弹道计算错误
             if (theTargetZombie) { // 存在僵尸目标时传入空的场地物 ID
-                event.data5.u16x2.u16_1 = uint16_t(GRIDITEMID_NULL);
+                event.data5.u16x2.u16_1 = NETPLAY_GRIDITEM_ID_NULL;
             } else {
-                event.data5.u16x2.u16_1 = theTargetGridItem == nullptr ? uint16_t(GRIDITEMID_NULL) : uint16_t(mBoard->mGridItems.DataArrayGetID(theTargetGridItem));
+                event.data5.u16x2.u16_1 = theTargetGridItem == nullptr ? NETPLAY_GRIDITEM_ID_NULL : uint16_t(mBoard->mGridItems.DataArrayGetID(theTargetGridItem));
             }
             netplay::PutEvent(event);
             //            SyncPingPongAnimationToClient();

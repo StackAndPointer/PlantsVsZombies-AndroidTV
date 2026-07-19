@@ -2116,8 +2116,25 @@ void Board::processServerEvent(const BaseEvent *event) {
                 uint16_t aRow = eventPlantFire->data4.u16x2.u16_1;
                 auto aPlantWeapon = PlantWeapon(eventPlantFire->data4.u16x2.u16_2);
                 Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
-                Zombie *aZombie = aZombieID == ZOMBIEID_NULL ? nullptr : mZombies.DataArrayGet(*homura::FindInMap(serverZombieIDMap, aZombieID));
-                GridItem *aGridItem = aGridItemID == GRIDITEMID_NULL ? nullptr : mGridItems.DataArrayGet(*homura::FindInMap(serverGridItemIDMap, aGridItemID));
+
+                Zombie *aZombie = nullptr;
+                if (aZombieID != NETPLAY_ZOMBIE_ID_NULL) {
+                    uint16_t clientZombieID = 0;
+                    if (!homura::FindInMap(serverZombieIDMap, aZombieID, clientZombieID)) {
+                        break;
+                    }
+                    aZombie = mZombies.DataArrayGet(clientZombieID);
+                }
+
+                GridItem *aGridItem = nullptr;
+                if (aGridItemID != NETPLAY_GRIDITEM_ID_NULL) {
+                    uint16_t clientGridItemID = 0;
+                    if (!homura::FindInMap(serverGridItemIDMap, aGridItemID, clientGridItemID)) {
+                        break;
+                    }
+                    aGridItem = mGridItems.DataArrayGet(clientGridItemID);
+                }
+
                 aPlant->Fire_Origin(aZombie, aRow, aPlantWeapon, aGridItem);
             }
         } break;
