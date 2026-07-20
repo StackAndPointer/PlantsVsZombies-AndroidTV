@@ -104,7 +104,7 @@ PlantDefinition gPlantDefs[SeedType::NUM_SEED_TYPES] = {
 
 PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_ICEBERG_LETTUCE, nullptr, ReanimationType::REANIM_ICEBERG_LETTUCE, 0, 0, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "ICEBERG_LETTUCE"},
-    {SeedType::SEED_CELERY_STALKER, nullptr, ReanimationType::REANIM_CELERY_STALKER, 0, 75, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "CELERY_STALKER"},
+    {SeedType::SEED_CELERY_STALKER, nullptr, ReanimationType::REANIM_CELERY_STALKER, 0, 50, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "CELERY_STALKER"},
     {SeedType::SEED_SPORESHROOM, nullptr, ReanimationType::REANIM_SPORE_SHROOM, 0, 125, 750, PlantSubClass::SUBCLASS_SHOOTER, 300, "SPORE_SHROOM"},
     {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
@@ -118,7 +118,7 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
         case SeedType::SEED_ICEBERG_LETTUCE:
             break;
         case SeedType::SEED_CELERY_STALKER:
-            mPlantMaxHealth = 1000;
+            mPlantMaxHealth = 1200;
             break;
         default:
             break;
@@ -655,7 +655,7 @@ void Plant::Draw(Sexy::Graphics *g) {
                 mSeedType == SeedType::SEED_TALLNUT ||      //
                 mSeedType == SeedType::SEED_PUMPKINSHELL || //
                 mSeedType == SeedType::SEED_GARLIC ||       //
-                mSeedType == SeedType::SEED_SPIKEROCK))) {  // 如果玩家开了 植物显血
+                mSeedType == SeedType::SEED_SPIKEROCK || mSeedType == SeedType::SEED_CELERY_STALKER))) { // 如果玩家开了 植物显血
         if (!IsOnlineServerModeActive()) {
             pvzstl::string str = StrFormat("%d/%d", mPlantHealth, mPlantMaxHealth);
             g->SetFont(Sexy::FONT_DWARVENTODCRAFT12);
@@ -1478,6 +1478,15 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
                 }
             }
 
+            if (mSeedType == SeedType::SEED_CELERY_STALKER) {
+                if (aZombie->mZombiePhase == ZombiePhase::PHASE_DIGGER_WALKING || aZombie->mZombiePhase == ZombiePhase::PHASE_DIGGER_STUNNED) {
+                    aAttackRect.mX += 25;
+                }
+                if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE && aZombie->mTargetCol != mPlantCol - 1) {
+                    continue; // 只能攻击左侧一格的蹦极僵尸
+                }
+            }
+
             if ((mSeedType == SeedType::SEED_EXPLODE_O_NUT && aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT) || (mSeedType == SeedType::SEED_TANGLEKELP && !aZombie->mInPool)) {
                 continue;
             }
@@ -2148,7 +2157,7 @@ Rect Plant::GetPlantAttackRect(PlantWeapon thePlantWeapon) {
                 aRect = Rect(mX, mY, mWidth, mHeight);
                 break;
             case SeedType::SEED_CELERY_STALKER:
-                aRect = Rect(mX - 80, mY, 60, mHeight);
+                aRect = Rect(mX - 80, mY, 70, mHeight);
                 break;
             default:
                 aRect = Rect(mX + 60, mY, BOARD_WIDTH, mHeight);
@@ -3073,7 +3082,7 @@ void Plant::UpdateIcebergLettuce() {
 }
 
 void Plant::UpdateCeleryStalker() {
-    static constexpr int kCeleryAttackDamage = 30;
+    static constexpr int kCeleryAttackDamage = 20;
     static constexpr int kCeleryHitInterval = 50;
     static constexpr int kCeleryRetreatDelay = 300;
 

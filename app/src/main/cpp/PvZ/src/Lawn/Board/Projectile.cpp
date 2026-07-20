@@ -148,7 +148,8 @@ Plant *Projectile::FindCollisionTargetPlant() {
         if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
             if (aPlant->mSeedType == SeedType::SEED_PUFFSHROOM || aPlant->mSeedType == SeedType::SEED_SUNSHROOM || aPlant->mSeedType == SeedType::SEED_POTATOMINE
                 || aPlant->mSeedType == SeedType::SEED_SPIKEWEED || aPlant->mSeedType == SeedType::SEED_SPIKEROCK || aPlant->mSeedType == SeedType::SEED_LILYPAD
-                || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE || aPlant->mState == PlantState::STATE_CELERY_STALKER_LOW) // 僵尸子弹不能击中低矮植物
+                || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE || aPlant->mState == PlantState::STATE_CELERY_STALKER_LOW
+                || aPlant->mState == PlantState::STATE_CELERY_STALKER_LOWERING) // 僵尸子弹不能击中低矮植物
                 continue;
         }
 
