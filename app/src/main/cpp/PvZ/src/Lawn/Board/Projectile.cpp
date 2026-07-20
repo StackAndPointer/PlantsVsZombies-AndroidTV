@@ -876,7 +876,7 @@ Zombie *Projectile::FindCollisionMindControlledTarget() {
     while (mBoard->IterateZombies(aZombie)) {
         if (!aZombie->mDead && aZombie->mRow == mRow && aZombie->mMindControlled) {
             Rect aZombieRect = aZombie->GetZombieRect();
-            if (GetRectOverlap(aProjectileRect, aZombieRect) >= 0 && (aBestZombie || aZombie->mX > aMinX)) {
+            if (GetRectOverlap(aProjectileRect, aZombieRect) >= 0 && (aBestZombie == nullptr || aZombie->mX > aMinX)) {
                 aBestZombie = aZombie;
                 aMinX = aZombie->mX;
             }

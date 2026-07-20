@@ -2202,7 +2202,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             if (homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
                 Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
                 Zombie *aZombie = nullptr;
-                if (eventIcebergLettuceDoSpecial->data2 != uint16_t(ZOMBIEID_NULL)) {
+                if (eventIcebergLettuceDoSpecial->data2 != NETPLAY_ZOMBIE_ID_NULL) {
                     uint16_t clientZombieID = 0;
                     if (homura::FindInMap(serverZombieIDMap, eventIcebergLettuceDoSpecial->data2, clientZombieID)) {
                         aZombie = mZombies.DataArrayGet(clientZombieID);
@@ -2336,6 +2336,16 @@ void Board::processServerEvent(const BaseEvent *event) {
                 }
             }
         } break;
+        case EVENT_SERVER_BOARD_PLANT_ICEBERG_LETTUCE_LAUNCH: {
+            auto *eventPlantLaunch = static_cast<const U16_Event *>(event);
+            uint16_t serverPlantID = eventPlantLaunch->data;
+            uint16_t clientPlantID = 0;
+            if (homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
+                Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
+                mApp->PlayFoley(FoleyType::FOLEY_ICEBERG);
+                aPlant->PlayBodyReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
+            }
+        } break;
         case EVENT_SERVER_BOARD_PLANT_WIN: {
             //            auto *plantWinEvent = static_cast<const U16_Event *>(event);
             //            uint16_t serverGridItemID = plantWinEvent->data;
@@ -2431,7 +2441,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             uint16_t clientZombieID = 0;
             if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
-                if (serverPlantID == PlantID::PLANTID_NULL) {
+                if (serverPlantID == NETPLAY_PLANT_ID_NULL) {
                     aZombie->mTargetPlantID = PlantID::PLANTID_NULL;
                 } else {
                     uint16_t clientPlantID = 0;
@@ -2491,7 +2501,7 @@ void Board::processServerEvent(const BaseEvent *event) {
                     aZombie->mTargetCol = theGridX;
                     aZombie->SetRow(theGridY);
                     aZombie->mPosX = float(GridToPixelX(theGridX, theGridY));
-                    aZombie->mPosY = aZombie->GetPosYBasedOnRow(theGridX);
+                    aZombie->mPosY = aZombie->GetPosYBasedOnRow(theGridY);
                     aZombie->mRenderOrder = Board::MakeRenderOrder(RENDER_LAYER_GRAVE_STONE, theGridX, 7);
                 } else {
                     aZombie->mPosX = float(GridToPixelX(theGridX, theGridY)) - 30.0f;
@@ -2723,10 +2733,12 @@ void Board::processServerEvent(const BaseEvent *event) {
             uint16_t clientZombieID = 0;
             uint16_t serverPlantID = event1->data2;
             uint16_t clientPlantID = 0;
-            if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID) && homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
-                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
-                Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
-                aZombie->ZombieCatapultFire(aPlant);
+            if (serverPlantID != NETPLAY_PLANT_ID_NULL) {
+                if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID) && homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
+                    Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                    Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
+                    aZombie->ZombieCatapultFire(aPlant);
+                }
             }
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_LADDER_START_PLACING: {

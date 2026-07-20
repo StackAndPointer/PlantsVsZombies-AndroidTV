@@ -894,7 +894,7 @@ void Plant::DoSpecial() {
                 Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
                 U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_PLANT_ICEBERG_LETTUCE_DO_SPECIAL},
                                       uint16_t(mBoard->mPlants.DataArrayGetID(this)),
-                                      aZombie == nullptr ? uint16_t(ZOMBIEID_NULL) : uint16_t(mBoard->mZombies.DataArrayGetID(aZombie))};
+                                      aZombie == nullptr ? NETPLAY_ZOMBIE_ID_NULL : uint16_t(mBoard->mZombies.DataArrayGetID(aZombie))};
                 netplay::PutEvent(event);
                 IcebergLettuceDoSpecial(aZombie);
                 return;
@@ -1833,7 +1833,7 @@ static int GetVSCostBalanced(SeedType theSeedType) {
 static int GetVSCostShuffle(SeedType theSeedType) {
     int aCost = GetVSCostDefault(theSeedType);
     switch (theSeedType) {
-        case SeedType::SEED_ICESHROOM:   // 75 -> 50
+        case SeedType::SEED_ICESHROOM: // 75 -> 50
             return 50;
         case SeedType::SEED_SQUASH: // 75 -> 100
         case SeedType::SEED_GARLIC: // 75 -> 100
@@ -3043,13 +3043,27 @@ void Plant::UpdateSquash() {
 }
 
 void Plant::UpdateIcebergLettuce() {
+    bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
+    auto syncIcebergLettuceState = [this]() {
+        if (gTcpClientSocket < 0) {
+            return;
+        }
+        U16_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_PLANT_ICEBERG_LETTUCE_LAUNCH;
+        event.data = uint16_t(mBoard->mPlants.DataArrayGetID(this));
+        netplay::PutEvent(event);
+    };
+
     if (mState == PlantState::STATE_NOTREADY) {
-        Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
-        if (aZombie != nullptr) {
+        if (isRemoteClient) {
+            return;
+        }
+        if (FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY)) {
             mApp->PlayFoley(FoleyType::FOLEY_ICEBERG);
             PlayBodyReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
             mState = PlantState::STATE_READY;
             mStateCountdown = 50;
+            syncIcebergLettuceState();
         }
     } else if (mState == PlantState::STATE_READY) {
         if (mStateCountdown <= 0) {

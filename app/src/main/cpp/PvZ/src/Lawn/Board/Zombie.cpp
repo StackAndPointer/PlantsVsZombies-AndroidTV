@@ -4149,20 +4149,20 @@ void Zombie::DieNoLoot_Origin() {
 
 void Zombie::StopZombieSound() {
     if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER) {
-        bool aStopSound = false;
+        bool aHasAliveDancer = false;
 
         if (mBoard) {
             Zombie *aZombie = nullptr;
             while (mBoard->IterateZombies(aZombie)) {
                 if (aZombie->mHasHead && !aZombie->IsDeadOrDying() && aZombie->IsOnBoard()
                     && (aZombie->mZombieType == ZombieType::ZOMBIE_DANCER || aZombie->mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER)) {
-                    aStopSound = true;
+                    aHasAliveDancer = true;
                     break;
                 }
             }
         }
 
-        if (aStopSound) {
+        if (!aHasAliveDancer) {
             mApp->mSoundSystem->StopFoley(FoleyType::FOLEY_DANCER);
         }
     }
@@ -7091,7 +7091,7 @@ void Zombie::UpdateZombieBungee() {
                         U16U16_Event event{};
                         event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_LIFT_TARGET;
                         event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
-                        event.data2 = uint16_t(mTargetPlantID);
+                        event.data2 = mTargetPlantID == PLANTID_NULL ? NETPLAY_PLANT_ID_NULL : uint16_t(mTargetPlantID);
                         netplay::PutEvent(event);
                     }
                 }
@@ -7153,7 +7153,7 @@ void Zombie::UpdateZombieCatapult() {
                 U16U16_Event event{};
                 event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_CATAPLUT_FIRE;
                 event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
-                event.data2 = thePlant == nullptr ? uint16_t(PLANTID_NULL) : uint16_t(mBoard->mPlants.DataArrayGetID(thePlant));
+                event.data2 = thePlant == nullptr ? NETPLAY_PLANT_ID_NULL : uint16_t(mBoard->mPlants.DataArrayGetID(thePlant));
                 netplay::PutEvent(event);
             }
             ZombieCatapultFire(thePlant);

@@ -33,8 +33,9 @@
 inline constexpr uint32_t NETPLAY_VERSION = 3184;
 
 // 联机事件只传输 DataArray ID 的低 16 位；slot/index 0 是合法对象 ID，
-// 因此不能使用游戏内部值为 0 的 ZOMBIEID_NULL / GRIDITEMID_NULL 作为网络空值。
+// 因此不能使用游戏内部值为 0 的 PLANTID_NULL / ZOMBIEID_NULL / GRIDITEMID_NULL 作为网络空值。
 // DataArray 容量远小于 UINT16_MAX，因此 0xFFFF 可安全保留为网络协议专用空值。
+inline constexpr uint16_t NETPLAY_PLANT_ID_NULL = UINT16_MAX;
 inline constexpr uint16_t NETPLAY_ZOMBIE_ID_NULL = UINT16_MAX;
 inline constexpr uint16_t NETPLAY_GRIDITEM_ID_NULL = UINT16_MAX;
 
@@ -134,6 +135,7 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_PLANT_MAGNETSHROOM_ATTACK,
     EVENT_SERVER_BOARD_PLANT_MAGNETSHROOM_ATTACK_LADDER,
     EVENT_SERVER_BOARD_PLANT_SQUASH_STATE,
+    EVENT_SERVER_BOARD_PLANT_ICEBERG_LETTUCE_LAUNCH,
     EVENT_SERVER_BOARD_PLANT_WIN, // 植物方通过杀够3只靶子胜利，目前版本由于已同步上级GridItemDie，故不需要同步
 
     EVENT_SERVER_BOARD_ZOMBIE_DIE,
