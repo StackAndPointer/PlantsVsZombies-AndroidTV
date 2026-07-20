@@ -118,7 +118,7 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
         case SeedType::SEED_ICEBERG_LETTUCE:
             break;
         case SeedType::SEED_CELERY_STALKER:
-            mPlantMaxHealth = 1200;
+            mPlantMaxHealth = 1000;
             break;
         default:
             break;
@@ -560,7 +560,7 @@ void Plant::Draw(Sexy::Graphics *g) {
                 int aClipLeft = std::min(aOldClipRect.mX, int(aOffsetX) + (aPlantRect.mX - mX) - 100);
                 int aClipRight = std::max(aOldClipRect.mX + aOldClipRect.mWidth, int(aOffsetX) + (aPlantRect.mX - mX) + aPlantRect.mWidth + 20);
                 int aClipTop = std::min(aOldClipRect.mY, aOldClipRect.mY - 40);
-                int aClipBottom = std::min(aOldClipRect.mY + aOldClipRect.mHeight, int(aOffsetY) + (aPlantRect.mY - mY) + aPlantRect.mHeight);
+                int aClipBottom = std::min(aOldClipRect.mY + aOldClipRect.mHeight, int(aOffsetY + 5) + (aPlantRect.mY - mY) + aPlantRect.mHeight);
                 if (aClipRight > aClipLeft && aClipBottom > aClipTop) {
                     g->SetClipRect(aClipLeft, aClipTop, aClipRight - aClipLeft, aClipBottom - aClipTop);
                     aCeleryClipApplied = true;
@@ -1666,7 +1666,6 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX:
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
-        case SeedType::SEED_ZOMBIE_ZOMBLOB:
             return 100;
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_ZOMBIE_BUNGEE:
@@ -1674,6 +1673,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
         case SeedType::SEED_ZOMBIE_JALAPENO_HEAD:
         case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
+        case SeedType::SEED_ZOMBIE_ZOMBLOB:
             return 125;
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:
@@ -3095,7 +3095,7 @@ void Plant::UpdateCeleryStalker() {
         if (aZombie != nullptr) {
             mState = PlantState::STATE_CELERY_STALKER_RISING;
             PlayBodyReanim("anim_rise", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, aBodyReanim->mDefinition->mFPS);
-            mApp->PlayFoley(FoleyType::FOLEY_DIRT_RISE);
+            mApp->PlayFoley(FoleyType::FOLEY_CELERY_STALKER_RISE);
         }
         return;
     }
@@ -3146,7 +3146,7 @@ void Plant::UpdateCeleryStalker() {
             unsigned int aDamageFlags = 0U;
             SetBit(aDamageFlags, int(DamageFlags::DAMAGE_BYPASSES_SHIELD), true);
             aZombie->TakeDamage(kCeleryAttackDamage, aDamageFlags);
-            mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
+            mApp->PlayFoley(FoleyType::FOLEY_CELERY_STALKER_ATTACK);
             mLaunchCounter = kCeleryHitInterval;
         } else {
             mLaunchCounter--;

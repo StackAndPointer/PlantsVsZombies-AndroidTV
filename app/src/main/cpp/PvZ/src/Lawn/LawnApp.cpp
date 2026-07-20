@@ -289,6 +289,8 @@ void LawnApp::LoadAddonSounds() {
     addonSounds.explorer = GetSoundByFileName("addonFiles/sounds/explorer");
     addonSounds.zomblob = GetSoundByFileName("addonFiles/sounds/zomblob");
     addonSounds.iceberg = GetSoundByFileName("addonFiles/sounds/iceberg");
+    addonSounds.celery_stalker_rise = GetSoundByFileName("addonFiles/sounds/celery_stalker_rise");
+    addonSounds.celery_stalker_attack = GetSoundByFileName("addonFiles/sounds/celery_stalker_attack");
 
     int addonSoundsNum = (sizeof(addonSounds) / sizeof(int));
     mCompletedLoadingThreadTasks += 54 * addonSoundsNum;
