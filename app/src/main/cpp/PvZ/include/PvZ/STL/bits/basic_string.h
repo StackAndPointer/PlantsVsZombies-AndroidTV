@@ -58,15 +58,13 @@ namespace pvzstl {
  */
 template <typename CharT, typename Traits = std::char_traits<CharT>, typename Alloc = std::allocator<CharT>>
 class basic_string {
-    using chart_alloc_type = typename std::allocator_traits<Alloc>::template rebind_alloc<CharT>;
-    using chart_alloc_traits = std::allocator_traits<chart_alloc_type>;
+    using chart_alloc_traits = std::allocator_traits<Alloc>;
 
     // A helper type for avoiding boiler-plate.
-    using sv_type = std::basic_string_view<CharT>;
+    using sv_type = std::basic_string_view<CharT, Traits>;
 
     template <typename Tp>
-    static constexpr bool if_sv =
-        std::is_convertible_v<const Tp &, std::basic_string_view<CharT>> && !std::is_convertible_v<const Tp *, const basic_string *> && !std::is_convertible_v<const Tp &, const CharT *>;
+    static constexpr bool if_sv = std::is_convertible_v<const Tp &, sv_type> && !std::is_convertible_v<const Tp *, const basic_string *> && !std::is_convertible_v<const Tp &, const CharT *>;
 
 public:
     using traits_type = Traits;
@@ -134,7 +132,7 @@ public:
         : m_dataplus(construct(str._data() + str.check(pos, "basic_string::basic_string"), str._data() + str.limit(pos, npos) + pos, a), a) {}
 
     template <typename Tp>
-        requires std::is_convertible_v<const Tp &, std::basic_string_view<CharT>>
+        requires std::is_convertible_v<const Tp &, sv_type>
     basic_string(const Tp &t, size_type pos, size_type n, const Alloc &a = Alloc())
         : basic_string(to_string_view(t).substr(pos, n), a) {}
 
@@ -943,14 +941,14 @@ public:
         requires if_sv<Tp>
     int compare(size_type pos1, size_type n1, const Tp &t, size_type pos2, size_type n2 = npos) const {
         sv_type sv = t;
-        return sv_type(*this).substr(pos1, n1).compare(sv.substr(pos2, n2));
+        return sv_type(*this).compare(pos1, n1, sv, pos2, n2);
     }
 
     template <typename Tp>
         requires if_sv<Tp>
     int compare(size_type pos, size_type n, const Tp &t) const {
         sv_type sv = t;
-        return sv_type(*this).substr(pos, n).compare(sv);
+        return sv_type(*this).compare(pos, n, sv);
     }
 
     template <typename Tp>
@@ -1106,7 +1104,7 @@ private:
 #endif
             }
             return refdata();
-        }
+        } // XXX MT
 
         CharT *clone(const Alloc &alloc, size_type res = 0) {
             // Requested capacity of the clone.
@@ -1148,7 +1146,7 @@ private:
                     destroy(a);
                 }
             }
-        }
+        } // XXX MT
 
         bool is_leaked() const noexcept {
             // m_refcount is mutated concurrently by refcopy/dispose,

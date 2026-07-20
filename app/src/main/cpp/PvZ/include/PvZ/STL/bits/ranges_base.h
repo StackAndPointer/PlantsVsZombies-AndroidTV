@@ -20,6 +20,11 @@
 #ifndef PVZ_STL_BITS_STL_RANGES_BASE_H
 #define PVZ_STL_BITS_STL_RANGES_BASE_H
 
+/**
+ * @file bits/ranges_base.h
+ * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a00827.html">ranges_base.h File Reference</a>
+ */
+
 #include <ranges>
 
 namespace pvzstl::detail {

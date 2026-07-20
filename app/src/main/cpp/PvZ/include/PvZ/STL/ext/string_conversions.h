@@ -22,7 +22,7 @@
 
 /**
  * @file ext/string_conversions.h
- * @see https://gcc.gnu.org/onlinedocs/gcc-4.9.4/libstdc++/api/a01277.html
+ * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a01277.html">string_conversions.h File Reference</a>
  */
 
 #include <cstdarg>

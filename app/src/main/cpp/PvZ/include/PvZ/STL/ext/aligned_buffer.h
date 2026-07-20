@@ -20,6 +20,11 @@
 #ifndef PVZ_STL_EXT_ALIGNED_BUFFER_H
 #define PVZ_STL_EXT_ALIGNED_BUFFER_H
 
+/**
+ * @file ext/aligned_buffer.h
+ * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a01343.html">aligned_buffer.h File Reference</a>
+ */
+
 #include <cstddef>
 
 namespace pvzcxx {

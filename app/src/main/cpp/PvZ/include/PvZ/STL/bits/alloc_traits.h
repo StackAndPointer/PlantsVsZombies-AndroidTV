@@ -20,6 +20,11 @@
 #ifndef PVZ_STL_BITS_ALLOC_TRAITS_H
 #define PVZ_STL_BITS_ALLOC_TRAITS_H
 
+/**
+ * @file bits/alloc_traits.h
+ * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a23486.html">alloc_traits.h File Reference</a>
+ */
+
 #include <cstddef>
 
 namespace pvzstl::detail {

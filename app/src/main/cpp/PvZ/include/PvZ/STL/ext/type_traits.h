@@ -20,6 +20,11 @@
 #ifndef PVZ_STL_EXT_TYPE_TRAITS_H
 #define PVZ_STL_EXT_TYPE_TRAITS_H
 
+/**
+ * @file ext/type_traits.h
+ * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a01328.html">type_traits.h File Reference</a>
+ */
+
 #include <type_traits>
 
 namespace pvzcxx {
