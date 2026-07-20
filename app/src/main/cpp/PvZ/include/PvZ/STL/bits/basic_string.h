@@ -34,6 +34,7 @@
 #include "PvZ/STL/bits/ranges_base.h"
 
 #include "PvZ/STL/ext/string_conversions.h"
+#include "PvZ/STL/ext/type_traits.h"
 
 #include <cassert>
 #include <cstdio>
@@ -122,7 +123,7 @@ public:
         if (a == other.get_allocator()) {
             other._data(empty_rep().refdata());
         } else {
-            m_dataplus.m_p = construct(other.begin(), other.end(), a);
+            m_dataplus.m_p = construct(other.ibegin(), other.iend(), a);
         }
     }
 
@@ -152,9 +153,11 @@ public:
     basic_string(std::nullptr_t) = delete;
 
     basic_string(size_type n, CharT c, const Alloc &a = Alloc())
+        requires detail::is_allocator<Alloc>
         : m_dataplus(construct(n, c, a), a) {}
 
-    template <std::input_iterator InIterator>
+    template <typename InIterator>
+        requires std::is_base_of_v<std::input_iterator_tag, typename std::iterator_traits<InIterator>::iterator_category>
     basic_string(InIterator first, InIterator last, const Alloc &a = Alloc())
         : m_dataplus(construct(first, last, a), a) {}
 
@@ -466,9 +469,11 @@ public:
             CharT *tmp = get_rep()->clone(a);
             get_rep()->dispose(a);
             _data(tmp);
-            // } catch (const __cxxabiv1::__forced_unwind &) {
-            //     throw;
-        } catch (...) {
+        }
+        // catch (const __cxxabiv1::__forced_unwind &) {
+        //     throw;
+        // }
+        catch (...) {
             /* swallow the exception */
         }
 #endif
@@ -544,9 +549,10 @@ public:
     }
 
     void push_back(CharT c) {
-        const size_type len = size() + 1;
+        const size_type sz = size();
+        const size_type len = sz + 1;
         reserve(len);
-        _data()[size()] = c;
+        _data()[sz] = c;
         get_rep()->set_length_and_sharable(len);
     }
 
@@ -702,6 +708,7 @@ public:
             _copy(_data() + pos, _data() + off, n2);
             return *this;
         }
+        // overlapping case.
         const basic_string tmp(s, n2);
         return replace_safe(pos, n1, tmp._data(), n2);
     }
@@ -1132,13 +1139,12 @@ private:
                 // - last but one decrement needs to release to synchronize with
                 //   the acquire load in is_shared that will conclude that
                 //   the object is not shared anymore.
-                if (
 #if __cpp_lib_atomic_ref
-                    std::atomic_ref(this->m_refcount).fetch_sub(1, std::memory_order_acq_rel) <= 0
+                if (std::atomic_ref(this->m_refcount).fetch_sub(1, std::memory_order_acq_rel) <= 0)
 #else
-                    reinterpret_cast<std::atomic_int &>(this->m_refcount).fetch_sub(1, std::memory_order_acq_rel) <= 0
+                if (reinterpret_cast<std::atomic_int &>(this->m_refcount).fetch_sub(1, std::memory_order_acq_rel) <= 0)
 #endif
-                ) {
+                {
                     destroy(a);
                 }
             }
@@ -1264,14 +1270,11 @@ private:
             return empty_rep().refdata();
         }
         // NB: Not required, but considered best practice.
-        if constexpr (std::is_pointer_v<InIterator>) {
-            if (first == nullptr && first != last) {
-                throw std::logic_error("basic_string::construct null not valid");
-            }
+        if (pvzcxx::is_null_pointer(first) && first != last) {
+            throw std::logic_error("basic_string::construct null not valid");
         }
 
         const size_type dnew = static_cast<size_type>(std::distance(first, last));
-
         // Check for out_of_range and length_error exceptions.
         rep *r = rep::create(dnew, size_type(0), a);
         try {

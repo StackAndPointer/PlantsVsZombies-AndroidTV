@@ -94,10 +94,10 @@ public:
     map(map &&) = default;
 
     map(const map &other, const std::type_identity_t<allocator_type> &a)
-        : m_t((other.m_t, pair_alloc_type(a))) {}
+        : m_t(other.m_t, pair_alloc_type(a)) {}
 
     map(map &&other, const std::type_identity_t<allocator_type> &a) noexcept(std::is_nothrow_copy_constructible_v<Compare> && alloc_traits::is_always_equal::value)
-        : m_t(std::move(other.m_t, pair_alloc_type(a))) {}
+        : m_t(std::move(other.m_t), pair_alloc_type(a)) {}
 
     explicit map(const Compare &comp, const allocator_type &a = allocator_type())
         : m_t(comp, pair_alloc_type(a)) {}

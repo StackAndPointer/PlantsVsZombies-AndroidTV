@@ -364,7 +364,8 @@ public:
     rb_tree &operator=(rb_tree &&other) noexcept((node_alloc_traits::propagate_on_container_move_assignment::value || node_alloc_traits::is_always_equal::value)
                                                  && std::is_nothrow_move_assignable_v<Compare>) {
         m_impl.m_key_compare = std::move(other.m_impl.m_key_compare);
-        move_assign(other, std::bool_constant<(node_alloc_traits::propagate_on_container_move_assignment::value || node_alloc_traits::is_always_equal::value)>());
+        constexpr bool nothrow_move = node_alloc_traits::propagate_on_container_move_assignment::value || node_alloc_traits::is_always_equal::value;
+        move_assign(other, std::bool_constant<nothrow_move>());
         return *this;
     }
 
