@@ -68,8 +68,7 @@ namespace homura::inline string {
     return result;
 }
 
-class {
-public:
+inline constexpr struct {
     [[nodiscard]] static constexpr bool operator()(char c) noexcept {
         // Blank characters as classified by the classic "C" locale
         return (c == ' ') || (c == '\t');
@@ -78,10 +77,9 @@ public:
     [[nodiscard]] constexpr bool operator()(std::string_view sv) const noexcept {
         return std::ranges::all_of(sv, *this);
     }
-} inline constexpr IsBlank{};
+} IsBlank{};
 
-class {
-public:
+inline constexpr struct {
     [[nodiscard]] static constexpr bool operator()(char c) noexcept {
         using namespace std::string_view_literals;
         // Whitespace characters as classified by the classic "C" locale
@@ -91,36 +89,36 @@ public:
     [[nodiscard]] constexpr bool operator()(std::string_view sv) const noexcept {
         return std::ranges::all_of(sv, *this);
     }
-} inline constexpr IsSpace{};
+} IsSpace{};
 
 /**
  * @warning 字符串含非 ASCII 字符时可能会出现意外
  */
 [[nodiscard]] constexpr std::string Trim(std::string_view sv) {
-    auto view = sv                        //
+    return sv                             //
         | std::views::drop_while(IsSpace) //
         | std::views::reverse             //
         | std::views::drop_while(IsSpace) //
-        | std::views::reverse;
-    return {std::from_range, view};
+        | std::views::reverse             //
+        | std::ranges::to<std::string>();
 }
 
 /**
  * @warning 字符串含非 ASCII 字符时可能会出现意外
  */
 [[nodiscard]] constexpr std::string TrimLeft(std::string_view sv) {
-    return {std::from_range, std::views::drop_while(sv, IsSpace)};
+    return sv | std::views::drop_while(IsSpace) | std::ranges::to<std::string>();
 }
 
 /**
  * @warning 字符串含非 ASCII 字符时可能会出现意外
  */
 [[nodiscard]] constexpr std::string TrimRight(std::string_view sv) {
-    auto view = sv                        //
+    return sv                             //
         | std::views::reverse             //
         | std::views::drop_while(IsSpace) //
-        | std::views::reverse;
-    return {std::from_range, view};
+        | std::views::reverse             //
+        | std::ranges::to<std::string>();
 }
 
 class StringHash {
