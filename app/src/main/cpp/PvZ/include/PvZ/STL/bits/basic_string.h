@@ -1011,15 +1011,13 @@ public:
     }
 
 private:
+    static_assert(sizeof(int) == sizeof(std::atomic_int) && alignof(int) >= alignof(std::atomic_int));
+
     struct rep_base {
         size_type m_length;
         size_type m_capacity;
         int m_refcount;
     };
-
-#ifndef __cpp_lib_atomic_ref
-    static_assert(sizeof(int) == sizeof(std::atomic_int) && alignof(int) == alignof(std::atomic_int));
-#endif
 
     struct rep : rep_base {
         using raw_bytes_alloc = std::allocator_traits<Alloc>::template rebind_alloc<unsigned char>;
@@ -1097,11 +1095,7 @@ private:
 
         CharT *refcopy() noexcept {
             if (this != &empty_rep()) [[unlikely]] {
-#if __cpp_lib_atomic_ref
-                std::atomic_ref(this->m_refcount).fetch_add(1, std::memory_order_acq_rel);
-#else
                 reinterpret_cast<std::atomic_int &>(this->m_refcount).fetch_add(1, std::memory_order_acq_rel);
-#endif
             }
             return refdata();
         } // XXX MT
@@ -1137,12 +1131,7 @@ private:
                 // - last but one decrement needs to release to synchronize with
                 //   the acquire load in is_shared that will conclude that
                 //   the object is not shared anymore.
-#if __cpp_lib_atomic_ref
-                if (std::atomic_ref(this->m_refcount).fetch_sub(1, std::memory_order_acq_rel) <= 0)
-#else
-                if (reinterpret_cast<std::atomic_int &>(this->m_refcount).fetch_sub(1, std::memory_order_acq_rel) <= 0)
-#endif
-                {
+                if (reinterpret_cast<std::atomic_int &>(this->m_refcount).fetch_sub(1, std::memory_order_acq_rel) <= 0) {
                     destroy(a);
                 }
             }
@@ -1153,11 +1142,7 @@ private:
             // so we need to use an atomic load. However, is_leaked
             // predicate does not change concurrently (i.e. the string is either
             // leaked or not), so a relaxed load is enough.
-#if __cpp_lib_atomic_ref
-            return std::atomic_ref(this->m_refcount).load(std::memory_order_relaxed) < 0;
-#else
             return reinterpret_cast<const std::atomic_int &>(this->m_refcount).load(std::memory_order_relaxed) < 0;
-#endif
         }
 
         bool is_shared() const noexcept {
@@ -1166,11 +1151,7 @@ private:
             // but one reference concurrently with this check, so we need this
             // load to be acquire to synchronize with release fetch_and_add in
             // dispose.
-#if __cpp_lib_atomic_ref
-            return std::atomic_ref(this->m_refcount).load(std::memory_order_acquire) > 0;
-#else
             return reinterpret_cast<const std::atomic_int &>(this->m_refcount).load(std::memory_order_acquire) > 0;
-#endif
         }
 
         void set_leaked() noexcept {
