@@ -648,14 +648,15 @@ void Plant::Draw(Sexy::Graphics *g) {
         DrawMagnetItems(g);
     }
 
-
+    // 如果玩家开了 植物显血
     if (showPlantHealth
         || (showNutGarlicSpikeHealth
             && (mSeedType == SeedType::SEED_WALLNUT ||      //
                 mSeedType == SeedType::SEED_TALLNUT ||      //
                 mSeedType == SeedType::SEED_PUMPKINSHELL || //
                 mSeedType == SeedType::SEED_GARLIC ||       //
-                mSeedType == SeedType::SEED_SPIKEROCK || mSeedType == SeedType::SEED_CELERY_STALKER))) { // 如果玩家开了 植物显血
+                mSeedType == SeedType::SEED_SPIKEROCK ||    //
+                mSeedType == SeedType::SEED_CELERY_STALKER))) {
         if (!IsOnlineServerModeActive()) {
             pvzstl::string str = StrFormat("%d/%d", mPlantHealth, mPlantMaxHealth);
             g->SetFont(Sexy::FONT_DWARVENTODCRAFT12);
