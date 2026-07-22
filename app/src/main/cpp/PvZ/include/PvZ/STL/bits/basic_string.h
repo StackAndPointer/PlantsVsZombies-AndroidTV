@@ -1086,6 +1086,7 @@ private:
             void *place = raw_bytes_alloc(alloc).allocate(size);
             rep *p = ::new (place) rep;
             p->m_capacity = cap;
+            p->set_sharable();
             return p;
         }
 
