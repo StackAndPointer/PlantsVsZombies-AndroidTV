@@ -251,6 +251,12 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER3 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_paper3");
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_leftarm_upper2");
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_LOWER = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_leftarm_lower");
+    addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_BODY1_2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_body1_2");
+    addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_OUTERARM_LOWER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_outerarm_lower2");
+    addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_BODY1_3 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_body1_3");
+    addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_FOOT2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_foot2");
+    addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_HEAD2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_head2");
+    addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_TELEPHONEPOLE_COIL = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_telephonepole_coil");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower2");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower3");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_upper2");
@@ -291,6 +297,14 @@ void LawnApp::LoadAddonSounds() {
     addonSounds.iceberg = GetSoundByFileName("addonFiles/sounds/iceberg");
     addonSounds.celery_stalker_rise = GetSoundByFileName("addonFiles/sounds/celery_stalker_rise");
     addonSounds.celery_stalker_attack = GetSoundByFileName("addonFiles/sounds/celery_stalker_attack");
+    addonSounds.power_pole_charge = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Charge");
+    addonSounds.power_pole_core = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Core");
+    addonSounds.power_pole_hifi = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_HiFi");
+    addonSounds.power_pole_tail = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Tail");
+    addonSounds.power_pole_width = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Width");
+    addonSounds.giga_laugh = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Laugh");
+    addonSounds.giga_laugh2 = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Laugh2");
+    addonSounds.giga_laugh3 = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Laugh3");
 
     int addonSoundsNum = (sizeof(addonSounds) / sizeof(int));
     mCompletedLoadingThreadTasks += 54 * addonSoundsNum;

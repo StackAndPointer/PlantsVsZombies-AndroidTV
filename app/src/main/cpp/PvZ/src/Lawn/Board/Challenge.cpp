@@ -859,6 +859,8 @@ ZombieType Challenge::IZombieSeedTypeToZombieType(SeedType theSeedType) {
             return ZOMBIE_EXPLORER;
         case SEED_ZOMBIE_ZOMBLOB:
             return ZOMBIE_ZOMBLOB;
+        case SEED_ZOMBIE_GIGA_GARGANTUAR:
+            return ZOMBIE_GIGA_GARGANTUAR;
         default:
             return ZOMBIE_INVALID;
     }
@@ -1056,7 +1058,7 @@ bool Challenge::IsMPZombieTypeAddInRow(ZombieType theZombieType) {
         || theZombieType == ZombieType::ZOMBIE_DUCKY_TUBE || theZombieType == ZombieType::ZOMBIE_SNORKEL || theZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER
         || theZombieType == ZombieType::ZOMBIE_BALLOON || theZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || theZombieType == ZombieType::ZOMBIE_BOBSLED
         || theZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL || theZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP || theZombieType == ZombieType::ZOMBIE_JACKSON
-        || theZombieType == ZombieType::ZOMBIE_EXPLORER;
+        || theZombieType == ZombieType::ZOMBIE_EXPLORER || theZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR;
 }
 
 bool Challenge::IsMPZombieTypeCanGoInPool(ZombieType theZombieType) {

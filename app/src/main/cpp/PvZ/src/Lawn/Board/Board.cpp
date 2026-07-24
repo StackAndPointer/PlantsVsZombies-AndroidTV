@@ -2633,8 +2633,12 @@ void Board::processServerEvent(const BaseEvent *event) {
                 Zombie *aGargantuar = mZombies.DataArrayGet(clientGargantuarID);
                 Zombie *aZombieImp = mZombies.DataArrayGet(clientImpID);
                 float aOffsetDistance = eventImpThrown->data4.f32;
-                if (aGargantuar && aZombieImp)
+                if (aGargantuar && aZombieImp) {
+                    if (aZombieImp->mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
+                        aZombieImp->mTargetCol = int(eventImpThrown->data3);
+                    }
                     aZombieImp->ZombieImpThrown(aGargantuar, aOffsetDistance);
+                }
             }
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_IMP_KICKED: {
@@ -2658,7 +2662,11 @@ void Board::processServerEvent(const BaseEvent *event) {
                 Zombie *aZombieImp = mZombies.DataArrayGet(clientImpID);
                 if (aZombieImp) {
                     aZombieImp->mZombiePhase = ZombiePhase::PHASE_IMP_POPPING;
-                    aZombieImp->PlayZombieReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+                    if (aZombieImp->mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
+                        aZombieImp->PlayZombieReanim("anim_boom", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
+                    } else {
+                        aZombieImp->PlayZombieReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
+                    }
                 }
             }
         } break;
@@ -2712,7 +2720,36 @@ void Board::processServerEvent(const BaseEvent *event) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
                 aZombie->mPosX = event1->data2.f32;
                 aZombie->mZombiePhase = PHASE_GARGANTUAR_THROWING;
-                aZombie->PlayZombieReanim("anim_throw", REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+                if (aZombie->mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
+                    aZombie->StopEating();
+                    aZombie->mSummonCounter = 0;
+                    aZombie->mVelX = 0.0f;
+                    aZombie->mZombiePhase = ZombiePhase::PHASE_GIGA_GARGANTUAR_THROW_PREPARING;
+                    aZombie->PlayZombieReanim("anim_throw_preparing", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+
+                } else {
+                    aZombie->mZombiePhase = ZombiePhase::PHASE_GARGANTUAR_THROWING;
+                    aZombie->PlayZombieReanim("anim_throw", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+                }
+            }
+        } break;
+        case EventType::EVENT_SERVER_BOARD_ZOMBIE_GIGA_GARGANTUAR_START_LIGHTNING: {
+            auto *event1 = static_cast<const U16UNI32UNI32_Event *>(event);
+            uint16_t clientZombieID = 0;
+            if (homura::FindInMap(serverZombieIDMap, event1->data1, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                if (aZombie != nullptr) {
+                    aZombie->StopEating();
+                    aZombie->mPosX = event1->data2.f32;
+                    aZombie->mX = int(aZombie->mPosX);
+                    aZombie->mHasObject = false;
+                    aZombie->mTargetPlantID = PlantID::PLANTID_NULL;
+                    aZombie->mTargetCol = event1->data3.i32;
+                    aZombie->mVelX = 0.0f;
+                    aZombie->mZombiePhase = ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_PREPARING;
+                    aZombie->mApp->PlayFoley(FoleyType::FOLEY_POWER_POLE_CHARGE);
+                    aZombie->PlayZombieReanim("anim_lightning_attack_preparing", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 16.0f);
+                }
             }
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_CATAPLUT_LAUNCHIING: {
@@ -7110,12 +7147,18 @@ void Board::KillAllPlantsInRadius(int theX, int theY, int theRadius) {
     }
 }
 
-void Board::KillAllPlantsInGrid(int theGridX, int theGridY) {
+void Board::PlantsTakeDamageInGrid(int theGridX, int theGridY, int theDamage) {
     Plant *aPlant = nullptr;
     while (IteratePlants(aPlant)) {
         if (aPlant->mPlantCol == theGridX && aPlant->mRow == theGridY) {
-            mPlantsEaten++;
-            aPlant->mPlantHealth -= 301;
+            Plant *aPumpkin = GetTopPlantAt(theGridX, theGridY, PlantPriority::TOPPLANT_ONLY_PUMPKIN);
+            if (aPumpkin != nullptr) {
+                mPlantsEaten++;
+                aPumpkin->mPlantHealth -= theDamage;
+            } else {
+                mPlantsEaten++;
+                aPlant->mPlantHealth -= theDamage;
+            }
         }
     }
 }

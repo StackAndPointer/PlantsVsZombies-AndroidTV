@@ -562,6 +562,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
             break;
         case SeedType::SEED_ZOMBIE_GARGANTUAR:
         case SeedType::SEED_ZOMBIE_REDEYE_GARGANTUAR:
+        case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
             offsetY = 3.0f;
             offsetX = 4.0f;
             theDrawScale = 0.23f;

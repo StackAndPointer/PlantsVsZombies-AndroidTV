@@ -577,10 +577,20 @@ bool LoadGameMain() {
     Zombie_BungeeLandingAddr = libGameMain.GetSymbol("_ZN6Zombie13BungeeLandingEv");
     Zombie_UpdateLadderAddr = libGameMain.GetSymbol("_ZN6Zombie12UpdateLadderEv");
     Zombie_GetDrawPosAddr = libGameMain.GetSymbol("_ZN6Zombie10GetDrawPosER18ZombieDrawPosition");
+    Zombie_DrawIceTrapAddr = libGameMain.GetSymbol("_ZN6Zombie11DrawIceTrapEPN4Sexy8GraphicsER18ZombieDrawPositionb");
+    Zombie_DrawButterAddr = libGameMain.GetSymbol("_ZN6Zombie10DrawButterEPN4Sexy8GraphicsER18ZombieDrawPosition");
     Zombie_ZombieNotWalkingAddr = libGameMain.GetSymbol("_ZN6Zombie16ZombieNotWalkingEv");
     Zombie_TrySpawnLevelAwardAddr = libGameMain.GetSymbol("_ZN6Zombie18TrySpawnLevelAwardEv");
     Zombie_StartZombieSoundAddr = libGameMain.GetSymbol("_ZN6Zombie16StartZombieSoundEv");
     ZombieTypeCanGoOnHighGroundAddr = libGameMain.GetSymbol("_Z27ZombieTypeCanGoOnHighGround10ZombieType");
+    Zombie_ZamboniDeathAddr = libGameMain.GetSymbol("_ZN6Zombie12ZamboniDeathEj");
+    Zombie_CatapultDeathAddr = libGameMain.GetSymbol("_ZN6Zombie13CatapultDeathEj");
+    Zombie_ApplyBossSmokeParticlesAddr = libGameMain.GetSymbol("_ZN6Zombie23ApplyBossSmokeParticlesEb");
+    Zombie_MowDownAddr = libGameMain.GetSymbol("_ZN6Zombie7MowDownEv");
+    Zombie_UpdateZombieFallingAddr = libGameMain.GetSymbol("_ZN6Zombie19UpdateZombieFallingEv");
+    Zombie_DoDaisiesAddr = libGameMain.GetSymbol("_ZN6Zombie9DoDaisiesEv");
+    Zombie_WalkIntoHouseAddr = libGameMain.GetSymbol("_ZN6Zombie13WalkIntoHouseEv");
+    Zombie_ReanimReenableClippingAddr = libGameMain.GetSymbol("_ZN6Zombie22ReanimReenableClippingEv");
 
 
     SeedChooserScreen_UpdateAddr = libGameMain.GetSymbol("_ZN17SeedChooserScreen6UpdateEv");
@@ -1005,6 +1015,7 @@ bool LoadGameMain() {
     Reanimation_SetTruncateDisappearingFramesAddr = libGameMain.GetSymbol("_ZN11Reanimation29SetTruncateDisappearingFramesEPKcb");
     Reanimation_IgnoreClipRectForPrefixAddr = libGameMain.GetSymbol("_ZN11Reanimation23IgnoreClipRectForPrefixEPKcb");
     Reanimation_GetTrackVelocityAddr = libGameMain.GetSymbol("_ZN11Reanimation16GetTrackVelocityEPKc");
+    Reanimation_IsTrackShowingAddr = libGameMain.GetSymbol("_ZN11Reanimation14IsTrackShowingEPKc");
 
 
     ZenGarden_GetStinkyAddr = libGameMain.GetSymbol("_ZN9ZenGarden9GetStinkyEv");

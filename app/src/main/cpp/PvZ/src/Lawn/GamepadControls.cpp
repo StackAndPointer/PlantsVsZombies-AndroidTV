@@ -692,7 +692,7 @@ void GamepadControls::UpdatePreviewReanim() {
                     mPreviewingSeedType = aSeedType;
                     return;
                 case ZombieType::ZOMBIE_GARGANTUAR:
-                case ZombieType::ZOMBIE_REDEYE_GARGANTUAR: // 在对战里可能用得到
+                case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
                     theDrawHeightOffset += 30.0;
                     break;
                 case ZombieType::ZOMBIE_POLEVAULTER:
@@ -721,8 +721,6 @@ void GamepadControls::UpdatePreviewReanim() {
                 zombieReanim->PlayReanim("anim_drive", ReanimLoopType::REANIM_LOOP, 0, 12.0);
             } else if (aZombieType == ZombieType::ZOMBIE_IMP || aZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
                 zombieReanim->PlayReanim("anim_walk", ReanimLoopType::REANIM_LOOP, 0, 12.0);
-            } else if (aZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL || aZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION || aZombieType == ZombieType::ZOMBIE_ZOMBLOB) {
-                zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
             } else if (aZombieType == ZombieType::ZOMBIE_EXPLORER) {
                 zombieReanim->PlayReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 12.0);
                 zombieReanim->AssignRenderGroupToPrefix("Zombie_flaghand", RENDER_GROUP_NORMAL);

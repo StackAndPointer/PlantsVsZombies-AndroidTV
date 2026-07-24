@@ -236,6 +236,12 @@ struct AddonImages {
     Sexy::Image *IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER3;
     Sexy::Image *IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_UPPER2;
     Sexy::Image *IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_LOWER;
+    Sexy::Image *IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_BODY1_2;
+    Sexy::Image *IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_OUTERARM_LOWER2;
+    Sexy::Image *IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_BODY1_3;
+    Sexy::Image *IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_FOOT2;
+    Sexy::Image *IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_HEAD2;
+    Sexy::Image *IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_TELEPHONEPOLE_COIL;
     Sexy::Image *IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER2;
     Sexy::Image *IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER3;
     Sexy::Image *IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER2;
@@ -254,6 +260,14 @@ struct AddonSounds {
     int iceberg;
     int celery_stalker_rise;
     int celery_stalker_attack;
+    int power_pole_charge;
+    int power_pole_core;
+    int power_pole_hifi;
+    int power_pole_tail;
+    int power_pole_width;
+    int giga_laugh;
+    int giga_laugh2;
+    int giga_laugh3;
 } inline addonSounds; // 此处是新增音频的列表。注意新增的音频数量有限制，最多新增62个。（最大总音频256个，原版游戏已经使用了194个，还剩62个空余。未来我也许会拓宽此限制。）
 
 struct AddonZombatarImages {

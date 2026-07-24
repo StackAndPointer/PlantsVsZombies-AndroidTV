@@ -284,6 +284,9 @@ public:
     float GetTrackVelocity(const char *theTrackName) {
         return reinterpret_cast<float (*)(Reanimation *, const char *)>(Reanimation_GetTrackVelocityAddr)(this, theTrackName);
     }
+    bool IsTrackShowing(const char *theTrackName) {
+        return reinterpret_cast<bool (*)(Reanimation *, const char *)>(Reanimation_IsTrackShowingAddr)(this, theTrackName);
+    }
 
     Reanimation() {
         _constructor();

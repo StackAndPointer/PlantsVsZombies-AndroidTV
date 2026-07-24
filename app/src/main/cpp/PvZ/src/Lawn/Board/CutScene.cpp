@@ -87,7 +87,7 @@ void CutScene::AddFlowerPots() {
 }
 
 bool CutScene::Is2x2Zombie(ZombieType theZombieType) {
-    return theZombieType == ZombieType::ZOMBIE_GARGANTUAR || theZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR;
+    return theZombieType == ZombieType::ZOMBIE_GARGANTUAR || theZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || theZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR;
 }
 
 void CutScene::PlaceStreetZombies() {

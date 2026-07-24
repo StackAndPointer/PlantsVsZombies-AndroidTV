@@ -578,10 +578,20 @@ inline void *Zombie_ZombieCatapultFireAddr;
 inline void *Zombie_BungeeLandingAddr;
 inline void *Zombie_UpdateLadderAddr;
 inline void *Zombie_GetDrawPosAddr;
+inline void *Zombie_DrawIceTrapAddr;
+inline void *Zombie_DrawButterAddr;
 inline void *Zombie_ZombieNotWalkingAddr;
 inline void *Zombie_TrySpawnLevelAwardAddr;
 inline void *Zombie_StartZombieSoundAddr;
 inline void *ZombieTypeCanGoOnHighGroundAddr;
+inline void *Zombie_ZamboniDeathAddr;
+inline void *Zombie_CatapultDeathAddr;
+inline void *Zombie_ApplyBossSmokeParticlesAddr;
+inline void *Zombie_MowDownAddr;
+inline void *Zombie_UpdateZombieFallingAddr;
+inline void *Zombie_DoDaisiesAddr;
+inline void *Zombie_WalkIntoHouseAddr;
+inline void *Zombie_ReanimReenableClippingAddr;
 
 
 inline void *SeedChooserScreen_UpdateAddr;
@@ -1007,6 +1017,7 @@ inline void *Reanimation_AttachParticleToTrackAddr;
 inline void *Reanimation_SetTruncateDisappearingFramesAddr;
 inline void *Reanimation_IgnoreClipRectForPrefixAddr;
 inline void *Reanimation_GetTrackVelocityAddr;
+inline void *Reanimation_IsTrackShowingAddr;
 
 
 inline void *Sexy_SexyCommonApp_getGameInfoAddr;

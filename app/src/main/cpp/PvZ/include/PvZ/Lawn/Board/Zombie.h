@@ -45,12 +45,15 @@ inline constexpr int RENDER_GROUP_BOSS_FRONT_LEG = 5;
 inline constexpr int RENDER_GROUP_BOSS_BACK_ARM = 6;
 inline constexpr int RENDER_GROUP_BOSS_FIREBALL_ADDITIVE = 7;
 inline constexpr int RENDER_GROUP_BOSS_FIREBALL_TOP = 8;
+inline constexpr int RENDER_GROUP_GIGA_LIGHTNING = 9;
 inline constexpr int ZOMBIE_LIMP_SPEED_FACTOR = 2;
 inline constexpr int POGO_BOUNCE_TIME = 80;
 inline constexpr int DOLPHIN_JUMP_TIME = 120;
 inline constexpr int JackInTheBoxZombieRadius = 115;
 inline constexpr int JackInTheBoxPlantRadius = 90;
 inline constexpr int SuperFanImpZombieRadius = 35;
+inline constexpr int SUPER_FAN_IMP_POP_DAMAGE = 301;
+inline constexpr int GIGA_IMP_POP_DAMAGE = 151;
 inline constexpr int BOBSLED_CRASH_TIME = 150;
 inline constexpr int ZOMBIE_BACKUP_DANCER_RISE_HEIGHT = -200;
 inline constexpr int BOSS_FLASH_HEALTH_FRACTION = 10;
@@ -99,6 +102,11 @@ public:
     float mImageOffsetX;
     float mImageOffsetY;
     float mClipHeight;
+};
+
+struct GigaLightningHit {
+    PlantID mPlantID;
+    int mDamage;
 };
 
 class Coin;
@@ -217,9 +225,6 @@ public:
     static void SetupShieldReanims(ZombieType theZombieType, Reanimation *aReanim) {
         reinterpret_cast<void (*)(ZombieType, Reanimation *)>(Zombie_SetupShieldReanimsAddr)(theZombieType, aReanim);
     }
-    void TakeBodyDamage(int theDamage, unsigned int theDamageFlags) {
-        reinterpret_cast<void (*)(Zombie *, int, unsigned int)>(Zombie_TakeBodyDamageAddr)(this, theDamage, theDamageFlags);
-    }
     void GetTrackPosition(const char *theTrackName, float &thePosX, float &thePosY) {
         reinterpret_cast<void (*)(Zombie *, const char *, float &, float &)>(Zombie_GetTrackPositionAddr)(this, theTrackName, thePosX, thePosY);
     }
@@ -302,9 +307,6 @@ public:
     void UpdateMowered() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_UpdateMoweredAddr)(this);
     }
-    void UpdateDeath() {
-        reinterpret_cast<void (*)(Zombie *)>(Zombie_UpdateDeathAddr)(this);
-    }
     void UpdateZombieChimney() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_UpdateZombieChimneyAddr)(this);
     }
@@ -344,7 +346,24 @@ public:
     static bool ZombieTypeCanGoOnHighGround(ZombieType theZombieType) {
         return reinterpret_cast<bool (*)(ZombieType)>(ZombieTypeCanGoOnHighGroundAddr)(theZombieType);
     }
-
+    void ZamboniDeath(unsigned int theDamageFlags) {
+        reinterpret_cast<void (*)(Zombie *, unsigned int)>(Zombie_ZamboniDeathAddr)(this, theDamageFlags);
+    }
+    void CatapultDeath(unsigned int theDamageFlags) {
+        reinterpret_cast<void (*)(Zombie *, unsigned int)>(Zombie_CatapultDeathAddr)(this, theDamageFlags);
+    }
+    void ApplyBossSmokeParticles(bool theEnable) {
+        reinterpret_cast<void (*)(Zombie *, bool)>(Zombie_ApplyBossSmokeParticlesAddr)(this, theEnable);
+    }
+    void UpdateZombieFalling() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_UpdateZombieFallingAddr)(this);
+    }
+    void DoDaisies() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_DoDaisiesAddr)(this);
+    }
+    void ReanimReenableClipping() {
+        reinterpret_cast<void (*)(Zombie *)>(Zombie_ReanimReenableClippingAddr)(this);
+    }
 
     Zombie() {
         _constructor();
@@ -384,6 +403,8 @@ public:
     void UpdateSundayEdition();
     void UpdateZombieExplorer();
     void ExplorerTorchConvert(bool theBurn);
+    void UpdateGigaGargantuar();
+    void UpdateGigaImp();
     void UpdateZombieGargantuar();
     void ZombieImpThrown(Zombie *theThrowerZombie, float theOffsetDistance);
     void ZombieImpKicked(float theKickingDistance);
@@ -431,6 +452,7 @@ public:
     Zombie *FindZombieGigaFootball();
     void TakeDamage(int theDamage, unsigned int theDamageFlags);
     void TakeDamage_Origin(int theDamage, unsigned int theDamageFlags);
+    void TakeBodyDamage(int theDamage, unsigned int theDamageFlags);
     int TakeHelmDamage(int theDamage, unsigned int theDamageFlags);
     int TakeFlyingDamage(int theDamage, unsigned int theDamageFlags);
     int TakeShieldDamage(int theDamage, unsigned int theDamageFlags);
@@ -462,6 +484,7 @@ public:
     bool CanBeChilled();
     bool CanBeFrozen();
     void AddButter();
+    void MowDown();
     static bool IsZombatarZombie(ZombieType theType);
     void SquishAllInSquare(int theX, int theY, ZombieAttackType theAttackType);
     bool IsWalkingBackwards() const;
@@ -473,6 +496,8 @@ public:
     void StopEating();
     Sexy::Rect GetZombieRect();
     void GetDrawPos(ZombieDrawPosition &theDrawPos);
+    void DrawIceTrap(Sexy::Graphics *g, const ZombieDrawPosition &theDrawPos, bool theFront);
+    void DrawButter(Sexy::Graphics *g, const ZombieDrawPosition &theDrawPos);
     bool IsOnHighGround();
     void DropLoot();
     bool IsOnBoard() const;
@@ -510,8 +535,10 @@ public:
     void BungeeLanding();
     void UpdateLadder();
     void PlayDeathAnim(unsigned int theDamageFlags);
+    void UpdateDeath();
     void ZomblobSplit();
     void SetupButteredZomblobReanim();
+    void WalkIntoHouse();
 
 protected:
     void _constructor() {

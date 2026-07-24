@@ -234,6 +234,9 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
             aReanim.Draw(&aMemoryGraphics);
             msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
         } else {
+            if (theZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
+                aPosY = 60.0f;
+            }
             Reanimation aReanim;
             aReanim.ReanimationInitializeType(aPosX, aPosY, aZombieDef.mReanimationType);
             aReanim.PlayReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
