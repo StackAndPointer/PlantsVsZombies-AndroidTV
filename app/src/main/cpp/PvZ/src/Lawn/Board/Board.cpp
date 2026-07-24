@@ -6228,12 +6228,11 @@ void Board::UpdateButtons() {
 
 
 void Board::ButtonDepress(int theId) {
-    //    if (gIsServerModeSpectator && theId == 1000) {
-    //        // Spectator cannot open pause/options menu.
-    //        return;
-    //    }
-
     if (theId == 1000) {
+        if (gIsServerModeSpectator && mBoardFadeOutCounter >= 0) {
+            return; // 修复观战在 FadeOut 界面返回会导致 NewOptionsDialog 卡死
+        }
+
         LawnApp *lawnApp = gLawnApp;
         if (lawnApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN || lawnApp->mGameMode == GameMode::GAMEMODE_TREE_OF_WISDOM) {
             lawnApp->DoBackToMain();
