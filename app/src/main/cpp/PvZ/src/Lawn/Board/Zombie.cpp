@@ -3158,11 +3158,8 @@ void Zombie::UpdateZombieSquashHead() {
                 if (!isRemoteClient) {
                     if (Zombie *aZombie = FindZombieTarget()) {
                         aDestX = aZombie->ZombieTargetLeadX(0.0f) - mWidth / 2;
-                    } else {
-                        Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
-                        if (aPlant) {
-                            mSquashHeadCol = aPlant->mPlantCol;
-                        }
+                    } else if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
+                        mSquashHeadCol = aPlant->mPlantCol;
                         aDestX = mBoard->GridToPixelX(mSquashHeadCol, mRow);
                     }
                 }
@@ -4330,6 +4327,11 @@ void Zombie::EatPlant(Plant *thePlant) {
     }
 
     StartEating();
+
+    if (mZombieType == ZombieType::ZOMBIE_SQUASH_HEAD && mZombiePhase == ZombiePhase::PHASE_SQUASH_PRE_LAUNCH && mSquashHeadCol == -1) {
+        mSquashHeadCol = thePlant->mPlantCol; // 修复窝瓜僵尸索敌冰冻生菜时被冻住，解冻后头部飘移
+    }
+
     if (thePlant->mSeedType == SeedType::SEED_JALAPENO || thePlant->mSeedType == SeedType::SEED_CHERRYBOMB || thePlant->mSeedType == SeedType::SEED_DOOMSHROOM
         || thePlant->mSeedType == SeedType::SEED_ICESHROOM || thePlant->mSeedType == SeedType::SEED_HYPNOSHROOM || thePlant->mState == PlantState::STATE_FLOWERPOT_INVULNERABLE
         || thePlant->mState == PlantState::STATE_LILYPAD_INVULNERABLE || thePlant->mState == PlantState::STATE_SQUASH_LOOK || thePlant->mState == PlantState::STATE_SQUASH_PRE_LAUNCH
