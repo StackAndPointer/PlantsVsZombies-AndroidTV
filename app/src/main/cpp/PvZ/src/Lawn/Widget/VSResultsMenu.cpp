@@ -467,7 +467,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
         return;
     }
 
-    if (theId == VSResultsMenu::VSResultsMenu_Play_Again && mIsOnlineSession && mVSResultsCounter < 300) { // 3秒后才能点再来一局
+    if ((theId == VSResultsMenu::VSResultsMenu_Play_Again || theId == VSResultsMenu::VSResultsMenu_Back) && mIsOnlineSession && mVSResultsCounter < 300) { // 3 秒后才能点再来一局或返回模式选择
         return;
     }
 
