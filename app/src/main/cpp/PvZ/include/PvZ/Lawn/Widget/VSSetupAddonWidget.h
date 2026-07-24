@@ -96,7 +96,7 @@ private:
     static inline Sexy::ButtonListener sButtonListener{&sButtonListenerVtable};
 };
 
-void PickMPRandomSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> &theZombieSeeds, bool theIsZombie);
+void PickMPRandomSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> &theZombieSeeds, bool theIsZombie, bool theAllowCoffee = true);
 void PickShuffleSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> &theZombieSeeds, bool theIsZombie);
 SeedType PickNextRandomSeed(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> &theZombieSeeds, bool theIsZombie, int theSeedIndex);
 bool NeedSeedInstantCoffee(LawnApp *theApp, const std::vector<SeedType> &thePlantSeeds = {}, bool theIsShuffle = false);

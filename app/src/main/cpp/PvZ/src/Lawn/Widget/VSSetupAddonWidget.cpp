@@ -316,11 +316,11 @@ void VSSetupAddonWidget::Draw(Graphics *g) const {
     }
 }
 
-void PickMPRandomSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> &theZombieSeeds, bool theIsZombie) {
+void PickMPRandomSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> &theZombieSeeds, bool theIsZombie, bool theAllowCoffee) {
     std::vector<SeedType> &aSeeds = theIsZombie ? theZombieSeeds : thePlantSeeds;
 
     int alreadyPicked = 0;
-    if (!theIsZombie && Sexy::Rand(5) == 1) {
+    if (!theIsZombie && theAllowCoffee && Sexy::Rand(5) == 1) {
         aSeeds.push_back(SEED_INSTANT_COFFEE);
         alreadyPicked = 1;
     }
@@ -360,29 +360,18 @@ void PickMPRandomSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, st
     }
 
     if (theIsZombie) {
-        if (NeedSeedZombieImp(theApp)) {
-            auto it = std::ranges::find(aSeeds, SeedType::SEED_ZOMBIE_NORMAL);
-            if (it != aSeeds.end()) {
-                *it = SeedType::SEED_ZOMBIE_IMP;
-            }
-        }
-        if (NeedSeedZombieSuperFanImp(theApp, theZombieSeeds, true)) {
-            if (!aSeeds.empty()) {
-                aSeeds[0] = SeedType::SEED_ZOMBIE_SUPER_FAN_IMP;
-            }
-        }
         //        if (NeedSeedZombieScreenDoor(theApp)) {
         //            auto it = std::ranges::find(aSeeds, SeedType::SEED_ZOMBIE_NEWSPAPER);
         //            if (it != aSeeds.end()) {
         //                *it = SeedType::SEED_ZOMBIE_SCREEN_DOOR;
         //            }
         //        }
-        if (NeedSeedZombieYeti(theApp)) {
-            auto it = std::ranges::find(aSeeds, SeedType::SEED_ZOMBIE_TRASHCAN);
-            if (it != aSeeds.end()) {
-                *it = SeedType::SEED_ZOMBIE_YETI;
-            }
-        }
+        //        if (NeedSeedZombieYeti(theApp)) {
+        //            auto it = std::ranges::find(aSeeds, SeedType::SEED_ZOMBIE_TRASHCAN);
+        //            if (it != aSeeds.end()) {
+        //                *it = SeedType::SEED_ZOMBIE_YETI;
+        //            }
+        //        }
     } else {
         if (NeedSeedTallnut(theApp)) {
             auto it = std::ranges::find(aSeeds, SeedType::SEED_WALLNUT);
@@ -414,14 +403,26 @@ void PickMPRandomSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, st
 void PickShuffleSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> &theZombieSeeds, bool theIsZombie) {
     PickMPRandomSeeds(theApp, thePlantSeeds, theZombieSeeds, theIsZombie);
 
-    if (!theIsZombie) {
+    if (theIsZombie) {
+        if (NeedSeedZombieImp(theApp)) {
+            auto it = std::ranges::find(theZombieSeeds, SeedType::SEED_ZOMBIE_NORMAL);
+            if (it != theZombieSeeds.end()) {
+                *it = SeedType::SEED_ZOMBIE_IMP;
+            }
+        }
+        if (NeedSeedZombieSuperFanImp(theApp, theZombieSeeds, true)) {
+            if (!theZombieSeeds.empty()) {
+                theZombieSeeds[0] = SeedType::SEED_ZOMBIE_SUPER_FAN_IMP;
+            }
+        }
+    } else {
         if (NeedSeedInstantCoffee(theApp, thePlantSeeds, true)) {
             if (!thePlantSeeds.empty()) {
                 thePlantSeeds[0] = SeedType::SEED_INSTANT_COFFEE;
             }
         }
         if (NeedSeedTorchwood(theApp, thePlantSeeds, true)) {
-            auto it = std::ranges::find(thePlantSeeds, SeedType::SEED_GRAVEBUSTER);
+            auto it = std::ranges::find(thePlantSeeds, SeedType::SEED_SPIKEWEED);
             if (it != thePlantSeeds.end()) {
                 *it = SeedType::SEED_TORCHWOOD;
             }
@@ -430,7 +431,7 @@ void PickShuffleSeeds(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std
 }
 
 SeedType PickNextRandomSeed(LawnApp *theApp, std::vector<SeedType> &thePlantSeeds, std::vector<SeedType> &theZombieSeeds, bool theIsZombie, int theSeedIndex) {
-    PickMPRandomSeeds(theApp, thePlantSeeds, theZombieSeeds, theIsZombie);
+    PickMPRandomSeeds(theApp, thePlantSeeds, theZombieSeeds, theIsZombie, false);
     SeedType aSeedType = theIsZombie ? theZombieSeeds[theSeedIndex - 1] : thePlantSeeds[theSeedIndex - 1];
 
     if (theIsZombie) {
@@ -441,7 +442,7 @@ SeedType PickNextRandomSeed(LawnApp *theApp, std::vector<SeedType> &thePlantSeed
         if (NeedSeedInstantCoffee(theApp) && theSeedIndex == 1) {
             aSeedType = SeedType::SEED_INSTANT_COFFEE;
         }
-        if (NeedSeedTorchwood(theApp) && aSeedType == SeedType::SEED_GRAVEBUSTER) {
+        if (NeedSeedTorchwood(theApp) && aSeedType == SeedType::SEED_SPIKEWEED) {
             aSeedType = SeedType::SEED_TORCHWOOD;
         }
     }
@@ -619,7 +620,7 @@ bool NeedSeedTorchwood(LawnApp *theApp, const std::vector<SeedType> &thePlantSee
             }
         }
     } else {
-        // 种子栏存在2株以上可用的豌豆类种子替换咬咬碑为火炬树桩
+        // 种子栏存在2株以上可用的豌豆类种子替换地刺为火炬树桩
         int aNumPeasInBank = 0;
         for (int i = 1; i < 6; ++i) {
             SeedPacket &aSeedPacket = theApp->mBoard->mSeedBank[0]->mSeedPackets[i];

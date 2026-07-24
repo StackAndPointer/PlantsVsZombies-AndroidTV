@@ -188,13 +188,13 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
         bool aIsStageNight = mBoard->StageIsNight();
         switch (theSeedType) {
                 //            case SEED_PUFFSHROOM:
-            case SEED_ZOMBIE_NORMAL:
-                if (aIsBalancePatch) {
-                    mRefreshTime = 1000;
-                    mRefreshing = true;
-                    mActive = false;
-                }
-                break;
+                //            case SEED_ZOMBIE_NORMAL:
+                //                if (aIsBalancePatch) {
+                //                    mRefreshTime = 1000;
+                //                    mRefreshing = true;
+                //                    mActive = false;
+                //                }
+                //                break;
             case SEED_SUNSHROOM:
                 if (aIsStageNight) { // 清除阳光菇的初始冷却
                     mRefreshTime = 0;
@@ -209,17 +209,14 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
                     mActive = true;
                 }
                 break;
-            case SEED_ZOMBIE_PEA_HEAD:
-                if (aIsBalancePatch) {
-                    mRefreshTime = 1500; // 10 -> 15
-                }
-                break;
             case SEED_ZOMBONI:
             case SEED_ZOMBIE_CATAPULT:
                 if (aIsBalancePatch) {
                     mRefreshTime = 2000; // 35 -> 20
                 }
                 break;
+            case SEED_REPEATER:
+            case SEED_CELERY_STALKER:
             case SEED_ZOMBIE_TRAFFIC_CONE:
             case SEED_ZOMBIE_BOBSLED:
             case SEED_ZOMBIE_SNORKEL:

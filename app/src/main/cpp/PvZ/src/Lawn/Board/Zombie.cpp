@@ -277,7 +277,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             mZombieAttackRect = Rect(20, 0, 50, 115);
             mZombiePhase = ZombiePhase::PHASE_NEWSPAPER_READING;
             mShieldType = ShieldType::SHIELDTYPE_SUNDAY_EDITION;
-            mShieldHealth = 500;
+            mShieldHealth = 370;
             mBodyHealth = 500;
             mVariant = false;
             AttachShield();
@@ -4386,8 +4386,12 @@ void Zombie::EatPlant(Plant *thePlant) {
             thePlant->mPlantHealth -= DAMAGE_PER_EAT;
         }
     }
-    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION && mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
-        thePlant->mPlantHealth -= DAMAGE_PER_EAT * 3;
+    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+        if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
+            thePlant->mPlantHealth -= DAMAGE_PER_EAT * 3; // 4 倍啃咬伤害
+        } else {
+            thePlant->mPlantHealth -= DAMAGE_PER_EAT; // 2 倍啃咬伤害
+        }
     }
 
     if (thePlant->mPlantHealth <= 0) {
@@ -4425,8 +4429,12 @@ void Zombie::EatPlant(Plant *thePlant) {
 
 void Zombie::EatZombie(Zombie *theZombie) {
     theZombie->TakeDamage(DAMAGE_PER_EAT, 9U);
-    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION && mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
-        theZombie->TakeDamage(DAMAGE_PER_EAT * 3, 9U);
+    if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
+        if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
+            theZombie->TakeDamage(DAMAGE_PER_EAT * 3, 9U);
+        } else {
+            theZombie->TakeDamage(DAMAGE_PER_EAT, 9U);
+        }
     }
     StartEating();
     if (theZombie->mBodyHealth <= 0) {

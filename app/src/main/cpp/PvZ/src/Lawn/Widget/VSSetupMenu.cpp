@@ -1300,14 +1300,14 @@ void VSSetupMenu::ButtonDepress_Origin(int theId) {
                     aPlantBank->mNumPackets = aZombieBank->mNumPackets = 7;
                     aZombieSeeds.clear();
                     aPlantSeeds.clear();
-                    PickMPRandomSeeds(mApp, aPlantSeeds, aZombieSeeds, true);
+                    PickShuffleSeeds(mApp, aPlantSeeds, aZombieSeeds, true);
                     if (!aZombieSeeds.empty()) {
                         for (int aPacketIndex = 1; aPacketIndex <= aZombieSeeds.size(); ++aPacketIndex) {
                             SeedType aSeedType = aZombieSeeds[aPacketIndex - 1];
                             mApp->mBoard->mSeedBank[1]->mSeedPackets[aPacketIndex].SetPacketType(aSeedType, SeedType::SEED_NONE);
                         }
                     }
-                    PickMPRandomSeeds(mApp, aPlantSeeds, aZombieSeeds, false);
+                    PickShuffleSeeds(mApp, aPlantSeeds, aZombieSeeds, false);
                     if (!aPlantSeeds.empty()) {
                         for (int aPacketIndex = 1; aPacketIndex <= aPlantSeeds.size(); ++aPacketIndex) {
                             SeedType aSeedType = aPlantSeeds[aPacketIndex - 1];

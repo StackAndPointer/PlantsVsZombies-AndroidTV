@@ -1667,7 +1667,6 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_BOBSLED:
         case SeedType::SEED_ZOMBIE_BALLOON:
         case SeedType::SEED_ZOMBIE_MOUND:
-        case SeedType::SEED_ZOMBIE_EXPLORER:
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
@@ -1676,14 +1675,13 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX:
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
+        case SeedType::SEED_ZOMBIE_EXPLORER:
             return 100;
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_ZOMBIE_BUNGEE:
         case SeedType::SEED_ZOMBIE_SNORKEL:
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
         case SeedType::SEED_ZOMBIE_JALAPENO_HEAD:
-        case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
-        case SeedType::SEED_ZOMBIE_ZOMBLOB:
             return 125;
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:
@@ -1695,6 +1693,8 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
         case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
         case SeedType::SEED_ZOMBIE_JACKSON:
+        case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
+        case SeedType::SEED_ZOMBIE_ZOMBLOB:
             return 150;
         case SeedType::SEED_STARFRUIT:
         case SeedType::SEED_ZOMBONI:
@@ -1740,7 +1740,6 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
             case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
             case SeedType::SEED_ZOMBIE_JACKSON:
             case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
-            case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
             case SeedType::SEED_ZOMBIE_EXPLORER:
             case SeedType::SEED_ZOMBIE_ZOMBLOB:
                 return 3000;
@@ -1749,6 +1748,7 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
             case SeedType::SEED_ZOMBIE_SQUASH_HEAD:
             case SeedType::SEED_ZOMBIE_MOUND:
             case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
+            case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
                 return 1500;
             case SeedType::SEED_ZOMBONI:
             case SeedType::SEED_ZOMBIE_POGO:
@@ -1803,17 +1803,21 @@ static int GetVSCostBalanced(SeedType theSeedType) {
         case SeedType::SEED_UMBRELLA:             // 100 -> 75
         case SeedType::SEED_ZOMBIE_POLEVAULTER:   // 100 -> 75
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER: // 125 -> 75
+        case SeedType::SEED_ZOMBIE_EXPLORER:      // 100 -> 75
             aCost = 75;
             break;
-        case SeedType::SEED_SQUASH:   // 75 -> 100 削弱窝瓜!!!
-        case SeedType::SEED_TALLNUT:  // 125 -> 100
-        case SeedType::SEED_SPLITPEA: // 125 -> 100
+        case SeedType::SEED_SQUASH:      // 75 -> 100 削弱窝瓜!!!
+        case SeedType::SEED_TALLNUT:     // 125 -> 100
+        case SeedType::SEED_SPLITPEA:    // 125 -> 100
+        case SeedType::SEED_SPORESHROOM: // 125 -> 100
             aCost = 100;
             break;
-        case SeedType::SEED_SNOWPEA:         // 150 -> 125
-        case SeedType::SEED_ZOMBIE_DIGGER:   // 150 -> 125
-        case SeedType::SEED_ZOMBIE_LADDER:   // 150 -> 125
-        case SeedType::SEED_ZOMBIE_CATAPULT: // 200 -> 125
+        case SeedType::SEED_SNOWPEA:                 // 150 -> 125
+        case SeedType::SEED_ZOMBIE_DIGGER:           // 150 -> 125
+        case SeedType::SEED_ZOMBIE_LADDER:           // 150 -> 125
+        case SeedType::SEED_ZOMBIE_CATAPULT:         // 200 -> 125
+        case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER: // 150 -> 125
+        case SeedType::SEED_ZOMBIE_ZOMBLOB:          // 150 -> 125
             aCost = 125;
             break;
         case SeedType::SEED_ZOMBONI: // 175 -> 125
@@ -1885,6 +1889,7 @@ static int GetVSRefreshTimeBalanced(SeedType theSeedType) {
         case SeedType::SEED_PUFFSHROOM:             // 7.5 -> 15
         case SeedType::SEED_CACTUS:                 // 7.5 -> 15
         case SeedType::SEED_SPLITPEA:               // 7.5 -> 15
+        case SeedType::SEED_ZOMBIE_NORMAL:          // 7.5 -> 15
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX: // 30 -> 15
         case SeedType::SEED_ZOMBIE_SNORKEL:         // 7.5 -> 15
             return 1500;
@@ -1903,9 +1908,9 @@ static int GetVSRefreshTimeBalanced(SeedType theSeedType) {
 static int GetVSRefreshTimeShuffle(SeedType theSeedType) {
     int aRefreshTime = GetVSRefreshTimeDefault(theSeedType);
     switch (theSeedType) {
-        case SeedType::SEED_SNOWPEA:  // 7.5 -> 15
-        case SeedType::SEED_REPEATER: // 7.5 -> 15
-            return 1500;
+            //        case SeedType::SEED_SNOWPEA:  // 7.5 -> 15
+            //        case SeedType::SEED_REPEATER: // 7.5 -> 15
+            //        return 1500;
         default:
             break;
     }
