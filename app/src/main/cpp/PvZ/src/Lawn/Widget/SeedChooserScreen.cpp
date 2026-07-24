@@ -2324,6 +2324,7 @@ void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
 
             switch (aSeedType) {
                 case SeedType::SEED_ZOMBIE_IMP:
+                case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
                     aToolTip->mX = aSeedX + 5 * (SEED_PACKET_WIDTH + 12);
                     break;
                 case SeedType::SEED_ZOMBIE_POLEVAULTER:

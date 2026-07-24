@@ -3696,8 +3696,8 @@ void Board::DrawProgressMeter(Sexy::Graphics *g, int theX, int theY) {
         int aTotalTicks = std::max(1, replay::GetPlaybackBoardTicks());
         int aCurrentTicks = std::clamp(mMainCounter, 0, aTotalTicks);
         int aClipWidth = aCurrentTicks * aMeterWidth / aTotalTicks;
-        Rect aSrcRect(aCelWidth - aClipWidth - 7, aCelHeight + 20, aClipWidth, aCelHeight + 20);
-        Rect aDstRect(aCelWidth - aClipWidth + theX - 7, theY + 20, aClipWidth, aCelHeight + 20);
+        Rect aSrcRect(aCelWidth - aClipWidth - 7, aCelHeight, aClipWidth, aCelHeight);
+        Rect aDstRect(aCelWidth - aClipWidth + theX - 7, theY + 20, aClipWidth, aCelHeight);
         g->DrawImage(Sexy::IMAGE_FLAGMETER, aDstRect, aSrcRect);
 
         const int aMeterRight = aCelWidth + theX - 7;
