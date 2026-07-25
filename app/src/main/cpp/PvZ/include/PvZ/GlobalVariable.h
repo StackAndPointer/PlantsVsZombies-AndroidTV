@@ -29,7 +29,7 @@ class GameButton;
 
 namespace Sexy {
 class Image;
-class Font;
+class FreeTypeFont;
 } // namespace Sexy
 
 inline uintptr_t gLibGameMainBaseAddr;
@@ -548,15 +548,15 @@ struct AddonZombatarImages {
 } inline addonZombatarImages; // 此处是新增贴图的列表；
 
 struct AddonFonts {
-    Sexy::Font *BRIANNETOD;
-    Sexy::Font *CONTINUUM_BOLD;
-    Sexy::Font *DWARVEN_TODCRAFT;
-    Sexy::Font *HOUSE_OF_TERROR;
-    Sexy::Font *PICO;
+    Sexy::FreeTypeFont *BRIANNETOD;
+    Sexy::FreeTypeFont *CONTINUUM_BOLD;
+    Sexy::FreeTypeFont *DWARVEN_TODCRAFT;
+    Sexy::FreeTypeFont *HOUSE_OF_TERROR;
+    Sexy::FreeTypeFont *PICO;
     // 以下字体含中文
-    Sexy::Font *JN_BOBO_HEI20;
-    Sexy::Font *JN_BOBO_HEI24;
-    Sexy::Font *TIEJILI_SC;
+    Sexy::FreeTypeFont *JN_BOBO_HEI20;
+    Sexy::FreeTypeFont *JN_BOBO_HEI24;
+    Sexy::FreeTypeFont *TIEJILI_SC;
 } inline addonFonts;
 
 #endif // PVZ_GLOBAL_VARIABLE_H

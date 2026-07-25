@@ -681,6 +681,7 @@ protected:
     friend void InitHookFunction();
 
     void _constructor();
+    void _destructor();
 };
 
 
@@ -728,6 +729,8 @@ inline void (*old_LawnApp_ShowCreditScreen)(LawnApp *lawnApp, bool isFromMainMen
 inline void (*old_LawnApp_LoadLevelConfiguration)(LawnApp *lawnApp, int a2, int a3);
 
 inline void (*old_LawnApp_LawnApp)(LawnApp *lawnApp);
+
+inline void (*old_LawnApp__destructor)(LawnApp *lawnApp);
 
 inline void (*old_LawnApp_Init)(LawnApp *lawnApp);
 

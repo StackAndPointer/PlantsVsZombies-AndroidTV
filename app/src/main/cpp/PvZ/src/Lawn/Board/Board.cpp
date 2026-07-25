@@ -55,6 +55,7 @@
 #include "PvZ/PatchList.h"
 #include "PvZ/ReplaySystem.h"
 #include "PvZ/SexyAppFramework/GamepadApp.h"
+#include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"

@@ -350,6 +350,7 @@ bool LoadGameMain() {
     LawnApp_IsArtChallengeAddr = libGameMain.GetSymbol("_ZN7LawnApp14IsArtChallengeEv");
     LawnApp_ShowChallengeScreenAddr = libGameMain.GetSymbol("_ZN7LawnApp19ShowChallengeScreenE13ChallengePage");
     LawnApp_LawnAppAddr = libGameMain.GetSymbol("_ZN7LawnAppC2Ev");
+    LawnApp__destructorAddr = libGameMain.GetSymbol("_ZN7LawnAppD2Ev");
     LawnApp_InitAddr = libGameMain.GetSymbol("_ZN7LawnApp4InitEv");
     LawnApp_IsNightAddr = libGameMain.GetSymbol("_ZN7LawnApp7IsNightEv");
     LawnApp_HardwareInitAddr = libGameMain.GetSymbol("_ZN7LawnApp12HardwareInitEv");
@@ -1443,6 +1444,7 @@ bool LoadGameMain() {
     Sexy_Font_CharWidthKernAddr = libGameMain.GetSymbol("_ZN4Sexy4Font13CharWidthKernEii");
     Sexy_Font_StringWidthAddr = libGameMain.GetSymbol("_ZN4Sexy4Font11StringWidthERKSs");
     Sexy_FreeTypeFont_FreeTypeFontAddr = libGameMain.GetSymbol("_ZN4Sexy12FreeTypeFontC2EPNS_11SexyAppBaseERKSsibbb");
+    Sexy_FreeTypeFont__destructorAddr = libGameMain.GetSymbol("_ZN4Sexy12FreeTypeFontD2Ev");
 
     vTableForWidgetAddr = libGameMain.GetSymbol("_ZTVN4Sexy6WidgetE");
     vTableForSyncObjectAddr = libGameMain.GetSymbol("_ZTV10SyncObject");

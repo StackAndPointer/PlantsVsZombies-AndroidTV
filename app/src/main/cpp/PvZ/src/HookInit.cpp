@@ -72,6 +72,7 @@
 
 void InitHookFunction() {
     homura::HookFunc(LawnApp_LawnAppAddr, &LawnApp::_constructor, &old_LawnApp_LawnApp);
+    homura::HookFunc(LawnApp__destructorAddr, &LawnApp::_destructor, &old_LawnApp__destructor);
     homura::HookFunc(LawnApp_InitAddr, &LawnApp::Init, &old_LawnApp_Init);
     homura::HookFunc(LawnApp_IsNightAddr, &LawnApp::IsNight, &old_LawnApp_IsNight);
     homura::HookFunc(LawnApp_HardwareInitAddr, &LawnApp::HardwareInit, &old_LawnApp_HardwareInit);

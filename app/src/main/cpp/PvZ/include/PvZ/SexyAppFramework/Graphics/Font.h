@@ -155,7 +155,9 @@ public:
         reinterpret_cast<void (*)(FreeTypeFont *, SexyAppBase *, pvzstl::string const &, int, bool, bool, bool)>(Sexy_FreeTypeFont_FreeTypeFontAddr)(
             this, theApp, theFile, size, bold, italic, underline);
     }
-    ~FreeTypeFont() = delete;
+    ~FreeTypeFont() {
+        reinterpret_cast<void (*)(FreeTypeFont *)>(Sexy_FreeTypeFont__destructorAddr)(this);
+    }
 };
 
 class SysFont : public Font {

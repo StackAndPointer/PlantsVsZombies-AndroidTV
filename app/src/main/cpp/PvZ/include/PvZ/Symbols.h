@@ -357,6 +357,7 @@ inline void *LawnApp_HideHelpBarWidgetAddr;
 inline void *LawnApp_ShowHelpTextScreenAddr;
 inline void *LawnApp_ShowChallengeScreenAddr;
 inline void *LawnApp_LawnAppAddr;
+inline void *LawnApp__destructorAddr;
 inline void *LawnApp_InitAddr;
 inline void *LawnApp_IsNightAddr;
 inline void *LawnApp_HardwareInitAddr;
@@ -1451,6 +1452,7 @@ inline void *TodFoley_PlayFoleyAddr;
 inline void *Sexy_Font_CharWidthKernAddr;
 inline void *Sexy_Font_StringWidthAddr;
 inline void *Sexy_FreeTypeFont_FreeTypeFontAddr;
+inline void *Sexy_FreeTypeFont__destructorAddr;
 
 inline void *Sexy_MTRand_MTRandUlongAddr;
 inline void *Sexy_MTRand_NextUlongAddr;

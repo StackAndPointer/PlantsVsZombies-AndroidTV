@@ -995,6 +995,19 @@ void LawnApp::_constructor() {
     mLawnMouseMode = true; // 开启触控
 }
 
+void LawnApp::_destructor() {
+    delete addonFonts.BRIANNETOD;
+    delete addonFonts.CONTINUUM_BOLD;
+    delete addonFonts.DWARVEN_TODCRAFT;
+    delete addonFonts.HOUSE_OF_TERROR;
+    delete addonFonts.PICO;
+    delete addonFonts.JN_BOBO_HEI20;
+    delete addonFonts.JN_BOBO_HEI24;
+    delete addonFonts.TIEJILI_SC;
+
+    old_LawnApp__destructor(this);
+}
+
 void LawnApp::Init() {
     // 试图修复默认加载名为player用户的问题。
 
