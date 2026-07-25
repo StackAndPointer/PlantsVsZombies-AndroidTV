@@ -701,8 +701,14 @@ void Challenge::StartLevel() {
             if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_SUN_RAIN) {
                 mBoard->DisplayAdvice("[ADVICE_SUN_RAIN_COMING]", MESSAGE_STYLE_HINT_FAST, ADVICE_NONE);
             }
-            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_LITTER_TROUBLE) {
-                mBoard->DisplayAdvice("[ADVICE_LITTER_TROUBLE]", MESSAGE_STYLE_HINT_FAST, ADVICE_NONE);
+            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_SUNNY_DAY) {
+                mBoard->DisplayAdvice("[ADVICE_SUNNY_DAY]", MESSAGE_STYLE_HINT_FAST, ADVICE_NONE);
+            }
+            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_FREE_SHUFFLE) {
+                mBoard->DisplayAdvice("[ADVICE_FREE_SHUFFLE]", MESSAGE_STYLE_HINT_FAST, ADVICE_NONE);
+            }
+            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_QUICK_SHUFFLE) {
+                mBoard->DisplayAdvice("[ADVICE_QUICK_SHUFFLE]", MESSAGE_STYLE_HINT_FAST, ADVICE_NONE);
             }
         }
     }

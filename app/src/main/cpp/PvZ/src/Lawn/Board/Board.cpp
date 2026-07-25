@@ -1267,10 +1267,16 @@ void Board::UpdateSunSpawning() {
             mSunCountDown *= 0.8f; // 多槽模式自然掉落的阳光产能提高至 1.25 倍
         }
 
-        // 刷牌模式阳光雨
+        aSunType = CoinType::COIN_SUN;
+        CoinType aBrainType = CoinType::COIN_VS_ZOMBIE_BRAIN;
         if (gOpeningEncounter) {
-            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_SUN_RAIN && gOpeningEncounter->mDoEffect)
+            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_SUN_RAIN && gOpeningEncounter->mDoEffect) { // 刷牌模式阳光雨
                 mSunCountDown /= 10;
+            }
+            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_SUNNY_DAY) { // 刷牌模式晴天
+                aSunType = CoinType::COIN_LARGESUN;
+                aBrainType = CoinType::COIN_LARGE_VS_ZOMBIE_BRAIN;
+            }
         }
 
         int aSpawnCount = 1;
@@ -1279,8 +1285,8 @@ void Board::UpdateSunSpawning() {
         }
 
         for (int aSpawnIndex = 0; aSpawnIndex < aSpawnCount; ++aSpawnIndex) {
-            AddCoin(RandRangeInt(100, 499), 60, CoinType::COIN_SUN, CoinMotion::COIN_MOTION_FROM_SKY);
-            AddCoin(RandRangeInt(500, 799), 60, CoinType::COIN_VS_ZOMBIE_BRAIN, CoinMotion::COIN_MOTION_FROM_SKY);
+            AddCoin(RandRangeInt(100, 499), 60, aSunType, CoinMotion::COIN_MOTION_FROM_SKY);
+            AddCoin(RandRangeInt(500, 799), 60, aBrainType, CoinMotion::COIN_MOTION_FROM_SKY);
         }
     } else {
         AddCoin(RandRangeInt(100, 649), 60, aSunType, CoinMotion::COIN_MOTION_FROM_SKY);
@@ -7516,15 +7522,19 @@ void Board::DrawLevel(Graphics *g) {
             if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_SUN_RAIN) {
                 aLevelStr = "[SUN_RAIN]";
             }
-            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_LITTER_TROUBLE) {
-                aLevelStr = "[LITTLE_TROUBLE]";
+            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_SUNNY_DAY) {
+                aLevelStr = "[SUNNY_DAY]";
             }
             if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_FREE_SHUFFLE) {
                 aLevelStr = "[FREE_SHUFFLE]";
             }
+            if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_QUICK_SHUFFLE) {
+                aLevelStr = "[QUICK_SHUFFLE]";
+            }
             int aPosX = 593;
             int aPosY = 595;
-            TodDrawString(g, aLevelStr, aPosX, aPosY, Sexy::FONT_HOUSEOFTERROR16, Color(224, 187, 98), DrawStringJustification::DS_ALIGN_RIGHT);
+            TodDrawString(g, aLevelStr, aPosX, aPosY, addonFonts.JN_BOBO_HEI24, Color::Black, DrawStringJustification::DS_ALIGN_RIGHT);
+            TodDrawString(g, aLevelStr, aPosX + 2, aPosY - 2, addonFonts.JN_BOBO_HEI24, Color(224, 187, 98), DrawStringJustification::DS_ALIGN_RIGHT);
         }
         return;
     }

@@ -1862,6 +1862,7 @@ static int GetVSCostShuffle(SeedType theSeedType) {
             return 125;
         case SeedType::SEED_TORCHWOOD:       // 125 -> 150
         case SeedType::SEED_DOOMSHROOM:      // 125 -> 150
+        case SeedType::SEED_ZOMBIE_BUNGEE:   // 125 -> 150
         case SeedType::SEED_ZOMBIE_CATAPULT: // 200 -> 150
             return 150;
         case SeedType::SEED_REPEATER:        // 150 -> 175
@@ -2031,8 +2032,12 @@ int Plant::GetRefreshTime(SeedType theSeedType, SeedType theImitaterType) {
     }
 
     if (gLawnApp->IsVSMode()) {
-        if (theSeedType == SEED_BEGHOULED_BUTTON_SHUFFLE || theSeedType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE)
+        if (theSeedType == SEED_BEGHOULED_BUTTON_SHUFFLE || theSeedType == SEED_ZOMBIE_BEGHOULED_BUTTON_SHUFFLE) {
+            if (gOpeningEncounter && gOpeningEncounter->mType == EncounterType::ENCOUNTER_QUICK_SHUFFLE) {
+                return 0;
+            }
             return 3000;
+        }
 
         if (theSeedType == SeedType::SEED_IMITATER && theImitaterType != SeedType::SEED_NONE) {
             theSeedType = theImitaterType;

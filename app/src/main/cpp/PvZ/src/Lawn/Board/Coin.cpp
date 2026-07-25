@@ -45,6 +45,15 @@ void Coin::CoinInitialize(int theX, int theY, CoinType theCoinType, CoinMotion t
         aReanim->SetAnimRate(6.0f);
         AttachReanim(mAttachmentID[0], aReanim, mWidth * 0.5f, mHeight * 0.5f);
     }
+    if (mType == CoinType::COIN_LARGE_VS_ZOMBIE_BRAIN) {
+        mScale = 2.0f;
+
+        Reanimation *aReanim = mApp->AddReanimation(0.0f, 0.0f, 0, ReanimationType::REANIM_ZOMBIESUN);
+        aReanim->SetPosition(mPosX + mWidth * 2.0f, mPosY + mHeight * 2.0f);
+        aReanim->mLoopType = ReanimLoopType::REANIM_LOOP;
+        aReanim->SetAnimRate(6.0f);
+        AttachReanim(mAttachmentID[0], aReanim, mWidth * 2.0f, mHeight * 2.0f);
+    }
 }
 
 void Coin::GamepadCursorOver(int thePlayerIndex) {
@@ -487,7 +496,7 @@ bool Coin::IsSun() const {
 }
 
 bool Coin::IsDeath() const {
-    return mType == CoinType::COIN_VS_ZOMBIE_BRAIN || mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN;
+    return mType == CoinType::COIN_VS_ZOMBIE_BRAIN || mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN || mType == CoinType::COIN_LARGE_VS_ZOMBIE_BRAIN;
 }
 
 int Coin::GetSunValue() {
@@ -504,6 +513,7 @@ int Coin::GetSunValue() {
         case CoinType::COIN_VS_ZOMBIE_BRAIN:
             return 25;
         case CoinType::COIN_LARGESUN:
+        case CoinType::COIN_LARGE_VS_ZOMBIE_BRAIN:
             return 50;
         default:
             return mCustomSunValue;
@@ -516,6 +526,7 @@ float Coin::GetSunScale() {
         case CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN:
             return 0.5f;
         case CoinType::COIN_LARGESUN:
+        case CoinType::COIN_LARGE_VS_ZOMBIE_BRAIN:
             return 2.0f;
         default:
             return 1.0f;
@@ -523,7 +534,7 @@ float Coin::GetSunScale() {
 }
 
 void Coin::Draw(Graphics *g) {
-    if (mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN) {
+    if (mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN || mType == CoinType::COIN_LARGE_VS_ZOMBIE_BRAIN) {
         Color aColor = GetColor();
         g->SetColor(aColor);
 

@@ -215,7 +215,6 @@ void SeedPacket::SetPacketType(SeedType theSeedType, SeedType theImitaterType) {
                     mRefreshTime = 2000; // 35 -> 20
                 }
                 break;
-            case SEED_REPEATER:
             case SEED_CELERY_STALKER:
             case SEED_ZOMBIE_TRAFFIC_CONE:
             case SEED_ZOMBIE_BOBSLED:

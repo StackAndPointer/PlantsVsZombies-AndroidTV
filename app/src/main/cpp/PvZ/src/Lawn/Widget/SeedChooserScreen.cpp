@@ -242,8 +242,8 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     mToolTip2 = new ToolTipWidget();
 
     if (VSSetupAddonWidget::msExtendedSeedsMode) {
-        mToolTip1->mTitleFont = mToolTip2->mTitleFont = addonFonts.JN_BOBO_HEI;
-        mToolTip1->mWarningTextFont = mToolTip2->mWarningTextFont = addonFonts.JN_BOBO_HEI;
+        mToolTip1->mTitleFont = mToolTip2->mTitleFont = addonFonts.JN_BOBO_HEI20;
+        mToolTip1->mWarningTextFont = mToolTip2->mWarningTextFont = addonFonts.JN_BOBO_HEI20;
     }
 
     mIsZombieChooser = theIsZombieChooser;

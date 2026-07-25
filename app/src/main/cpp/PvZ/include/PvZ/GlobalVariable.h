@@ -552,9 +552,11 @@ struct AddonFonts {
     Sexy::Font *CONTINUUM_BOLD;
     Sexy::Font *DWARVEN_TODCRAFT;
     Sexy::Font *HOUSE_OF_TERROR;
-    Sexy::Font *JN_BOBO_HEI; // 含中文
     Sexy::Font *PICO;
-    Sexy::Font *TIEJILI_SC; // 含中文
+    // 以下字体含中文
+    Sexy::Font *JN_BOBO_HEI20;
+    Sexy::Font *JN_BOBO_HEI24;
+    Sexy::Font *TIEJILI_SC;
 } inline addonFonts;
 
 #endif // PVZ_GLOBAL_VARIABLE_H

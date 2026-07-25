@@ -1140,8 +1140,9 @@ void LawnApp::LoadingThreadProc() {
     addonFonts.CONTINUUM_BOLD = new FreeTypeFont(this, "addonFiles/data/ContinuumBold.ttf", 16, false, false, false);
     addonFonts.DWARVEN_TODCRAFT = new FreeTypeFont(this, "addonFiles/data/DwarvenTodcraft.ttf", 16, false, false, false);
     addonFonts.HOUSE_OF_TERROR = new FreeTypeFont(this, "addonFiles/data/HouseofTerror.ttf", 16, false, false, false);
-    addonFonts.JN_BOBO_HEI = new FreeTypeFont(this, "addonFiles/data/JNBoBoHei.ttf", 22, false, false, false);
     addonFonts.PICO = new FreeTypeFont(this, "addonFiles/data/Pico.ttf", 16, false, false, false);
+    addonFonts.JN_BOBO_HEI20 = new FreeTypeFont(this, "addonFiles/data/JNBoBoHei.ttf", 20, false, false, false);
+    addonFonts.JN_BOBO_HEI24 = new FreeTypeFont(this, "addonFiles/data/JNBoBoHei.ttf", 24, false, false, false);
     addonFonts.TIEJILI_SC = new FreeTypeFont(this, "addonFiles/data/TiejiliSC.ttf", 16, false, false, false);
 
     // //试图修复偶现的地图错位现象。不知道是否有效

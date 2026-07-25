@@ -24,7 +24,6 @@
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/CutScene.h"
 #include "PvZ/Lawn/Board/GridItem.h"
-#include "PvZ/Lawn/Board/OpeningEncounter.h"
 #include "PvZ/Lawn/Board/Plant.h"
 #include "PvZ/Lawn/Board/Projectile.h"
 #include "PvZ/Lawn/LawnApp.h"
@@ -338,13 +337,6 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             break;
     }
 
-    if (gOpeningEncounter) {
-        if (gOpeningEncounter->mType == EncounterType::ENCOUNTER_LITTER_TROUBLE && IsOnBoard()) {
-            mScaleZombie = 0.5f;
-            UpdateAnimSpeed();
-        }
-    }
-
     mBodyMaxHealth = mBodyHealth;
     mHelmMaxHealth = mHelmHealth;
     mShieldMaxHealth = mShieldHealth;
@@ -531,9 +523,6 @@ void Zombie::UpdatePlaying() {
     if (mGroanCounter == 0 && Rand(aZombiesCount) == 0 && mHasHead && mZombieType != ZombieType::ZOMBIE_BOSS && !mBoard->HasLevelAwardDropped()) {
         float aPitch = 0.0f;
         if (mApp->IsLittleTroubleLevel()) {
-            aPitch = RandRangeFloat(40.0f, 50.0f);
-        }
-        if (gOpeningEncounter && gOpeningEncounter->mType == EncounterType::ENCOUNTER_LITTER_TROUBLE) {
             aPitch = RandRangeFloat(40.0f, 50.0f);
         }
 
