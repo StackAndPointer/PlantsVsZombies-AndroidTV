@@ -28,25 +28,24 @@ void ImitaterDialog::_constructor(int thePlayerIndex) {
     old_ImitaterDialog_ImitaterDialog(this, thePlayerIndex);
 }
 
-void ImitaterDialog_ShowToolTip(ImitaterDialog *instance) {
+void ImitaterDialog::ShowToolTip() {
     // 在触控模式下不显示ToolTip
-    if (!gKeyboardMode)
+    if (!gKeyboardMode) {
         return;
-    old_ImitaterDialog_ShowToolTip(instance);
+    }
+    old_ImitaterDialog_ShowToolTip(this);
 }
 
-bool ImitaterDialog_KeyDown(ImitaterDialog *a, int a2) {
+bool ImitaterDialog::KeyDown(Sexy::KeyCode theKey) {
     // 修复不选择模仿者卡片并退出时的闪退
-    if (a2 == Sexy::KEYCODE_ESCAPE || a2 == Sexy::KEYCODE_GAMEPAD_B) {
-        LawnApp *lawnApp = a->mApp;
-        SeedChooserScreen *seedChooserScreen = lawnApp->mSeedChooserScreen;
-        seedChooserScreen->RemoveWidget(a);
-        a->mApp->SafeDeleteWidget(a);
-        //            (*(void (**)(LawnApp *, Sexy::Widget *))(*(uint32_t *)mApp + 188))(mApp, this);
-        seedChooserScreen->mImitaterDialog = nullptr;
+    if (theKey == Sexy::KEYCODE_ESCAPE || theKey == Sexy::KEYCODE_GAMEPAD_B) {
+        SeedChooserScreen *aSeedChooserScreen = mApp->mSeedChooserScreen;
+        aSeedChooserScreen->RemoveWidget(this);
+        mApp->SafeDeleteWidget(this);
+        aSeedChooserScreen->mImitaterDialog = nullptr;
         return true;
     }
-    return old_ImitaterDialog_KeyDown(a, a2);
+    return old_ImitaterDialog_KeyDown(this, theKey);
 }
 
 void ImitaterDialog::MouseDown(int x, int y, int theCount) {

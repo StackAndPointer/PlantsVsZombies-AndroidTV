@@ -579,8 +579,8 @@ void InitHookFunction() {
     homura::HookFunc(ImitaterDialog_ImitaterDialogAddr, &ImitaterDialog::_constructor, &old_ImitaterDialog_ImitaterDialog);
     homura::HookFunc(ImitaterDialog_MouseDownAddr, &ImitaterDialog::MouseDown, &old_ImitaterDialog_MouseDown);
     // homura::HookFunc(ImitaterDialog_OnKeyDownAddr, ImitaterDialog_OnKeyDown, &old_ImitaterDialog_OnKeyDown);
-    homura::HookFunc(ImitaterDialog_KeyDownAddr, &ImitaterDialog_KeyDown, &old_ImitaterDialog_KeyDown);
-    homura::HookFunc(ImitaterDialog_ShowToolTipAddr, &ImitaterDialog_ShowToolTip, &old_ImitaterDialog_ShowToolTip);
+    homura::HookFunc(ImitaterDialog_KeyDownAddr, &ImitaterDialog::KeyDown, &old_ImitaterDialog_KeyDown);
+    homura::HookFunc(ImitaterDialog_ShowToolTipAddr, &ImitaterDialog::ShowToolTip, &old_ImitaterDialog_ShowToolTip);
 
 
     homura::HookFunc(MailScreen_MailScreenAddr, &MailScreen::_constructor, &old_MailScreen_MailScreen);

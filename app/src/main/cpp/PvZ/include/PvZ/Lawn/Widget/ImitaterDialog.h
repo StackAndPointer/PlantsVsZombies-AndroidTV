@@ -34,6 +34,8 @@ public:
         return reinterpret_cast<SeedType (*)(ImitaterDialog *, int, int)>(ImitaterDialog_SeedHitTestAddr)(this, x, y);
     }
 
+    void ShowToolTip();
+    bool KeyDown(Sexy::KeyCode theKey);
     void MouseDown(int x, int y, int theCount);
 
 protected:
@@ -43,17 +45,12 @@ protected:
 };
 
 
-inline void (*old_ImitaterDialog_ImitaterDialog)(ImitaterDialog *instance, int a2);
+inline void (*old_ImitaterDialog_ImitaterDialog)(ImitaterDialog *, int);
 
-inline void (*old_ImitaterDialog_ShowToolTip)(ImitaterDialog *instance);
+inline void (*old_ImitaterDialog_ShowToolTip)(ImitaterDialog *);
 
-inline bool (*old_ImitaterDialog_KeyDown)(ImitaterDialog *a, int a2);
+inline bool (*old_ImitaterDialog_KeyDown)(ImitaterDialog *, Sexy::KeyCode);
 
-inline void (*old_ImitaterDialog_MouseDown)(ImitaterDialog *a, int x, int y, int theCount);
-
-
-void ImitaterDialog_ShowToolTip(ImitaterDialog *instance);
-
-bool ImitaterDialog_KeyDown(ImitaterDialog *a, int a2);
+inline void (*old_ImitaterDialog_MouseDown)(ImitaterDialog *, int, int, int);
 
 #endif // PVZ_LAWN_WIDGET_IMITATER_DIALOG_H

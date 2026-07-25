@@ -23,7 +23,6 @@
 #include "PvZ/Lawn/Board/ToolTipWidget.h"
 #include "PvZ/Lawn/Common/ConstEnums.h"
 #include "PvZ/Lawn/GamepadControls.h"
-#include "PvZ/Lawn/Widget/ImitaterDialog.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
 #include "PvZ/Symbols.h"
@@ -32,11 +31,14 @@
 
 #include <cstdint>
 
+struct TodWeightedArray;
+
 class Board;
+class GameButton;
+class ImitaterDialog;
 class LawnApp;
 class SeedBank;
-class GameButton;
-struct TodWeightedArray;
+
 namespace Sexy {
 class MTRand;
 }
