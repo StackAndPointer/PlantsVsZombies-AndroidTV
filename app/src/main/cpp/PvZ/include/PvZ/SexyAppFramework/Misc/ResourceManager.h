@@ -22,8 +22,11 @@
 
 #include "Homura/TypeUtils.h"
 #include "PvZ/STL/string.h"
+#include "PvZ/Symbols.h"
 
 namespace Sexy {
+
+class Image;
 
 class ResourceManager {
 protected:

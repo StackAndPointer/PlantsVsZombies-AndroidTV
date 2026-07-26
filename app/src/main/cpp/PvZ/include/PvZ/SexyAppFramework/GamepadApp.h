@@ -21,10 +21,10 @@
 #define PVZ_SEXYAPPFRAMEWORK_GAMEPAD_APP_H
 
 #include "PvZ/Lawn/LawnApp.h"
-#include "PvZ/Symbols.h"
-
 #include "PvZ/SexyAppFramework/Graphics/SharedImageRef.h"
 #include "PvZ/SexyAppFramework/Widget/InputDeviceListener.h"
+#include "PvZ/Symbols.h"
+
 #include "SexyCommonApp.h"
 
 namespace Sexy {
@@ -35,11 +35,13 @@ public:
     bool mSimulateGamepadWithKeyboard; // 0x838, LAWN_SIMULATE_GAMEPAD
     bool mGamePad1IsOn;                // 0x839
 
-    SexyOpaqueCritSect32 mDeviceEventCritSect; // 0x83C
-    SexyOpaqueList32 mDeviceEventList;         // 0x840 ~ 0x847
+    homura::Storage<CritSect> mDeviceEventCritSect;         // 0x83C
+    homura::Storage<pvzstl::list<void *>> mDeviceEventList; // 0x840 ~ 0x847
 
-    SexyAtlasParserStorage32 mAtlasParser; // 0x848 ~ 0x877
-    SexyOpaqueCritSect32 mAtlasCritSect;   // 0x878
+    struct AtlasParserStorage {
+        char unk[0x30];
+    } mAtlasParser;                           // 0x848 ~ 0x877
+    homura::Storage<CritSect> mAtlasCritSect; // 0x878
 
     // std::map<std::string, Sexy::SharedImageRef>
     homura::Storage<pvzstl::map<pvzstl::string, Sexy::SharedImageRef>> mAtlasImageMap; // 0x87C ~ 0x893

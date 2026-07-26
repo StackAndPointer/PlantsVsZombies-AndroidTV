@@ -21,16 +21,19 @@
 #define PVZ_SEXYAPPFRAMEWORK_SEXY_APP_BASE_H
 
 #include "PvZ/MagicNumbers.h"
+#include "PvZ/STL/list.h"
 #include "PvZ/STL/map.h"
 #include "PvZ/STL/set.h"
 #include "PvZ/STL/string.h"
+#include "PvZ/SexyAppFramework/Misc/CritSect.h"
+#include "PvZ/SexyAppFramework/Misc/Ratio.h"
+#include "PvZ/SexyAppFramework/Misc/ResourceManager.h"
 #include "PvZ/SexyAppFramework/Thread.h"
+#include "PvZ/SexyAppFramework/Widget/DialogListener.h"
+#include "PvZ/SexyAppFramework/Widget/InputConnectListener.h"
 #include "PvZ/SexyAppFramework/Widget/WidgetManager.h"
 #include "PvZ/Symbols.h"
 
-#include "PvZ/SexyAppFramework/Misc/ResourceManager.h"
-#include "PvZ/SexyAppFramework/Widget/DialogListener.h"
-#include "PvZ/SexyAppFramework/Widget/InputConnectListener.h"
 #include "Buffer.h"
 #include "Graphics/Color.h"
 #include "Graphics/MemoryImage.h"
@@ -40,49 +43,14 @@
 #include "Widget/ButtonListener.h"
 
 void InitHookFunction();
-struct SexyAtlasParserStorage32 {
-    char unk[0x30];
-};
-
-struct SexyOpaqueList32 {
-    unsigned int next;
-    unsigned int prev; // 0x08
-};
-
-struct SexyOpaqueCritSect32 {
-    unsigned int impl; // observed 0x04
-};
-
-struct SexyOpaqueRatio32 {
-    int numerator;
-    int denominator; // 0x08
-};
-
-struct SexyOpaqueRect32 {
-    int x;
-    int y;
-    int width;
-    int height; // 0x10
-};
-
-// Exact 0x34-byte footprint observed around AddParameterEntries().
-// Only mSelectedIndex's constructor value (-1) is known; the remaining
-// semantics are intentionally left generic.
-struct SexyParameterStorage32 {
-    int mField00;
-    int mField04;
-    int mField08;
-    int mField0C;
-    int mSelectedIndex;
-    unsigned char mData[0x20];
-};
-
 
 namespace Sexy {
-class Gamepad;
-class Dialog;
-class MusicInterface;
+
 struct Event;
+
+class Dialog;
+class Gamepad;
+class MusicInterface;
 
 class SexyAppBase : public Sexy::ButtonListener, public Sexy::DialogListener, public Sexy::InputConnectListener {
 public:
@@ -274,17 +242,17 @@ public:
     bool mOnlyAllowOneCopyToRun; // 0x07E
     bool unk_07F;                // 0x07F
 
-    void *mMutex;                            // 0x080
-    SexyOpaqueCritSect32 mCritSect;          // 0x084
-    SexyOpaqueCritSect32 mSecondaryCritSect; // 0x088, Android addition
-    int mNotifyGameMessage;                  // 0x08C, tentative name
-    bool mBetaValidate;                      // 0x090
-    unsigned char mAdd8BitMaxTable[512];     // 0x091, values 0..255 then 0xFF
+    void *mMutex;                                 // 0x080
+    homura::Storage<CritSect> mCritSect;          // 0x084
+    homura::Storage<CritSect> mSecondaryCritSect; // 0x088, Android addition
+    int mNotifyGameMessage;                       // 0x08C, tentative name
+    bool mBetaValidate;                           // 0x090
+    unsigned char mAdd8BitMaxTable[512];          // 0x091, values 0..255 then 0xFF
 
     WidgetManager *mWidgetManager; // 0x294, dword 165
 
     homura::Storage<pvzstl::map<int, Sexy::Dialog *>> mDialogMap; // 0x298
-    SexyOpaqueList32 mDialogList;                                 // 0x2B0
+    homura::Storage<pvzstl::list<void *>> mDialogList;            // 0x2B0
     unsigned int mPrimaryThreadId;                                // 0x2B8
     Sexy::Thread mPrimaryThread;                                  // 0x2BC, Android addition
 
@@ -333,7 +301,7 @@ public:
     bool mMuteOnLostFocus;                       // 0x3E1
 
     homura::Storage<pvzstl::set<Sexy::MemoryImage *>> mMemoryImageSet;                                       // 0x3E4
-    SexyOpaqueCritSect32 mMemoryImageCritSect;                                                               // 0x3FC, Android addition
+    homura::Storage<CritSect> mMemoryImageCritSect;                                                          // 0x3FC, Android addition
     homura::Storage<pvzstl::set<void *>> mPIEffectSet;                                                       // 0x400, std::set<PIEffect*>
     homura::Storage<pvzstl::set<void *>> mPopAnimSet;                                                        // 0x418, std::set<PopAnim*>
     homura::Storage<pvzstl::map<std::pair<pvzstl::string, pvzstl::string>, void *>> mSharedImageMap;         // 0x430, map<pair<string,string>, SharedImage>
@@ -371,12 +339,12 @@ public:
 
     AudiereSoundManager *mSoundManager; // 0x4E8, dword 314
 
-    void *mHandCursor;                // 0x4EC
-    void *mDraggingCursor;            // 0x4F0
-    int unkCursorPlatform_4F4[7];     // 0x4F4~0x50F
-    int mMouseX;                      // 0x510, remapped current mouse X
-    int mMouseY;                      // 0x514, remapped current mouse Y
-    SexyOpaqueList32 mSafeDeleteList; // 0x518, list<WidgetSafeDeleteInfo>
+    void *mHandCursor;                                     // 0x4EC
+    void *mDraggingCursor;                                 // 0x4F0
+    int unkCursorPlatform_4F4[7];                          // 0x4F4~0x50F
+    int mMouseX;                                           // 0x510, remapped current mouse X
+    int mMouseY;                                           // 0x514, remapped current mouse Y
+    homura::Storage<pvzstl::list<void *>> mSafeDeleteList; // 0x518, list<WidgetSafeDeleteInfo>
 
     bool mMouseIn;       // 0x520
     bool mRunning;       // 0x521
@@ -426,24 +394,24 @@ public:
     int mNumLoadingThreadTasks;       // 0x588, dword 354
     int mCompletedLoadingThreadTasks; // 0x58C, dword 355
 
-    bool mRecordingDemoBuffer;                     // 0x590
-    bool mPlayingDemoBuffer;                       // 0x591
-    bool mManualShutdown;                          // 0x592
-    homura::Storage<pvzstl::string> mDemoPrefix;   // 0x594
-    homura::Storage<pvzstl::string> mDemoFileName; // 0x598
-    char mDemoBuffer[0x1C];                        // 0x59C
-    int mDemoLength;                               // 0x5B8
-    int mLastDemoMouseX;                           // 0x5BC
-    int mLastDemoMouseY;                           // 0x5C0
-    int mLastDemoUpdateCnt;                        // 0x5C4
-    bool mDemoNeedsCommand;                        // 0x5C8
-    bool mDemoIsShortCmd;                          // 0x5C9
-    int mDemoCmdNum;                               // 0x5CC
-    int mDemoCmdOrder;                             // 0x5D0
-    int mDemoCmdBitPos;                            // 0x5D4
-    bool mDemoLoadingComplete;                     // 0x5D8
-    int mCurHandleNum;                             // 0x5DC
-    SexyOpaqueList32 mDemoMarkerList;              // 0x5E0
+    bool mRecordingDemoBuffer;                             // 0x590
+    bool mPlayingDemoBuffer;                               // 0x591
+    bool mManualShutdown;                                  // 0x592
+    homura::Storage<pvzstl::string> mDemoPrefix;           // 0x594
+    homura::Storage<pvzstl::string> mDemoFileName;         // 0x598
+    char mDemoBuffer[0x1C];                                // 0x59C
+    int mDemoLength;                                       // 0x5B8
+    int mLastDemoMouseX;                                   // 0x5BC
+    int mLastDemoMouseY;                                   // 0x5C0
+    int mLastDemoUpdateCnt;                                // 0x5C4
+    bool mDemoNeedsCommand;                                // 0x5C8
+    bool mDemoIsShortCmd;                                  // 0x5C9
+    int mDemoCmdNum;                                       // 0x5CC
+    int mDemoCmdOrder;                                     // 0x5D0
+    int mDemoCmdBitPos;                                    // 0x5D4
+    bool mDemoLoadingComplete;                             // 0x5D8
+    int mCurHandleNum;                                     // 0x5DC
+    homura::Storage<pvzstl::list<void *>> mDemoMarkerList; // 0x5E0
 
     bool mDebugKeysEnabled;     // 0x5E8
     bool mEnableMaximizeButton; // 0x5E9
@@ -469,20 +437,20 @@ public:
     unsigned int mMinVidMemory3D;         // 0x60C, unkMem5[0] = 6
     unsigned int mRecommendedVidMemory3D; // 0x610, unkMem5[1] = 14
 
-    bool mWidescreenAware;          // 0x614, unkMem5[2].byte0
-    bool unkDisplayFlag_615;        // 0x615, initialized true
-    bool unkDisplayFlag_616;        // 0x616
-    bool unkDisplayFlag_617;        // 0x617
-    SexyOpaqueRect32 mScreenBounds; // 0x618, unkMem5[3]~[6]
+    bool mWidescreenAware;   // 0x614, unkMem5[2].byte0
+    bool unkDisplayFlag_615; // 0x615, initialized true
+    bool unkDisplayFlag_616; // 0x616
+    bool unkDisplayFlag_617; // 0x617
+    Rect mScreenBounds;      // 0x618, unkMem5[3]~[6]
 
-    bool mEnableWindowAspect;              // 0x628, unkMem5[7].byte0
-    SexyOpaqueRatio32 mWindowAspect;       // 0x62C, 4:3
-    SexyOpaqueRatio32 mPresentationAspect; // 0x634, 4:3, Android addition
-    SexyOpaqueRatio32 mWideScreenAspect;   // 0x63C, 16:10, Android addition
-    int unk_644;                           // 0x644
-    int mScreenWidth;                      // 0x648 = 800
-    int mScreenHeight;                     // 0x64C = 600
-    bool unkDisplayFlags_650[4];           // 0x650
+    bool mEnableWindowAspect;    // 0x628, unkMem5[7].byte0
+    Ratio mWindowAspect;         // 0x62C, 4:3
+    Ratio mPresentationAspect;   // 0x634, 4:3, Android addition
+    Ratio mWideScreenAspect;     // 0x63C, 16:10, Android addition
+    int unk_644;                 // 0x644
+    int mScreenWidth;            // 0x648 = 800
+    int mScreenHeight;           // 0x64C = 600
+    bool unkDisplayFlags_650[4]; // 0x650
 
     homura::Storage<pvzstl::map<pvzstl::string, pvzstl::string>> mStringProperties;                    // 0x654, map<string, SexyString>
     homura::Storage<pvzstl::map<pvzstl::string, bool>> mBoolProperties;                                // 0x66C
@@ -508,16 +476,28 @@ public:
     int unk_744[2];                                                    // 0x744
     bool unkFlag_74C;                                                  // 0x74C = true
     homura::Storage<pvzstl::string> unkString_750;                     // 0x750
-    SexyParameterStorage32 mParameterStorage;                          // 0x754
-    void *mParameterEntriesHeap;                                       // 0x788, deleted in destructor
-    int unk_78C;                                                       // 0x78C
-    int unk_790;                                                       // 0x790
-    bool unkFlags_794[4];                                              // 0x794
-    int unk_798;                                                       // 0x798
-    bool mThreadedPreload;                                             // 0x79C, default true
-    bool unkPreload_79D;                                               // 0x79D
-    bool mSafeReload;                                                  // 0x79E, SEXY_SAFE_RELOAD
-    bool unkPreload_79F;                                               // 0x79F
+
+    // Exact 0x34-byte footprint observed around AddParameterEntries().
+    // Only mSelectedIndex's constructor value (-1) is known; the remaining
+    // semantics are intentionally left generic.
+    struct ParameterStorage {
+        int mField00;
+        int mField04;
+        int mField08;
+        int mField0C;
+        int mSelectedIndex;
+        unsigned char mData[0x20];
+    } mParameterStorage; // 0x754
+
+    void *mParameterEntriesHeap; // 0x788, deleted in destructor
+    int unk_78C;                 // 0x78C
+    int unk_790;                 // 0x790
+    bool unkFlags_794[4];        // 0x794
+    int unk_798;                 // 0x798
+    bool mThreadedPreload;       // 0x79C, default true
+    bool unkPreload_79D;         // 0x79D
+    bool mSafeReload;            // 0x79E, SEXY_SAFE_RELOAD
+    bool unkPreload_79F;         // 0x79F
 
     Dialog *GetDialog(Dialogs theDialogId) { // vTable + 4 * 103
         return reinterpret_cast<Dialog *(*)(SexyAppBase *, Dialogs)>(Sexy_SexyAppBase_GetDialogAddr)(this, theDialogId);

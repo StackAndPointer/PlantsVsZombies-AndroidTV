@@ -1214,7 +1214,6 @@ inline void *Sexy_SexyAppBase_WriteBufferToFileAddr;
 inline void *Sexy_SexyAppBase_ReadBufferFromFileAddr;
 inline void *Sexy_SexyAppBase_GetIntegerAddr;
 inline void *Sexy_SexyAppBase_SetCursorAddr;
-inline void *Sexy_Ratio_SetAddr;
 inline void *Sexy_MemoryImage_MemoryImageAddr;
 inline void *Sexy_MemoryImage_ClearRectAddr;
 inline void *Sexy_MemoryImage_GetBitsAddr;

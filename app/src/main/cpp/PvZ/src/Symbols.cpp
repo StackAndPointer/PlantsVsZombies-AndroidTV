@@ -1213,7 +1213,6 @@ bool LoadGameMain() {
     Sexy_SexyAppBase_SetCursorAddr = libGameMain.GetSymbol("_ZN4Sexy11SexyAppBase9SetCursorEi");
     Sexy_MTRand_MTRandUlongAddr = libGameMain.GetSymbol("_ZN4Sexy6MTRandC2Em");
     Sexy_MTRand_NextUlongAddr = libGameMain.GetSymbol("_ZN4Sexy6MTRand4NextEm");
-    Sexy_Ratio_SetAddr = libGameMain.GetSymbol("_ZN4Sexy5Ratio3SetEii");
     Sexy_MemoryImage_MemoryImageAddr = libGameMain.GetSymbol("_ZN4Sexy11MemoryImageC2Ev");
     Sexy_MemoryImage_ClearRectAddr = libGameMain.GetSymbol("_ZN4Sexy11MemoryImage9ClearRectERKNS_5TRectIiEE");
     Sexy_MemoryImage_GetBitsAddr = libGameMain.GetSymbol("_ZN4Sexy11MemoryImage7GetBitsEv");

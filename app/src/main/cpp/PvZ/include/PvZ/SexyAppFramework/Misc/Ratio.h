@@ -20,15 +20,57 @@
 #ifndef PVZ_SEXYAPPFRAMEWORK_MISC_RATIO_H
 #define PVZ_SEXYAPPFRAMEWORK_MISC_RATIO_H
 
-#include "PvZ/Symbols.h"
-
 namespace Sexy {
 
 struct Ratio {
-    void Set(int theNumerator, int theDenominator) {
-        reinterpret_cast<void (*)(Ratio *, int, int)>(Sexy_Ratio_SetAddr)(this, theNumerator, theDenominator);
+    int mNumerator;
+    int mDenominator;
+
+    constexpr Ratio() noexcept
+        : mNumerator{1}
+        , mDenominator{1} {}
+
+    constexpr Ratio(int theNumerator, int theDenominator) {
+        Set(theNumerator, theDenominator);
+    }
+
+    constexpr void Set(int theNumerator, int theDenominator) {
+        // find the greatest-common-denominator of theNumerator and theDenominator.
+        int a = theNumerator;
+        int b = theDenominator;
+        while (b != 0) {
+            int t = b;
+            b = a % b;
+            a = t;
+        }
+
+        // divide by the g-c-d to reduce mNumerator/mDenominator to lowest terms.
+        mNumerator = theNumerator / a;
+        mDenominator = theDenominator / a;
+    }
+
+    constexpr bool operator==(const Ratio &theRatio) const = default;
+
+    constexpr bool operator<(const Ratio &theRatio) const {
+        return (mNumerator * theRatio.mDenominator / mDenominator < theRatio.mNumerator) || (mNumerator < theRatio.mNumerator * mDenominator / theRatio.mDenominator);
+    }
+
+    constexpr int operator*(int theInt) const {
+        return theInt * mNumerator / mDenominator;
+    }
+
+    constexpr int operator/(int theInt) const {
+        return theInt * mDenominator / mNumerator;
     }
 };
+
+constexpr int operator*(int theInt, const Ratio &theRatio) {
+    return theInt * theRatio.mNumerator / theRatio.mDenominator;
+}
+
+constexpr int operator/(int theInt, const Ratio &theRatio) {
+    return theInt * theRatio.mDenominator / theRatio.mNumerator;
+}
 
 } // namespace Sexy
 
