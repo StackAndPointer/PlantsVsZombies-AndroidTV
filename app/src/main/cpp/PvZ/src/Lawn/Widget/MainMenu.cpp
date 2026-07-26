@@ -310,7 +310,7 @@ void MainMenu::ButtonDepress(int theSelectedButton) {
     }
 }
 
-void MainMenu::KeyDown(Sexy::KeyCode theKeyCode) {
+void MainMenu::KeyDown(Sexy::KeyCode theKey) {
     // 为1.1.5解锁左方向键进入“更多游戏模式”
     if (InTransition())
         return;
@@ -322,9 +322,9 @@ void MainMenu::KeyDown(Sexy::KeyCode theKeyCode) {
     if (gMainMenuAchievementsWidget != nullptr) {
         if (gAchievementState != SHOWING)
             return;
-        if (theKeyCode == Sexy::KEYCODE_ESCAPE || theKeyCode == Sexy::KEYCODE_GAMEPAD_B) {
+        if (theKey == Sexy::KEYCODE_ESCAPE || theKey == Sexy::KEYCODE_GAMEPAD_B) {
             MainMenu::ButtonDepress(ACHIEVEMENTS_BUTTON);
-        } else if (theKeyCode == Sexy::KEYCODE_UP || theKeyCode == Sexy::KEYCODE_DOWN) {
+        } else if (theKey == Sexy::KEYCODE_UP || theKey == Sexy::KEYCODE_DOWN) {
             if (gMainMenuAchievementKeyboardScrollCounter != 0) {
                 return;
                 // int theNewY = gMainMenuAchievementsKeyboardScrollWidgetY -(gMainMenuAchievementKeyboardScrollDirection ? 192 : -192);
@@ -334,19 +334,19 @@ void MainMenu::KeyDown(Sexy::KeyCode theKeyCode) {
             }
             gMainMenuAchievementKeyboardScrollCounter = KEYBOARD_SCROLL_TIME;
             gMainMenuAchievementsKeyboardScrollWidgetY = gMainMenuAchievementsWidget->mY;
-            gMainMenuAchievementKeyboardScrollDirection = theKeyCode == Sexy::KEYCODE_DOWN;
+            gMainMenuAchievementKeyboardScrollDirection = theKey == Sexy::KEYCODE_DOWN;
         }
         return;
     }
 
     auto mSelectedButtonId = MainMenuButtonId(mFocusedChildWidget->mWidgetId);
-    if ((mSelectedButtonId == ADVENTURE_BUTTON || mSelectedButtonId == MORE_WAYS_BUTTON || mSelectedButtonId == START_ADVENTURE_BUTTON) && theKeyCode == Sexy::KEYCODE_LEFT) {
+    if ((mSelectedButtonId == ADVENTURE_BUTTON || mSelectedButtonId == MORE_WAYS_BUTTON || mSelectedButtonId == START_ADVENTURE_BUTTON) && theKey == Sexy::KEYCODE_LEFT) {
         // 如果当前选中的按钮为"冒险模式"或者为"更多游戏方式"，同时玩家又按下了左方向键
         SetScene(MENUSCENE_MORE_WAYS);
         return;
     }
 
-    old_MainMenu_KeyDown(this, theKeyCode);
+    old_MainMenu_KeyDown(this, theKey);
 }
 
 void MainMenu::UpdateHouseReanim() const {

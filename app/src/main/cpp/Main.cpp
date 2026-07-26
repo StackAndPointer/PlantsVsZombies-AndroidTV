@@ -537,9 +537,9 @@ extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_n
 }
 
 
-extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativeSwitchTwoPlayerMode(JNIEnv *env, jclass clazz, jboolean is_on) {
-    isKeyboardTwoPlayerMode = doKeyboardTwoPlayerDialog = is_on;
-    if (is_on) {
+extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativeSwitchTwoPlayerMode(JNIEnv *env, jclass clazz, jboolean isOn) {
+    isKeyboardTwoPlayerMode = doKeyboardTwoPlayerDialog = isOn;
+    if (isOn) {
         return;
     }
     LawnApp *anApp = gLawnApp;
@@ -573,10 +573,10 @@ extern "C" JNIEXPORT jboolean JNICALL Java_com_transmension_mobile_EnhanceActivi
 }
 
 
-extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativeSendButtonEvent(JNIEnv *env, jclass clazz, jboolean is_key_down, jint button_code) {
-    bool aIsPlayer2 = button_code >= 256;
+extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_nativeSendButtonEvent(JNIEnv *env, jclass clazz, jboolean isButtonDown, jint buttonCode) {
+    bool aIsPlayer2 = buttonCode >= 256;
     bool aGamepad1Is2P = gGamepad1ToPlayerIndex == 1;
-    Sexy::GamepadButton aButtonCode = Sexy::GamepadButton(aIsPlayer2 ? button_code - 256 : button_code);
+    Sexy::GamepadButton aButtonCode = Sexy::GamepadButton(aIsPlayer2 ? buttonCode - 256 : buttonCode);
 
     LawnApp *anApp = gLawnApp;
     Board *aBoard = anApp->mBoard;
@@ -584,7 +584,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_n
 
     if (!aBoard || aFocusWidget != aBoard) {
         SeedChooserScreen *aSeedChooser = anApp->mSeedChooserScreen;
-        if (is_key_down && anApp->IsCoopMode() && aSeedChooser && aFocusWidget == aSeedChooser) {
+        if (isButtonDown && anApp->IsCoopMode() && aSeedChooser && aFocusWidget == aSeedChooser) {
             gButtonDownSeedChooser = true;
             gButtonCode = aButtonCode;
             gGamePlayerIndex = aIsPlayer2 ? 1 : 0;
@@ -592,7 +592,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_n
         }
 
         VSSetupMenu *aVSSetup = anApp->mVSSetupMenu;
-        if (is_key_down && anApp->IsVSMode() && aVSSetup && (aVSSetup->mState == VSSetupMenu::VS_SETUP_STATE_SIDES || aVSSetup->mState == VSSetupMenu::VS_SETUP_STATE_CUSTOM_BATTLE)) {
+        if (isButtonDown && anApp->IsVSMode() && aVSSetup && (aVSSetup->mState == VSSetupMenu::VS_SETUP_STATE_SIDES || aVSSetup->mState == VSSetupMenu::VS_SETUP_STATE_CUSTOM_BATTLE)) {
             gButtonDownVSSetup = true;
             gButtonCode = aButtonCode;
             gGamePlayerIndex = aIsPlayer2 ? 1 : 0;
@@ -603,22 +603,24 @@ extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_n
 
     float &aX = aIsPlayer2 ? gGamepadP2VelX : gGamepadP1VelX;
     float &aY = aIsPlayer2 ? gGamepadP2VelY : gGamepadP1VelY;
-    if (is_key_down) {
+
+    using Sexy::GamepadButton;
+    if (isButtonDown) {
         switch (aButtonCode) {
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_B:
+            case GamepadButton::GAMEPAD_BUTTON_B:
                 gKeyDown = true;
                 gGamePlayerIndex = aIsPlayer2 ? 1 : 0;
                 break;
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_DPAD_UP:
+            case GamepadButton::GAMEPAD_BUTTON_DPAD_UP:
                 aY = -400;
                 break;
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_DPAD_DOWN:
+            case GamepadButton::GAMEPAD_BUTTON_DPAD_DOWN:
                 aY = 400;
                 break;
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_DPAD_LEFT:
+            case GamepadButton::GAMEPAD_BUTTON_DPAD_LEFT:
                 aX = -400;
                 break;
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_DPAD_RIGHT:
+            case GamepadButton::GAMEPAD_BUTTON_DPAD_RIGHT:
                 aX = 400;
                 break;
             default:
@@ -633,12 +635,12 @@ extern "C" JNIEXPORT void JNICALL Java_com_transmension_mobile_EnhanceActivity_n
         }
     } else {
         switch (aButtonCode) {
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_DPAD_UP:
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_DPAD_DOWN:
+            case GamepadButton::GAMEPAD_BUTTON_DPAD_UP:
+            case GamepadButton::GAMEPAD_BUTTON_DPAD_DOWN:
                 aY = 0;
                 break;
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_DPAD_LEFT:
-            case Sexy::GamepadButton::GAMEPAD_BUTTON_DPAD_RIGHT:
+            case GamepadButton::GAMEPAD_BUTTON_DPAD_LEFT:
+            case GamepadButton::GAMEPAD_BUTTON_DPAD_RIGHT:
                 aX = 0;
                 break;
             default:

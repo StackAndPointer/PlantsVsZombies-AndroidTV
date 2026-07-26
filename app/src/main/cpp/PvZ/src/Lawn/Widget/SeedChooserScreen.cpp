@@ -1362,7 +1362,7 @@ void SeedChooserScreen::CrazyDavePickSeeds() {
     }
 }
 
-void SeedChooserScreen::ClickedSeedInBank(ChosenSeed &theChosenSeed, unsigned int thePlayerIndex) {
+void SeedChooserScreen::ClickedSeedInBank(ChosenSeed &theChosenSeed, int thePlayerIndex) {
     // 解决结盟1P选够4个种子之后，无法点击种子栏内的已选种子来退选的问题
     if (mApp->IsCoopMode()) {
         thePlayerIndex = theChosenSeed.mChosenPlayerIndex;
@@ -1428,13 +1428,13 @@ void SeedChooserScreen::ClickedSeedInBank(ChosenSeed &theChosenSeed, unsigned in
     mApp->PlaySample(Sexy::SOUND_TAP);
 }
 
-void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
+bool SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int theEventFlag) {
     if (gIsServerModeSpectator || gIsReplayMode) {
-        return;
+        return false;
     }
 
     if (theKey == KEYCODE_GAMEPAD_A || theKey == KEYCODE_GAMEPAD_B) {
-        return;
+        return false;
     }
 
     auto confirmQuit = [&]() {
@@ -1543,13 +1543,13 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
     }
 
     if (mBoard->mGamepadControls[0]->mGamepadIndex == -1) {
-        return;
+        return false;
     }
 
     if (mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN && theKey == KEYCODE_RETURN) {
         if (CancelLawnView()) {
             RebuildHelpbar();
-            return;
+            return true;
         }
     }
 
@@ -1573,7 +1573,7 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
         }
         if (bestButton != nullptr) {
             setButtonFocus(bestButton);
-            return;
+            return true;
         }
     }
 
@@ -1590,16 +1590,16 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
                         if (button != reinterpret_cast<Sexy::Widget *>(mButtonSlotState)) {
                             setButtonFocus(button);
                         }
-                        return;
+                        return true;
                     }
                 }
             }
         } else if (theKey == KEYCODE_UP) {
             clearButtonFocus();
-            return;
+            return true;
         } else if (theKey == KEYCODE_RETURN) {
             reinterpret_cast<Sexy::Widget *>(mButtonSlotState)->mIsDown = true;
-            return;
+            return true;
         }
     }
 
@@ -1607,12 +1607,12 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
         case KEYCODE_LEFT:
             mSeedIndex1 = GetNextSeedInDir(mSeedIndex1, SeedDir::SEED_DIR_LEFT);
             GetSeedPositionInChooser(mSeedIndex1, mCursorPositionX1, mCursorPositionY1);
-            return;
+            return true;
 
         case KEYCODE_UP:
             mSeedIndex1 = GetNextSeedInDir(mSeedIndex1, SeedDir::SEED_DIR_UP);
             GetSeedPositionInChooser(mSeedIndex1, mCursorPositionX1, mCursorPositionY1);
-            return;
+            return true;
 
         case KEYCODE_RIGHT:
             if (mSeedIndex1 % 8 == 7 && HasPacket(SeedType::SEED_IMITATER, false) && mApp->mGameMode != GameMode::GAMEMODE_MP_VS) {
@@ -1621,12 +1621,12 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
                 mSeedIndex1 = GetNextSeedInDir(mSeedIndex1, SeedDir::SEED_DIR_RIGHT);
             }
             GetSeedPositionInChooser(mSeedIndex1, mCursorPositionX1, mCursorPositionY1);
-            return;
+            return true;
 
         case KEYCODE_DOWN:
             mSeedIndex1 = GetNextSeedInDir(mSeedIndex1, SeedDir::SEED_DIR_DOWN);
             GetSeedPositionInChooser(mSeedIndex1, mCursorPositionX1, mCursorPositionY1);
-            return;
+            return true;
 
         case KEYCODE_RETURN: {
             if (mSeedIndex1 == SeedType::SEED_IMITATER && mSeedsInBank < mSeedBank1->mNumPackets) {
@@ -1638,16 +1638,16 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
                     mImitaterDialog->LawnDialog::Resize((800 - mImitaterDialog->mWidth) / 2, (600 - mImitaterDialog->mHeight) / 2, mImitaterDialog->mWidth, mImitaterDialog->mHeight);
                     mApp->mWidgetManager->SetFocus(mImitaterDialog);
                 }
-                return;
+                return true;
             }
 
             const SeedType seedType = SeedHitTest(mCursorPositionX1, mCursorPositionY1);
             if (seedType == SeedType::SEED_NONE) {
-                return;
+                return false;
             }
             if (SeedNotAllowedToPick(seedType)) {
                 mApp->PlaySample(Sexy::SOUND_BUZZER);
-                return;
+                return true;
             }
             if (SeedNotAllowedDuringTrial(seedType)) {
                 mApp->PlaySample(Sexy::SOUND_TAP);
@@ -1655,12 +1655,12 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
                     mApp->BuyFullVersion();
                     mApp->DoBackToMain();
                 }
-                return;
+                return true;
             }
 
             const int seedIndex = GetSeedPacketIndex(seedType);
             if (seedIndex < 0 || seedIndex >= GetSeedStorageCount()) {
-                return;
+                return true;
             }
 
             ChosenSeed &chosenSeed = GetChosenSeed(seedIndex);
@@ -1668,28 +1668,31 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
                 if (chosenSeed.mCrazyDavePicked) {
                     mApp->PlaySample(Sexy::SOUND_BUZZER);
                     mToolTip1->FlashWarning();
-                } else if (mApp->mGameMode != GameMode::GAMEMODE_MP_VS) {
+                } else {
+                    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+                        return false;
+                    }
                     ClickedSeedInBank(chosenSeed, 0);
                 }
-                return;
+                return true;
             }
 
             if (chosenSeed.mSeedState != ChosenSeedState::SEED_IN_CHOOSER) {
-                return;
+                return false;
             }
 
             ClickedSeedInChooser(chosenSeed, 0);
             advanceCursorAfterPick();
-            return;
+            return true;
         }
 
         case KEYCODE_ESCAPE: {
             if (mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN) {
-                return;
+                return true;
             }
             if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
                 confirmQuit();
-                return;
+                return true;
             }
 
             bool hasSelectableBankSeed = false;
@@ -1702,7 +1705,7 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
 
             if (!hasSelectableBankSeed || mSeedsInBank == 0) {
                 confirmQuit();
-                return;
+                return true;
             }
 
             int selectedCount = mSeedsInBank;
@@ -1720,14 +1723,14 @@ void SeedChooserScreen::OnKeyDown(KeyCode theKey, unsigned int thePlayerIndex) {
                 ChosenSeed &chosenSeed = GetChosenSeed(i);
                 if (chosenSeed.mSeedState == ChosenSeedState::SEED_IN_BANK && chosenSeed.mSeedIndexInBank == removeBankIndex && !chosenSeed.mCrazyDavePicked && chosenSeed.mChosenPlayerIndex == 0) {
                     ClickedSeedInBank(chosenSeed, 0);
-                    return;
+                    return true;
                 }
             }
-            return;
+            return true;
         }
 
         default:
-            return;
+            return false;
     }
 }
 
@@ -2196,7 +2199,7 @@ int SeedChooserScreen::NumColumns() const {
 }
 
 
-void SeedChooserScreen::ShowToolTip(unsigned int thePlayerIndex) {
+void SeedChooserScreen::ShowToolTip(int thePlayerIndex) {
     ToolTipWidget *aToolTip = (thePlayerIndex == 1) ? mToolTip2 : mToolTip1;
     int &aToolTipSeed = (thePlayerIndex == 1) ? mToolTipSeed2 : mToolTipSeed1;
 

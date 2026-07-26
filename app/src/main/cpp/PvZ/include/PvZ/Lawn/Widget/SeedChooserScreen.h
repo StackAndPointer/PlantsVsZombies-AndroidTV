@@ -232,15 +232,15 @@ public:
     bool SeedNotAllowedToPick(SeedType theSeedType);
     unsigned int SeedNotRecommendedToPick(SeedType theSeedType);
     SeedType FindSeedInBank(int theIndexInBank, int thePlayerIndex);
-    void ClickedSeedInBank(ChosenSeed &theChosenSeed, unsigned int thePlayerIndex);
-    void OnKeyDown(Sexy::KeyCode theKey, unsigned int thePlayerIndex);
+    void ClickedSeedInBank(ChosenSeed &theChosenSeed, int thePlayerIndex);
+    bool OnKeyDown(Sexy::KeyCode theKey, unsigned int theEventFlag);
     /*virtual*/ void GameButtonDown(Sexy::GamepadButton theButton, int thePlayerIndex, unsigned int theModifierFlag);
     void
     DrawPacket(Sexy::Graphics *g, int x, int y, SeedType theSeedType, SeedType theImitaterType, float thePercentDark, int theGrayness, Sexy::Color *theColor, bool theDrawCost, bool theUseCurrentCost);
     void GetSeedPositionInBank(int theIndex, int &x, int &y, int thePlayerIndex);
     void GetSeedPositionInChooser(int theIndex, int &x, int &y);
     int NumColumns() const;
-    void ShowToolTip(unsigned int thePlayerIndex);
+    void ShowToolTip(int thePlayerIndex);
     int GetNextSeedInDir(int theNumSeed, SeedDir theMoveDirection);
     void Draw(Sexy::Graphics *g);
     void DrawBanIcon(Sexy::Graphics *g);
@@ -304,6 +304,6 @@ inline void (*old_SeedChooserScreen_MouseUp)(SeedChooserScreen *seedChooserScree
 
 inline void (*old_SeedChooserScreen_Draw)(SeedChooserScreen *, Sexy::Graphics *);
 
-inline void (*old_SeedChooserScreen_OnKeyDown)(SeedChooserScreen *, Sexy::KeyCode theKey, unsigned int thePlayerIndex);
+inline bool (*old_SeedChooserScreen_OnKeyDown)(SeedChooserScreen *, Sexy::KeyCode, unsigned int);
 
 #endif // PVZ_LAWN_WIDGET_SEED_CHOOSER_SCREEN_H

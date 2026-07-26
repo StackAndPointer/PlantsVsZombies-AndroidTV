@@ -61,8 +61,8 @@ public:
     MailScreen(LawnApp *theApp) = delete;
     ~MailScreen() = delete;
 
-    void KeyDown(int theKey, int a2, int a3) {
-        reinterpret_cast<void (*)(MailScreen *, int, int, int)>(MailScreen_KeyDownAddr)(this, theKey, a2, a3);
+    void KeyDown(Sexy::KeyCode theKey) {
+        reinterpret_cast<void (*)(MailScreen *, Sexy::KeyCode)>(MailScreen_KeyDownAddr)(this, theKey);
     }
 
     void AddedToManager(Sexy::WidgetManager *theWidgetManager);

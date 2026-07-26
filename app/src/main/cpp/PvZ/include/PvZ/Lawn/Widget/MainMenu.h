@@ -130,7 +130,7 @@ public:
     }
 
     static FoleyType GetFoleyTypeByScene(int theScene);
-    void KeyDown(Sexy::KeyCode theKeyCode);
+    void KeyDown(Sexy::KeyCode theKey);
     void ButtonPress(int theSelectedButton);
     void ButtonDepress(int theSelectedButton);
     void Update();

@@ -55,22 +55,22 @@ void HouseChooserDialog::MouseDown(int x, int y, int theClickCount) {
 void HouseChooserDialog::KeyDown(Sexy::KeyCode theKey) {
     old_HouseChooserDialog_KeyDown(this, theKey);
 
-    using Sexy::KeyCode;
+    using Sexy::KeyCode, Sexy::GamepadButton;
     switch (theKey) {
         case KeyCode::KEYCODE_LEFT:
-            return GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_LEFT, 0, 0);
+            return GameButtonDown(GamepadButton::GAMEPAD_BUTTON_LEFT, 0, 0);
         case KeyCode::KEYCODE_UP:
-            return GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_UP, 0, 0);
+            return GameButtonDown(GamepadButton::GAMEPAD_BUTTON_UP, 0, 0);
         case KeyCode::KEYCODE_RIGHT:
-            return GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_RIGHT, 0, 0);
+            return GameButtonDown(GamepadButton::GAMEPAD_BUTTON_RIGHT, 0, 0);
         case KeyCode::KEYCODE_DOWN:
-            return GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_DOWN, 0, 0);
+            return GameButtonDown(GamepadButton::GAMEPAD_BUTTON_DOWN, 0, 0);
         case KeyCode::KEYCODE_ESCAPE:
         case KeyCode::KEYCODE_GAMEPAD_B:
-            return GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_B, 0, 0);
+            return GameButtonDown(GamepadButton::GAMEPAD_BUTTON_B, 0, 0);
         case KeyCode::KEYCODE_RETURN:
         case KeyCode::KEYCODE_GAMEPAD_A:
-            return GameButtonDown(Sexy::GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
+            return GameButtonDown(GamepadButton::GAMEPAD_BUTTON_A, 0, 0);
         default:
             break;
     }
