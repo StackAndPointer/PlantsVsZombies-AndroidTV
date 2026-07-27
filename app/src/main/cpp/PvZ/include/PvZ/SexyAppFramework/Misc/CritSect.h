@@ -25,7 +25,7 @@
 namespace Sexy {
 
 class CritSect {
-private:
+protected:
     pthread_mutex_t mCriticalSection;
 
 public:
@@ -37,16 +37,16 @@ public:
         pthread_mutex_destroy(&mCriticalSection);
     }
 
-    int Lock() {
-        return pthread_mutex_lock(&mCriticalSection);
+    void Lock() {
+        pthread_mutex_lock(&mCriticalSection);
     }
 
     bool TryLock() {
         return pthread_mutex_trylock(&mCriticalSection) == 0;
     }
 
-    int Unlock() {
-        return pthread_mutex_unlock(&mCriticalSection);
+    void Unlock() {
+        pthread_mutex_unlock(&mCriticalSection);
     }
 };
 
