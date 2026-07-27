@@ -4208,23 +4208,24 @@ void Zombie::ShowDoorArms(bool theShow) {
 }
 
 void Zombie::StartEating() {
-    //    if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-    //        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
-    //            return;
-    //        }
-    //
-    //        if (mIsEating) {
-    //            return;
-    //        }
-    //
-    //        if (gTcpClientSocket >= 0) {
-    //            U16UNI32_Event event{};
-    //            event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_START_EATING;
-    //            event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
-    //            event.data2.f32 = mPosX;
-    //            netplay::PutEvent(event);
-    //        }
-    //    }
+    // 为确保视觉的流畅性允许客户端擅自触发啃咬，仅权威同步僵尸的位置以优化高移速僵尸“借过”植物的问题
+    if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
+        //        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
+        //            return;
+        //        }
+
+        if (mIsEating) {
+            return;
+        }
+
+        if (gTcpClientSocket >= 0) {
+            U16UNI32_Event event{};
+            event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_START_EATING;
+            event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+            event.data2.f32 = mPosX;
+            netplay::PutEvent(event);
+        }
+    }
 
     StartEating_Origin();
 }
