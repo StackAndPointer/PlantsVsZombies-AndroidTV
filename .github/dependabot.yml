@@ -4,8 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: monthly
+    commit-message:
+      prefix: ci
     target-branch: dev
     groups:
-      github-actions-deps:
+      ci-deps:
         patterns:
           - "*"
