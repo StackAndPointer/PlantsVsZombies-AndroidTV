@@ -117,6 +117,7 @@ static ReanimationParams gExtendedReanimationParamArray[] = {
     {ReanimationType::REANIM_ICEBERG_LETTUCE, "addonFiles/compiled/reanim/IcebergLettuce.reanim", 0},
     {ReanimationType::REANIM_CELERY_STALKER, "addonFiles/compiled/reanim/CeleryStalker.reanim", 0},
     {ReanimationType::REANIM_SPORE_SHROOM, "addonFiles/compiled/reanim/SporeShroom.reanim", 0},
+    {ReanimationType::REANIM_BLOOMERANG, "addonFiles/compiled/reanim/Bloomerang.reanim", 0},
     {ReanimationType::REANIM_IMP_PEAR, "addonFiles/compiled/reanim/ImpPear.reanim", 0},
     {ReanimationType::REANIM_APPLE_CLOCK, "addonFiles/compiled/reanim/apple_clock.reanim", 0},
 };

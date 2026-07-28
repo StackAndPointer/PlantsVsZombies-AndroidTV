@@ -413,12 +413,13 @@ void InitHookFunction() {
     homura::HookFunc(Projectile_ProjectileInitializeAddr, &Projectile::ProjectileInitialize, &old_Projectile_ProjectileInitialize);
     homura::HookFunc(Projectile_ConvertToFireballAddr, &Projectile::ConvertToFireball, nullptr);
     homura::HookFunc(Projectile_ConvertToPeaAddr, &Projectile::ConvertToPea, &old_Projectile_ConvertToPea);
-    homura::HookFunc(Projectile_UpdateAddr, &Projectile::Update, &old_Projectile_Update);
+    homura::HookFunc(Projectile_UpdateAddr, &Projectile::Update, nullptr);
+    homura::HookFunc(Projectile_UpdateMotionAddr, &Projectile::UpdateMotion, nullptr);
     homura::HookFunc(Projectile_UpdateNormalMotionAddr, &Projectile::UpdateNormalMotion, &old_Projectile_UpdateNormalMotion);
     homura::HookFunc(Projectile_UpdateLobMotionAddr, &Projectile::UpdateLobMotion, nullptr);
     homura::HookFunc(Projectile_DoImpactAddr, &Projectile::DoImpact, nullptr);
     homura::HookFunc(Projectile_DoImpactGridItemAddr, &Projectile::DoImpactGridItem, nullptr);
-    homura::HookFunc(Projectile_DoSplashDamageAddr, &Projectile::DoSplashDamage, &old_Projectile_DoSplashDamage);
+    homura::HookFunc(Projectile_DoSplashDamageAddr, &Projectile::DoSplashDamage, nullptr);
     homura::HookFunc(Projectile_CheckForCollisionAddr, &Projectile::CheckForCollision, nullptr);
     homura::HookFunc(Projectile_GetProjectileDefAddr, &Projectile::GetProjectileDef, nullptr);
     homura::HookFunc(Projectile_DrawAddr, &Projectile::Draw, &old_Projectile_Draw);

@@ -101,7 +101,8 @@ enum PlantState // Prefix: STATE
     STATE_CELERY_STALKER_LOWERING,
     STATE_CELERY_STALKER_ATTACKING,
     STATE_CELERY_STALKER_PUNCHING,
-    STATE_CELERY_STALKER_STOPPING
+    STATE_CELERY_STALKER_STOPPING,
+    STATE_BLOOMERANG_CATCHING
 };
 
 enum PLANT_LAYER {
@@ -337,6 +338,9 @@ public:
     void UpdateSquash();
     void UpdateIcebergLettuce();
     void UpdateCeleryStalker();
+    bool HasActiveBoomerang();
+    void UpdateBloomerang();
+    int CalcRenderOrder();
 };
 
 inline float PlantDrawHeightOffset(Board *theBoard, Plant *thePlant, SeedType theSeedType, int theCol, int theRow) {

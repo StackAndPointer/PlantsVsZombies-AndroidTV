@@ -72,6 +72,8 @@ public:
     int mPierceHitCount = 0;
     ZombieID mHitZombieIDs[MAX_PIERCE_HIT_COUNT];
     GridItemID mHitGridItemIDs[MAX_PIERCE_HIT_COUNT];
+    PlantID mRelatedPlantID = PlantID::PLANTID_NULL;
+    bool mReturning = false;
 
     Projectile() {
         _constructor();
@@ -90,8 +92,11 @@ public:
     void ConvertToZombieFireball();
     void ConvertToPea(int theGridX);
     void Update();
+    void UpdateMotion();
     void UpdateNormalMotion();
     void UpdateLobMotion();
+    void UpdateBoomerang();
+    void BoomerangReturn();
     void DoImpact(Zombie *theZombie);
     void DoImpactGridItem(GridItem *theGridItem);
     void CheckForCollision();
@@ -144,14 +149,10 @@ inline void (*old_Projectile_ProjectileInitialize)(Projectile *projectile, int t
 
 inline void (*old_Projectile_ConvertToPea)(Projectile *projectile, int aGridX);
 
-inline void (*old_Projectile_Update)(Projectile *a);
-
 inline void (*old_Projectile_Draw)(Projectile *, Sexy::Graphics *);
 
 inline void (*old_Projectile_DrawShadow)(Projectile *, Sexy::Graphics *);
 
 inline void (*old_Projectile_UpdateNormalMotion)(Projectile *);
-
-inline void (*old_Projectile_DoSplashDamage)(Projectile *, Zombie *, GridItem *);
 
 #endif // PVZ_LAWN_BOARD_PROJECTILE_H

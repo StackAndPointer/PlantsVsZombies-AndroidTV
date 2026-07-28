@@ -22,6 +22,7 @@
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
+#include "PvZ/Lawn/Board/CutScene.h"
 #include "PvZ/Lawn/Board/GridItem.h"
 #include "PvZ/Lawn/Board/Plant.h"
 #include "PvZ/Lawn/Board/Zombie.h"
@@ -45,25 +46,52 @@ bool IsPiercingSpike(const Projectile *theProjectile) {
     return theProjectile->mApp->IsVSMode() && (VSSetupAddonWidget::msBalancePatchMode || Challenge::msVSShuffleMode) && theProjectile->mProjectileType == ProjectileType::PROJECTILE_SPIKE;
 }
 
-bool HasHitZombie(const Projectile *theProjectile, Zombie *theZombie) {
-    ZombieID aZombieID = theProjectile->mBoard->ZombieGetID(theZombie);
+int FindHitZombieSlot(const Projectile *theProjectile, Zombie *theZombie) {
+    if (theZombie == nullptr) {
+        return -1;
+    }
+
+    const ZombieID aZombieID = theProjectile->mBoard->ZombieGetID(theZombie);
     for (int i = 0; i < theProjectile->mPierceHitCount; ++i) {
         if (theProjectile->mHitZombieIDs[i] == aZombieID) {
-            return true;
+            return i;
         }
     }
-    return false;
+    return -1;
+}
+
+bool HasHitZombie(const Projectile *theProjectile, Zombie *theZombie) {
+    return FindHitZombieSlot(theProjectile, theZombie) >= 0;
+}
+
+int FindHitGridItemSlot(const Projectile *theProjectile, GridItem *theGridItem) {
+    if (theGridItem == nullptr) {
+        return -1;
+    }
+
+    const GridItemID aGridItemID = theProjectile->mBoard->GridItemGetID(theGridItem);
+    for (int i = 0; i < theProjectile->mPierceHitCount; ++i) {
+        if (theProjectile->mHitGridItemIDs[i] == aGridItemID) {
+            return i;
+        }
+    }
+    return -1;
 }
 
 bool HasHitGridItem(const Projectile *theProjectile, GridItem *theGridItem) {
-    GridItemID aGridItemID = theProjectile->mBoard->GridItemGetID(theGridItem);
-    for (int i = 0; i < theProjectile->mPierceHitCount; ++i) {
-        if (theProjectile->mHitGridItemIDs[i] == aGridItemID) {
-            return true;
-        }
-    }
-    return false;
+    return FindHitGridItemSlot(theProjectile, theGridItem) >= 0;
 }
+
+void ResetHitHistory(Projectile *theProjectile) {
+    theProjectile->mPierceHitCount = 0;
+    for (ZombieID &aZombieID : theProjectile->mHitZombieIDs) {
+        aZombieID = ZombieID::ZOMBIEID_NULL;
+    }
+    for (GridItemID &aGridItemID : theProjectile->mHitGridItemIDs) {
+        aGridItemID = GridItemID::GRIDITEMID_NULL;
+    }
+}
+
 } // namespace
 
 ProjectileDefinition gProjectileDefinition[] = {
@@ -88,10 +116,11 @@ ProjectileDefinition gExtendedProjectileDefinition[] = {
     {ProjectileType::PROJECTILE_ZOMBIE_FIREBALL, 0, 40},
     {ProjectileType::PROJECTILE_ZOMBLOB, 0, 0},
     {ProjectileType::PROJECTILE_SPORE, 0, 50},
+    {ProjectileType::PROJECTILE_BOOMERANG, 0, 20},
 };
 
 void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
-    if (!isOnlyTouchFireWood && theProjectileType != ProjectileType::PROJECTILE_ZOMBLOB) {
+    if (!isOnlyTouchFireWood && theProjectileType != ProjectileType::PROJECTILE_ZOMBLOB && theProjectileType != ProjectileType::PROJECTILE_BOOMERANG) {
         // 僵尸子弹与加农炮子弹NULL
         if (theProjectileType == ProjectileType::PROJECTILE_COBBIG || theProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
             old_Projectile_ProjectileInitialize(this, theX, theY, theRenderOrder, theRow, theProjectileType);
@@ -126,15 +155,13 @@ void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, in
     } else if (mProjectileType == ProjectileType::PROJECTILE_SPORE) {
         mRotation = -7 * std::numbers::pi / 25; // DEG_TO_RAD(-50.4f);
         mRotationSpeed = RandRangeFloat(-0.08f, -0.02f);
+    } else if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+        mRotationSpeed = 0.2f;
     }
 
-    mPierceHitCount = 0;
-    for (ZombieID &aZombieID : mHitZombieIDs) {
-        aZombieID = ZombieID::ZOMBIEID_NULL;
-    }
-    for (GridItemID &aGridItemID : mHitGridItemIDs) {
-        aGridItemID = GridItemID::GRIDITEMID_NULL;
-    }
+    mRelatedPlantID = PlantID::PLANTID_NULL;
+    mReturning = false;
+    ResetHitHistory(this);
 }
 
 Plant *Projectile::FindCollisionTargetPlant() {
@@ -216,10 +243,22 @@ Zombie *Projectile::FindCollisionTarget() {
 
             Rect aZombieRect = aZombie->GetZombieRect();
             if (GetRectOverlap(aProjectileRect, aZombieRect) > 0) {
-                if (IsPiercingSpike(this) && HasHitZombie(this, aZombie)) {
+                if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+                    const int aTargetSlot = FindHitZombieSlot(this, aZombie);
+                    if (aTargetSlot < 0) {
+                        continue;
+                    }
+
+                    const int aHitMask = mReturning ? mCobTargetRow : mHitTorchwoodGridX;
+                    if ((aHitMask & (1 << aTargetSlot)) != 0) {
+                        continue;
+                    }
+                } else if (IsPiercingSpike(this) && HasHitZombie(this, aZombie)) {
                     continue;
                 }
-                if (aBestZombie == nullptr || aZombie->mX < aMinX) {
+
+                const bool aPreferThisZombie = aBestZombie == nullptr || (!mReturning && aZombie->mX < aMinX) || (mReturning && aZombie->mX > aMinX);
+                if (aPreferThisZombie) {
                     aBestZombie = aZombie;
                     aMinX = aZombie->mX;
                 }
@@ -319,7 +358,143 @@ void Projectile::Update() {
         return;
     }
 
-    old_Projectile_Update(this);
+    mProjectileAge++;
+    if (mApp->mGameScene != GameScenes::SCENE_PLAYING && !mBoard->mCutScene->ShouldRunUpsellBoard()) {
+        return;
+    }
+
+    int aTime = 20;
+    if (mProjectileType == ProjectileType::PROJECTILE_PEA || mProjectileType == ProjectileType::PROJECTILE_SNOWPEA || mProjectileType == ProjectileType::PROJECTILE_CABBAGE
+        || mProjectileType == ProjectileType::PROJECTILE_MELON || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON || mProjectileType == ProjectileType::PROJECTILE_KERNEL
+        || mProjectileType == ProjectileType::PROJECTILE_BUTTER || mProjectileType == ProjectileType::PROJECTILE_COBBIG || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA
+        || mProjectileType == ProjectileType::PROJECTILE_SPIKE) {
+        aTime = 0;
+    }
+    if (mProjectileAge > aTime) {
+        mRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_PROJECTILE, mRow, 0);
+    }
+
+    if (mClickBackoffCounter > 0) {
+        mClickBackoffCounter--;
+    }
+    mRotation += mRotationSpeed;
+
+    UpdateMotion();
+    if (mProjectileType != ProjectileType::PROJECTILE_FIREBALL || mRotation == 0.0) {
+        AttachmentUpdateAndMove(mAttachmentID, mPosX, mPosZ + mPosY);
+    } else {
+        SexyTransform2D aTransform;
+        aTransform.RotateRad(mRotation);
+        aTransform.Translate(mPosX, mPosZ + mPosY);
+        AttachmentUpdateAndSetMatrix(mAttachmentID, aTransform);
+    }
+}
+
+void Projectile::UpdateMotion() {
+    if (mAnimTicksPerFrame > 0) {
+        mAnimCounter = (mAnimCounter + 1) % (mNumFrames * mAnimTicksPerFrame);
+        mFrame = mAnimCounter / mAnimTicksPerFrame;
+    }
+
+    int aOldRow = mRow;
+    float aOldY = mBoard->GetPosYBasedOnRow(mPosX, mRow);
+    if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+        UpdateBoomerang();
+    } else if (mMotionType == ProjectileMotion::MOTION_LOBBED) {
+        UpdateLobMotion();
+    } else {
+        UpdateNormalMotion();
+    }
+
+    float aSlopeHeightChange = mBoard->GetPosYBasedOnRow(mPosX, aOldRow) - aOldY;
+
+    if (mProjectileType == ProjectileType::PROJECTILE_COBBIG) {
+        aSlopeHeightChange = 0.0f;
+    }
+
+    if (mMotionType == ProjectileMotion::MOTION_FLOAT_OVER) {
+        mPosY += aSlopeHeightChange;
+    }
+    if (mMotionType == ProjectileMotion::MOTION_LOBBED) {
+        mPosY += aSlopeHeightChange;
+        mPosZ -= aSlopeHeightChange;
+    }
+    mShadowY += aSlopeHeightChange;
+    mX = int(mPosX);
+    mY = int(mPosY + mPosZ);
+}
+
+void Projectile::BoomerangReturn() {
+    if (mReturning) {
+        return;
+    }
+
+    mReturning = true;         // 回旋镖折返
+    mClickBackoffCounter = 25; // 悬停时间
+    mVelX = 0.0f;
+}
+
+void Projectile::UpdateBoomerang() {
+    // 折返点暂停
+    if (mClickBackoffCounter > 0) {
+        return;
+    }
+
+    if (mReturning && mVelX == 0.0f) {
+        mVelX = -6.6f;
+    }
+
+    mPosX += mVelX;
+    mPosY += mVelY;
+    mShadowY += mVelY;
+
+    const bool aReachedTurnPoint = !mReturning && mPosX >= mCobTargetX;
+    if (aReachedTurnPoint) {
+        mPosX = mCobTargetX;
+    }
+
+    Zombie *aZombie = FindCollisionTarget();
+    if (aZombie != nullptr) {
+        if (!(aZombie->mOnHighGround && CantHitHighGround())) {
+            DoImpact(aZombie);
+        }
+    } else if (mApp->IsVSMode()) {
+        // 对战模式下检测墓碑和靶子
+        GridItem *aGridItem = FindCollisionTargetGridItem();
+        if (aGridItem != nullptr) {
+            DoImpactGridItem(aGridItem);
+        }
+    }
+
+    if (mDead) {
+        return;
+    }
+
+    if (aReachedTurnPoint) {
+        BoomerangReturn();
+        return;
+    }
+
+    if (!mReturning) {
+        return;
+    }
+
+    // 返回发射植物
+    Plant *aRelatedPlant = mBoard->mPlants.DataArrayTryToGet(mRelatedPlantID);
+    if (aRelatedPlant != nullptr && !aRelatedPlant->mDead && aRelatedPlant->mRow == mRow) {
+        const auto aCatchX = static_cast<float>(aRelatedPlant->mX + 48);
+        if (mPosX <= aCatchX) {
+            Reanimation *aBodyReanim = mApp->ReanimationTryToGet(aRelatedPlant->mBodyReanimID);
+            const float anAnimRate = aBodyReanim && aBodyReanim->mDefinition ? aBodyReanim->mDefinition->mFPS : 24.0f;
+
+            aRelatedPlant->mState = PlantState::STATE_BLOOMERANG_CATCHING;
+            aRelatedPlant->PlayBodyReanim("anim_catch", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, anAnimRate);
+
+            Die();
+        }
+    } else if (mPosX + float(mWidth) < 0.0f) {
+        Die();
+    }
 }
 
 void Projectile::UpdateNormalMotion() {
@@ -478,6 +653,19 @@ void Projectile::UpdateLobMotion() {
             }
             return;
         }
+        Plant *aBloomerang = mBoard->FindBloomerangPlant(aPlantTarget->mPlantCol, aPlantTarget->mRow);
+        if (aBloomerang) {
+            if (aBloomerang->mState == PlantState::STATE_UMBRELLA_REFLECTING) {
+                mApp->PlayFoley(FoleyType::FOLEY_SPLAT);
+                int aRenderPos = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_TOP, 0, 1);
+                mApp->AddTodParticle(mPosX + 20.0f, mPosY + 20.0f, aRenderPos, ParticleEffect::PARTICLE_UMBRELLA_REFLECT);
+                Die();
+            } else if (aBloomerang->mState != PlantState::STATE_UMBRELLA_TRIGGERED) {
+                mApp->PlayFoley(FoleyType::FOLEY_UMBRELLA);
+                aBloomerang->DoSpecial();
+            }
+            return;
+        }
 
         aPlantTarget->mPlantHealth -= GetProjectileDef().mDamage;
         aPlantTarget->mEatenFlashCountdown = std::max(aPlantTarget->mEatenFlashCountdown, 25);
@@ -589,6 +777,30 @@ void Projectile::PlayImpactSound(Zombie *theZombie) {
 void Projectile::DoImpact(Zombie *theZombie) {
     bool aIsPiercingSpike = theZombie != nullptr && IsPiercingSpike(this) && !theZombie->IsFlying();
     if (aIsPiercingSpike && HasHitZombie(this, theZombie)) {
+        return;
+    }
+
+    if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+        if (theZombie == nullptr) {
+            return;
+        }
+
+        const int aTargetSlot = FindHitZombieSlot(this, theZombie);
+        if (aTargetSlot < 0) {
+            return;
+        }
+
+        int &aHitMask = mReturning ? mCobTargetRow : mHitTorchwoodGridX;
+        const int aTargetBit = 1 << aTargetSlot;
+        if ((aHitMask & aTargetBit) != 0) {
+            return;
+        }
+
+        PlayImpactSound(theZombie);
+        theZombie->TakeDamage(GetProjectileDef().mDamage, GetDamageFlags(theZombie));
+
+        // 同一目标在去程和回程各只命中一次。
+        aHitMask |= aTargetBit;
         return;
     }
 
@@ -791,6 +1003,30 @@ void Projectile::DoImpactGridItem(GridItem *theGridItem) {
         return;
     }
 
+    if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+        if (theGridItem == nullptr) {
+            return;
+        }
+
+        const int aTargetSlot = FindHitGridItemSlot(this, theGridItem);
+        if (aTargetSlot < 0) {
+            return;
+        }
+
+        int &aHitMask = mReturning ? mCobTargetRow : mHitTorchwoodGridX;
+        const int aTargetBit = 1 << aTargetSlot;
+        if ((aHitMask & aTargetBit) != 0) {
+            return;
+        }
+
+        PlayImpactSound(nullptr);
+        theGridItem->TakeDamage(GetProjectileDef().mDamage, 0U);
+
+        // 同一目标在去程和回程各只命中一次。
+        aHitMask |= aTargetBit;
+        return;
+    }
+
     PlayImpactSound(nullptr);
 
     if (IsSplashDamage(nullptr)) {
@@ -903,10 +1139,28 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
             if (mRow != aGridItem->mGridY) {
                 continue;
             }
-            if (IsPiercingSpike(this)) {
-                aHasGravestoneInRow = true; // 若本行有墓碑穿透尖刺不索敌靶子僵尸
+            if (IsPiercingSpike(this) || mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+                // 本行有墓碑时，穿透尖刺和回旋镖都不索敌靶子僵尸。
+                aHasGravestoneInRow = true;
             }
             if (GetRectOverlap(aProjectileRect, aGridItem->GetItemRect()) > 12) {
+                if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+                    const int aTargetSlot = FindHitGridItemSlot(this, aGridItem);
+                    if (aTargetSlot < 0) {
+                        continue;
+                    }
+
+                    const int aHitMask = mReturning ? mCobTargetRow : mHitTorchwoodGridX;
+                    if ((aHitMask & (1 << aTargetSlot)) != 0) {
+                        continue;
+                    }
+
+                    if (!aBestGridItem || (!mReturning && aGridItem->mGridX < aBestGridItem->mGridX) || (mReturning && aGridItem->mGridX > aBestGridItem->mGridX)) {
+                        aBestGridItem = aGridItem;
+                    }
+                    continue;
+                }
+
                 if (IsPiercingSpike(this) && HasHitGridItem(this, aGridItem)) {
                     continue;
                 }
@@ -918,10 +1172,26 @@ GridItem *Projectile::FindCollisionTargetGridItem() {
             }
             continue;
         } else if (aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
-            bool findTarget = (!aBestGridItem || aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE);
+            bool findTarget = mProjectileType == ProjectileType::PROJECTILE_BOOMERANG || !aBestGridItem || aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE;
             if (findTarget && aGridItem->mVSTargetZombieHealth > 0) {
                 if (mRow == aGridItem->mGridY) {
                     if (GetRectOverlap(aProjectileRect, aGridItem->GetItemRect()) > 12) {
+                        if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+                            const int aTargetSlot = FindHitGridItemSlot(this, aGridItem);
+                            if (aTargetSlot < 0) {
+                                continue;
+                            }
+
+                            const int aHitMask = mReturning ? mCobTargetRow : mHitTorchwoodGridX;
+                            if ((aHitMask & (1 << aTargetSlot)) != 0) {
+                                continue;
+                            }
+
+                            if (!aBestGridItem || (!mReturning && aGridItem->mGridX < aBestGridItem->mGridX) || (mReturning && aGridItem->mGridX > aBestGridItem->mGridX)) {
+                                aBestGridItem = aGridItem;
+                            }
+                            continue;
+                        }
                         aBestGridItem = aGridItem;
                     }
                 }
@@ -1060,7 +1330,7 @@ bool Projectile::CantHitHighGround() const {
         return false;
 
     return (mProjectileType == ProjectileType::PROJECTILE_PEA || mProjectileType == ProjectileType::PROJECTILE_SNOWPEA || mProjectileType == ProjectileType::PROJECTILE_STAR
-            || mProjectileType == ProjectileType::PROJECTILE_PUFF || mProjectileType == ProjectileType::PROJECTILE_FIREBALL)
+            || mProjectileType == ProjectileType::PROJECTILE_PUFF || mProjectileType == ProjectileType::PROJECTILE_FIREBALL || mProjectileType == ProjectileType::PROJECTILE_BOOMERANG)
         && !mOnHighGround;
 }
 
@@ -1133,6 +1403,8 @@ unsigned int Projectile::GetDamageFlags(Zombie *theZombie) {
         SetBit(aDamageFlags, (int)DamageFlags::DAMAGE_BYPASSES_SHIELD, true);
     } else if (mMotionType == ProjectileMotion::MOTION_STAR && mVelX < 0.0f) {
         SetBit(aDamageFlags, (int)DamageFlags::DAMAGE_BYPASSES_SHIELD, true);
+    } else if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG && mReturning) {
+        SetBit(aDamageFlags, (int)DamageFlags::DAMAGE_BYPASSES_SHIELD, true);
     }
 
     if (mProjectileType == ProjectileType::PROJECTILE_SNOWPEA || mProjectileType == ProjectileType::PROJECTILE_WINTERMELON) {
@@ -1172,6 +1444,10 @@ void Projectile::Draw(Graphics *g) {
         aImage = addonImages.IMAGE_PROJECTILEZOMBLOB;
     } else if (mProjectileType == ProjectileType::PROJECTILE_SPORE) {
         aImage = addonImages.IMAGE_PROJECTILESPORE;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_BOOMERANG) {
+        aScaleX = 0.8f;
+        aScaleY = 0.5f;
+        aImage = addonImages.IMAGE_PROJECTILEBOOMERANG;
     }
 
     bool aMirror = false;
@@ -1271,6 +1547,11 @@ void Projectile::DrawShadow(Graphics *g) {
         case ProjectileType::PROJECTILE_ZOMBIE_FIREBALL:
             aScale = 1.4f;
             break;
+
+        case ProjectileType::PROJECTILE_BOOMERANG:
+            aOffsetX += 17.0f;
+            break;
+
         default:
             break;
     }

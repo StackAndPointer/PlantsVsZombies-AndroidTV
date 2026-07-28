@@ -588,6 +588,9 @@ public:
     GridItemID GridItemGetID(GridItem *theGridItem) {
         return GridItemID(mGridItems.DataArrayGetID(theGridItem));
     }
+    PlantID PlantGetID(Plant *thePlant) {
+        return PlantID(mPlants.DataArrayGetID(thePlant));
+    }
     void SetDanceMode(bool theEnableDance) {
         reinterpret_cast<void (*)(Board *, bool)>(Board_SetDanceModeAddr)(this, theEnableDance);
     }
@@ -784,6 +787,7 @@ public:
     static bool IsZombieTypeSpawnedOnly(ZombieType theZombieType);
     void ProcessDeleteQueue();
     static bool IsZombieTypePoolOnly(ZombieType theZombieType);
+    Plant *FindBloomerangPlant(int theGridX, int theGridY);
 
     void MouseMove(int x, int y);
     void MouseDown(int x, int y, int theClickCount);

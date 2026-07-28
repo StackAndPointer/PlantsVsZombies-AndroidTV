@@ -7690,3 +7690,13 @@ bool Board::IsZombieTypeSpawnedOnly(ZombieType theZombieType) {
 bool Board::IsZombieTypePoolOnly(ZombieType theZombieType) {
     return (theZombieType == ZombieType::ZOMBIE_SNORKEL || theZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER);
 }
+
+Plant *Board::FindBloomerangPlant(int theGridX, int theGridY) {
+    Plant *aPlant = nullptr;
+    while (IteratePlants(aPlant)) {
+        if (aPlant->mSeedType == SeedType::SEED_BLOOMERANG && !aPlant->NotOnGround() && GridInRange(theGridX, theGridY, aPlant->mPlantCol, aPlant->mRow, 1, 1)) {
+            return aPlant;
+        }
+    }
+    return nullptr;
+}
