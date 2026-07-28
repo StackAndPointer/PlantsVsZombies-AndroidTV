@@ -482,27 +482,28 @@ public:
         return node_alloc_traits::max_size(get_node_allocator());
     }
 
-    void swap(rb_tree &t) noexcept(std::is_nothrow_swappable_v<Compare>) {
+    void swap(rb_tree &other) noexcept(std::is_nothrow_swappable_v<Compare>) {
         if (!root()) {
-            if (t.root()) {
-                m_impl.move_data(t.m_impl);
-            } else if (!t.root()) {
-                t.m_impl.move_data(m_impl);
-            } else {
-                std::swap(root(), t.root());
-                std::swap(leftmost(), t.leftmost());
-                std::swap(rightmost(), t.rightmost());
-
-                root()->m_parent = _end();
-                t.root()->m_parent = t._end();
-                std::swap(m_impl.m_node_count, t.m_impl.m_node_count);
+            if (other.root()) {
+                m_impl.move_data(other.m_impl);
             }
+        } else if (!other.root()) {
+            other.m_impl.move_data(m_impl);
+        } else {
+            std::swap(root(), other.root());
+            std::swap(leftmost(), other.leftmost());
+            std::swap(rightmost(), other.rightmost());
+
+            root()->m_parent = _end();
+            other.root()->m_parent = other._end();
+            std::swap(m_impl.m_node_count, other.m_impl.m_node_count);
         }
+        // No need to swap header's color as it does not change.
 
         using std::swap;
-        swap(m_impl.m_key_compare, t.m_impl.m_key_compare);
+        swap(m_impl.m_key_compare, other.m_impl.m_key_compare);
 
-        detail::alloc_on_swap(get_node_allocator(), t.get_node_allocator());
+        detail::alloc_on_swap(get_node_allocator(), other.get_node_allocator());
     }
 
     std::pair<base_ptr, base_ptr> get_insert_unique_pos(const key_type &k) {
@@ -1542,7 +1543,7 @@ private:
 };
 
 template <typename Key, typename Val, typename KeyOfValue, typename Compare, typename Alloc>
-inline void swap(rb_tree<Key, Val, KeyOfValue, Compare, Alloc> &lhs, rb_tree<Key, Val, KeyOfValue, Compare, Alloc> &rhs) noexcept(noexcept(lhs.swap(rhs))) {
+void swap(rb_tree<Key, Val, KeyOfValue, Compare, Alloc> &lhs, rb_tree<Key, Val, KeyOfValue, Compare, Alloc> &rhs) noexcept(noexcept(lhs.swap(rhs))) {
     lhs.swap(rhs);
 }
 

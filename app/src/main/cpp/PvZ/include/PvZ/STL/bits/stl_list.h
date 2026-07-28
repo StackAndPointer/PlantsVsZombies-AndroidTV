@@ -25,6 +25,8 @@
  * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a00449.html">stl_list.h File Reference</a>
  */
 
+#include "PvZ/STL/compare.h"
+
 #include "PvZ/STL/bits/alloc_traits.h"
 #include "PvZ/STL/bits/allocated_ptr.h"
 #include "PvZ/STL/bits/ranges_base.h"
@@ -560,18 +562,19 @@ public:
     ~list() = default;
 
     list &operator=(const list &other) {
-        if (this != std::addressof(other)) {
-            if (node_alloc_traits::propagate_on_container_copy_assignment::value) {
-                auto &this_alloc = get_node_allocator();
-                auto &that_alloc = other.get_node_allocator();
-                if (!node_alloc_traits::is_always_equal::value && this_alloc != that_alloc) {
-                    // replacement allocator cannot free existing storage
-                    clear();
-                }
-                detail::alloc_on_copy(this_alloc, that_alloc);
-            }
-            assign_dispatch(other.begin(), other.end());
+        if (this == std::addressof(other)) {
+            return *this;
         }
+        if (node_alloc_traits::propagate_on_container_copy_assignment::value) {
+            auto &this_alloc = get_node_allocator();
+            auto &that_alloc = other.get_node_allocator();
+            if (!node_alloc_traits::is_always_equal::value && this_alloc != that_alloc) {
+                // replacement allocator cannot free existing storage
+                clear();
+            }
+            detail::alloc_on_copy(this_alloc, that_alloc);
+        }
+        assign_dispatch(other.begin(), other.end());
         return *this;
     }
 
@@ -589,9 +592,7 @@ public:
         clear();
         this->move_nodes(std::move(other));
 
-        if constexpr (node_alloc_traits::propagate_on_container_move_assignment::value) {
-            get_node_allocator() = std::move(other.get_node_allocator());
-        }
+        detail::alloc_on_move(get_node_allocator(), other.get_node_allocator());
 
         return *this;
     }
@@ -1309,6 +1310,31 @@ protected:
         return it;
     }
 };
+
+template <typename Tp, typename Alloc>
+[[nodiscard]] bool operator==(const list<Tp, Alloc> &lhs, const list<Tp, Alloc> &rhs) {
+    using const_iterator = typename list<Tp, Alloc>::const_iterator;
+    const_iterator end1 = lhs.end();
+    const_iterator end2 = rhs.end();
+
+    const_iterator it1 = lhs.begin();
+    const_iterator it2 = rhs.begin();
+    while (it1 != end1 && it2 != end2 && *it1 == *it2) {
+        ++it1;
+        ++it2;
+    }
+    return it1 == end1 && it2 == end2;
+}
+
+template <typename Tp, typename Alloc>
+[[nodiscard]] auto operator<=>(const list<Tp, Alloc> &lhs, const list<Tp, Alloc> &rhs) {
+    return std::lexicographical_compare_three_way(lhs.begin(), lhs.end(), rhs.begin(), rhs.end(), detail::synth3way);
+}
+
+template <typename Tp, typename Alloc>
+void swap(list<Tp, Alloc> &lhs, list<Tp, Alloc> &rhs) noexcept(noexcept(lhs.swap(rhs))) {
+    lhs.swap(rhs);
+}
 
 } // namespace pvzstl
 
