@@ -20,6 +20,16 @@
 #ifndef PVZ_STL_MAP_H
 #define PVZ_STL_MAP_H
 
+#include "PvZ/STL/bits/erase_if.h"
 #include "PvZ/STL/bits/stl_map.h"
+
+namespace pvzstl {
+
+template <typename Key, typename Tp, typename Compare, typename Alloc, typename Predicate>
+typename map<Key, Tp, Compare, Alloc>::size_type erase_if(map<Key, Tp, Compare, Alloc> &cont, Predicate pred) {
+    return detail::erase_nodes_if(cont, cont, pred);
+}
+
+} // namespace pvzstl
 
 #endif // PVZ_STL_MAP_H

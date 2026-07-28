@@ -20,6 +20,16 @@
 #ifndef PVZ_STL_SET_H
 #define PVZ_STL_SET_H
 
+#include "PvZ/STL/bits/erase_if.h"
 #include "PvZ/STL/bits/stl_set.h"
+
+namespace pvzstl {
+
+template <typename Key, typename Compare, typename Alloc, typename Predicate>
+typename set<Key, Compare, Alloc>::size_type erase_if(set<Key, Compare, Alloc> &cont, Predicate pred) {
+    return detail::erase_nodes_if(cont, cont, pred);
+}
+
+} // namespace pvzstl
 
 #endif // PVZ_STL_SET_H

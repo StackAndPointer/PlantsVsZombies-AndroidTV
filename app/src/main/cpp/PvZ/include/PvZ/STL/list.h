@@ -22,4 +22,18 @@
 
 #include "PvZ/STL/bits/stl_list.h"
 
+namespace pvzstl {
+
+template <typename Tp, typename Alloc, typename Predicate>
+typename list<Tp, Alloc>::size_type erase_if(list<Tp, Alloc> &cont, Predicate pred) {
+    return cont.remove_if(pred);
+}
+
+template <typename Tp, typename Alloc, typename Up>
+typename list<Tp, Alloc>::size_type erase(list<Tp, Alloc> &cont, const Up &value) {
+    return erase_if(cont, [&](const auto &elem) { return elem == value; });
+}
+
+} // namespace pvzstl
+
 #endif // PVZ_STL_LIST_H

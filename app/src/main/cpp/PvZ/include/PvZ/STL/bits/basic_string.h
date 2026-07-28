@@ -545,6 +545,30 @@ public:
         return *this;
     }
 
+    iterator erase(iterator position) {
+        assert(position >= ibegin() && position < iend());
+        const size_type pos = position - ibegin();
+        mutate(pos, size_type(1), size_type(0));
+        get_rep()->set_leaked();
+        return iterator(ibegin() + pos);
+    }
+
+    iterator erase(iterator first, iterator last) {
+        assert(first >= ibegin() && first <= last && last <= iend());
+
+        // NB: This isn't just an optimization (bail out early when
+        // there is nothing to do, really), it's also a correctness
+        // issue vs MT, see libstdc++/40518.
+        const size_type sz = last - first;
+        if (sz > 0) {
+            const size_type pos = first - ibegin();
+            mutate(pos, sz, size_type(0));
+            get_rep()->set_leaked();
+            return iterator(_data() + pos);
+        }
+        return first;
+    }
+
     void push_back(CharT c) {
         const size_type sz = size();
         const size_type len = sz + 1;

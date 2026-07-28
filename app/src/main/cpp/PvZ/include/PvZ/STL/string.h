@@ -21,5 +21,20 @@
 #define PVZ_STL_STRING_H
 
 #include "PvZ/STL/bits/basic_string.h"
+#include "PvZ/STL/bits/erase_if.h"
+
+namespace pvzstl {
+
+template <typename CharT, typename Traits, typename Alloc, typename Predicate>
+constexpr typename basic_string<CharT, Traits, Alloc>::size_type erase_if(basic_string<CharT, Traits, Alloc> &cont, Predicate pred) {
+    return detail::erase_if(cont, cont, std::move(pred));
+}
+
+template <typename CharT, typename Traits, typename Alloc, typename Up>
+constexpr typename basic_string<CharT, Traits, Alloc>::size_type erase(basic_string<CharT, Traits, Alloc> &cont, const Up &value) {
+    return erase_if(cont, [&](const auto &elem) { return elem == value; });
+}
+
+} // namespace pvzstl
 
 #endif // PVZ_STL_STRING_H
