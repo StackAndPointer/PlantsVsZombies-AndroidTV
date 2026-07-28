@@ -298,6 +298,9 @@ void LawnApp::LoadAddonSounds() {
     addonSounds.iceberg = GetSoundByFileName("addonFiles/sounds/iceberg");
     addonSounds.celery_stalker_rise = GetSoundByFileName("addonFiles/sounds/celery_stalker_rise");
     addonSounds.celery_stalker_attack = GetSoundByFileName("addonFiles/sounds/celery_stalker_attack");
+    addonSounds.bloomerang = GetSoundByFileName("addonFiles/sounds/bloomerang");
+    addonSounds.bonk_choy_punch = GetSoundByFileName("addonFiles/sounds/bonk_choy_punch");
+    addonSounds.bonk_choy_uppercut = GetSoundByFileName("addonFiles/sounds/bonk_choy_uppercut");
     addonSounds.power_pole_charge = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Charge");
     addonSounds.power_pole_core = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Core");
     addonSounds.power_pole_hifi = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_HiFi");

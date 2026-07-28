@@ -102,7 +102,9 @@ enum PlantState // Prefix: STATE
     STATE_CELERY_STALKER_ATTACKING,
     STATE_CELERY_STALKER_PUNCHING,
     STATE_CELERY_STALKER_STOPPING,
-    STATE_BLOOMERANG_CATCHING
+    STATE_BLOOMERANG_CATCHING,
+    STATE_BONK_CHOY_PUNCHING,
+    STATE_BONK_CHOY_UPPERCUTTING
 };
 
 enum PLANT_LAYER {
@@ -338,6 +340,7 @@ public:
     void UpdateSquash();
     void UpdateIcebergLettuce();
     void UpdateCeleryStalker();
+    void UpdateBonkChoy();
     bool HasActiveBoomerang();
     void UpdateBloomerang();
     int CalcRenderOrder();

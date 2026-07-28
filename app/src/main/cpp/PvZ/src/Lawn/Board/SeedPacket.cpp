@@ -440,6 +440,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
             theDrawScale = 0.45f;
             break;
         case SeedType::SEED_BLOVER:
+        case SeedType::SEED_BONK_CHOY:
             offsetY = 17.0f;
             offsetX = 8.0f;
             theDrawScale = 0.4f;

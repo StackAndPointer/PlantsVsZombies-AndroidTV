@@ -104,9 +104,10 @@ PlantDefinition gPlantDefs[SeedType::NUM_SEED_TYPES] = {
 
 PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_ICEBERG_LETTUCE, nullptr, ReanimationType::REANIM_ICEBERG_LETTUCE, 0, 0, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "ICEBERG_LETTUCE"},
+    {SeedType::SEED_BLOOMERANG, nullptr, ReanimationType::REANIM_BLOOMERANG, 0, 175, 750, PlantSubClass::SUBCLASS_SHOOTER, 300, "BLOOMERANG"},
+    {SeedType::SEED_BONK_CHOY, nullptr, ReanimationType::REANIM_BONK_CHOY, 0, 150, 750, PlantSubClass::SUBCLASS_NORMAL, 0, "BONK_CHOY"},
     {SeedType::SEED_CELERY_STALKER, nullptr, ReanimationType::REANIM_CELERY_STALKER, 0, 50, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "CELERY_STALKER"},
     {SeedType::SEED_SPORESHROOM, nullptr, ReanimationType::REANIM_SPORE_SHROOM, 0, 125, 750, PlantSubClass::SUBCLASS_SHOOTER, 300, "SPORE_SHROOM"},
-    {SeedType::SEED_BLOOMERANG, nullptr, ReanimationType::REANIM_BLOOMERANG, 0, 175, 750, PlantSubClass::SUBCLASS_SHOOTER, 300, "BLOOMERANG"},
     {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
 
@@ -120,6 +121,9 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
             break;
         case SeedType::SEED_CELERY_STALKER:
             mPlantMaxHealth = 1200;
+            break;
+        case SeedType::SEED_BONK_CHOY:
+            mTargetX = 1; // mTargetX 被菜问用作朝向标记；刚种下时默认朝右。
             break;
         default:
             break;
@@ -201,16 +205,18 @@ int Plant::GetDamageRangeFlags(PlantWeapon thePlantWeapon) const {
 }
 
 void Plant::PlayBodyReanim(const char *theTrackName, ReanimLoopType theLoopType, int theBlendTime, float theAnimRate) {
-    Reanimation *reanimation = mApp->ReanimationGet(mBodyReanimID);
+    Reanimation *aBodyReanim = mApp->ReanimationGet(mBodyReanimID);
+
     if (theBlendTime > 0) {
-        reanimation->StartBlend(theBlendTime);
+        aBodyReanim->StartBlend(theBlendTime);
     }
     if (theAnimRate > 0.0f) {
-        reanimation->SetAnimRate(theAnimRate);
+        aBodyReanim->SetAnimRate(theAnimRate);
     }
-    reanimation->mLoopType = theLoopType;
-    reanimation->mLoopCount = 0;
-    reanimation->SetFramesForLayer(theTrackName);
+
+    aBodyReanim->mLoopType = theLoopType;
+    aBodyReanim->mLoopCount = 0;
+    aBodyReanim->SetFramesForLayer(theTrackName);
 }
 
 void Plant::SpikeweedAttack() {
@@ -422,6 +428,8 @@ void Plant::UpdateAbilities() {
         UpdateCeleryStalker();
     } else if (mSeedType == SeedType::SEED_BLOOMERANG) {
         UpdateBloomerang();
+    } else if (mSeedType == SeedType::SEED_BONK_CHOY) {
+        UpdateBonkChoy();
     }
 }
 
@@ -612,7 +620,19 @@ void Plant::Draw(Sexy::Graphics *g) {
             // Color color = {150, 255, 150, 255};
             // SetColor(g,&color);
             // }
-            reanimation2->DrawRenderGroup(g, 0);
+            const bool aMirrorBonkChoyAttack = mSeedType == SeedType::SEED_BONK_CHOY && mTargetX < 0;
+            if (aMirrorBonkChoyAttack) {
+                const SexyTransform2D anOldOverlayMatrix = reanimation2->mOverlayMatrix;
+                SexyTransform2D aMirrorMatrix;
+                aMirrorMatrix.m00 = -1.0f;
+                aMirrorMatrix.m02 = 80.0f;
+
+                reanimation2->mOverlayMatrix = anOldOverlayMatrix * aMirrorMatrix;
+                reanimation2->DrawRenderGroup(g, 0);
+                reanimation2->mOverlayMatrix = anOldOverlayMatrix;
+            } else {
+                reanimation2->DrawRenderGroup(g, 0);
+            }
             if (aCeleryClipApplied) {
                 g->mClipRect = aOldClipRect;
             }
@@ -1572,7 +1592,7 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
 
         if (!aZombie->mHasHead || aZombie->IsTangleKelpTarget()) {
             if (mSeedType == SeedType::SEED_POTATOMINE || mSeedType == SeedType::SEED_CHOMPER || mSeedType == SeedType::SEED_TANGLEKELP || mSeedType == SeedType::SEED_ICEBERG_LETTUCE
-                || mSeedType == SeedType::SEED_CELERY_STALKER) {
+                || mSeedType == SeedType::SEED_CELERY_STALKER || mSeedType == SeedType::SEED_BONK_CHOY) {
                 continue;
             }
         }
@@ -1669,7 +1689,19 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
             ////////////////////
 
             int aWeight = -aZombieRect.mX;
-            if (mSeedType == SeedType::SEED_CATTAIL) {
+            if (mSeedType == SeedType::SEED_BONK_CHOY) {
+                const float aPlantCenterX = static_cast<float>(mX) + 40.0f;
+                const float aZombieLeft = static_cast<float>(aZombieRect.mX);
+                const float aZombieRight = static_cast<float>(aZombieRect.mX + aZombieRect.mWidth);
+                const float aNearestTargetX = std::clamp(aPlantCenterX, aZombieLeft, aZombieRight);
+                const float aDistance = std::abs(aNearestTargetX - aPlantCenterX);
+                const bool aZombieIsBehind = aZombieLeft + static_cast<float>(aZombieRect.mWidth) * 0.5f < aPlantCenterX;
+
+                aWeight = -static_cast<int>(aDistance * 100.0f);
+                if (!aZombieIsBehind) {
+                    ++aWeight; // 距离相同时优先右侧。
+                }
+            } else if (mSeedType == SeedType::SEED_CATTAIL) {
                 aWeight = -Distance2D(mX + 40.0f, mY + 40.0f, aZombieRect.mX + aZombieRect.mWidth / 2.0f, aZombieRect.mY + aZombieRect.mHeight / 2.0f);
                 if (aZombie->IsFlying()) {
                     aWeight += 10000; // 优先攻击飞行单位
@@ -1699,6 +1731,52 @@ GridItem *Plant::FindTargetGridItem(int theRow, PlantWeapon thePlantWeapon) {
     if (mSeedType == SEED_SPLITPEA && thePlantWeapon == WEAPON_SECONDARY) {
         // 如果是裂荚射手朝后的头，就直接不开火
         return nullptr;
+    }
+
+    if (mSeedType == SeedType::SEED_BONK_CHOY) {
+        static constexpr int kBonkChoyGridItemRange = 2;
+
+        if (!mApp->IsVSMode()) {
+            return nullptr;
+        }
+
+        GridItem *aBestGridItem = nullptr;
+        int aBestDistance = kBonkChoyGridItemRange + 1;
+        bool aBestIsBehind = true;
+
+        GridItem *aGridItem = nullptr;
+        while (mBoard->IterateGridItems(aGridItem)) {
+            if (aGridItem->mDead || aGridItem->mGridY != theRow) {
+                continue;
+            }
+
+            int aGridItemHealth = 0;
+            if (aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
+                aGridItemHealth = aGridItem->mVSTargetZombieHealth;
+            } else if (aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND) {
+                aGridItemHealth = aGridItem->mVSGraveStoneHealth;
+            } else {
+                continue;
+            }
+
+            if (aGridItemHealth <= 0) {
+                continue;
+            }
+
+            const int aDistance = std::abs(aGridItem->mGridX - mPlantCol);
+            if (aDistance < 1 || aDistance > kBonkChoyGridItemRange) {
+                continue;
+            }
+
+            const bool aGridItemIsBehind = aGridItem->mGridX < mPlantCol;
+            if (aBestGridItem == nullptr || aDistance < aBestDistance || (aDistance == aBestDistance && !aGridItemIsBehind && aBestIsBehind)) {
+                aBestGridItem = aGridItem;
+                aBestDistance = aDistance;
+                aBestIsBehind = aGridItemIsBehind;
+            }
+        }
+
+        return aBestGridItem;
     }
 
     int aLastGridX = 0;
@@ -1838,6 +1916,8 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_MOUND:
             return 75;
         case SeedType::SEED_CACTUS:
+        case SeedType::SEED_SPORESHROOM:
+        case SeedType::SEED_BONK_CHOY:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -1847,6 +1927,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_EXPLORER:
             return 100;
         case SeedType::SEED_TORCHWOOD:
+        case SeedType::SEED_BLOOMERANG:
         case SeedType::SEED_ZOMBIE_BUNGEE:
         case SeedType::SEED_ZOMBIE_SNORKEL:
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
@@ -1975,10 +2056,9 @@ static int GetVSCostBalanced(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_EXPLORER:      // 100 -> 75
             aCost = 75;
             break;
-        case SeedType::SEED_SQUASH:      // 75 -> 100 削弱窝瓜!!!
-        case SeedType::SEED_TALLNUT:     // 125 -> 100
-        case SeedType::SEED_SPLITPEA:    // 125 -> 100
-        case SeedType::SEED_SPORESHROOM: // 125 -> 100
+        case SeedType::SEED_SQUASH:   // 75 -> 100 削弱窝瓜!!!
+        case SeedType::SEED_TALLNUT:  // 125 -> 100
+        case SeedType::SEED_SPLITPEA: // 125 -> 100
             aCost = 100;
             break;
         case SeedType::SEED_SNOWPEA:                 // 150 -> 125
@@ -2343,6 +2423,9 @@ Rect Plant::GetPlantAttackRect(PlantWeapon thePlantWeapon) {
                 break;
             case SeedType::SEED_CELERY_STALKER:
                 aRect = Rect(mX - 80, mY, 70, mHeight);
+                break;
+            case SeedType::SEED_BONK_CHOY:
+                aRect = Rect(mX - 95, mY, 270, mHeight);
                 break;
             default:
                 aRect = Rect(mX + 60, mY, BOARD_WIDTH, mHeight);
@@ -2884,6 +2967,7 @@ bool Plant::FindTargetAndFire(int theRow, PlantWeapon thePlantWeapon) {
             return false;
         }
 
+        mApp->PlayFoley(FoleyType::FOLEY_BLOOMERANG);
         PlayBodyReanim("anim_shooting", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
         mShootingCounter = 65;
         result = true;
@@ -3412,6 +3496,116 @@ void Plant::UpdateCeleryStalker() {
         mState = PlantState::STATE_CELERY_STALKER_LOWERING;
         PlayBodyReanim("anim_lower", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, aBodyReanim->mDefinition->mFPS);
     }
+}
+
+void Plant::UpdateBonkChoy() {
+    static constexpr int kBonkChoyGridItemRange = 2;
+    static constexpr int kBonkChoyAttackInterval = 40;
+    static constexpr int kBonkChoyPunchDamage = 20;
+    static constexpr int kBonkChoyUppercutDamage = 40;
+
+    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    if (aBodyReanim == nullptr) {
+        return;
+    }
+
+    if (mLaunchCounter > 0) {
+        --mLaunchCounter;
+    }
+
+    const bool anAttackAnimationPlaying = mState == PlantState::STATE_BONK_CHOY_PUNCHING || mState == PlantState::STATE_BONK_CHOY_UPPERCUTTING;
+    if (anAttackAnimationPlaying) {
+        if (aBodyReanim->mLoopCount > 0) {
+            PlayIdleAnim(12.0f);
+            mState = PlantState::STATE_NOTREADY;
+        }
+        return;
+    }
+
+    if (mLaunchCounter > 0) {
+        return;
+    }
+
+    const float aPlantCenterX = static_cast<float>(mX) + 40.0f;
+    Zombie *aBestZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
+
+    GridItem *aBestGridItem = aBestZombie == nullptr ? FindTargetGridItem(mRow, PlantWeapon::WEAPON_PRIMARY) : nullptr;
+    const int aBestGridItemDistance = aBestGridItem != nullptr ? std::abs(aBestGridItem->mGridX - mPlantCol) : kBonkChoyGridItemRange + 1;
+    bool aBestTargetIsBehind = false;
+
+    if (aBestZombie != nullptr) {
+        const Rect aZombieRect = aBestZombie->GetZombieRect();
+        const auto aZombieLeft = static_cast<float>(aZombieRect.mX);
+
+        aBestTargetIsBehind = aZombieLeft + static_cast<float>(aZombieRect.mWidth) * 0.5f < aPlantCenterX;
+    } else if (aBestGridItem != nullptr) {
+        aBestTargetIsBehind = aBestGridItem->mGridX < mPlantCol;
+    }
+
+    if (aBestZombie == nullptr && aBestGridItem == nullptr) {
+        return;
+    }
+
+    if (aBestGridItem != nullptr) {
+        const int aGridItemHealth = aBestGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE ? aBestGridItem->mVSTargetZombieHealth : aBestGridItem->mVSGraveStoneHealth;
+        const bool aUseUppercut = aBestGridItemDistance == 1 && aGridItemHealth > 0 && aGridItemHealth <= kBonkChoyUppercutDamage;
+
+        const char *anAttackTrack = aUseUppercut ? "anim_rightuppercut" : "anim_rightpunch";
+        const float aAnimRate = aUseUppercut ? 30.0f : 45.0f;
+        FoleyType aFoleyType = aUseUppercut ? FoleyType::FOLEY_BONK_CHOY_UPPERCUT : FoleyType::FOLEY_BONK_CHOY_PUNCH;
+
+        // 左侧攻击也播放右侧动画，并在 Draw() 中水平镜像。
+        mTargetX = aBestTargetIsBehind ? -1 : 1;
+        PlayBodyReanim(anAttackTrack, ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, aAnimRate);
+
+        mState = aUseUppercut ? PlantState::STATE_BONK_CHOY_UPPERCUTTING : PlantState::STATE_BONK_CHOY_PUNCHING;
+        mLaunchCounter = kBonkChoyAttackInterval;
+
+        aBestGridItem->TakeDamage(aUseUppercut ? aGridItemHealth : kBonkChoyPunchDamage, 0U);
+        mApp->PlayFoley(aFoleyType);
+        return;
+    }
+
+    unsigned int aDamageFlags = 0U;
+    if (aBestTargetIsBehind) {
+        SetBit(aDamageFlags, int(DamageFlags::DAMAGE_BYPASSES_SHIELD), true);
+    }
+
+    const bool aShieldBlocksBody = !aBestTargetIsBehind && aBestZombie->mShieldType != ShieldType::SHIELDTYPE_NONE && aBestZombie->mShieldHealth > 0;
+    const bool aHelmBlocksBody = aBestZombie->mHelmType != HelmType::HELMTYPE_NONE && aBestZombie->mHelmHealth > 0;
+    const bool aDamageReachesBody = !aShieldBlocksBody && !aHelmBlocksBody;
+
+    bool aUseUppercut = false;
+    bool anUppercutExecutesTarget = false;
+    if (aDamageReachesBody) {
+        if (aBestZombie->CanLoseBodyParts() && aBestZombie->mHasHead && aBestZombie->mBodyMaxHealth > 0) {
+            const int aHeadDropThreshold = aBestZombie->mBodyMaxHealth / 3;
+            const int aDamageNeededToDropHead = aBestZombie->mBodyHealth - aHeadDropThreshold + 1;
+            if (aDamageNeededToDropHead > 0 && aDamageNeededToDropHead <= kBonkChoyUppercutDamage) {
+                aUseUppercut = true;
+                anUppercutExecutesTarget = true;
+            }
+        } else if (!aBestZombie->CanLoseBodyParts() && aBestZombie->mBodyHealth <= kBonkChoyUppercutDamage) {
+            aUseUppercut = true;
+        }
+    }
+
+    const char *anAttackTrack = aUseUppercut ? "anim_rightuppercut" : "anim_rightpunch";
+    const float aAnimRate = aUseUppercut ? 30.0f : 45.0f;
+    FoleyType aFoleyType = aUseUppercut ? FoleyType::FOLEY_BONK_CHOY_UPPERCUT : FoleyType::FOLEY_BONK_CHOY_PUNCH;
+
+    mTargetX = aBestTargetIsBehind ? -1 : 1;
+    PlayBodyReanim(anAttackTrack, ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, aAnimRate);
+
+    mState = aUseUppercut ? PlantState::STATE_BONK_CHOY_UPPERCUTTING : PlantState::STATE_BONK_CHOY_PUNCHING;
+    mLaunchCounter = kBonkChoyAttackInterval;
+
+    if (anUppercutExecutesTarget) {
+        aBestZombie->TakeDamage(aBestZombie->mBodyHealth, aDamageFlags);
+    } else {
+        aBestZombie->TakeDamage(aUseUppercut ? kBonkChoyUppercutDamage : kBonkChoyPunchDamage, aDamageFlags);
+    }
+    mApp->PlayFoley(aFoleyType);
 }
 
 int Plant::CalcRenderOrder() {

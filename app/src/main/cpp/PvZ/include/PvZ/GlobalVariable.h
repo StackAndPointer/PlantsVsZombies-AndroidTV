@@ -261,6 +261,9 @@ struct AddonSounds {
     int iceberg;
     int celery_stalker_rise;
     int celery_stalker_attack;
+    int bloomerang;
+    int bonk_choy_punch;
+    int bonk_choy_uppercut;
     int power_pole_charge;
     int power_pole_core;
     int power_pole_hifi;
