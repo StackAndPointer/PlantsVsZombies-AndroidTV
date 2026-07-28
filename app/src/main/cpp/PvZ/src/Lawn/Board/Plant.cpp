@@ -108,6 +108,7 @@ PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_BONK_CHOY, nullptr, ReanimationType::REANIM_BONK_CHOY, 0, 150, 750, PlantSubClass::SUBCLASS_NORMAL, 0, "BONK_CHOY"},
     {SeedType::SEED_CELERY_STALKER, nullptr, ReanimationType::REANIM_CELERY_STALKER, 0, 50, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "CELERY_STALKER"},
     {SeedType::SEED_SPORESHROOM, nullptr, ReanimationType::REANIM_SPORE_SHROOM, 0, 125, 750, PlantSubClass::SUBCLASS_SHOOTER, 300, "SPORE_SHROOM"},
+    {SeedType::SEED_SWEET_POTATO, nullptr, ReanimationType::REANIM_SWEET_POTATO, 0, 150, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "SWEET_POTATO"},
     {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
 
@@ -124,6 +125,9 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
             break;
         case SeedType::SEED_BONK_CHOY:
             mTargetX = 1; // mTargetX 被菜问用作朝向标记；刚种下时默认朝右。
+            break;
+        case SeedType::SEED_SWEET_POTATO:
+            mPlantMaxHealth = 4000;
             break;
         default:
             break;
@@ -150,6 +154,9 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
             case SeedType::SEED_SUNFLOWER:
             case SeedType::SEED_PEASHOOTER:
                 mPlantMaxHealth = 300;
+                break;
+            case SeedType::SEED_SWEET_POTATO:
+                mPlantMaxHealth = 4000;
                 break;
             default:
                 break;
@@ -323,6 +330,8 @@ void Plant::Animate() {
         AnimatePumpkin();
     } else if (mSeedType == SeedType::SEED_CELERY_STALKER) {
         AnimateCeleryStalker();
+    } else if (mSeedType == SeedType::SEED_SWEET_POTATO) {
+        AnimateSweetPotato();
     }
 
     UpdateBlink();
@@ -360,6 +369,27 @@ void Plant::AnimateCeleryStalker() {
     } else {
         aBodyReanim->SetImageOverride("CeleryStalker_arm2_upper", nullptr);
         aBodyReanim->SetImageOverride("CeleryStalker_arm2_lower", nullptr);
+    }
+}
+
+void Plant::AnimateSweetPotato() {
+    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    Image *aImageOverride = aBodyReanim->GetImageOverride("SweetPotato_body");
+    if (mPlantHealth < mPlantMaxHealth / 3) {
+        if (aImageOverride != addonImages.IMAGE_REANIM_SWEET_POTATO_BODY3) {
+            aBodyReanim->SetImageOverride("SweetPotato_body", addonImages.IMAGE_REANIM_SWEET_POTATO_BODY3);
+            aBodyReanim->SetImageOverride("SweetPotato_mouth", addonImages.IMAGE_REANIM_SWEET_POTATO_MOUTH3);
+            aBodyReanim->SetImageOverride("SweetPotato_stem", IMAGE_BLANK);
+        }
+    } else if (mPlantHealth < mPlantMaxHealth * 2 / 3) {
+        if (aImageOverride != addonImages.IMAGE_REANIM_SWEET_POTATO_BODY2) {
+            aBodyReanim->SetImageOverride("SweetPotato_body", addonImages.IMAGE_REANIM_SWEET_POTATO_BODY2);
+            aBodyReanim->SetImageOverride("SweetPotato_mouth", addonImages.IMAGE_REANIM_SWEET_POTATO_MOUTH2);
+            aBodyReanim->SetImageOverride("SweetPotato_eye", addonImages.IMAGE_REANIM_SWEET_POTATO_EYE3);
+        }
+    } else {
+        aBodyReanim->SetImageOverride("SweetPotato_body", nullptr);
+        aBodyReanim->SetImageOverride("SweetPotato_mouth", nullptr);
     }
 }
 
@@ -430,6 +460,8 @@ void Plant::UpdateAbilities() {
         UpdateBloomerang();
     } else if (mSeedType == SeedType::SEED_BONK_CHOY) {
         UpdateBonkChoy();
+    } else if (mSeedType == SeedType::SEED_SWEET_POTATO) {
+        UpdateSweetPotato();
     }
 }
 
@@ -467,6 +499,74 @@ void Plant::UpdateBloomerang() {
             PlayIdleAnim(0.0f);
             mState = PlantState::STATE_NOTREADY;
         }
+    }
+}
+
+void Plant::UpdateSweetPotato() {
+    if (mBoard == nullptr || mDead || mSquished) {
+        return;
+    }
+
+    const int aFrontCol = mPlantCol + 1;
+    if (aFrontCol >= MAX_GRID_SIZE_X) {
+        return;
+    }
+
+    // 为每个僵尸确定唯一的甜薯归属，防止相邻行的多个甜薯反复抢夺：
+    auto FindSweetPotatoOwner = [this](Zombie *theZombie) -> Plant * {
+        Plant *anOwner = nullptr;
+        Plant *aSweetPotato = nullptr;
+
+        while (mBoard->IteratePlants(aSweetPotato)) {
+            if (aSweetPotato->mSeedType != SeedType::SEED_SWEET_POTATO || aSweetPotato->mDead || aSweetPotato->mSquished || aSweetPotato->mPlantCol != mPlantCol) {
+                continue;
+            }
+
+            // 如果僵尸当前逻辑行已有同列甜薯，则由同行甜薯锁定。
+            if (aSweetPotato->mRow == theZombie->mRow) {
+                return aSweetPotato;
+            }
+
+            if (std::abs(aSweetPotato->mRow - theZombie->mRow) != 1) {
+                continue;
+            }
+
+            // 如果同行没有甜薯，而上下相邻行同时存在候选，则固定由上方甜薯获得。
+            if (anOwner == nullptr || aSweetPotato->mRow < anOwner->mRow) {
+                anOwner = aSweetPotato;
+            }
+        }
+
+        return anOwner;
+    };
+
+    Zombie *aZombie = nullptr;
+    while (mBoard->IterateZombies(aZombie)) {
+        if (aZombie->mDead || !aZombie->IsOnBoard()) {
+            continue;
+        }
+
+        if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE || aZombie->mZombieType == ZombieType::ZOMBIE_CATAPULT || aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || !aZombie->CanBeFrozen()) {
+            continue;
+        }
+
+        if (std::abs(aZombie->mRow - mRow) != 1) {
+            continue;
+        }
+
+        const Rect aZombieRect = aZombie->GetZombieRect();
+        const int aZombieCenterX = aZombieRect.mX + aZombieRect.mWidth / 2;
+        const int aZombieCenterY = aZombieRect.mY + aZombieRect.mHeight / 2;
+        if (mBoard->PixelToGridX(aZombieCenterX, aZombieCenterY) != aFrontCol) {
+            continue;
+        }
+
+        if (FindSweetPotatoOwner(aZombie) != this) {
+            continue;
+        }
+
+        aZombie->StopEating();
+        aZombie->SetRow(mRow);
     }
 }
 
@@ -711,12 +811,13 @@ void Plant::Draw(Sexy::Graphics *g) {
     // 如果玩家开了 植物显血
     if (showPlantHealth
         || (showNutGarlicSpikeHealth
-            && (mSeedType == SeedType::SEED_WALLNUT ||      //
-                mSeedType == SeedType::SEED_TALLNUT ||      //
-                mSeedType == SeedType::SEED_PUMPKINSHELL || //
-                mSeedType == SeedType::SEED_GARLIC ||       //
-                mSeedType == SeedType::SEED_SPIKEROCK ||    //
-                mSeedType == SeedType::SEED_CELERY_STALKER))) {
+            && (mSeedType == SeedType::SEED_WALLNUT ||        //
+                mSeedType == SeedType::SEED_TALLNUT ||        //
+                mSeedType == SeedType::SEED_PUMPKINSHELL ||   //
+                mSeedType == SeedType::SEED_GARLIC ||         //
+                mSeedType == SeedType::SEED_SPIKEROCK ||      //
+                mSeedType == SeedType::SEED_CELERY_STALKER || //
+                mSeedType == SeedType::SEED_SWEET_POTATO))) {
         if (!IsOnlineServerModeActive()) {
             pvzstl::string str = StrFormat("%d/%d", mPlantHealth, mPlantMaxHealth);
             g->SetFont(Sexy::FONT_DWARVENTODCRAFT12);
@@ -2294,21 +2395,21 @@ int Plant::GetRefreshTime(SeedType theSeedType, SeedType theImitaterType) {
         int aRefreshTime =
             Challenge::msVSShuffleMode ? GetVSRefreshTimeShuffle(theSeedType) : (VSSetupAddonWidget::msBalancePatchMode ? GetVSRefreshTimeBalanced(theSeedType) : GetVSRefreshTimeDefault(theSeedType));
         if (gLawnApp->mBoard->mChallenge->IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode == 1) {
-            // sd不减冷却的卡片
-            switch (theSeedType) { // 此处用switch-case替换旧的if-else，方便后续增删
-                // 墓碑和向日葵，sd用不到
+            // sd 不减冷却的卡片
+            switch (theSeedType) {
+                // 墓碑和向日葵，sd 用不到
                 case SeedType::SEED_ZOMBIE_GRAVESTONE:
                 case SeedType::SEED_SUNFLOWER:
-                // 默认五个不减cd的
+                // 默认五个不减 cd 的
                 case SeedType::SEED_TALLNUT:
                 case SeedType::SEED_WALLNUT:
                 case SeedType::SEED_PUMPKINSHELL:
                 case SeedType::SEED_ZOMBIE_TRASHCAN:
                 case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
-                    // 新增不减cd
-                    //                case SeedType::SEED_ZOMBIE_YETI:
+                // 新增不减 cd
+                case SeedType::SEED_SWEET_POTATO:
                     return aRefreshTime;
-                // 平衡调整后cd减幅下降
+                // 平衡调整后 cd 减幅下降
                 case SeedType::SEED_POTATOMINE:
                 case SeedType::SEED_SQUASH:
                 case SeedType::SEED_CHERRYBOMB:
@@ -2358,6 +2459,10 @@ bool Plant::IsUpgrade(SeedType theSeedType) {
         return !(gamePad->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR && gamePad->mIsInShopSeedBank);
     }
     return old_Plant_IsUpgrade(theSeedType);
+}
+
+bool Plant::IsDefender(SeedType theSeedType) {
+    return theSeedType == SeedType::SEED_WALLNUT || theSeedType == SeedType::SEED_TALLNUT || theSeedType == SeedType::SEED_PUMPKINSHELL || theSeedType == SeedType::SEED_SWEET_POTATO;
 }
 
 Rect Plant::GetPlantRect() {

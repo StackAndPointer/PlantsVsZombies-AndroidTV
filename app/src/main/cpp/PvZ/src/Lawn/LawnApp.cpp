@@ -262,6 +262,11 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower3");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_upper2");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_upper3");
+    addonImages.IMAGE_REANIM_SWEET_POTATO_BODY2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/sweet_potato_body2");
+    addonImages.IMAGE_REANIM_SWEET_POTATO_BODY3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/sweet_potato_body3");
+    addonImages.IMAGE_REANIM_SWEET_POTATO_MOUTH2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/sweet_potato_mouth2");
+    addonImages.IMAGE_REANIM_SWEET_POTATO_MOUTH3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/sweet_potato_mouth3");
+    addonImages.IMAGE_REANIM_SWEET_POTATO_EYE3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/sweet_potato_eye3");
     addonImages.IMAGE_SHOVELBANK_VERTICAL = GetImageByFileName("addonFiles/images/shovel_bank_vertical");
     addonImages.IMAGE_SHOVEL_VERTICAL = GetImageByFileName("addonFiles/images/shovel_vertical");
 

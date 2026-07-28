@@ -300,6 +300,7 @@ public:
     static bool IsAquatic(SeedType theSeedType);
     static bool IsFlying(SeedType theSeedType);
     static bool IsUpgrade(SeedType theSeedType);
+    static bool IsDefender(SeedType theSeedType);
     int GetDamageRangeFlags(PlantWeapon thePlantWeapon) const;
     Sexy::Rect GetPlantRect();
     Sexy::Rect GetPlantAttackRect(PlantWeapon thePlantWeapon);
@@ -312,6 +313,7 @@ public:
     bool IsInPlay();
     void Animate();
     void AnimateCeleryStalker();
+    void AnimateSweetPotato();
     void PlayBodyReanim(const char *theTrackName, ReanimLoopType theLoopType, int theBlendTime, float theAnimRate);
     void SpikeweedAttack();
     void SpikeRockTakeDamage();
@@ -341,6 +343,7 @@ public:
     void UpdateIcebergLettuce();
     void UpdateCeleryStalker();
     void UpdateBonkChoy();
+    void UpdateSweetPotato();
     bool HasActiveBoomerang();
     void UpdateBloomerang();
     int CalcRenderOrder();

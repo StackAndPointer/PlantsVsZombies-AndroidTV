@@ -1311,8 +1311,7 @@ void Zombie::UpdateZombieJackInTheBox() {
                     if (VSSetupAddonWidget::msBalancePatchMode) {
                         if (mIsEating) {
                             Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
-                            if (aPlant != nullptr
-                                && !(aPlant->mSeedType == SeedType::SEED_WALLNUT || aPlant->mSeedType == SeedType::SEED_TALLNUT || aPlant->mSeedType == SeedType::SEED_PUMPKINSHELL)) {
+                            if (aPlant != nullptr && !Plant::IsDefender(aPlant->mSeedType)) {
                                 ++mPhaseCounter;
                             }
                         }
@@ -4361,8 +4360,8 @@ void Zombie::EatPlant(Plant *thePlant) {
 
     thePlant->mPlantHealth -= DAMAGE_PER_EAT;
     thePlant->mRecentlyEatenCountdown = 50;
-    auto absorbedEating = [this]() {
-        if (mJustGotShotCounter >= -500) {
+    auto absorbedEating = [this, &thePlant]() {
+        if (!Plant::IsDefender(thePlant->mSeedType) || mJustGotShotCounter >= -500) {
             return false;
         }
         if (mApp->IsIZombieLevel()) {
@@ -4374,9 +4373,7 @@ void Zombie::EatPlant(Plant *thePlant) {
         return false;
     };
     if (absorbedEating()) {
-        if (thePlant->mSeedType == SeedType::SEED_WALLNUT || thePlant->mSeedType == SeedType::SEED_TALLNUT || thePlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
-            thePlant->mPlantHealth -= DAMAGE_PER_EAT;
-        }
+        thePlant->mPlantHealth -= DAMAGE_PER_EAT;
     }
     if (mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
         if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
