@@ -26,7 +26,6 @@
  */
 
 #include "PvZ/STL/bits/ranges_base.h"
-#include "PvZ/STL/bits/stl_function.h"
 #include "PvZ/STL/bits/stl_pair.h"
 #include "PvZ/STL/bits/stl_tree.h"
 

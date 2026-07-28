@@ -25,15 +25,51 @@
  * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a23486.html">alloc_traits.h File Reference</a>
  */
 
-#include <cstddef>
+#include <memory>
 
 namespace pvzstl::detail {
 
-template <typename Tp>
-constexpr bool is_allocator = requires(Tp &a) {
-    typename Tp::value_type;
-    { a.allocate(std::size_t{}) };
+template <typename Alloc>
+[[gnu::always_inline]] constexpr void alloc_on_copy(Alloc &one, const Alloc &two) {
+    using traits = std::allocator_traits<Alloc>;
+    using pocca = typename traits::propagate_on_container_copy_assignment::type;
+    if constexpr (pocca::value) {
+        one = two;
+    }
+}
+template <typename Alloc>
+[[gnu::always_inline]] constexpr void alloc_on_copy(const Alloc &a) {
+    using traits = std::allocator_traits<Alloc>;
+    return traits::select_on_container_copy_construction(a);
+}
+
+template <typename Alloc>
+[[gnu::always_inline]] constexpr void alloc_on_move(Alloc &one, Alloc &&two) {
+    using traits = std::allocator_traits<Alloc>;
+    using pocma = typename traits::propagate_on_container_move_assignment::type;
+    if constexpr (pocma::value) {
+        one = std::move(two);
+    }
+}
+
+template <typename Alloc>
+[[gnu::always_inline]] constexpr void alloc_on_swap(Alloc &one, Alloc &two) {
+    using traits = std::allocator_traits<Alloc>;
+    using pocs = typename traits::propagate_on_container_swap::type;
+    if constexpr (pocs::value) {
+        using std::swap;
+        swap(one, two);
+    }
+}
+
+template <typename Alloc>
+concept allocator_like = requires(Alloc &a) {
+    typename Alloc::value_type;
+    a.deallocate(a.allocate(1u), 1u);
 };
+
+template <typename Alloc>
+concept not_allocator_like = !allocator_like<Alloc>;
 
 } // namespace pvzstl::detail
 

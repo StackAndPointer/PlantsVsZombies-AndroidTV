@@ -28,6 +28,8 @@
 #include "PvZ/STL/bits/ranges_base.h"
 #include "PvZ/STL/bits/stl_tree.h"
 
+#include <functional>
+
 namespace pvzstl {
 
 /**

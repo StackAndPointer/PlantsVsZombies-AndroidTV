@@ -27,6 +27,8 @@
 
 #include "PvZ/STL/compare.h"
 
+#include "PvZ/STL/bits/alloc_traits.h"
+#include "PvZ/STL/bits/move.h"
 #include "PvZ/STL/bits/stl_function.h"
 
 #include "PvZ/STL/ext/aligned_buffer.h"
@@ -35,7 +37,6 @@
 
 #include <algorithm>
 #include <iterator>
-#include <memory>
 #include <type_traits>
 
 namespace pvzstl::detail {
@@ -259,24 +260,60 @@ struct rb_tree_const_iterator {
 [[gnu::nonnull]] void rb_tree_insert_and_rebalance(bool insert_left, rb_tree_node_base *x, rb_tree_node_base *p, rb_tree_node_base &header) noexcept;
 [[gnu::nonnull, gnu::returns_nonnull]] rb_tree_node_base *rb_tree_rebalance_for_erase(rb_tree_node_base *z, rb_tree_node_base &header) noexcept;
 
+namespace _rb_tree {
+    // Determine the node and iterator types used by pvzstl::detail::rb_tree.
+    template <typename Val, typename Ptr>
+    struct node_traits;
+
+    // Specialization for the simple case where the allocator's pointer type
+    // is the same type as value_type*.
+    // For ABI compatibility we can't change the types used for this case.
+    template <typename Val>
+    struct node_traits<Val, Val *> {
+        using node = rb_tree_node<Val>;
+        using node_ptr = node *;
+        using node_base = rb_tree_node_base;
+        using base_ptr = node_base *;
+        using header_t = rb_tree_header;
+        using iterator = rb_tree_iterator<Val>;
+        using const_iterator = rb_tree_const_iterator<Val>;
+
+        [[gnu::nonnull]] static void insert_and_rebalance(bool insert_left, node_base *x, node_base *p, node_base &header) noexcept {
+            rb_tree_insert_and_rebalance(insert_left, x, p, header);
+        }
+
+        [[gnu::nonnull]] static node_base *rebalance_for_erase(node_base *z, node_base &header) noexcept {
+            return rb_tree_rebalance_for_erase(z, header);
+        }
+    };
+
+    // Always use the T* specialization.
+    template <typename Val, typename Ptr>
+    struct node_traits : node_traits<Val, Val *> {};
+} // namespace _rb_tree
+
 [[gnu::pure]] unsigned int rb_tree_black_count(const rb_tree_node_base *node, const rb_tree_node_base *root) noexcept;
 
 template <typename Key, typename Val, typename KeyOfValue, typename Compare, typename Alloc = std::allocator<Val>>
 class rb_tree {
     using val_alloc_type = typename std::allocator_traits<Alloc>::template rebind_alloc<Val>;
+
     using val_alloc_traits = std::allocator_traits<val_alloc_type>;
     using valptr = typename val_alloc_traits::pointer;
+    using node_traits = _rb_tree::node_traits<Val, valptr>;
 
-    using node_base = rb_tree_node_base;
-    using node = rb_tree_node<Val>;
+    using node_base = node_traits::node_base;
+    using node = node_traits::node;
 
     using node_alloc_type = typename std::allocator_traits<Alloc>::template rebind_alloc<node>;
+
     using node_alloc_traits = std::allocator_traits<node_alloc_type>;
 
 protected:
-    using base_ptr = node_base *;
-    using node_ptr = node *;
-    using header_t = rb_tree_header;
+    using base_ptr = node_traits::base_ptr;
+    using node_ptr = node_traits::node_ptr;
+
+    using header_t = node_traits::header_t;
 
 public:
     using key_type = Key;
@@ -289,8 +326,8 @@ public:
     using difference_type = std::ptrdiff_t;
     using allocator_type = Alloc;
 
-    using iterator = rb_tree_iterator<Val>;
-    using const_iterator = rb_tree_const_iterator<Val>;
+    using iterator = node_traits::iterator;
+    using const_iterator = node_traits::const_iterator;
 
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
@@ -345,9 +382,7 @@ public:
                 // Replacement allocator cannot free existing storage, we need
                 // to erase nodes first.
                 clear();
-                if constexpr (node_alloc_traits::propagate_on_container_copy_assignment::value) {
-                    this_alloc = that_alloc;
-                }
+                alloc_on_copy(this_alloc, that_alloc);
             }
         }
 
@@ -467,9 +502,7 @@ public:
         using std::swap;
         swap(m_impl.m_key_compare, t.m_impl.m_key_compare);
 
-        if constexpr (node_alloc_traits::propagate_on_container_swap::value) {
-            swap(get_node_allocator(), t.get_node_allocator());
-        }
+        detail::alloc_on_swap(get_node_allocator(), t.get_node_allocator());
     }
 
     std::pair<base_ptr, base_ptr> get_insert_unique_pos(const key_type &k) {
@@ -1278,6 +1311,15 @@ private:
         node_ptr m_node;
     };
 
+    static node_ptr adapt(typename node_alloc_traits::pointer ptr) {
+        using alloc_ptr = typename node_alloc_traits::pointer;
+        if constexpr (std::is_same_v<node_ptr, alloc_ptr>) {
+            return ptr;
+        } else {
+            return std::to_address(ptr);
+        }
+    }
+
     rb_tree(rb_tree &&other, node_alloc_type &&a, std::true_type) noexcept(std::is_nothrow_default_constructible_v<Compare>)
         : m_impl(std::move(other.m_impl), std::move(a)) {}
 
@@ -1285,15 +1327,6 @@ private:
         : m_impl(other.m_impl.m_key_compare, std::move(a)) {
         if (other.root()) {
             move_data(other, std::false_type());
-        }
-    }
-
-    static node_ptr adapt(typename node_alloc_traits::pointer ptr) noexcept {
-        using alloc_ptr = typename node_alloc_traits::pointer;
-        if constexpr (std::is_same_v<node_ptr, alloc_ptr>) {
-            return ptr;
-        } else {
-            return std::to_address(ptr);
         }
     }
 
@@ -1308,7 +1341,7 @@ private:
         if (get_node_allocator() == other.get_node_allocator()) {
             move_data(other, std::true_type());
         } else {
-            constexpr bool move = std::is_nothrow_move_constructible_v<value_type> || !std::is_copy_constructible_v<value_type>;
+            constexpr bool move = !move_if_noexcept_cond<value_type>;
             alloc_node an(*this);
             root() = copy<move>(other, an);
             if constexpr (move) {
@@ -1323,9 +1356,7 @@ private:
         if (other.root()) {
             move_data(other, std::true_type());
         }
-        if constexpr (node_alloc_traits::propagate_on_container_move_assignment::value) {
-            get_node_allocator() = std::move(other.get_node_allocator());
-        }
+        alloc_on_move(get_node_allocator(), other.get_node_allocator());
     }
 
     // Move assignment from container with possibly non-equal allocator,
@@ -1351,7 +1382,7 @@ private:
         bool insert_left = (x || p == _end() || key_compare(KeyOfValue()(arg), key(p)));
 
         base_ptr z = node_gen(std::forward<Arg>(arg))->get_base_ptr();
-        rb_tree_insert_and_rebalance(insert_left, z, p, m_impl.m_header);
+        node_traits::insert_and_rebalance(insert_left, z, p, m_impl.m_header);
         ++m_impl.m_node_count;
         return iterator(z);
     }
@@ -1361,7 +1392,7 @@ private:
         bool insert_left = (p == _end() || !key_compare(key(p), KeyOfValue()(arg)));
 
         base_ptr z = create_node(std::forward<Arg>(arg))->get_base_ptr();
-        rb_tree_insert_and_rebalance(insert_left, z, p, m_impl.m_header);
+        node_traits::insert_and_rebalance(insert_left, z, p, m_impl.m_header);
         ++m_impl.m_node_count;
         return iterator(z);
     }
@@ -1381,7 +1412,7 @@ private:
         bool insert_left = (x || p == _end() || key_compare(key(z), key(p)));
 
         base_ptr base_z = z->get_base_ptr();
-        rb_tree_insert_and_rebalance(insert_left, base_z, p, m_impl.m_header);
+        node_traits::insert_and_rebalance(insert_left, base_z, p, m_impl.m_header);
         ++m_impl.m_node_count;
         return iterator(base_z);
     }
@@ -1390,7 +1421,7 @@ private:
         bool insert_left = (p == _end() || !key_compare(key(p), key(z)));
 
         base_ptr base_z = z->get_base_ptr();
-        rb_tree_insert_and_rebalance(insert_left, base_z, p, m_impl.m_header);
+        node_traits::insert_and_rebalance(insert_left, base_z, p, m_impl.m_header);
         ++m_impl.m_node_count;
         return iterator(base_z);
     }
@@ -1400,7 +1431,7 @@ private:
         base_ptr y = _end();
         while (x) {
             y = x;
-            x = !key_compare(key(x).key(z)) ? left(x) : right(x);
+            x = !key_compare(key(x), key(z)) ? left(x) : right(x);
         }
         return insert_lower_node(y, z);
     }
@@ -1485,7 +1516,7 @@ private:
     }
 
     void erase_aux(const_iterator pos) {
-        base_ptr y = rb_tree_rebalance_for_erase(pos.m_node, m_impl.m_header);
+        base_ptr y = node_traits::rebalance_for_erase(pos.m_node, m_impl.m_header);
         drop_node(static_cast<node &>(*y).get_node_ptr());
         ++m_impl.m_node_count;
     }

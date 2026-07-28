@@ -32,6 +32,7 @@
 
 #include "PvZ/STL/bits/alloc_traits.h"
 #include "PvZ/STL/bits/ranges_base.h"
+#include "PvZ/STL/bits/stl_iterator_base_types.h"
 
 #include "PvZ/STL/ext/string_conversions.h"
 #include "PvZ/STL/ext/type_traits.h"
@@ -44,7 +45,6 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 
 #ifdef PVZ_VERSION
 extern uintptr_t gLibGameMainBaseAddr;
@@ -145,17 +145,16 @@ public:
         : m_dataplus(construct(s, s + n, a), a) {}
 
     basic_string(const CharT *s, const Alloc &a = Alloc())
-        requires detail::is_allocator<Alloc>
+        requires detail::allocator_like<Alloc>
         : m_dataplus(construct(s, s + (s != nullptr ? traits_type::length(s) : npos), a), a) {}
 
     basic_string(std::nullptr_t) = delete;
 
     basic_string(size_type n, CharT c, const Alloc &a = Alloc())
-        requires detail::is_allocator<Alloc>
+        requires detail::allocator_like<Alloc>
         : m_dataplus(construct(n, c, a), a) {}
 
-    template <typename InIterator>
-        requires std::is_base_of_v<std::input_iterator_tag, typename std::iterator_traits<InIterator>::iterator_category>
+    template <detail::has_input_iter_cat InIterator>
     basic_string(InIterator first, InIterator last, const Alloc &a = Alloc())
         : m_dataplus(construct(first, last, a), a) {}
 
@@ -401,19 +400,19 @@ public:
     }
 
     const_iterator cbegin() const noexcept {
-        return const_iterator(_data());
+        return begin();
     }
 
     const_iterator cend() const noexcept {
-        return const_iterator(_data() + size());
+        return end();
     }
 
     const_reverse_iterator crbegin() const noexcept {
-        return const_reverse_iterator(end());
+        return rbegin();
     }
 
     const_reverse_iterator crend() const noexcept {
-        return const_reverse_iterator(begin());
+        return rend();
     }
 
     [[nodiscard]] bool empty() const noexcept {
