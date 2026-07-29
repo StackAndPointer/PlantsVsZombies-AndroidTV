@@ -70,6 +70,9 @@ public:
     using size_type = typename rep_type::size_type;
     using difference_type = typename rep_type::difference_type;
 
+    using node_type = typename rep_type::node_type;
+    using insert_return_type = typename rep_type::insert_return_type;
+
     set() = default;
 
     set(const set &) = default;
@@ -238,6 +241,14 @@ public:
         insert(il.begin(), il.end());
     }
 
+    insert_return_type insert(node_type &&nh) {
+        return m_t.reinsert_node_unique(std::move(nh));
+    }
+
+    iterator insert(const_iterator pos, node_type &&nh) {
+        return m_t.reinsert_node_hint_unique(pos, std::move(nh));
+    }
+
     template <detail::container_compatible_range<value_type> Rg>
     void insert_range(Rg &&rg) {
         auto first = std::ranges::begin(rg);
@@ -281,6 +292,34 @@ public:
 
     void swap(set &other) noexcept(std::is_nothrow_swappable_v<Compare>) {
         m_t.swap(other.m_t);
+    }
+
+    node_type extract(const_iterator pos) {
+        assert(pos != end());
+        return m_t.extract(pos);
+    }
+
+    node_type extract(const key_type &k) {
+        return m_t.extract(k);
+    }
+
+    template <detail::heterogeneous_tree_key<set> Kt>
+    node_type extract(Kt &&k) {
+        return m_t.extract_tr(k);
+    }
+
+    template <typename, typename>
+    friend struct detail::rb_tree_merge_helper;
+
+    template <typename Compare2>
+    void merge(set<Key, Compare2, Alloc> &src) {
+        using merge_helper = detail::rb_tree_merge_helper<set, Compare2>;
+        m_t.merge_unique(merge_helper::get_tree(src));
+    }
+
+    template <typename Compare2>
+    void merge(set<Key, Compare2, Alloc> &&src) {
+        merge(src);
     }
 
     size_type count(const key_type &k) const {
@@ -389,6 +428,18 @@ template <typename Key, typename Compare, typename Alloc>
 void swap(set<Key, Compare, Alloc> &lhs, set<Key, Compare, Alloc> &rhs) noexcept(noexcept(lhs.swap(rhs))) {
     lhs.swap(rhs);
 }
+
+
+// Allow pvzstl::set access to internals of compatible sets.
+template <typename Val, typename Cmp1, typename Alloc, typename Cmp2>
+struct detail::rb_tree_merge_helper<set<Val, Cmp1, Alloc>, Cmp2> {
+private:
+    friend class set<Val, Cmp1, Alloc>;
+
+    static auto &get_tree(set<Val, Cmp2, Alloc> &set) noexcept {
+        return set.m_t;
+    }
+};
 
 } // namespace pvzstl
 

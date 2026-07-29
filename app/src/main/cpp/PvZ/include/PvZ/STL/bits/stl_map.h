@@ -86,6 +86,9 @@ public:
     using reverse_iterator = rep_type::reverse_iterator;
     using const_reverse_iterator = rep_type::const_reverse_iterator;
 
+    using node_type = typename rep_type::node_type;
+    using insert_return_type = typename rep_type::insert_return_type;
+
     map() = default;
 
     map(const map &) = default;
@@ -312,6 +315,14 @@ public:
         insert(il.begin(), il.end());
     }
 
+    insert_return_type insert(node_type &&nh) {
+        return m_t.reinsert_node_unique(std::move(nh));
+    }
+
+    iterator insert(const_iterator pos, node_type &&nh) {
+        return m_t.reinsert_node_hint_unique(pos, std::move(nh));
+    }
+
     template <detail::container_compatible_range<value_type> Rg>
     void insert_range(Rg &&rg) {
         auto first = std::ranges::begin(rg);
@@ -461,6 +472,34 @@ public:
         m_t.swap(other.m_t);
     }
 
+    node_type extract(const_iterator pos) {
+        assert(pos != end());
+        return m_t.extract(pos);
+    }
+
+    node_type extract(const key_type &k) {
+        return m_t.extract(k);
+    }
+
+    template <detail::heterogeneous_tree_key<map> Kt>
+    node_type extract(Kt &&k) {
+        return m_t.extract_tr(k);
+    }
+
+    template <typename, typename>
+    friend struct detail::rb_tree_merge_helper;
+
+    template <typename Compare2>
+    void merge(map<Key, Tp, Compare2, Alloc> &src) {
+        using merge_helper = detail::rb_tree_merge_helper<map, Compare2>;
+        m_t.merge_unique(merge_helper::get_tree(src));
+    }
+
+    template <typename Compare2>
+    void merge(map<Key, Tp, Compare2, Alloc> &&src) {
+        merge(src);
+    }
+
     size_type count(const key_type &k) const {
         return m_t.find(k) == m_t.end() ? 0 : 1;
     }
@@ -579,6 +618,17 @@ template <typename Key, typename Tp, typename Compare, typename Alloc>
 void swap(map<Key, Tp, Compare, Alloc> &lhs, map<Key, Tp, Compare, Alloc> &rhs) noexcept(noexcept(lhs.swap(rhs))) {
     lhs.swap(rhs);
 }
+
+// Allow pvzstl::map access to internals of compatible maps.
+template <typename Key, typename Val, typename Cmp1, typename Alloc, typename Cmp2>
+struct detail::rb_tree_merge_helper<map<Key, Val, Cmp1, Alloc>, Cmp2> {
+private:
+    friend class map<Key, Val, Cmp1, Alloc>;
+
+    static auto &get_tree(map<Key, Val, Cmp2, Alloc> &map) noexcept {
+        return map.m_t;
+    }
+};
 
 } // namespace pvzstl
 

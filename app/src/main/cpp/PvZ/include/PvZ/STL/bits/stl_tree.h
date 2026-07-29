@@ -29,6 +29,7 @@
 
 #include "PvZ/STL/bits/alloc_traits.h"
 #include "PvZ/STL/bits/move.h"
+#include "PvZ/STL/bits/node_handle.h"
 #include "PvZ/STL/bits/stl_function.h"
 
 #include "PvZ/STL/ext/aligned_buffer.h"
@@ -292,6 +293,9 @@ namespace _rb_tree {
     struct node_traits : node_traits<Val, Val *> {};
 } // namespace _rb_tree
 
+template <typename Tree1, typename Cmp2>
+struct rb_tree_merge_helper {};
+
 [[gnu::pure]] unsigned int rb_tree_black_count(const rb_tree_node_base *node, const rb_tree_node_base *root) noexcept;
 
 template <typename Key, typename Val, typename KeyOfValue, typename Compare, typename Alloc = std::allocator<Val>>
@@ -331,6 +335,9 @@ public:
 
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+    using node_type = detail::node_handle<Key, Val, node_alloc_type>;
+    using insert_return_type = detail::node_insert_result<std::conditional_t<std::is_same_v<Key, Val>, const_iterator, iterator>, node_type>;
 
     template <typename Iter>
     static constexpr bool same_value_type = std::is_same_v<value_type, typename std::iterator_traits<Iter>::value_type>;
@@ -828,6 +835,147 @@ public:
         m_impl.reset();
     }
 
+    insert_return_type reinsert_node_unique(node_type &&nh) {
+        insert_return_type ret;
+        if (nh.empty()) {
+            ret.position = end();
+        } else {
+            assert(get_node_allocator() == *nh.m_alloc);
+            auto res = get_insert_unique_pos(nh.key());
+            if (res.second) {
+                ret.position = insert_node(res.first, res.second, adapt(nh.m_ptr));
+                nh.release();
+                ret.inserted = true;
+            } else {
+                ret.node = std::move(nh);
+                ret.position = iterator(res.first);
+                ret.inserted = false;
+            }
+        }
+        return ret;
+    }
+
+    insert_return_type reinsert_node_equal(node_type &&nh) {
+        insert_return_type ret;
+        if (nh.empty()) {
+            ret.position = end();
+        } else {
+            assert(get_node_allocator() == *nh.m_alloc);
+            auto res = get_insert_equal_pos(nh.key());
+            if (res.second) {
+                ret = insert_node(res.first, res.second, adapt(nh.m_ptr));
+            } else {
+                ret = insert_equal_lower_node(adapt(nh.m_ptr));
+            }
+            nh.release();
+        }
+        return ret;
+    }
+
+    iterator reinsert_node_hint_unique(const_iterator pos, node_type &&nh) {
+        iterator ret;
+        if (nh.empty()) {
+            ret = end();
+        } else {
+            assert(get_node_allocator() == *nh.m_alloc);
+            auto res = get_insert_hint_unique_pos(pos, nh.key());
+            if (res.second) {
+                ret = insert_node(res.first, res.second, adapt(nh.m_ptr));
+                nh.release();
+            } else {
+                ret = iterator(res.first);
+            }
+        }
+        return ret;
+    }
+
+    iterator reinsert_node_hint_equal(const_iterator pos, node_type &&nh) {
+        iterator ret;
+        if (nh.empty()) {
+            ret = end();
+        } else {
+            assert(get_node_allocator() == *nh.m_alloc);
+            auto res = get_insert_hint_equal_pos(pos, nh.key());
+            if (res.second) {
+                ret = insert_node(res.first, res.second, adapt(nh.m_ptr));
+                nh.release();
+            } else {
+                ret = insert_equal_lower_node(adapt(nh.m_ptr));
+            }
+        }
+        return ret;
+    }
+
+    node_type extract(const_iterator pos) {
+        auto ptr = node_traits::rebalance_for_erase(pos.m_node, m_impl.m_header);
+        --m_impl.m_node_count;
+        auto node_p = static_cast<node &>(*ptr).get_node_ptr();
+        using alloc_ptr = typename node_alloc_traits::pointer;
+        if constexpr (std::is_same_v<node_ptr, alloc_ptr>) {
+            return {node_p, get_node_allocator()};
+        } else {
+            auto ap = std::pointer_traits<alloc_ptr>::pointer_to(*node_p);
+            return {ap, get_node_allocator()};
+        }
+    }
+
+    node_type extract(const key_type &k) {
+        node_type nh;
+        auto pos = find(k);
+        if (pos != end()) {
+            nh = extract(const_iterator(pos));
+        }
+        return nh;
+    }
+
+    template <typename Kt>
+    node_type extract_tr(const Kt &k) {
+        node_type nh;
+        auto pos = find_tr(k);
+        if (pos != end()) {
+            nh = extract(const_iterator(pos));
+        }
+        return nh;
+    }
+
+    template <typename Compare2>
+    using compatible_tree = rb_tree<Key, Val, KeyOfValue, Compare2, Alloc>;
+
+    template <typename, typename>
+    friend struct rb_tree_merge_helper;
+
+    template <typename Compare2>
+    void merge_unique(compatible_tree<Compare2> &src) noexcept {
+        using merge_helper = rb_tree_merge_helper<rb_tree, Compare2>;
+        for (auto it = src.begin(), end = src.end(); it != end;) {
+            auto pos = it++;
+            auto res = get_insert_unique_pos(KeyOfValue()(*pos));
+            if (res.second) {
+                auto &src_impl = merge_helper::get_impl(src);
+                auto ptr = node_traits::rebalance_for_erase(pos.m_node, src_impl.m_header);
+                --src_impl.m_node_count;
+                auto node_p = static_cast<node &>(*ptr).get_node_ptr();
+                insert_node(res.first, res.second, node_p);
+            }
+        }
+    }
+
+    template <typename Compare2>
+    void merge_equal(compatible_tree<Compare2> &src) noexcept {
+        using merge_helper = rb_tree_merge_helper<rb_tree, Compare2>;
+        for (auto it = src.begin(), end = src.end(); it != end;) {
+            auto pos = it++;
+            auto res = get_insert_equal_pos(KeyOfValue()(*pos));
+            if (res.second) {
+                auto &src_impl = merge_helper::get_impl(src);
+                auto ptr = node_traits::rebalance_for_erase(pos.m_node, src_impl.m_header);
+                --src_impl.m_node_count;
+                auto node_p = static_cast<node &>(*ptr).get_node_ptr();
+                insert_node(res.first, res.second, node_p);
+            }
+        }
+    }
+
     // Set operations.
     iterator find(const key_type &k) {
         iterator it(_lower_bound(_begin(), _end(), k));
@@ -1280,7 +1428,7 @@ private:
             : m_t(t)
             , m_node(t.create_node(std::forward<Args>(args)...)) {}
 
-        auto_node(auto_node &&other)
+        auto_node(auto_node &&other) noexcept
             : m_t(other.m_t)
             , m_node(other.m_node) {
             other.m_node = nullptr;
@@ -1546,6 +1694,17 @@ template <typename Key, typename Val, typename KeyOfValue, typename Compare, typ
 void swap(rb_tree<Key, Val, KeyOfValue, Compare, Alloc> &lhs, rb_tree<Key, Val, KeyOfValue, Compare, Alloc> &rhs) noexcept(noexcept(lhs.swap(rhs))) {
     lhs.swap(rhs);
 }
+
+// Allow access to internals of compatible rb_tree specializations.
+template <typename Key, typename Val, typename Sel, typename Cmp1, typename Alloc, typename Cmp2>
+struct rb_tree_merge_helper<rb_tree<Key, Val, Sel, Cmp1, Alloc>, Cmp2> {
+private:
+    friend class rb_tree<Key, Val, Sel, Cmp1, Alloc>;
+
+    static auto &get_impl(rb_tree<Key, Val, Sel, Cmp2, Alloc> &tree) noexcept {
+        return tree.m_impl;
+    }
+};
 
 template <typename Kt, typename Container>
 concept heterogeneous_tree_key = transparent_comparator<typename Container::key_compare> && heterogeneous_key<Kt, Container>;

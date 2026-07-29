@@ -70,9 +70,9 @@ struct allocated_ptr {
     }
 
     pointer release() {
-        pointer ptr = std::move(m_ptr);
+        pointer tmp = std::move(m_ptr);
         m_ptr = nullptr;
-        return ptr;
+        return tmp;
     }
 
 private:

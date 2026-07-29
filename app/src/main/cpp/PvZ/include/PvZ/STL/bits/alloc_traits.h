@@ -29,6 +29,9 @@
 
 namespace pvzstl::detail {
 
+template <typename Alloc, typename Up>
+using alloc_rebind = typename std::allocator_traits<Alloc>::template rebind_alloc<Up>;
+
 template <typename Alloc>
 [[gnu::always_inline]] constexpr void alloc_on_copy(Alloc &one, const Alloc &two) {
     using traits = std::allocator_traits<Alloc>;
@@ -37,14 +40,15 @@ template <typename Alloc>
         one = two;
     }
 }
+
 template <typename Alloc>
-[[gnu::always_inline]] constexpr void alloc_on_copy(const Alloc &a) {
+[[gnu::always_inline]] constexpr Alloc alloc_on_copy(const Alloc &a) {
     using traits = std::allocator_traits<Alloc>;
     return traits::select_on_container_copy_construction(a);
 }
 
 template <typename Alloc>
-[[gnu::always_inline]] constexpr void alloc_on_move(Alloc &one, Alloc &&two) {
+[[gnu::always_inline]] constexpr void alloc_on_move(Alloc &one, Alloc &two) {
     using traits = std::allocator_traits<Alloc>;
     using pocma = typename traits::propagate_on_container_move_assignment::type;
     if constexpr (pocma::value) {
