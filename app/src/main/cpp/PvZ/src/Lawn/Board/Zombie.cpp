@@ -94,7 +94,7 @@ ZombieDefinition gExtendedZombieDefs[] = {
     {ZOMBIE_ZOMBLOB_MIDDLE, REANIM_ZOMBLOB_MIDDLE, 1, 18, 1, 0, "ZOMBLOB"},
     {ZOMBIE_ZOMBLOB_SMALL, REANIM_ZOMBLOB_SMALL, 1, 18, 1, 0, "ZOMBLOB"},
     {ZOMBIE_GIGA_GARGANTUAR, REANIM_GIGA_GARGANTUAR, 10, 48, 15, 6000, "GIGA_GARGANTUAR"},
-    {ZOMBIE_GIGA_IMP, REANIM_GIGA_GARGANTUAR, 10, 48, 1, 0, "GIGA_IMP"},
+    {ZOMBIE_GIGA_IMP, REANIM_GIGA_IMP, 10, 48, 1, 0, "GIGA_IMP"},
 };
 
 ZombieDefinition &GetZombieDefinition(ZombieType theZombieType) {
@@ -329,6 +329,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
             if (aBodyReanim != nullptr) {
                 aBodyReanim->AssignRenderGroupToPrefix("lightning_attack", RENDER_GROUP_GIGA_LIGHTNING);
+                aBodyReanim->AssignRenderGroupToPrefix("lightning_splash", RENDER_GROUP_GIGA_LIGHTNING);
             }
             break;
         }
@@ -526,7 +527,7 @@ void Zombie::UpdatePlaying() {
             aPitch = RandRangeFloat(40.0f, 50.0f);
         }
 
-        if (mZombieType == ZombieType::ZOMBIE_GARGANTUAR) {
+        if (mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
             mApp->PlayFoley(FoleyType::FOLEY_LOW_GROAN);
         } else if (mVariant) {
             mApp->PlayFoleyPitch(FoleyType::FOLEY_BRAINS, aPitch);
@@ -2143,6 +2144,8 @@ void Zombie::UpdateGigaGargantuar() {
     static constexpr int GIGA_LIGHTNING_DURATION = 400;
     static constexpr int GIGA_LIGHTNING_MAIN_DAMAGE = 6;
     static constexpr int GIGA_LIGHTNING_SPLASH_DAMAGE = 2;
+    static constexpr int GIGA_LIGHTNING_HIT_EFFECT_INTERVAL = 50;
+    static constexpr int GIGA_LIGHTNING_HIT_EFFECT_DURATION = 40;
 
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
     if (aBodyReanim == nullptr) {
@@ -2151,13 +2154,39 @@ void Zombie::UpdateGigaGargantuar() {
 
     const bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
 
-    auto damagePlant = [this](Plant *thePlant, int theDamage) {
+    auto spawnLightningHitEffect = [this](Plant *thePlant) {
+        if (thePlant == nullptr || thePlant->mDead) {
+            return;
+        }
+
+        const int aRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, thePlant->mRow, 1);
+        Reanimation *aLightning = mApp->AddReanimation(thePlant->mX, thePlant->mY, aRenderOrder, ReanimationType::REANIM_LIGHTNING_HIT);
+        if (aLightning != nullptr) {
+            mApp->PlayFoley(FoleyType::FOLEY_POWER_POLE_HIFI);
+            aLightning->SetFramesForLayer("anim_hit");
+            aLightning->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_FULL_LAST_FRAME;
+            aLightning->mAnimRate = aLightning->mFrameCount * 100.0f / float(GIGA_LIGHTNING_HIT_EFFECT_DURATION);
+        }
+    };
+
+    auto damagePlant = [this, &spawnLightningHitEffect](Plant *thePlant, int theDamage, bool theSpawnHitEffect) {
         if (thePlant == nullptr || thePlant->mDead || thePlant->NotOnGround()) {
             return;
         }
 
+        if (thePlant->mSeedType == SeedType::SEED_JALAPENO || thePlant->mSeedType == SeedType::SEED_CHERRYBOMB || thePlant->mSeedType == SeedType::SEED_DOOMSHROOM
+            || thePlant->mSeedType == SeedType::SEED_ICESHROOM || thePlant->mState == PlantState::STATE_SQUASH_LOOK || thePlant->mState == PlantState::STATE_SQUASH_PRE_LAUNCH) {
+            if (!thePlant->mIsAsleep) {
+                return;
+            }
+        }
+
         thePlant->mPlantHealth -= theDamage;
-        thePlant->mEatenFlashCountdown = 25;
+        thePlant->mEatenFlashCountdown = std::max(thePlant->mEatenFlashCountdown, 25);
+
+        if (theSpawnHitEffect) {
+            spawnLightningHitEffect(thePlant);
+        }
 
         if (thePlant->mPlantHealth > 0) {
             return;
@@ -2231,19 +2260,17 @@ void Zombie::UpdateGigaGargantuar() {
             return;
         }
 
-        const float aOffsetDistance = RandRangeFloat(0.0f, 100.0f);
-
         if (gTcpClientSocket >= 0) {
             U16U16U16UNI32UNI32_Event event{};
             event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_IMP_THROWN;
             event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
             event.data2 = uint16_t(mBoard->mZombies.DataArrayGetID(aGigaImp));
             event.data3 = uint16_t(aGigaImp->mTargetCol);
-            event.data4.f32 = aOffsetDistance;
+            event.data4.f32 = 0.0f;
             netplay::PutEvent(event);
         }
 
-        aGigaImp->ZombieImpThrown(this, aOffsetDistance);
+        aGigaImp->ZombieImpThrown(this, 0.0f);
     };
 
     auto hasGigaImpBombardTarget = [this]() -> bool {
@@ -2369,6 +2396,9 @@ void Zombie::UpdateGigaGargantuar() {
     }
 
     if (mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_ATTACK) {
+        const int aLightningElapsedTicks = GIGA_LIGHTNING_DURATION - std::clamp(mPhaseCounter, 0, GIGA_LIGHTNING_DURATION);
+        const bool aSpawnHitEffect = aLightningElapsedTicks == 1 || (aLightningElapsedTicks > 0 && aLightningElapsedTicks % GIGA_LIGHTNING_HIT_EFFECT_INTERVAL == 0);
+
         Plant *aMainTarget = refreshLightningMainTarget();
         int aLightningLeft;
 
@@ -2416,7 +2446,7 @@ void Zombie::UpdateGigaGargantuar() {
                 continue;
             }
 
-            damagePlant(aHitPlant, aHit.mDamage);
+            damagePlant(aHitPlant, aHit.mDamage, aSpawnHitEffect);
         }
 
         refreshLightningMainTarget();
@@ -2540,7 +2570,7 @@ void Zombie::UpdateGigaImp() {
         return;
     }
 
-    bool doBoom = false;
+    bool doPop = false;
 
     if (mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN) {
         mVelZ -= THOWN_ZOMBIE_GRAVITY;
@@ -2557,7 +2587,6 @@ void Zombie::UpdateGigaImp() {
             int aGridX = mBoard->PixelToGridXKeepOnBoard(aPosX, aPosY);
 
             Plant *aUmbrella = mBoard->FindUmbrellaPlant(aGridX, mRow);
-
             if (aUmbrella != nullptr) {
                 mApp->PlaySample(SOUND_BOING);
                 mApp->PlayFoley(FoleyType::FOLEY_UMBRELLA);
@@ -2580,8 +2609,7 @@ void Zombie::UpdateGigaImp() {
 
         if (mAltitude <= 0.0f) {
             mAltitude = 0.0f;
-
-            doBoom = true;
+            doPop = true;
         }
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_BLOCKED) {
         mVelZ -= THOWN_ZOMBIE_GRAVITY;
@@ -2602,7 +2630,7 @@ void Zombie::UpdateGigaImp() {
 
         if (mPosX >= mTargetRow && mAltitude <= 0.0f) {
             mAltitude = 0.0f;
-            doBoom = true;
+            doPop = true;
         }
 
         if (mAltitude < 0.0f && mPosX < mTargetRow) {
@@ -2620,13 +2648,13 @@ void Zombie::UpdateGigaImp() {
         return;
     }
 
-    if (doBoom) {
+    if (doPop) {
         if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
             return;
         }
 
         mZombiePhase = ZombiePhase::PHASE_IMP_POPPING;
-        PlayZombieReanim("anim_boom", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
+        PlayZombieReanim("anim_land", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
 
         if (gTcpClientSocket >= 0) {
             U16_Event event{};
@@ -2810,6 +2838,41 @@ void Zombie::UpdateZombieGargantuar() {
 }
 
 void Zombie::ZombieImpThrown(Zombie *theThrowerZombie, float theOffsetDistance) {
+    if (mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
+        static constexpr float GIGA_IMP_FLY_SPEED = 3.0f;
+        static constexpr float GIGA_IMP_LAUNCH_OFFSET_X = -45.0f;
+        static constexpr float GIGA_IMP_LAUNCH_ALTITUDE = 90.0f;
+
+        SetRow(theThrowerZombie->mRow);
+        mPosX = theThrowerZombie->mPosX + GIGA_IMP_LAUNCH_OFFSET_X * theThrowerZombie->mScaleZombie;
+        mPosY = GetPosYBasedOnRow(mRow);
+        mAltitude = GIGA_IMP_LAUNCH_ALTITUDE * theThrowerZombie->mScaleZombie;
+        mX = int(mPosX);
+        mY = int(mPosY);
+        mVariant = false;
+        mHitUmbrella = false;
+        mZombieHeight = ZombieHeight::HEIGHT_ZOMBIE_NORMAL;
+        mZombiePhase = ZombiePhase::PHASE_IMP_GETTING_THROWN;
+        mRenderOrder = theThrowerZombie->mRenderOrder + 1;
+        mScaleZombie = theThrowerZombie->mScaleZombie;
+        mBodyHealth *= mScaleZombie * mScaleZombie;
+        mBodyMaxHealth *= mScaleZombie * mScaleZombie;
+        mChilledCounter = theThrowerZombie->mChilledCounter;
+
+        const auto aTargetX = float(mBoard->GridToPixelX(mTargetCol, mRow));
+        const float aThrowingDistance = std::max(0.0f, mPosX - aTargetX);
+        mVelX = GIGA_IMP_FLY_SPEED;
+
+        const int aFlightFrames = std::max(1, int(std::ceil(aThrowingDistance / GIGA_IMP_FLY_SPEED)));
+        const auto aFrames = float(aFlightFrames);
+        mVelZ = (THOWN_ZOMBIE_GRAVITY * aFrames * (aFrames + 1.0f) * 0.5f - mAltitude) / aFrames;
+
+        PlayZombieReanim("anim_thrown", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 18.0f);
+        UpdateReanim();
+        mApp->PlayFoley(FoleyType::FOLEY_IMP);
+        return;
+    }
+
     float aThrowingDistance = theThrowerZombie->mPosX - 360.0f;
 
     float aMinThrowDistance = 40.0f;
@@ -2833,25 +2896,6 @@ void Zombie::ZombieImpThrown(Zombie *theThrowerZombie, float theOffsetDistance) 
     mScaleZombie = theThrowerZombie->mScaleZombie;
     mBodyHealth *= mScaleZombie * mScaleZombie;
     mBodyMaxHealth *= mScaleZombie * mScaleZombie;
-
-    if (mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
-        const auto aTargetX = float(mBoard->GridToPixelX(mTargetCol, mRow));
-
-        aThrowingDistance = mPosX - aTargetX;
-        if (aThrowingDistance < 0.0f) {
-            aThrowingDistance = 0.0f;
-        }
-
-        mVelX = 3.0f;
-        int aFlightFrames = std::max(1, int(std::ceil(aThrowingDistance / mVelX)));
-        const auto aFrames = float(aFlightFrames);
-        mVelZ = (THOWN_ZOMBIE_GRAVITY * aFrames * (aFrames + 1.0f) * 0.5f - mAltitude) / aFrames;
-        mChilledCounter = theThrowerZombie->mChilledCounter;
-        PlayZombieReanim("anim_drop", ReanimLoopType::REANIM_LOOP, 0, 18.0f);
-        UpdateReanim();
-        mApp->PlayFoley(FoleyType::FOLEY_IMP);
-        return;
-    }
 
     if (theThrowerZombie->mMindControlled) {
         mPosX = theThrowerZombie->mPosX + theThrowerZombie->mWidth;

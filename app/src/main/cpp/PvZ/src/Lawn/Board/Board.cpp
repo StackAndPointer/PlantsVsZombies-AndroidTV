@@ -7153,18 +7153,10 @@ void Board::KillAllPlantsInRadius(int theX, int theY, int theRadius) {
 }
 
 void Board::PlantsTakeDamageInGrid(int theGridX, int theGridY, int theDamage) {
-    Plant *aPlant = nullptr;
-    while (IteratePlants(aPlant)) {
-        if (aPlant->mPlantCol == theGridX && aPlant->mRow == theGridY) {
-            Plant *aPumpkin = GetTopPlantAt(theGridX, theGridY, PlantPriority::TOPPLANT_ONLY_PUMPKIN);
-            if (aPumpkin != nullptr) {
-                mPlantsEaten++;
-                aPumpkin->mPlantHealth -= theDamage;
-            } else {
-                mPlantsEaten++;
-                aPlant->mPlantHealth -= theDamage;
-            }
-        }
+    Plant *aPlant = GetTopPlantAt(theGridX, theGridY, PlantPriority::TOPPLANT_EATING_ORDER);
+    if (aPlant != nullptr) {
+        aPlant->mPlantHealth -= theDamage;
+        aPlant->mEatenFlashCountdown = std::max(aPlant->mEatenFlashCountdown, 50);
     }
 }
 
