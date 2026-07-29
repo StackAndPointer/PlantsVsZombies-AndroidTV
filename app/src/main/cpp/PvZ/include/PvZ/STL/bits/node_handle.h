@@ -94,7 +94,7 @@ protected:
         return *this;
     }
 
-    void swap(node_handle_common &other) noexcept {
+    void _swap(node_handle_common &other) noexcept {
         if (empty()) {
             if (!other.empty()) {
                 move(std::move(other));
@@ -217,7 +217,7 @@ public:
     }
 
     void swap(node_handle &other) noexcept {
-        this->swap(other);
+        this->_swap(other);
         using std::swap;
         swap(m_pkey, other.m_pkey);
         swap(m_pmapped, other.m_pmapped);
@@ -279,7 +279,7 @@ public:
     }
 
     void swap(node_handle &other) noexcept {
-        this->swap(other);
+        this->_swap(other);
     }
 
     friend void swap(node_handle &lhs, node_handle &rhs) noexcept(noexcept(lhs.swap(rhs))) {
