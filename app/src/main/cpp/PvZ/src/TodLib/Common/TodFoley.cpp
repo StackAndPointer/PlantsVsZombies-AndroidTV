@@ -91,7 +91,7 @@ auto GetNewLawnFoleyParamArray() -> FoleyParams (&)[FoleyType::EXTENDED_NUM_FOLE
             {FoleyType::FOLEY_MENU_LEFT, 0.0f, {&Sexy::SOUND_MENU_L_ST}, 1U},
             {FoleyType::FOLEY_MENU_CENTRE, 0.0f, {&Sexy::SOUND_MENU_C_ST}, 1U},
             {FoleyType::FOLEY_MENU_RIGHT, 0.0f, {&Sexy::SOUND_MENU_R_ST}, 1U},
-            {FoleyType::FOLEY_ALLSTAR_TACKLE, 10.0f, {&addonSounds.allstardbl}, 0U},
+            {FoleyType::FOLEY_ALLSTAR_TACKLE, 5.0f, {&addonSounds.allstardbl}, 0U},
             {FoleyType::FOLEY_THRILLER, 0.0f, {&addonSounds.thriller}, 6U},
             {FoleyType::FOLEY_EXPLORER_IGNITE, 0.0f, {&addonSounds.explorer}, 0U},
             {FoleyType::FOLEY_ZOMBLOB, 0.0f, {&addonSounds.zomblob}, 0U},

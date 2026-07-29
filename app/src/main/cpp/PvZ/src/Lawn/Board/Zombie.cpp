@@ -747,20 +747,45 @@ void Zombie::UpdateSuperFanImp() {
         return;
     }
 
+    const bool isRemoteClient = gTcpConnected || gIsReplayMode;
+
+    auto syncPhaseCounter = [this]() {
+        if (gTcpClientSocket < 0) {
+            return;
+        }
+
+        U8U8U16U16_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER;
+        event.data1 = uint8_t(mZombiePhase);
+        event.data3 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+        event.data4 = uint16_t(std::max(0, mPhaseCounter));
+        netplay::PutEvent(event);
+    };
+
     if (Zombie *aZombie = FindZombieGigaFootball()) {
         mRelatedZombieID = mBoard->ZombieGetID(aZombie);
     }
 
     if (Zombie *aZombie = mBoard->ZombieTryToGet(mRelatedZombieID)) {
-        if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
+        if (!(mApp->IsVSMode() && isRemoteClient)) {
             bool isKicked = false;
+            Plant *aPlant = aZombie->FindCatapultTarget();
+
             if (aZombie->mZombiePhase == ZombiePhase::PHASE_FOOTBALL_CHARGING) {
+                if (mApp->IsVSMode() && aPlant != nullptr) {
+                    mTargetCol = aPlant->mPlantCol;
+                }
                 isKicked = true;
             } else if (aZombie->mZombiePhase == ZombiePhase::PHASE_FOOTBALL_WALKING) {
+                if (mApp->IsVSMode() && aPlant != nullptr) {
+                    mTargetCol = aPlant->mPlantCol;
+                }
                 aZombie->StopEating();
                 aZombie->mZombiePhase = PHASE_FOOTBALL_KICKING;
                 aZombie->PlayZombieReanim("anim_kick", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 20.0f);
+
                 mApp->PlaySample(addonSounds.whistle);
+
                 if (gTcpClientSocket >= 0) {
                     U8U8U16U16_Event event{};
                     event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER;
@@ -781,8 +806,13 @@ void Zombie::UpdateSuperFanImp() {
                 mApp->PlayFoley(FoleyType::FOLEY_SWING);
 
                 mZombiePhase = ZombiePhase::PHASE_IMP_GETTING_THROWN;
-                int aTargetCol = mBoard->GridToPixelX(RandRangeInt(0, 2), mRow) - 25;
-                float aKickingDistance = mPosX - aTargetCol;
+                int aTargetX = 0;
+                if (mApp->IsVSMode()) {
+                    aTargetX = mBoard->GridToPixelX(mTargetCol, mRow) - 25;
+                } else {
+                    aTargetX = mBoard->GridToPixelX(RandRangeInt(0, 2), mRow) - 25;
+                }
+                float aKickingDistance = mPosX - aTargetX;
                 if (mBoard->StageHasRoof()) {
                     aKickingDistance -= 60.0f;
                 }
@@ -898,22 +928,39 @@ void Zombie::UpdateSuperFanImp() {
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_PRE_RUN) {
         mZombiePhase = PHASE_IMP_RUNNING;
         PickRandomSpeed();
+        if (mApp->IsVSMode()) {
+            mPhaseCounter = RandRangeInt(1350, 2300);
+            syncPhaseCounter();
+        }
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING) {
-        int aTargetX = mBoard->GridToPixelX(mTargetCol, mRow) + RandRangeInt(-20, 60);
-        if (mX + mWidth / 2 <= aTargetX) {
-            doPop = true;
+        if (mApp->IsVSMode()) {
+            if (mIsEating) {
+                Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
+                if (aPlant != nullptr && Plant::IsDefender(aPlant->mSeedType)) {
+                    ++mPhaseCounter;
+                }
+            }
+            if (mPhaseCounter <= 0) {
+                doPop = true;
+            }
+        } else {
+            int aTargetX = mBoard->GridToPixelX(mTargetCol, mRow) + RandRangeInt(-20, 60);
+            if (mX + mWidth / 2 <= aTargetX) {
+                doPop = true;
+            }
         }
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_POPPING) {
         Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
         if (aBodyReanim && aBodyReanim->ShouldTriggerTimedEvent(0.20f)) {
             DoSpecial();
-            ApplyBurn();
+            DieNoLoot();
         }
     }
 
     if (doPop) {
-        if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
+        if (mApp->IsVSMode() && isRemoteClient) {
             return;
+        }
 
         mZombiePhase = ZombiePhase::PHASE_IMP_POPPING;
         PlayZombieReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
@@ -984,7 +1031,7 @@ void Zombie::UpdateGigaFootball() {
         if (aBodyReanim->ShouldTriggerTimedEvent(0.15f)) {
             int aMindCtrlIndex = mMindControlled ? -1 : 1;
             mApp->PlayFoley(FoleyType::FOLEY_ALLSTAR_TACKLE);
-            mBoard->ShakeBoard(-4 * aMindCtrlIndex, 1);
+            mBoard->ShakeBoard(-4 * aMindCtrlIndex, 2);
             mPosX += 20.0f * aMindCtrlIndex;
 
             if (Zombie *aZombie = FindZombieTarget()) {
@@ -993,11 +1040,16 @@ void Zombie::UpdateGigaFootball() {
 
             if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
                 SeedType aSeedType = aPlant->mSeedType;
-                if (aSeedType == SEED_CHERRYBOMB || ((aSeedType == SEED_ICESHROOM || aSeedType == SEED_DOOMSHROOM) && !aPlant->mIsAsleep) || aSeedType == SEED_SQUASH || aSeedType == SEED_JALAPENO
-                    || aSeedType == SEED_BLOVER)
-                    return;
-
-                aPlant->Die();
+                if (aSeedType == SEED_CHERRYBOMB || aSeedType == SEED_ICESHROOM || aSeedType == SEED_DOOMSHROOM || aSeedType == SEED_SQUASH || aSeedType == SEED_JALAPENO || aSeedType == SEED_BLOVER) {
+                    if (!aPlant->mIsAsleep) {
+                        return;
+                    }
+                }
+                if (aSeedType == SEED_TALLNUT || aSeedType == SEED_TALLNUT) {
+                    aPlant->mPlantHealth -= aPlant->mPlantHealth + 1; // 造成伤害可触发坚果损伤的粒子特效
+                } else {
+                    aPlant->Die();
+                }
             }
         }
 

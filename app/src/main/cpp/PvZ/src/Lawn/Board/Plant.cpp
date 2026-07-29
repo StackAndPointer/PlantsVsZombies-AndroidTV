@@ -2011,6 +2011,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
             return 50;
         case SeedType::SEED_SQUASH:
         case SeedType::SEED_GARLIC:
+        case SeedType::SEED_CELERY_STALKER:
         case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
         case SeedType::SEED_ZOMBIE_BOBSLED:
         case SeedType::SEED_ZOMBIE_BALLOON:
@@ -2210,12 +2211,15 @@ static int GetVSCostShuffle(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_PAIL:   // 100 -> 125
         case SeedType::SEED_ZOMBIE_DIGGER: // 150 -> 125
             return 125;
+        case SeedType::SEED_JALAPENO:        // 125 -> 150
         case SeedType::SEED_TORCHWOOD:       // 125 -> 150
-        case SeedType::SEED_DOOMSHROOM:      // 125 -> 150
+        case SeedType::SEED_BLOOMERANG:      // 125 -> 150
         case SeedType::SEED_ZOMBIE_BUNGEE:   // 125 -> 150
         case SeedType::SEED_ZOMBIE_CATAPULT: // 200 -> 150
             return 150;
+        case SeedType::SEED_CHERRYBOMB:      // 150 -> 175
         case SeedType::SEED_REPEATER:        // 150 -> 175
+        case SeedType::SEED_DOOMSHROOM:      // 125 -> 175
         case SeedType::SEED_ZOMBIE_FOOTBALL: // 150 -> 175
             return 175;
         case SeedType::SEED_STARFRUIT: // 150 -> 200
