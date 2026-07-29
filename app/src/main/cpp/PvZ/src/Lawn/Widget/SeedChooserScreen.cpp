@@ -2200,12 +2200,17 @@ int SeedChooserScreen::NumColumns() const {
 
 
 void SeedChooserScreen::ShowToolTip(int thePlayerIndex) {
+    if (thePlayerIndex < 0 || thePlayerIndex > 1) {
+        return;
+    }
+
     ToolTipWidget *aToolTip = (thePlayerIndex == 1) ? mToolTip2 : mToolTip1;
     int &aToolTipSeed = (thePlayerIndex == 1) ? mToolTipSeed2 : mToolTipSeed1;
 
-    if (thePlayerIndex > 1) {
+    if (aToolTip == nullptr) {
         return;
     }
+
     if (mChooseState == SeedChooserState::CHOOSE_VIEW_LAWN) {
         RemoveToolTip(thePlayerIndex);
         return;
