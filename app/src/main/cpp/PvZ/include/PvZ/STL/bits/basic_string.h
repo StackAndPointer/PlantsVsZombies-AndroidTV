@@ -154,8 +154,8 @@ public:
         requires detail::allocator_like<Alloc>
         : m_dataplus(construct(n, c, a), a) {}
 
-    template <detail::has_input_iter_cat InIterator>
-    basic_string(InIterator first, InIterator last, const Alloc &a = Alloc())
+    template <detail::has_input_iter_cat InputIterator>
+    basic_string(InputIterator first, InputIterator last, const Alloc &a = Alloc())
         : m_dataplus(construct(first, last, a), a) {}
 
     template <detail::container_compatible_range<CharT> Rg>
@@ -291,14 +291,19 @@ public:
         return replace_aux(size_type(0), size(), n, c);
     }
 
+    template <detail::has_input_iter_cat InputIterator>
+    basic_string &assign(InputIterator first, InputIterator last) {
+        return replace(ibegin(), iend(), first, last);
+    }
+
     basic_string &assign(std::initializer_list<CharT> il) {
         return assign(il.begin(), il.size());
     }
 
     template <detail::container_compatible_range<CharT> Rg>
     basic_string &assign_range(Rg &&rg) {
-        basic_string s(std::from_range, std::forward<Rg>(rg), get_allocator());
-        assign(std::move(s));
+        basic_string str(std::from_range, std::forward<Rg>(rg), get_allocator());
+        assign(std::move(str));
         return *this;
     }
 
@@ -540,6 +545,28 @@ public:
         return replace_aux(check(pos, "basic_string::insert"), size_type(0), n, c);
     }
 
+    iterator insert(iterator position, CharT c) {
+        assert(position >= ibegin() && position <= iend());
+        const size_type pos = position - ibegin();
+        replace_aux(pos, size_type(0), size_type(1), c);
+        get_rep()->set_leaked();
+        return iterator(_data() + pos);
+    }
+
+    void insert(iterator position, size_type n, CharT c) {
+        replace(position, position, n, c);
+    }
+
+    template <detail::has_input_iter_cat InputIterator>
+    void insert(iterator position, InputIterator first, InputIterator last) {
+        replace(position, position, first, last);
+    }
+
+    void insert(iterator position, std::initializer_list<CharT> il) {
+        assert(position >= ibegin() && position <= iend());
+        insert(position - ibegin(), il.begin(), il.size());
+    }
+
     template <detail::container_compatible_range<CharT> Rg>
     iterator insert_range(const_iterator position, Rg &&rg) {
         auto pos = position - cbegin();
@@ -553,8 +580,8 @@ public:
         if (position == cend()) {
             append_range(std::forward<Rg>(rg));
         } else {
-            basic_string s(std::from_range, std::forward<Rg>(rg), get_allocator());
-            insert(pos, s);
+            basic_string str(std::from_range, std::forward<Rg>(rg), get_allocator());
+            insert(pos, str);
         }
         return begin() + pos;
     }
@@ -569,7 +596,7 @@ public:
         const size_type pos = position - ibegin();
         mutate(pos, size_type(1), size_type(0));
         get_rep()->set_leaked();
-        return iterator(ibegin() + pos);
+        return iterator(_data() + pos);
     }
 
     iterator erase(iterator first, iterator last) {
@@ -673,14 +700,19 @@ public:
         return *this;
     }
 
+    template <detail::has_input_iter_cat InputIterator>
+    basic_string &append(InputIterator first, InputIterator last) {
+        return replace(iend(), iend(), first, last);
+    }
+
     basic_string &append(std::initializer_list<CharT> il) {
         return append(il.begin(), il.size());
     }
 
     template <detail::container_compatible_range<CharT> Rg>
     basic_string &append_range(Rg &&rg) {
-        basic_string s(std::from_range, std::forward<Rg>(rg), get_allocator());
-        append(s);
+        basic_string str(std::from_range, std::forward<Rg>(rg), get_allocator());
+        append(str);
         return *this;
     }
 
@@ -762,13 +794,63 @@ public:
         return replace_aux(check(pos, "basic_string::replace"), limit(pos, n1), n2, c);
     }
 
+    basic_string &replace(iterator first, iterator last, const basic_string &str) {
+        return replace(first, last, str._data(), str.size());
+    }
+
+    basic_string &replace(iterator first, iterator last, const CharT *s, size_type n) {
+        assert(ibegin() <= first && first <= last && last <= iend());
+        return replace(first - ibegin(), last - first, s, n);
+    }
+
+    basic_string &replace(iterator first, iterator last, const CharT *s) {
+        assert(s != nullptr);
+        return replace(first, last, s, traits_type::length(s));
+    }
+
+    template <typename Tp>
+        requires if_sv<Tp>
+    basic_string &replace(iterator first, iterator last, const Tp &t) {
+        sv_type sv = t;
+        return replace(first - ibegin(), last - first, sv);
+    }
+
+    basic_string &replace(iterator first, iterator last, size_type n, CharT c) {
+        assert(ibegin() <= first && first <= last && last <= iend());
+        return replace(first - ibegin(), last - first, n, c);
+    }
+
+    template <detail::has_input_iter_cat InputIterator>
+    basic_string &replace(iterator first1, iterator last1, InputIterator first2, InputIterator last2) {
+        assert(ibegin() <= first1 && first1 <= last1 && last1 <= iend());
+        return replace_dispatch(first1, last1, first2, last2);
+    }
+
+    // Specializations for the common case of pointer and iterator:
+    // useful to avoid the overhead of temporary buffering in replace.
+    basic_string &replace(iterator first1, iterator last1, CharT *first2, CharT *last2) {
+        assert(ibegin() <= first1 && first1 <= last1 && last1 <= iend());
+        // __glibcxx_requires_valid_range(first2, last2);
+        return replace(first1 - ibegin(), last1 - first1, first2, last2 - first2);
+    }
+
+    basic_string &replace(iterator first1, iterator last1, const CharT *first2, const CharT *last2) {
+        assert(ibegin() <= first1 && first1 <= last1 && last1 <= iend());
+        // __glibcxx_requires_valid_range(first2, last2);
+        return replace(first1 - ibegin(), last1 - first1, first2, last2 - first2);
+    }
+
+    basic_string &replace(iterator first, iterator last, std::initializer_list<CharT> il) {
+        return replace(first, last, il.begin(), il.end());
+    }
+
     template <detail::container_compatible_range<CharT> Rg>
     basic_string &replace_with_range(const_iterator first, const_iterator last, Rg &&rg) {
         if (first == cend()) {
             append_range(std::forward<Rg>(rg));
         } else {
-            basic_string s(std::from_range, std::forward<Rg>(rg), get_allocator());
-            replace(first - cbegin(), last - first, s);
+            basic_string str(std::from_range, std::forward<Rg>(rg), get_allocator());
+            replace(first - cbegin(), last - first, str);
         }
         return *this;
     }
@@ -1254,15 +1336,15 @@ private:
         return sv;
     }
 
-    template <typename InIterator>
-    static CharT *construct(InIterator first, InIterator last, const Alloc &a) {
-        using Tag = typename std::iterator_traits<InIterator>::iterator_category;
+    template <typename InputIterator>
+    static CharT *construct(InputIterator first, InputIterator last, const Alloc &a) {
+        using Tag = typename std::iterator_traits<InputIterator>::iterator_category;
         return construct(first, last, a, Tag());
     }
 
     // For Input Iterators, used in istreambuf_iterators, etc.
-    template <typename InIterator>
-    static CharT *construct(InIterator first, InIterator last, const Alloc &a, std::input_iterator_tag) {
+    template <typename InputIterator>
+    static CharT *construct(InputIterator first, InputIterator last, const Alloc &a, std::input_iterator_tag) {
         if (first == last && a == Alloc()) {
             return empty_rep().refdata();
         }
@@ -1297,8 +1379,8 @@ private:
 
     // For forward_iterators up to random_access_iterators, used for
     // string::iterator, CharT*, etc.
-    template <typename InIterator>
-    static CharT *construct(InIterator first, InIterator last, const Alloc &a, std::forward_iterator_tag) {
+    template <typename InputIterator>
+    static CharT *construct(InputIterator first, InputIterator last, const Alloc &a, std::forward_iterator_tag) {
         if (first == last && a == Alloc()) {
             return empty_rep().refdata();
         }
@@ -1474,6 +1556,15 @@ private:
             _move((_data() + pos + len2), (_data() + pos + len1), how_much);
         }
         get_rep()->set_length_and_sharable(new_size);
+    }
+
+    template <typename InputIterator>
+    basic_string &replace_dispatch(iterator first1, iterator last1, InputIterator first2, InputIterator last2) {
+        // __glibcxx_requires_valid_range(first2, last2);
+        const basic_string str(first2, last2);
+        const size_type n1 = last1 - first1;
+        check_length(n1, str.size(), "basic_string::replace_dispatch");
+        return replace_safe(first1 - ibegin(), n1, str._data(), str.size());
     }
 
     basic_string &replace_aux(size_type pos, size_type n1, size_type n2, CharT c) {
