@@ -8202,6 +8202,24 @@ void Zombie::UpdateZombieBungee() {
     mY = int(mPosY);
 }
 
+Plant *Zombie::FindCatapultTarget() {
+    Plant *aTarget = nullptr;
+
+    Plant *aPlant = nullptr;
+    while (mBoard->IteratePlants(aPlant)) {
+        if (aPlant->mState == PlantState::STATE_CELERY_STALKER_LOW || aPlant->mState == PlantState::STATE_CELERY_STALKER_LOWERING) {
+            continue;
+        }
+
+        if (aPlant->mRow == mRow && mX >= aPlant->mX + 100 && !aPlant->NotOnGround() && !aPlant->IsSpiky()) {
+            if (aTarget == nullptr || aPlant->mPlantCol < aTarget->mPlantCol) {
+                aTarget = mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_CATAPULT_ORDER);
+            }
+        }
+    }
+
+    return aTarget;
+}
 
 void Zombie::UpdateZombieCatapult() {
     auto syncCatapultPhase = [this](ZombiePhase phase, int phaseCounter, int summonCounter) {

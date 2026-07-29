@@ -452,6 +452,10 @@ void Plant::UpdateAbilities() {
 
     old_Plant_UpdateAbilities(this);
 
+    if (mIsAsleep || mSquished || mOnBungeeState != PlantOnBungeeState::NOT_ON_BUNGEE) {
+        return;
+    }
+
     if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
         UpdateIcebergLettuce();
     } else if (mSeedType == SeedType::SEED_CELERY_STALKER) {
@@ -503,10 +507,6 @@ void Plant::UpdateBloomerang() {
 }
 
 void Plant::UpdateSweetPotato() {
-    if (mBoard == nullptr || mDead || mSquished) {
-        return;
-    }
-
     const int aFrontCol = mPlantCol + 1;
     if (aFrontCol >= MAX_GRID_SIZE_X) {
         return;
@@ -518,7 +518,7 @@ void Plant::UpdateSweetPotato() {
         Plant *aSweetPotato = nullptr;
 
         while (mBoard->IteratePlants(aSweetPotato)) {
-            if (aSweetPotato->mSeedType != SeedType::SEED_SWEET_POTATO || aSweetPotato->mDead || aSweetPotato->mSquished || aSweetPotato->mPlantCol != mPlantCol) {
+            if (aSweetPotato->mSeedType != SeedType::SEED_SWEET_POTATO || aSweetPotato->mPlantCol != mPlantCol) {
                 continue;
             }
 
