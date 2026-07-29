@@ -34,11 +34,8 @@
 
 #include "PvZ/STL/ext/aligned_buffer.h"
 
-#include <cassert>
-
 #include <algorithm>
 #include <iterator>
-#include <type_traits>
 
 namespace pvzstl::detail {
 
@@ -141,7 +138,7 @@ struct rb_tree_node : rb_tree_node_base {
         return this;
     }
 
-    pvzcxx::aligned_membuf<Val> m_storage;
+    pvzstl_cxx::aligned_membuf<Val> m_storage;
 };
 
 [[gnu::pure]] rb_tree_node_base *rb_tree_increment(rb_tree_node_base *x) noexcept;

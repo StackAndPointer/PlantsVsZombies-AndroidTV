@@ -27,7 +27,7 @@
 
 #include <type_traits>
 
-namespace pvzcxx {
+namespace pvzstl_cxx {
 
 // For use in string and vstring.
 template <typename Type>
@@ -41,6 +41,6 @@ constexpr bool is_null_pointer(Type ptr) noexcept {
     }
 }
 
-} // namespace pvzcxx
+} // namespace pvzstl_cxx
 
 #endif // PVZ_STL_EXT_TYPE_TRAITS_H

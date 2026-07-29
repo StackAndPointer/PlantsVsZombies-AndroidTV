@@ -26,12 +26,12 @@
 namespace pvzstl {
 
 template <typename CharT, typename Traits, typename Alloc, typename Predicate>
-constexpr typename basic_string<CharT, Traits, Alloc>::size_type erase_if(basic_string<CharT, Traits, Alloc> &cont, Predicate pred) {
+typename basic_string<CharT, Traits, Alloc>::size_type erase_if(basic_string<CharT, Traits, Alloc> &cont, Predicate pred) {
     return detail::erase_if(cont, cont, std::move(pred));
 }
 
 template <typename CharT, typename Traits, typename Alloc, typename Up>
-constexpr typename basic_string<CharT, Traits, Alloc>::size_type erase(basic_string<CharT, Traits, Alloc> &cont, const Up &value) {
+typename basic_string<CharT, Traits, Alloc>::size_type erase(basic_string<CharT, Traits, Alloc> &cont, const Up &value) {
     return erase_if(cont, [&](const auto &elem) { return elem == value; });
 }
 

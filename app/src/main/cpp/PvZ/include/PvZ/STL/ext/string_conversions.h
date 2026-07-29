@@ -25,10 +25,61 @@
  * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a01277.html">string_conversions.h File Reference</a>
  */
 
+#include <cerrno>
 #include <cstdarg>
 #include <cstddef>
 
-namespace pvzcxx {
+#include <limits>
+#include <stdexcept>
+
+namespace pvzstl_cxx {
+
+// Helper for all the sto* functions.
+template <typename TRet, typename Ret = TRet, typename CharT, typename... Base>
+Ret stoa(TRet (*convf)(const CharT *, CharT **, Base...), const char *name, const CharT *str, std::size_t *idx, Base... base) {
+    Ret ret;
+
+    CharT *endptr;
+
+    struct save_errno {
+        save_errno()
+            : m_errno(errno) {
+            errno = 0;
+        }
+        ~save_errno() {
+            if (errno == 0)
+                errno = m_errno;
+        }
+        int m_errno;
+    } const save_errno;
+
+    struct range_chk {
+        static bool chk(TRet, std::false_type) {
+            return false;
+        }
+
+        static bool chk(TRet val, std::true_type) // only called when Ret is int
+        {
+            return val < TRet(std::numeric_limits<int>::min()) || val > TRet(std::numeric_limits<int>::max());
+        }
+    };
+
+    const TRet tmp = convf(str, &endptr, base...);
+
+    if (endptr == str) {
+        throw std::invalid_argument(name);
+    } else if (errno == ERANGE || range_chk::chk(tmp, std::is_same<Ret, int>{})) {
+        throw std::out_of_range(name);
+    } else {
+        ret = tmp;
+    }
+
+    if (idx) {
+        *idx = endptr - str;
+    }
+
+    return ret;
+}
 
 // Helper for the to_string / to_wstring functions.
 template <typename String, std::size_t N, typename CharT = typename String::value_type>
@@ -47,6 +98,6 @@ String to_xstring(int (*convf)(CharT *, std::size_t, const CharT *, std::va_list
     return String(buf, len);
 }
 
-} // namespace pvzcxx
+} // namespace pvzstl_cxx
 
 #endif // PVZ_STL_EXT_STRING_CONVERSIONS_H

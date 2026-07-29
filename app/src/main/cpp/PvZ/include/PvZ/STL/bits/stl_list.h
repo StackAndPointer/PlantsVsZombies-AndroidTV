@@ -227,7 +227,7 @@ namespace detail {
             return this;
         }
 
-        pvzcxx::aligned_membuf<Tp> m_storage;
+        pvzstl_cxx::aligned_membuf<Tp> m_storage;
     };
 
     template <typename Tp>

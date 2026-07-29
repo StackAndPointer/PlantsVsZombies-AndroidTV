@@ -27,7 +27,7 @@
 
 #include <cstddef>
 
-namespace pvzcxx {
+namespace pvzstl_cxx {
 
 // A utility type containing a POD object that can hold an object of type
 // _Tp initialized via placement new or allocator_traits::construct.
@@ -91,6 +91,6 @@ struct aligned_buffer {
     alignas(__alignof__(Tp)) unsigned char m_storage[sizeof(Tp)];
 };
 
-} // namespace pvzcxx
+} // namespace pvzstl_cxx
 
 #endif // PVZ_STL_EXT_ALIGNED_BUFFER_H
