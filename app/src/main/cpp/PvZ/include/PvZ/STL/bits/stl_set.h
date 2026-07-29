@@ -429,7 +429,6 @@ void swap(set<Key, Compare, Alloc> &lhs, set<Key, Compare, Alloc> &rhs) noexcept
     lhs.swap(rhs);
 }
 
-
 // Allow pvzstl::set access to internals of compatible sets.
 template <typename Val, typename Cmp1, typename Alloc, typename Cmp2>
 struct detail::rb_tree_merge_helper<set<Val, Cmp1, Alloc>, Cmp2> {

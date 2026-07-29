@@ -540,6 +540,25 @@ public:
         return replace_aux(check(pos, "basic_string::insert"), size_type(0), n, c);
     }
 
+    template <detail::container_compatible_range<CharT> Rg>
+    iterator insert_range(const_iterator position, Rg &&rg) {
+        auto pos = position - cbegin();
+
+        if constexpr (std::ranges::forward_range<Rg>) {
+            if (std::ranges::empty(rg)) {
+                return begin() + pos;
+            }
+        }
+
+        if (position == cend()) {
+            append_range(std::forward<Rg>(rg));
+        } else {
+            basic_string s(std::from_range, std::forward<Rg>(rg), get_allocator());
+            insert(pos, s);
+        }
+        return begin() + pos;
+    }
+
     basic_string &erase(size_type pos = 0, size_type n = npos) {
         mutate(check(pos, "basic_string::erase"), limit(pos, n), size_type(0));
         return *this;
@@ -741,6 +760,17 @@ public:
 
     basic_string &replace(size_type pos, size_type n1, size_type n2, CharT c) {
         return replace_aux(check(pos, "basic_string::replace"), limit(pos, n1), n2, c);
+    }
+
+    template <detail::container_compatible_range<CharT> Rg>
+    basic_string &replace_with_range(const_iterator first, const_iterator last, Rg &&rg) {
+        if (first == cend()) {
+            append_range(std::forward<Rg>(rg));
+        } else {
+            basic_string s(std::from_range, std::forward<Rg>(rg), get_allocator());
+            replace(first - cbegin(), last - first, s);
+        }
+        return *this;
     }
 
     size_type copy(CharT *dest, size_type n, size_type pos = 0) const {
