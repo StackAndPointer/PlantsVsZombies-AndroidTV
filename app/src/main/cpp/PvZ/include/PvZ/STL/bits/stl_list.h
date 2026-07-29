@@ -27,6 +27,8 @@
 
 #include "PvZ/STL/compare.h"
 
+#include "PvZ/STL/debug/assertions.h"
+
 #include "PvZ/STL/bits/alloc_traits.h"
 #include "PvZ/STL/bits/allocated_ptr.h"
 #include "PvZ/STL/bits/ranges_base.h"
@@ -35,7 +37,6 @@
 
 #include "PvZ/STL/ext/aligned_buffer.h"
 
-#include <cassert>
 #include <cstdlib>
 
 #include <type_traits>
@@ -638,24 +639,24 @@ public:
     }
 
     [[nodiscard]] reference front() noexcept {
-        assert(!empty());
+        PVZSTL_CXX_REQUIRES_NOEMPTY();
         return *begin();
     }
 
     [[nodiscard]] const_reference front() const noexcept {
-        assert(!empty());
+        PVZSTL_CXX_REQUIRES_NOEMPTY();
         return *begin();
     }
 
     [[nodiscard]] reference back() noexcept {
-        assert(!empty());
+        PVZSTL_CXX_REQUIRES_NOEMPTY();
         iterator tmp = end();
         --tmp;
         return *tmp;
     }
 
     [[nodiscard]] const_reference back() const noexcept {
-        assert(!empty());
+        PVZSTL_CXX_REQUIRES_NOEMPTY();
         const_iterator tmp = end();
         --tmp;
         return *tmp;
@@ -818,7 +819,7 @@ public:
     }
 
     void pop_back() noexcept {
-        assert(!empty());
+        PVZSTL_CXX_REQUIRES_NOEMPTY();
         _erase(iterator(m_impl.m_node.m_prev));
     }
 
@@ -845,7 +846,7 @@ public:
     }
 
     void pop_front() noexcept {
-        assert(!empty());
+        PVZSTL_CXX_REQUIRES_NOEMPTY();
         _erase(begin());
     }
 

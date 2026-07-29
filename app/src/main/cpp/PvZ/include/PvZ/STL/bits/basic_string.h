@@ -30,6 +30,8 @@
 #include "PvZ/MagicNumbers.h"
 #endif
 
+#include "PvZ/STL/debug/debug.h"
+
 #include "PvZ/STL/bits/alloc_traits.h"
 #include "PvZ/STL/bits/ranges_base.h"
 #include "PvZ/STL/bits/stl_iterator_base_types.h"
@@ -265,7 +267,7 @@ public:
     }
 
     basic_string &assign(const CharT *s, size_type n) {
-        assert(s != nullptr || n == 0);
+        PVZSTL_CXX_REQUIRES_STRING_LEN(s, n);
         check_length(size(), n, "basic_string::assign");
         if (disjunct(s) || get_rep()->is_shared()) {
             return replace_safe(0, size(), s, n);
@@ -282,7 +284,7 @@ public:
     }
 
     basic_string &assign(const CharT *s) {
-        assert(s != nullptr);
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return assign(s, traits_type::length(s));
     }
 
@@ -369,7 +371,8 @@ public:
         return _data();
     }
 
-    iterator begin() {
+    iterator begin() // FIXME C++11: should be noexcept.
+    {
         leak();
         return iterator(_data());
     }
@@ -378,7 +381,8 @@ public:
         return const_iterator(_data());
     }
 
-    iterator end() {
+    iterator end() // FIXME C++11: should be noexcept.
+    {
         leak();
         return iterator(_data() + size());
     }
@@ -387,7 +391,8 @@ public:
         return const_iterator(_data() + size());
     }
 
-    reverse_iterator rbegin() {
+    reverse_iterator rbegin() // FIXME C++11: should be noexcept.
+    {
         return reverse_iterator(end());
     }
 
@@ -395,7 +400,8 @@ public:
         return const_reverse_iterator(end());
     }
 
-    reverse_iterator rend() {
+    reverse_iterator rend() // FIXME C++11: should be noexcept.
+    {
         return reverse_iterator(begin());
     }
 
@@ -512,7 +518,7 @@ public:
     }
 
     basic_string &insert(size_type pos, const CharT *s, size_type n) {
-        assert(s != nullptr || n == 0);
+        PVZSTL_CXX_REQUIRES_STRING_LEN(s, n);
         check(pos, "basic_string::insert");
         check_length(size_type(0), n, "basic_string::insert");
         if (disjunct(s) || get_rep()->is_shared()) {
@@ -536,7 +542,7 @@ public:
     }
 
     basic_string &insert(size_type pos, const CharT *s) {
-        assert(s != nullptr);
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return insert(pos, s, traits_type::length(s));
     }
 
@@ -622,7 +628,8 @@ public:
         get_rep()->set_length_and_sharable(len);
     }
 
-    void pop_back() {
+    void pop_back() // FIXME C++11: should be noexcept.
+    {
         assert(!empty());
         erase(size() - 1, 1);
     }
@@ -665,7 +672,7 @@ public:
     }
 
     basic_string &append(const CharT *s, size_type n) {
-        assert(s != nullptr || n == 0);
+        PVZSTL_CXX_REQUIRES_STRING_LEN(s, n);
         if (n == 0) {
             return *this;
         }
@@ -684,7 +691,7 @@ public:
     }
 
     basic_string &append(const CharT *s) {
-        assert(s != nullptr);
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return append(s, traits_type::length(s));
     }
 
@@ -761,7 +768,7 @@ public:
     }
 
     basic_string &replace(size_type pos, size_type n1, const CharT *s, size_type n2) {
-        assert(s != nullptr || n2 == 0);
+        PVZSTL_CXX_REQUIRES_STRING_LEN(s, n2);
         check(pos, "basic_string::replace");
         n1 = limit(pos, n1);
         check_length(n1, n2, "basic_string::replace");
@@ -779,13 +786,13 @@ public:
             _copy(_data() + pos, _data() + off, n2);
             return *this;
         }
-        // overlapping case.
+        // TODO: overlapping case.
         const basic_string tmp(s, n2);
         return replace_safe(pos, n1, tmp._data(), n2);
     }
 
     basic_string &replace(size_type pos, size_type n, const CharT *s) {
-        assert(s != nullptr);
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return replace(pos, n, s, traits_type::length(s));
     }
 
@@ -803,7 +810,7 @@ public:
     }
 
     basic_string &replace(iterator first, iterator last, const CharT *s) {
-        assert(s != nullptr);
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return replace(first, last, s, traits_type::length(s));
     }
 
@@ -829,13 +836,13 @@ public:
     // useful to avoid the overhead of temporary buffering in replace.
     basic_string &replace(iterator first1, iterator last1, CharT *first2, CharT *last2) {
         assert(ibegin() <= first1 && first1 <= last1 && last1 <= iend());
-        // __glibcxx_requires_valid_range(first2, last2);
+        PVZSTL_CXX_REQUIRES_VALID_RANGE(first2, last2);
         return replace(first1 - ibegin(), last1 - first1, first2, last2 - first2);
     }
 
     basic_string &replace(iterator first1, iterator last1, const CharT *first2, const CharT *last2) {
         assert(ibegin() <= first1 && first1 <= last1 && last1 <= iend());
-        // __glibcxx_requires_valid_range(first2, last2);
+        PVZSTL_CXX_REQUIRES_VALID_RANGE(first2, last2);
         return replace(first1 - ibegin(), last1 - first1, first2, last2 - first2);
     }
 
@@ -857,7 +864,7 @@ public:
     size_type copy(CharT *dest, size_type n, size_type pos = 0) const {
         check(pos, "basic_string::copy");
         n = limit(pos, n);
-        assert(dest != nullptr || n == 0);
+        PVZSTL_CXX_REQUIRES_STRING_LEN(dest, n);
         if (n > 0) {
             _copy(dest, _data() + pos, n);
         }
@@ -937,6 +944,7 @@ public:
     }
 
     size_type find(const CharT *s, size_type pos = 0) const {
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return sv_type(*this).find(s, pos);
     }
 
@@ -960,6 +968,7 @@ public:
     }
 
     size_type rfind(const CharT *s, size_type pos = npos) const {
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return sv_type(*this).rfind(s, pos);
     }
 
@@ -983,6 +992,7 @@ public:
     }
 
     size_type find_first_of(const CharT *s, size_type pos = 0) const {
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return sv_type(*this).find_first_of(s, pos);
     }
 
@@ -1006,6 +1016,7 @@ public:
     }
 
     size_type find_first_not_of(const CharT *s, size_type pos = 0) const {
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return sv_type(*this).find_first_not_of(s, pos);
     }
 
@@ -1029,6 +1040,7 @@ public:
     }
 
     size_type find_last_of(const CharT *s, size_type pos = npos) const {
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return sv_type(*this).find_last_of(s, pos);
     }
 
@@ -1052,6 +1064,7 @@ public:
     }
 
     size_type find_last_not_of(const CharT *s, size_type pos = npos) const {
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return sv_type(*this).find_last_not_of(s, pos);
     }
 
@@ -1093,14 +1106,17 @@ public:
     }
 
     int compare(size_type pos1, size_type n1, const CharT *s, size_type n2) const {
+        PVZSTL_CXX_REQUIRES_STRING_LEN(s, n2);
         return sv_type(*this).compare(pos1, n1, s, n2);
     }
 
     int compare(size_type pos, size_type n, const CharT *s) const {
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return sv_type(*this).compare(pos, n, s);
     }
 
     int compare(const CharT *s) const {
+        PVZSTL_CXX_REQUIRES_STRING(s);
         return sv_type(*this).compare(s);
     }
 
@@ -1559,7 +1575,7 @@ private:
 
     template <typename InputIterator>
     basic_string &replace_dispatch(iterator first1, iterator last1, InputIterator first2, InputIterator last2) {
-        // __glibcxx_requires_valid_range(first2, last2);
+        PVZSTL_CXX_REQUIRES_VALID_RANGE(first2, last2);
         const basic_string str(first2, last2);
         const size_type n1 = last1 - first1;
         check_length(n1, str.size(), "basic_string::replace_dispatch");

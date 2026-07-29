@@ -30,6 +30,11 @@
 namespace pvzstl::detail {
 
 template <typename Iter>
+[[gnu::always_inline]] constexpr auto iterator_category(const Iter &) -> typename std::iterator_traits<Iter>::iterator_category {
+    return typename std::iterator_traits<Iter>::iterator_category();
+}
+
+template <typename Iter>
 using iter_category_t = typename std::iterator_traits<Iter>::iterator_category;
 
 template <typename InIter>
