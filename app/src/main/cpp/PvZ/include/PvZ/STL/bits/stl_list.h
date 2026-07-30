@@ -474,6 +474,10 @@ namespace detail {
     };
 } // namespace detail
 
+/**
+ * @brief A standard container with linear time access to elements,
+ * and fixed time insertion/deletion at any point in the sequence.
+ */
 template <typename Tp, typename Alloc = std::allocator<Tp>>
 class list : protected detail::list_base<Tp, Alloc> {
     static_assert(std::is_same_v<std::remove_cv_t<Tp>, Tp>, "std::list must have a non-const, non-volatile value_type");

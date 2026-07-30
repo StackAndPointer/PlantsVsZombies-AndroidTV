@@ -53,6 +53,10 @@ extern uintptr_t gLibGameMainBaseAddr;
 
 namespace pvzstl {
 
+/**
+ * @class basic_string basic_string.h <string>
+ * @brief Managing sequences of characters and character-like objects.
+ */
 template <typename CharT, typename Traits = std::char_traits<CharT>, typename Alloc = std::allocator<CharT>>
 class basic_string {
     using chart_alloc_traits = std::allocator_traits<Alloc>;
