@@ -32,6 +32,7 @@
 #include "PvZ/STL/bits/alloc_traits.h"
 #include "PvZ/STL/bits/allocated_ptr.h"
 #include "PvZ/STL/bits/ranges_base.h"
+#include "PvZ/STL/bits/stdexcept_throw.h"
 #include "PvZ/STL/bits/stl_iterator.h"
 #include "PvZ/STL/bits/stl_iterator_base_types.h"
 
@@ -1104,7 +1105,7 @@ public:
 
         typename scratch_list::template ptr_cmp<iterator, void> ptr_cmp;
 
-        try {
+        PVZSTL_TRY {
             do {
                 carry.take_one(begin().m_node);
 
@@ -1122,13 +1123,14 @@ public:
                 counter->merge(counter[-1], ptr_cmp);
             }
             fill[-1].swap(m_impl.m_node);
-        } catch (...) {
+        }
+        PVZSTL_CATCH(...) {
             // Move all nodes back into *this.
             carry.put_all(end().m_node);
             for (int i = 0; i < sizeof(tmp) / sizeof(tmp[0]); ++i) {
                 tmp[i].put_all(end().m_node);
             }
-            throw;
+            PVZSTL_THROW_EXCEPTION_AGAIN;
         }
     }
 
@@ -1148,7 +1150,7 @@ public:
 
         typename scratch_list::template ptr_cmp<iterator, StrictWeakOrdering> ptr_cmp{comp};
 
-        try {
+        PVZSTL_TRY {
             do {
                 carry.take_one(begin().m_node);
 
@@ -1166,13 +1168,14 @@ public:
                 counter->merge(counter[-1], ptr_cmp);
             }
             fill[-1].swap(m_impl.m_node);
-        } catch (...) {
+        }
+        PVZSTL_CATCH(...) {
             // Move all nodes back into *this.
             carry.put_all(end().m_node);
             for (int i = 0; i < sizeof(tmp) / sizeof(tmp[0]); ++i) {
                 tmp[i].put_all(end().m_node);
             }
-            throw;
+            PVZSTL_THROW_EXCEPTION_AGAIN;
         }
     }
 
@@ -1233,15 +1236,16 @@ protected:
     // Called by resize(sz).
     void default_append(size_type n) {
         size_type i = 0;
-        try {
+        PVZSTL_TRY {
             for (; i < n; ++i) {
                 emplace_back();
             }
-        } catch (...) {
+        }
+        PVZSTL_CATCH(...) {
             for (; i > 0; --i) {
                 pop_back();
             }
-            throw;
+            PVZSTL_THROW_EXCEPTION_AGAIN;
         }
     }
 

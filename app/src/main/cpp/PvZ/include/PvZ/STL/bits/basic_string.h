@@ -53,10 +53,6 @@ extern uintptr_t gLibGameMainBaseAddr;
 
 namespace pvzstl {
 
-/**
- * @class basic_string basic_string.h <string>
- * @brief Managing sequences of characters and character-like objects.
- */
 template <typename CharT, typename Traits = std::char_traits<CharT>, typename Alloc = std::allocator<CharT>>
 class basic_string {
     using chart_alloc_traits = std::allocator_traits<Alloc>;
@@ -314,7 +310,7 @@ public:
 
     reference at(size_type pos) {
         if (pos >= size()) {
-            throw std::out_of_range("basic_string::at");
+            detail::throw_out_of_range_fmt("basic_string::at: pos (which is %zu) >= this->size() (which is %zu)", pos, size());
         }
         leak();
         return _data()[pos];
@@ -322,7 +318,7 @@ public:
 
     const_reference at(size_type pos) const {
         if (pos >= size()) {
-            throw std::out_of_range("basic_string::at");
+            detail::throw_out_of_range_fmt("basic_string::at: pos (which is %zu) >= this->size() (which is %zu)", pos, size());
         }
         return _data()[pos];
     }
@@ -816,7 +812,7 @@ public:
 
     template <typename Tp>
         requires if_sv<Tp>
-    basic_string &replace(iterator first, iterator last, const Tp &t) {
+    basic_string &replace(const_iterator first, const_iterator last, const Tp &t) {
         sv_type sv = t;
         return replace(first - ibegin(), last - first, sv);
     }
@@ -1191,7 +1187,7 @@ private:
 
         static rep *create(size_type cap, size_type old_cap, const Alloc &alloc) {
             if (cap > max_size()) {
-                throw std::length_error("basic_string::create");
+                detail::throw_length_error("basic_string::create");
             }
 
             // pagesize need not match the actual VM page size for good
@@ -1372,7 +1368,7 @@ private:
         }
         rep *r = rep::create(len, size_type(0), a);
         _copy(r->refdata(), buf, len);
-        try {
+        PVZSTL_TRY {
             while (first != last) {
                 if (len == r->m_capacity) {
                     // Allocate more space.
@@ -1384,9 +1380,10 @@ private:
                 r->refdata()[len++] = *first;
                 ++first;
             }
-        } catch (...) {
+        }
+        PVZSTL_CATCH(...) {
             r->destroy(a);
-            throw;
+            PVZSTL_THROW_EXCEPTION_AGAIN;
         }
         r->set_length(len);
         return r->refdata();
@@ -1401,17 +1398,18 @@ private:
         }
         // NB: Not required, but considered best practice.
         if (pvzstl_cxx::is_null_pointer(first) && first != last) {
-            throw std::logic_error("basic_string::construct null not valid");
+            detail::throw_logic_error("basic_string::construct null not valid");
         }
 
         const size_type dnew = static_cast<size_type>(std::distance(first, last));
         // Check for out_of_range and length_error exceptions.
         rep *r = rep::create(dnew, size_type(0), a);
-        try {
+        PVZSTL_TRY {
             copy_chars(r->refdata(), first, last);
-        } catch (...) {
+        }
+        PVZSTL_CATCH(...) {
             r->destroy(a);
-            throw;
+            PVZSTL_THROW_EXCEPTION_AGAIN;
         }
         r->set_length(dnew);
         return r->refdata();
@@ -1505,14 +1503,14 @@ private:
 
     size_type check(size_type pos, const char *msg) const {
         if (pos > size()) {
-            throw std::out_of_range(msg);
+            detail::throw_out_of_range_fmt("%s: pos (which is %zu) > this->size() (which is %zu)", msg, pos, size());
         }
         return pos;
     }
 
     void check_length(size_type n1, size_type n2, const char *msg) const {
         if (max_size() - (size() - n1) < n2) {
-            throw std::length_error(msg);
+            detail::throw_length_error(msg);
         }
     }
 

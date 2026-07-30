@@ -30,6 +30,7 @@
 #include "PvZ/STL/bits/alloc_traits.h"
 #include "PvZ/STL/bits/move.h"
 #include "PvZ/STL/bits/node_handle.h"
+#include "PvZ/STL/bits/stdexcept_throw.h"
 #include "PvZ/STL/bits/stl_function.h"
 
 #include "PvZ/STL/ext/aligned_buffer.h"
@@ -1244,13 +1245,14 @@ protected:
 
     template <typename... Args>
     void construct_node(node_ptr p, Args &&...args) {
-        try {
+        PVZSTL_TRY {
             ::new (std::addressof(*p)) node;
             node_alloc_traits::construct(get_node_allocator(), p->get_valptr(), std::forward<Args>(args)...);
-        } catch (...) {
+        }
+        PVZSTL_CATCH(...) {
             p->~node();
             put_node(p);
-            throw;
+            PVZSTL_THROW_EXCEPTION_AGAIN;
         }
     }
 
@@ -1589,7 +1591,7 @@ private:
         base_ptr top_base = top->get_base_ptr();
         top->m_parent = p;
 
-        try {
+        PVZSTL_TRY {
             if (x->m_right) {
                 top->m_right = copy<MoveValue>(right(x), top_base, node_gen);
             }
@@ -1606,9 +1608,10 @@ private:
                 p = y;
                 x = left(x);
             }
-        } catch (...) {
+        }
+        PVZSTL_CATCH(...) {
             _erase(top);
-            throw;
+            PVZSTL_THROW_EXCEPTION_AGAIN;
         }
         return top_base;
     }

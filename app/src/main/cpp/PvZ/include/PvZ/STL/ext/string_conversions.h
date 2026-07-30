@@ -25,12 +25,13 @@
  * @see <a href="https://gcc.gnu.org/onlinedocs/gcc-16.1.0/libstdc++/api/a01277.html">string_conversions.h File Reference</a>
  */
 
+#include "PvZ/STL/bits/stdexcept_throw.h"
+
 #include <cerrno>
 #include <cstdarg>
 #include <cstddef>
 
 #include <limits>
-#include <stdexcept>
 
 namespace pvzstl_cxx {
 
@@ -67,14 +68,14 @@ Ret stoa(TRet (*convf)(const CharT *, CharT **, Base...), const char *name, cons
     const TRet tmp = convf(str, &endptr, base...);
 
     if (endptr == str) {
-        throw std::invalid_argument(name);
+        pvzstl::detail::throw_invalid_argument(name);
     } else if (errno == ERANGE || range_chk::chk(tmp, std::is_same<Ret, int>{})) {
-        throw std::out_of_range(name);
+        pvzstl::detail::throw_out_of_range(name);
     } else {
         ret = tmp;
     }
 
-    if (idx) {
+    if (idx != nullptr) {
         *idx = endptr - str;
     }
 

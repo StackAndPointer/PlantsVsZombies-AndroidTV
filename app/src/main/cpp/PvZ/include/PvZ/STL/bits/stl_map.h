@@ -30,7 +30,6 @@
 #include "PvZ/STL/bits/stl_tree.h"
 
 #include <functional>
-#include <stdexcept>
 
 namespace pvzstl {
 
@@ -165,7 +164,7 @@ public:
     mapped_type &at(const key_type &k) {
         iterator it = lower_bound(k);
         if (it == end() || key_comp()(k, (*it).first)) {
-            throw std::out_of_range("map::at");
+            detail::throw_out_of_range("map::at");
         }
         return (*it).second;
     }
@@ -173,7 +172,7 @@ public:
     const mapped_type &at(const key_type &k) const {
         const_iterator it = lower_bound(k);
         if (it == end() || key_comp()(k, (*it).first)) {
-            throw std::out_of_range("map::at");
+            detail::throw_out_of_range("map::at");
         }
         return (*it).second;
     }
