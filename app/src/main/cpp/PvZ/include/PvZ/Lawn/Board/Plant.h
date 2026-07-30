@@ -318,6 +318,7 @@ public:
     void SpikeweedAttack();
     void SpikeRockTakeDamage();
     bool IsSpiky() const;
+    bool IsLowProfile() const;
     bool DrawMagnetItemsOnTop();
     void SetImitaterFilterEffect();
     void BurnRow(int theRow);

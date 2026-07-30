@@ -2670,7 +2670,7 @@ void Board::processServerEvent(const BaseEvent *event) {
                 if (aZombieImp) {
                     aZombieImp->mZombiePhase = ZombiePhase::PHASE_IMP_POPPING;
                     if (aZombieImp->mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
-                        aZombieImp->PlayZombieReanim("anim_boom", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
+                        aZombieImp->PlayZombieReanim("anim_land", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
                     } else {
                         aZombieImp->PlayZombieReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 0.0f);
                     }

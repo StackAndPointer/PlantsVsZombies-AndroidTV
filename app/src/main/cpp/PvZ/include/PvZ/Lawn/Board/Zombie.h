@@ -401,6 +401,7 @@ public:
     void UpdateZombieExplorer();
     void ExplorerTorchConvert(bool theBurn);
     void UpdateGigaGargantuar();
+    void InterruptLightning();
     void UpdateGigaImp();
     void UpdateZombieGargantuar();
     void ZombieImpThrown(Zombie *theThrowerZombie, float theOffsetDistance);

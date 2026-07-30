@@ -149,19 +149,16 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
     }
 
     // 在对战模式修改指定植物的血量
-    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
-        switch (theSeedType) {
-            case SeedType::SEED_SUNFLOWER:
-            case SeedType::SEED_PEASHOOTER:
-                mPlantMaxHealth = 300;
-                break;
-            case SeedType::SEED_SWEET_POTATO:
-                mPlantMaxHealth = 4000;
-                break;
-            default:
-                break;
-        }
-    }
+    //    if (mApp->mGameMode == GameMode::GAMEMODE_MP_VS) {
+    //        switch (theSeedType) {
+    //            case SeedType::SEED_SUNFLOWER:
+    //            case SeedType::SEED_PEASHOOTER:
+    //                mPlantMaxHealth = 300;
+    //                break;
+    //            default:
+    //                break;
+    //        }
+    //    }
 
     mPlantHealth = mPlantMaxHealth;
 }
@@ -256,6 +253,25 @@ void Plant::SpikeRockTakeDamage() {
 
 bool Plant::IsSpiky() const {
     return mSeedType == SeedType::SEED_SPIKEWEED || mSeedType == SeedType::SEED_SPIKEROCK;
+}
+
+bool Plant::IsLowProfile() const {
+    switch (mSeedType) {
+        case SeedType::SEED_PUFFSHROOM:
+        case SeedType::SEED_SUNSHROOM:
+        case SeedType::SEED_POTATOMINE:
+        case SeedType::SEED_SPIKEWEED:
+        case SeedType::SEED_SPIKEROCK:
+        case SeedType::SEED_LILYPAD:
+        case SeedType::SEED_ICEBERG_LETTUCE:
+            return true;
+
+        case SeedType::SEED_CELERY_STALKER:
+            return mState == PlantState::STATE_CELERY_STALKER_LOW || mState == PlantState::STATE_CELERY_STALKER_LOWERING;
+
+        default:
+            return false;
+    }
 }
 
 void Plant::UpdateReanimColor() {

@@ -582,6 +582,10 @@ void Zombie::UpdatePlaying() {
         return;
     }
 
+    if (IsImmobilizied() && mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
+        InterruptLightning();
+    }
+
     if (!IsImmobilizied()) {
         UpdateActions();
         UpdateZombiePosition();
@@ -2190,6 +2194,10 @@ void Zombie::ExplorerTorchConvert(bool theBurn) {
 }
 
 void Zombie::UpdateGigaGargantuar() {
+    if (!mHasHead || IsDeadOrDying()) {
+        return;
+    }
+
     static constexpr int GIGA_THROW_COUNT = 3;
     static constexpr int GIGA_THROW_COOLDOWN = 2000;
 
@@ -2268,8 +2276,8 @@ void Zombie::UpdateGigaGargantuar() {
                 continue;
             }
 
-            if (aPlant->mRow != mRow) {
-                continue;
+            if (aPlant->mRow != mRow || aPlant->IsLowProfile()) {
+                continue; // 仅索敌本行的非低矮植物
             }
 
             Plant *aTopPlant = mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_EATING_ORDER);
@@ -2526,10 +2534,6 @@ void Zombie::UpdateGigaGargantuar() {
         return;
     }
 
-    if (IsImmobilizied() || !mHasHead) {
-        return;
-    }
-
     if (isRemoteClient) {
         return;
     }
@@ -2560,7 +2564,6 @@ void Zombie::UpdateGigaGargantuar() {
         }
 
         mZombiePhase = ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_PREPARING;
-        mVelX = 0.0f;
         mApp->PlayFoley(FoleyType::FOLEY_POWER_POLE_CHARGE);
 
         PlayZombieReanim("anim_lightning_attack_preparing", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 12.0f);
@@ -2569,7 +2572,7 @@ void Zombie::UpdateGigaGargantuar() {
 
     bool doSmash = false;
 
-    if (FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW) || (mMindControlled && FindZombieTarget())) {
+    if (FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW) || FindZombieTarget()) {
         doSmash = true;
     }
 
@@ -2615,6 +2618,19 @@ void Zombie::UpdateGigaGargantuar() {
         PlayZombieReanim("anim_throw_preparing", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
         return;
     }
+}
+
+void Zombie::InterruptLightning() {
+    if (mZombiePhase != ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_PREPARING && mZombiePhase != ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_ATTACK) {
+        return;
+    }
+    mPhaseCounter = 0;
+    mTargetPlantID = PlantID::PLANTID_NULL;
+    mTargetCol = -1;
+    mZombiePhase = ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_END;
+    mApp->PlayFoley(FoleyType::FOLEY_POWER_POLE_TAIL);
+    PlayZombieReanim("anim_lightning_attack_end", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 16.0f);
+    UpdateAnimSpeed();
 }
 
 void Zombie::UpdateGigaImp() {
@@ -6336,9 +6352,7 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
     }
 
     if (theAttackType == ZombieAttackType::ATTACKTYPE_POLE) {
-        if (thePlant->mSeedType == SeedType::SEED_PUFFSHROOM || thePlant->mSeedType == SeedType::SEED_SUNSHROOM || thePlant->mSeedType == SeedType::SEED_POTATOMINE
-            || thePlant->mSeedType == SeedType::SEED_SPIKEWEED || thePlant->mSeedType == SeedType::SEED_SPIKEROCK || thePlant->mSeedType == SeedType::SEED_LILYPAD
-            || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+        if (thePlant->IsLowProfile()) {
             return false;
         }
         Plant *aTopPlant = mBoard->GetTopPlantAt(thePlant->mPlantCol, thePlant->mRow, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
@@ -7455,7 +7469,9 @@ bool Zombie::ZombieNotWalking() {
         || mZombiePhase == ZombiePhase::PHASE_DANCER_WALK_TO_RAISE || mZombiePhase == ZombiePhase::PHASE_DANCER_RAISE_RIGHT_1 || mZombiePhase == ZombiePhase::PHASE_DANCER_RAISE_LEFT_2
         || mZombiePhase == ZombiePhase::PHASE_DANCER_RAISE_RIGHT_2 || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PICK || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PREPARE
         || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_TAKE || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_THROW || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_TACKLING
-        || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_KICKING) {
+        || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_KICKING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_THROW_PREPARING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_THROW_END
+        || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_PREPARING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_ATTACK
+        || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_END) {
         return true;
     }
 
