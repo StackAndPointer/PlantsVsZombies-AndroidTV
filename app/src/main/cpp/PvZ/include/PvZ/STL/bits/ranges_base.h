@@ -32,6 +32,16 @@ namespace pvzstl::detail {
 template <typename Rg, typename Tp>
 concept container_compatible_range = std::ranges::input_range<Rg> && std::convertible_to<std::ranges::range_reference_t<Rg>, Tp>;
 
+template <std::ranges::input_range Rg>
+using range_key_type = std::remove_cvref_t<std::tuple_element_t<0, std::ranges::range_value_t<Rg>>>;
+
+template <std::ranges::input_range Rg>
+using range_mapped_type = std::remove_cvref_t<std::tuple_element_t<1, std::ranges::range_value_t<Rg>>>;
+
+// The allocator's value_type for map-like containers.
+template <std::ranges::input_range Rg>
+using range_to_alloc_type = std::pair<const range_key_type<Rg>, range_mapped_type<Rg>>;
+
 } // namespace pvzstl::detail
 
 #endif // PVZ_STL_BITS_STL_RANGES_BASE_H

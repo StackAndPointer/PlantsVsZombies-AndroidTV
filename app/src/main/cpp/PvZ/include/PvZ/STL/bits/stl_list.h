@@ -1316,6 +1316,12 @@ protected:
     }
 };
 
+template <detail::has_input_iter_cat InputIterator, typename ValT = typename std::iterator_traits<InputIterator>::value_type, detail::allocator_like Allocator = std::allocator<ValT>>
+list(InputIterator, InputIterator, Allocator = Allocator()) -> list<ValT, Allocator>;
+
+template <std::ranges::input_range Rg, typename Allocator = std::allocator<std::ranges::range_value_t<Rg>>>
+list(std::from_range_t, Rg &&, Allocator = Allocator()) -> list<std::ranges::range_value_t<Rg>, Allocator>;
+
 template <typename Tp, typename Alloc>
 [[nodiscard]] bool operator==(const list<Tp, Alloc> &lhs, const list<Tp, Alloc> &rhs) {
     using const_iterator = typename list<Tp, Alloc>::const_iterator;

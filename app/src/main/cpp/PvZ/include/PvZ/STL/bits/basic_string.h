@@ -1600,6 +1600,21 @@ private:
     mutable alloc_hider m_dataplus;
 };
 
+template <detail::has_input_iter_cat InputIterator, typename CharT = std::iterator_traits<InputIterator>::value_type, detail::allocator_like Allocator = std::allocator<CharT>>
+basic_string(InputIterator, InputIterator, Allocator = Allocator()) -> basic_string<CharT, std::char_traits<CharT>, Allocator>;
+
+template <typename CharT, typename Traits, detail::allocator_like Allocator = std::allocator<CharT>>
+basic_string(std::basic_string_view<CharT, Traits>, const Allocator & = Allocator()) -> basic_string<CharT, Traits, Allocator>;
+
+template <typename CharT, typename Traits, detail::allocator_like Allocator = std::allocator<CharT>>
+basic_string(std::basic_string_view<CharT, Traits>,
+             typename basic_string<CharT, Traits, Allocator>::size_type,
+             typename basic_string<CharT, Traits, Allocator>::size_type,
+             const Allocator & = Allocator()) -> basic_string<CharT, Traits, Allocator>;
+
+template <std::ranges::input_range Rg, typename Allocator = std::allocator<std::ranges::range_value_t<Rg>>>
+basic_string(std::from_range_t, Rg &&, Allocator = Allocator()) -> basic_string<std::ranges::range_value_t<Rg>, std::char_traits<std::ranges::range_value_t<Rg>>, Allocator>;
+
 template <typename CharT, typename Traits, typename Alloc>
 bool operator==(const basic_string<CharT, Traits, Alloc> &lhs, const basic_string<CharT, Traits, Alloc> &rhs) noexcept {
     return std::basic_string_view<CharT, Traits>(lhs) == std::basic_string_view<CharT, Traits>(rhs);

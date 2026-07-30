@@ -41,6 +41,15 @@ template <typename Tp, typename ReturnType = std::conditional_t<move_if_noexcept
     return ReturnType(ptr);
 }
 
+template <typename InputIterator>
+using iter_key_t = std::tuple_element_t<0, typename std::iterator_traits<InputIterator>::value_type>;
+
+template <typename InputIterator>
+using iter_val_t = std::tuple_element_t<1, typename std::iterator_traits<InputIterator>::value_type>;
+
+template <typename InputIterator>
+using iter_to_alloc_t = std::pair<const iter_key_t<InputIterator>, iter_val_t<InputIterator>>;
+
 } // namespace pvzstl::detail
 
 #endif // PVZ_STL_BITS_STL_ITERATOR_H

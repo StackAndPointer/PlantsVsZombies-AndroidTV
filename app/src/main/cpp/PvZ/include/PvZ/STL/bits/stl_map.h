@@ -26,6 +26,8 @@
  */
 
 #include "PvZ/STL/bits/ranges_base.h"
+#include "PvZ/STL/bits/stl_iterator.h"
+#include "PvZ/STL/bits/stl_iterator_base_types.h"
 #include "PvZ/STL/bits/stl_pair.h"
 #include "PvZ/STL/bits/stl_tree.h"
 
@@ -612,6 +614,26 @@ private:
     // The actual tree structure.
     rep_type m_t;
 };
+
+template <detail::has_input_iter_cat InputIterator,
+          detail::not_allocator_like Compare = std::less<detail::iter_key_t<InputIterator>>,
+          detail::allocator_like Allocator = std::allocator<detail::iter_to_alloc_t<InputIterator>>>
+map(InputIterator, InputIterator, Compare = Compare(), Allocator = Allocator()) -> map<detail::iter_key_t<InputIterator>, detail::iter_val_t<InputIterator>, Compare, Allocator>;
+
+template <typename Key, typename Tp, detail::not_allocator_like Compare = std::less<Key>, detail::allocator_like Allocator = std::allocator<std::pair<const Key, Tp>>>
+map(std::initializer_list<std::pair<Key, Tp>>, Compare = Compare(), Allocator = Allocator()) -> map<Key, Tp, Compare, Allocator>;
+
+template <detail::has_input_iter_cat InputIterator, detail::allocator_like Allocator>
+map(InputIterator, InputIterator, Allocator) -> map<detail::iter_key_t<InputIterator>, detail::iter_val_t<InputIterator>, std::less<detail::iter_key_t<InputIterator>>, Allocator>;
+
+template <typename Key, typename Tp, detail::allocator_like Allocator>
+map(std::initializer_list<std::pair<Key, Tp>>, Allocator) -> map<Key, Tp, std::less<Key>, Allocator>;
+
+template <std::ranges::input_range Rg, detail::not_allocator_like Compare = std::less<detail::range_key_type<Rg>>, detail::allocator_like Allocator = std::allocator<detail::range_to_alloc_type<Rg>>>
+map(std::from_range_t, Rg &&, Compare = Compare(), Allocator = Allocator()) -> map<detail::range_key_type<Rg>, detail::range_mapped_type<Rg>, Compare, Allocator>;
+
+template <std::ranges::input_range Rg, detail::allocator_like Allocator>
+map(std::from_range_t, Rg &&, Allocator) -> map<detail::range_key_type<Rg>, detail::range_mapped_type<Rg>, std::less<detail::range_key_type<Rg>>, Allocator>;
 
 template <typename Key, typename Tp, typename Compare, typename Alloc>
 void swap(map<Key, Tp, Compare, Alloc> &lhs, map<Key, Tp, Compare, Alloc> &rhs) noexcept(noexcept(lhs.swap(rhs))) {

@@ -26,6 +26,7 @@
  */
 
 #include "PvZ/STL/bits/ranges_base.h"
+#include "PvZ/STL/bits/stl_iterator_base_types.h"
 #include "PvZ/STL/bits/stl_tree.h"
 
 #include <functional>
@@ -423,6 +424,28 @@ public:
 private:
     rep_type m_t; // Red-black tree representing set.
 };
+
+template <detail::has_input_iter_cat InputIterator,
+          detail::not_allocator_like Compare = std::less<typename std::iterator_traits<InputIterator>::value_type>,
+          detail::allocator_like Allocator = std::allocator<typename std::iterator_traits<InputIterator>::value_type>>
+set(InputIterator, InputIterator, Compare = Compare(), Allocator = Allocator()) -> set<typename std::iterator_traits<InputIterator>::value_type, Compare, Allocator>;
+
+template <typename Key, detail::not_allocator_like Compare = std::less<Key>, detail::allocator_like Allocator = std::allocator<Key>>
+set(std::initializer_list<Key>, Compare = Compare(), Allocator = Allocator()) -> set<Key, Compare, Allocator>;
+
+template <detail::has_input_iter_cat InputIterator, detail::allocator_like Allocator>
+set(InputIterator, InputIterator, Allocator) -> set<typename std::iterator_traits<InputIterator>::value_type, std::less<typename std::iterator_traits<InputIterator>::value_type>, Allocator>;
+
+template <typename Key, detail::allocator_like Allocator>
+set(std::initializer_list<Key>, Allocator) -> set<Key, std::less<Key>, Allocator>;
+
+template <std::ranges::input_range Rg,
+          detail::not_allocator_like Compare = std::less<std::ranges::range_value_t<Rg>>,
+          detail::allocator_like Allocator = std::allocator<std::ranges::range_value_t<Rg>>>
+set(std::from_range_t, Rg &&, Compare = Compare(), Allocator = Allocator()) -> set<std::ranges::range_value_t<Rg>, Compare, Allocator>;
+
+template <std::ranges::input_range Rg, detail::allocator_like Allocator>
+set(std::from_range_t, Rg &&, Allocator) -> set<std::ranges::range_value_t<Rg>, std::less<std::ranges::range_value_t<Rg>>, Allocator>;
 
 template <typename Key, typename Compare, typename Alloc>
 void swap(set<Key, Compare, Alloc> &lhs, set<Key, Compare, Alloc> &rhs) noexcept(noexcept(lhs.swap(rhs))) {
