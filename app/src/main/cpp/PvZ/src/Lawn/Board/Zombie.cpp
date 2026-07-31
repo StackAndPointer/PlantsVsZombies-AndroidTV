@@ -4674,7 +4674,10 @@ bool Zombie::IsFlying() const {
 }
 
 bool Zombie::IsImpFlying() const {
-    return mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP && (mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN || mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_BLOCKED);
+    if (mZombieType != ZombieType::ZOMBIE_SUPER_FAN_IMP && mZombieType != ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
+        return false;
+    }
+    return mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN || mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_BLOCKED;
 }
 
 int Zombie::GetBobsledPosition() {
