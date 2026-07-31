@@ -4674,7 +4674,7 @@ bool Zombie::IsFlying() const {
 }
 
 bool Zombie::IsImpFlying() const {
-    if (mZombieType != ZombieType::ZOMBIE_SUPER_FAN_IMP && mZombieType != ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
+    if (mZombieType != ZombieType::ZOMBIE_SUPER_FAN_IMP && mZombieType != ZombieType::ZOMBIE_GIGA_IMP) {
         return false;
     }
     return mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN || mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_BLOCKED;
@@ -5749,6 +5749,9 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_GIGA_ZOMBIEPOLEVAULTERHEAD);
                 DropPole();
             } else if (mZombieType == ZombieType::ZOMBIE_EXPLORER) {
+                ReanimShowPrefix("zombie_explorer_hat", RENDER_GROUP_HIDDEN);
+                ReanimShowPrefix("zombie_explorer_beard", RENDER_GROUP_HIDDEN);
+                aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_EXPLORER_HEAD);
                 ExplorerTorchConvert(false);
             }
         }
@@ -6050,6 +6053,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
             ReanimShowTrack("Zombie_paper_hands", RENDER_GROUP_HIDDEN);
             ReanimShowTrack("Zombie_paper_leftarm_lower", RENDER_GROUP_HIDDEN);
             break;
+        case ZombieType::ZOMBIE_EXPLORER:
+            ReanimShowTrack("Zombie_explorer_outerarm_lower", RENDER_GROUP_HIDDEN);
+            ReanimShowTrack("Zombie_explorer_outerarm_hand", RENDER_GROUP_HIDDEN);
+            break;
         default:
             ReanimShowPrefix("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
             ReanimShowPrefix("Zombie_outerarm_hand", RENDER_GROUP_HIDDEN);
@@ -6090,6 +6097,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
             case ZombieType::ZOMBIE_SUNDAY_EDITION:
                 GetTrackPosition("Zombie_paper_leftarm_lower", aPosX, aPosY);
                 aBodyReanim->SetImageOverride("Zombie_paper_leftarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_UPPER2);
+                break;
+            case ZombieType::ZOMBIE_EXPLORER:
+                GetTrackPosition("Zombie_explorer_outerarm_lower", aPosX, aPosY);
+                aBodyReanim->SetImageOverride("Zombie_explorer_outerarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_EXPLORER_OUTERARM_UPPER2);
                 break;
             default:
                 GetTrackPosition("Zombie_outerarm_lower", aPosX, aPosY);
@@ -6135,6 +6146,9 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
                     break;
                 case ZombieType::ZOMBIE_SUNDAY_EDITION:
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_LOWER);
+                    break;
+                case ZombieType::ZOMBIE_EXPLORER:
+                    aParticle->OverrideImage(nullptr, IMAGE_REANIM_ZOMBIE_OUTERARM_HAND);
                     break;
                 default:
                     break;

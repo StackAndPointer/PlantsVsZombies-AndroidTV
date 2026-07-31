@@ -214,6 +214,7 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_ZOMBIEJACKSONHEAD = GetImageByFileName("particles/ZombieDancerHead");
     addonImages.IMAGE_ZOMBIEBACKUPDANCERHEAD = GetImageByFileName("particles/ZombieBackupDancerHead");
     addonImages.IMAGE_GIGA_ZOMBIEPOLEVAULTERHEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieGigaPolevaulterHead");
+    addonImages.IMAGE_REANIM_ZOMBIE_EXPLORER_HEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieExplorerHead");
     addonImages.IMAGE_PROJECTILEPOLE = GetImageByFileName("addonFiles/images/ExtendedZombies/Zombie_giga_polevaulter_pole");
     addonImages.IMAGE_PROJECTILEZOMBLOB = GetImageByFileName("addonFiles/images/ExtendedZombies/zombie_zomblob_split");
     addonImages.IMAGE_PROJECTILESPORE = GetImageByFileName("addonFiles/images/ProjectileSpore");
@@ -252,6 +253,7 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_PAPER3 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_paper3");
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_leftarm_upper2");
     addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_LOWER = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_sunday_edition_leftarm_lower");
+    addonImages.IMAGE_REANIM_ZOMBIE_EXPLORER_OUTERARM_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/Zombie_explorer_outerarm_upper2");
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_BODY1_2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_body1_2");
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_OUTERARM_LOWER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_outerarm_lower2");
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_BODY1_3 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_body1_3");
