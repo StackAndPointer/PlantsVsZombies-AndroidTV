@@ -398,11 +398,11 @@ namespace detail {
         }
 
         void _clear() noexcept {
-            using node = typename node_traits::node;
-            using node_base = typename node_traits::node_base;
-            typename node_base::base_ptr cur = m_impl.m_node.m_next;
+            using Node = typename node_traits::node;
+            using NodeBase = typename node_traits::node_base;
+            typename NodeBase::base_ptr cur = m_impl.m_node.m_next;
             while (cur != m_impl.m_node.get_base()) {
-                node &tmp = static_cast<node &>(*cur);
+                Node &tmp = static_cast<Node &>(*cur);
                 cur = tmp.m_next;
                 destroy_node(tmp.get_node_ptr());
             }
@@ -462,10 +462,10 @@ namespace detail {
             // Destroy the element
             node_alloc_traits::destroy(m_impl, p->get_valptr());
             // Only destroy the node if the pointers require it.
-            using node = typename node_traits::node;
-            using base_ptr = typename node_traits::node_base::base_ptr;
-            if constexpr (!std::is_trivially_destructible_v<base_ptr>) {
-                p->~node();
+            using Node = typename node_traits::node;
+            using BasePtr = typename node_traits::node_base::base_ptr;
+            if constexpr (!std::is_trivially_destructible_v<BasePtr>) {
+                p->~Node();
             }
             put_node(p);
         }

@@ -944,12 +944,12 @@ public:
 
     template <typename Compare2>
     void merge_unique(compatible_tree<Compare2> &src) noexcept {
-        using merge_helper = rb_tree_merge_helper<rb_tree, Compare2>;
+        using MergeHelper = rb_tree_merge_helper<rb_tree, Compare2>;
         for (auto it = src.begin(), end = src.end(); it != end;) {
             auto pos = it++;
             auto res = get_insert_unique_pos(KeyOfValue()(*pos));
             if (res.second) {
-                auto &src_impl = merge_helper::get_impl(src);
+                auto &src_impl = MergeHelper::get_impl(src);
                 auto ptr = node_traits::rebalance_for_erase(pos.m_node, src_impl.m_header);
                 --src_impl.m_node_count;
                 auto node_p = static_cast<node &>(*ptr).get_node_ptr();
@@ -960,12 +960,12 @@ public:
 
     template <typename Compare2>
     void merge_equal(compatible_tree<Compare2> &src) noexcept {
-        using merge_helper = rb_tree_merge_helper<rb_tree, Compare2>;
+        using MergeHelper = rb_tree_merge_helper<rb_tree, Compare2>;
         for (auto it = src.begin(), end = src.end(); it != end;) {
             auto pos = it++;
             auto res = get_insert_equal_pos(KeyOfValue()(*pos));
             if (res.second) {
-                auto &src_impl = merge_helper::get_impl(src);
+                auto &src_impl = MergeHelper::get_impl(src);
                 auto ptr = node_traits::rebalance_for_erase(pos.m_node, src_impl.m_header);
                 --src_impl.m_node_count;
                 auto node_p = static_cast<node &>(*ptr).get_node_ptr();

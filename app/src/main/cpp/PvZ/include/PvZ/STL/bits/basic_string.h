@@ -804,6 +804,13 @@ public:
         return replace(first, last, str._data(), str.size());
     }
 
+    template <typename Tp>
+        requires if_sv<Tp>
+    basic_string &replace(const_iterator first, const_iterator last, const Tp &t) {
+        sv_type sv = t;
+        return replace(first - ibegin(), last - first, sv);
+    }
+
     basic_string &replace(iterator first, iterator last, const CharT *s, size_type n) {
         assert(ibegin() <= first && first <= last && last <= iend());
         return replace(first - ibegin(), last - first, s, n);
@@ -812,13 +819,6 @@ public:
     basic_string &replace(iterator first, iterator last, const CharT *s) {
         PVZSTL_CXX_REQUIRES_STRING(s);
         return replace(first, last, s, traits_type::length(s));
-    }
-
-    template <typename Tp>
-        requires if_sv<Tp>
-    basic_string &replace(const_iterator first, const_iterator last, const Tp &t) {
-        sv_type sv = t;
-        return replace(first - ibegin(), last - first, sv);
     }
 
     basic_string &replace(iterator first, iterator last, size_type n, CharT c) {
@@ -1752,6 +1752,7 @@ inline unsigned long long stoull(const string &str, std::size_t *idx = nullptr, 
     return pvzstl_cxx::stoa(&std::strtoull, "stoull", str.c_str(), idx, base);
 }
 
+// NB: strtof vs strtod.
 inline float stof(const string &str, std::size_t *idx = nullptr) {
     return pvzstl_cxx::stoa(&std::strtof, "stof", str.c_str(), idx);
 }
@@ -1765,39 +1766,39 @@ inline long double stold(const string &str, std::size_t *idx = nullptr) {
 }
 
 [[nodiscard]] inline string to_string(int val) {
-    return pvzstl_cxx::to_xstring<string, 4 * sizeof(int)>(std::vsnprintf, "%d", val);
+    return pvzstl_cxx::to_xstring<string, 4 * sizeof(int)>(&std::vsnprintf, "%d", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned val) {
-    return pvzstl_cxx::to_xstring<string, 4 * sizeof(unsigned)>(std::vsnprintf, "%u", val);
+    return pvzstl_cxx::to_xstring<string, 4 * sizeof(unsigned)>(&std::vsnprintf, "%u", val);
 }
 
 [[nodiscard]] inline string to_string(long val) {
-    return pvzstl_cxx::to_xstring<string, 4 * sizeof(long)>(std::vsnprintf, "%ld", val);
+    return pvzstl_cxx::to_xstring<string, 4 * sizeof(long)>(&std::vsnprintf, "%ld", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned long val) {
-    return pvzstl_cxx::to_xstring<string, 4 * sizeof(unsigned long)>(std::vsnprintf, "%lu", val);
+    return pvzstl_cxx::to_xstring<string, 4 * sizeof(unsigned long)>(&std::vsnprintf, "%lu", val);
 }
 
 [[nodiscard]] inline string to_string(long long val) {
-    return pvzstl_cxx::to_xstring<string, 4 * sizeof(long long)>(std::vsnprintf, "%lld", val);
+    return pvzstl_cxx::to_xstring<string, 4 * sizeof(long long)>(&std::vsnprintf, "%lld", val);
 }
 
 [[nodiscard]] inline string to_string(unsigned long long val) {
-    return pvzstl_cxx::to_xstring<string, 4 * sizeof(unsigned long long)>(std::vsnprintf, "%llu", val);
+    return pvzstl_cxx::to_xstring<string, 4 * sizeof(unsigned long long)>(&std::vsnprintf, "%llu", val);
 }
 
 [[nodiscard]] inline string to_string(float val) {
-    return pvzstl_cxx::to_xstring<string, std::numeric_limits<float>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
+    return pvzstl_cxx::to_xstring<string, std::numeric_limits<float>::max_exponent10 + 20>(&std::vsnprintf, "%f", val);
 }
 
 [[nodiscard]] inline string to_string(double val) {
-    return pvzstl_cxx::to_xstring<string, std::numeric_limits<double>::max_exponent10 + 20>(std::vsnprintf, "%f", val);
+    return pvzstl_cxx::to_xstring<string, std::numeric_limits<double>::max_exponent10 + 20>(&std::vsnprintf, "%f", val);
 }
 
 [[nodiscard]] inline string to_string(long double val) {
-    return pvzstl_cxx::to_xstring<string, std::numeric_limits<long double>::max_exponent10 + 20>(std::vsnprintf, "%Lf", val);
+    return pvzstl_cxx::to_xstring<string, std::numeric_limits<long double>::max_exponent10 + 20>(&std::vsnprintf, "%Lf", val);
 }
 
 inline int stoi(const wstring &str, std::size_t *idx = nullptr, int base = 10) {
@@ -1820,6 +1821,7 @@ inline unsigned long long stoull(const wstring &str, std::size_t *idx = nullptr,
     return pvzstl_cxx::stoa(&std::wcstoull, "stoull", str.c_str(), idx, base);
 }
 
+// NB: wcstof vs wcstod.
 inline float stof(const wstring &str, std::size_t *idx = nullptr) {
     return pvzstl_cxx::stoa(&std::wcstof, "stof", str.c_str(), idx);
 }
@@ -1833,39 +1835,39 @@ inline long double stold(const wstring &str, std::size_t *idx = nullptr) {
 }
 
 [[nodiscard]] inline wstring to_wstring(int val) {
-    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(int)>(std::vswprintf, L"%d", val);
+    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(int)>(&std::vswprintf, L"%d", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned val) {
-    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(unsigned)>(std::vswprintf, L"%u", val);
+    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(unsigned)>(&std::vswprintf, L"%u", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long val) {
-    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(long)>(std::vswprintf, L"%ld", val);
+    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(long)>(&std::vswprintf, L"%ld", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned long val) {
-    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(unsigned long)>(std::vswprintf, L"%lu", val);
+    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(unsigned long)>(&std::vswprintf, L"%lu", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long long val) {
-    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(long long)>(std::vswprintf, L"%lld", val);
+    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(long long)>(&std::vswprintf, L"%lld", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(unsigned long long val) {
-    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(unsigned long long)>(std::vswprintf, L"%llu", val);
+    return pvzstl_cxx::to_xstring<wstring, 4 * sizeof(unsigned long long)>(&std::vswprintf, L"%llu", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(float val) {
-    return pvzstl_cxx::to_xstring<wstring, std::numeric_limits<float>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
+    return pvzstl_cxx::to_xstring<wstring, std::numeric_limits<float>::max_exponent10 + 20>(&std::vswprintf, L"%f", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(double val) {
-    return pvzstl_cxx::to_xstring<wstring, std::numeric_limits<double>::max_exponent10 + 20>(std::vswprintf, L"%f", val);
+    return pvzstl_cxx::to_xstring<wstring, std::numeric_limits<double>::max_exponent10 + 20>(&std::vswprintf, L"%f", val);
 }
 
 [[nodiscard]] inline wstring to_wstring(long double val) {
-    return pvzstl_cxx::to_xstring<wstring, std::numeric_limits<long double>::max_exponent10 + 20>(std::vswprintf, L"%Lf", val);
+    return pvzstl_cxx::to_xstring<wstring, std::numeric_limits<long double>::max_exponent10 + 20>(&std::vswprintf, L"%Lf", val);
 }
 
 } // namespace pvzstl

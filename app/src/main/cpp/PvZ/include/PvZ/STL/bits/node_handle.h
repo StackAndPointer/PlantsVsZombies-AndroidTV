@@ -127,10 +127,10 @@ private:
 
         // Precondition: m_alloc is the active member of the union.
         void operator=(NodeAlloc &&alloc) noexcept {
-            using a_tr = _alloc_traits;
-            if constexpr (a_tr::propagate_on_container_move_assignment::value) {
+            using ATr = _alloc_traits;
+            if constexpr (ATr::propagate_on_container_move_assignment::value) {
                 m_alloc = std::move(alloc);
-            } else if constexpr (!a_tr::is_always_equal::value) {
+            } else if constexpr (!ATr::is_always_equal::value) {
                 assert(m_alloc == alloc);
             }
         }
