@@ -1582,6 +1582,10 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
                 }
             }
 
+            // 墓碑只锁定本行最靠近回旋镖射手的一个。
+            GridItem *aClosestGravestone = nullptr;
+            float aClosestGravestoneX = 0.0f;
+
             aGridItem = nullptr;
             while (mBoard->IterateGridItems(aGridItem)) {
                 if (aGridItem->mGridY != theRow) {
@@ -1592,8 +1596,8 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
                     continue;
                 }
 
-                const bool aDamageableGridItem = aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND
-                    || (aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE && aGridItem->mVSTargetZombieHealth > 0);
+                const bool aIsGravestone = aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND;
+                const bool aDamageableGridItem = aIsGravestone || (aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE && aGridItem->mVSTargetZombieHealth > 0);
                 if (!aDamageableGridItem) {
                     continue;
                 }
@@ -1603,7 +1607,20 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
                     continue;
                 }
 
+                if (aIsGravestone) {
+                    const float aGridItemX = float(aGridItemRect.mX);
+                    if (aClosestGravestone == nullptr || aGridItemX < aClosestGravestoneX) {
+                        aClosestGravestone = aGridItem;
+                        aClosestGravestoneX = aGridItemX;
+                    }
+                    continue;
+                }
+
                 AddBoomerangTarget(float(aGridItemRect.mX), ZombieID::ZOMBIEID_NULL, mBoard->GridItemGetID(aGridItem));
+            }
+
+            if (aClosestGravestone != nullptr) {
+                AddBoomerangTarget(aClosestGravestoneX, ZombieID::ZOMBIEID_NULL, mBoard->GridItemGetID(aClosestGravestone));
             }
         }
 
@@ -3646,8 +3663,8 @@ void Plant::UpdateCeleryStalker() {
 void Plant::UpdateBonkChoy() {
     static constexpr int kBonkChoyGridItemRange = 2;
     static constexpr int kBonkChoyAttackInterval = 40;
-    static constexpr int kBonkChoyPunchDamage = 20;
-    static constexpr int kBonkChoyUppercutDamage = 40;
+    static constexpr int kBonkChoyPunchDamage = 15;
+    static constexpr int kBonkChoyUppercutDamage = 35;
 
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
     if (aBodyReanim == nullptr) {
