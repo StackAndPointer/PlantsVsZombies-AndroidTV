@@ -232,7 +232,18 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
             aReanim.AssignRenderGroupToPrefix("anim_pole3", RENDER_GROUP_HIDDEN);
             aReanim.Update();
             aReanim.Draw(&aMemoryGraphics);
-            msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
+        } else if (theZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+            Reanimation aReanim;
+            aReanim.ReanimationInitializeType(aPosX, aPosY, aZombieDef.mReanimationType);
+            aReanim.PlayReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
+            aReanim.AssignRenderGroupToTrack("Zombie_dogwalker_rope2_2", RENDER_GROUP_HIDDEN);
+            aReanim.Update();
+            aReanim.Draw(&aMemoryGraphics);
+            Reanimation aDogeReanim;
+            aDogeReanim.ReanimationInitializeType(aPosX - 40, aPosY, ReanimationType::REANIM_DOG);
+            aDogeReanim.PlayReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
+            aDogeReanim.Update();
+            aDogeReanim.Draw(&aMemoryGraphics);
         } else {
             if (theZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
                 aPosY = 60.0f;
@@ -242,8 +253,8 @@ Sexy::MemoryImage *ReanimatorCache::MakeCachedZombieFrame(ZombieType theZombieTy
             aReanim.PlayReanim("anim_idle", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 24.0f);
             aReanim.Update();
             aReanim.Draw(&aMemoryGraphics);
-            msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
         }
+        msExtendedZombieImages[aExtendedIndex] = aMemoryImage;
         return aMemoryImage;
     }
 

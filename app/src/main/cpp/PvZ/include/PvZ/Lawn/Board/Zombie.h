@@ -403,6 +403,13 @@ public:
     void UpdateGigaGargantuar();
     void InterruptLightning();
     void UpdateGigaImp();
+    Zombie *GetDogPartner() const;
+    void CheckDogPartnerDeath();
+    void HandleDogPartnerLost();
+    void UpdateDogWalker();
+    void UpdateZombieDog();
+    Plant *FindDogTarget();
+    void SetDogPairRow(int theRow);
     void UpdateZombieGargantuar();
     void ZombieImpThrown(Zombie *theThrowerZombie, float theOffsetDistance);
     void ZombieImpKicked(float theKickingDistance);
@@ -435,6 +442,7 @@ public:
     void SetupReanimForLostHead();
     void DropHead(unsigned int theDamageFlags);
     void DropHead_Origin(unsigned int theDamageFlags);
+    void BreakRope();
     void DropPole();
     void DropFlag();
     void DropHelm(unsigned int theDamageFlags);

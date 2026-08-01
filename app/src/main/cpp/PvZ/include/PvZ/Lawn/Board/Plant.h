@@ -299,6 +299,7 @@ public:
     static bool IsNocturnal(SeedType theSeedType);
     static bool IsAquatic(SeedType theSeedType);
     static bool IsFlying(SeedType theSeedType);
+    static bool IsLobber(SeedType theSeedType);
     static bool IsUpgrade(SeedType theSeedType);
     static bool IsDefender(SeedType theSeedType);
     int GetDamageRangeFlags(PlantWeapon thePlantWeapon) const;

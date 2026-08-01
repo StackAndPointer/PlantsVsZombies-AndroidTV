@@ -95,6 +95,8 @@ ZombieDefinition gExtendedZombieDefs[] = {
     {ZOMBIE_ZOMBLOB_SMALL, REANIM_ZOMBLOB_SMALL, 1, 18, 1, 0, "ZOMBLOB"},
     {ZOMBIE_GIGA_GARGANTUAR, REANIM_GIGA_GARGANTUAR, 10, 48, 15, 6000, "GIGA_GARGANTUAR"},
     {ZOMBIE_GIGA_IMP, REANIM_GIGA_IMP, 10, 48, 1, 0, "GIGA_IMP"},
+    {ZOMBIE_DOGWALKER, REANIM_DOGWALKER, 2, 18, 5, 1000, "DOGWALKER_ZOMBIE"},
+    {ZOMBIE_DOG, REANIM_DOG, 1, 18, 1, 0, "ZOMBIE_DOG"},
 };
 
 ZombieDefinition &GetZombieDefinition(ZombieType theZombieType) {
@@ -309,6 +311,23 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             mVariant = false;
             break;
 
+        case ZombieType::ZOMBIE_DOGWALKER:
+            mBodyHealth = 500;
+            mVariant = false;
+            mZombieAttackRect = Rect(20, 0, 50, 115);
+            ReanimShowTrack("Zombie_dogwalker_rope2_2", RENDER_GROUP_HIDDEN);
+            break;
+
+        case ZombieType::ZOMBIE_DOG:
+            mBodyHealth = 340;
+            mVariant = false;
+            mZombieRect = Rect(20, 60, 50, 55);
+            mZombieAttackRect = Rect(15, 60, 40, 55);
+            mTargetRow = theRow; // 固定保存出生行，索敌范围始终是出生行及上下相邻行
+            mZombiePhase = ZombiePhase::PHASE_DOG_WALKING;
+            PickRandomSpeed();
+            break;
+
         case ZombieType::ZOMBIE_GIGA_GARGANTUAR: {
             mWidth = 180;
             mHeight = 180;
@@ -345,6 +364,21 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
 }
 
 void Zombie::CheckIfPreyCaught() {
+    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
+        Zombie *aPartner = GetDogPartner();
+        if (aPartner != nullptr) {
+            const float aTargetY = GetPosYBasedOnRow(mRow);
+            const float aPartnerTargetY = aPartner->GetPosYBasedOnRow(aPartner->mRow);
+            const bool aChangingRow = std::fabs(mPosY - aTargetY) > 1.0f || std::fabs(aPartner->mPosY - aPartnerTargetY) > 1.0f;
+            if (aChangingRow) {
+                if (mIsEating) {
+                    StopEating();
+                }
+                return;
+            }
+        }
+    }
+
     if (mZombieType == ZombieType::ZOMBIE_BUNGEE || mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR
         || mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_ZAMBONI || mZombieType == ZombieType::ZOMBIE_CATAPULT || mZombieType == ZombieType::ZOMBIE_BOSS
         || IsBouncingPogo() || IsBobsledTeamWithSled() || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT
@@ -358,8 +392,9 @@ void Zombie::CheckIfPreyCaught() {
         || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP || mZombiePhase == ZombiePhase::PHASE_SNORKEL_INTO_POOL
         || mZombiePhase == ZombiePhase::PHASE_SNORKEL_WALKING || mZombiePhase == ZombiePhase::PHASE_LADDER_PLACING || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_CHARGING
         || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_TACKLING || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_KICKING || mZombiePhase == ZombiePhase::PHASE_IMP_POPPING
-        || mZombieHeight == ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED || mZombieHeight == ZombieHeight::HEIGHT_UP_LADDER || mZombieHeight == ZombieHeight::HEIGHT_IN_TO_POOL
-        || mZombieHeight == ZombieHeight::HEIGHT_OUT_OF_POOL || IsTangleKelpTarget() || mZombieHeight == ZombieHeight::HEIGHT_FALLING || !mHasHead || IsFlying()) {
+        || mZombiePhase == ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK || mZombieHeight == ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED || mZombieHeight == ZombieHeight::HEIGHT_UP_LADDER
+        || mZombieHeight == ZombieHeight::HEIGHT_IN_TO_POOL || mZombieHeight == ZombieHeight::HEIGHT_OUT_OF_POOL || IsTangleKelpTarget() || mZombieHeight == ZombieHeight::HEIGHT_FALLING || !mHasHead
+        || IsFlying()) {
         return;
     }
 
@@ -516,6 +551,12 @@ void Zombie::UpdateActions() {
     if (mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
         UpdateGigaImp();
     }
+    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+        UpdateDogWalker();
+    }
+    if (mZombieType == ZombieType::ZOMBIE_DOG) {
+        UpdateZombieDog();
+    }
 }
 
 void Zombie::UpdatePlaying() {
@@ -582,6 +623,10 @@ void Zombie::UpdatePlaying() {
         return;
     }
 
+    if ((mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) && mRelatedZombieID != ZombieID::ZOMBIEID_NULL) {
+        CheckDogPartnerDeath();
+    }
+
     if (IsImmobilizied() && mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
         InterruptLightning();
     }
@@ -622,6 +667,179 @@ void Zombie::UpdatePlaying() {
         }
     }
 }
+
+Zombie *Zombie::GetDogPartner() const {
+    if (mBoard == nullptr || mRelatedZombieID == ZombieID::ZOMBIEID_NULL) {
+        return nullptr;
+    }
+
+    Zombie *aPartner = mBoard->ZombieTryToGet(mRelatedZombieID);
+    if (aPartner == nullptr) {
+        return nullptr;
+    }
+
+    const bool aValidPair = (mZombieType == ZombieType::ZOMBIE_DOGWALKER && aPartner->mZombieType == ZombieType::ZOMBIE_DOG)
+        || (mZombieType == ZombieType::ZOMBIE_DOG && aPartner->mZombieType == ZombieType::ZOMBIE_DOGWALKER);
+    return aValidPair ? aPartner : nullptr;
+}
+
+void Zombie::HandleDogPartnerLost() {
+    Zombie *aPartner = GetDogPartner();
+    if (aPartner != nullptr) {
+        aPartner->mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+    }
+    mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+
+    if (IsDeadOrDying()) {
+        return;
+    }
+
+    StopEating();
+    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+        if (mZombiePhase == ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK) {
+            return;
+        }
+        mZombiePhase = ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK;
+        PlayZombieReanim("anim_ropebreak", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 10, 18.0f);
+        return;
+    }
+
+    if (mZombieType == ZombieType::ZOMBIE_DOG) {
+        mZombiePhase = ZombiePhase::PHASE_DOG_RUNNING;
+        PickRandomSpeed();
+        PlayZombieReanim("anim_run", ReanimLoopType::REANIM_LOOP, 10, 0.0f);
+    }
+}
+
+void Zombie::CheckDogPartnerDeath() {
+    if (mRelatedZombieID == ZombieID::ZOMBIEID_NULL) {
+        return;
+    }
+
+    Zombie *aPartner = GetDogPartner();
+    if (aPartner == nullptr || aPartner->IsDeadOrDying()) {
+        HandleDogPartnerLost();
+    }
+}
+
+void Zombie::UpdateDogWalker() {
+    if (mZombiePhase == ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK) {
+        Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+        if (aBodyReanim != nullptr && aBodyReanim->mLoopCount > 0) {
+            mZombiePhase = ZombiePhase::PHASE_ZOMBIE_NORMAL;
+            StartWalkAnim(0);
+            BreakRope();
+        }
+        return;
+    }
+
+    Zombie *aDog = GetDogPartner();
+    if (aDog == nullptr || aDog->IsDeadOrDying()) {
+        return;
+    }
+
+    if (mRow != aDog->mRow) {
+        SetRow(aDog->mRow);
+    }
+}
+
+Plant *Zombie::FindDogTarget() {
+    const int aRowCount = mBoard->StageHas6Rows() ? 6 : 5;
+    const int aHomeRow = ClampInt(mTargetRow, 0, aRowCount - 1);
+
+    const Rect aDogRect = GetZombieRect();
+    const int aDogCenterX = aDogRect.mX + aDogRect.mWidth / 2;
+    const int aDogCenterY = aDogRect.mY + aDogRect.mHeight / 2;
+    const int aDogCol = mBoard->PixelToGridX(aDogCenterX, aDogCenterY);
+    const int aFrontCol = aDogCol + (IsWalkingBackwards() ? 1 : -1);
+
+    Plant *aBestPlant = nullptr;
+    float aBestDistance = 1.0e30f;
+
+    Plant *aPlant = nullptr;
+    while (mBoard->IteratePlants(aPlant)) {
+        if (aPlant->NotOnGround()) {
+            continue;
+        }
+        if (aPlant->mRow < aHomeRow - 1 || aPlant->mRow > aHomeRow + 1) {
+            continue;
+        }
+        if (aPlant->mPlantCol != aDogCol && aPlant->mPlantCol != aFrontCol) {
+            continue;
+        }
+        if (!mBoard->RowCanHaveZombieType(aPlant->mRow, ZombieType::ZOMBIE_DOG)) {
+            continue;
+        }
+        if (!CanTargetPlant(aPlant, ZombieAttackType::ATTACKTYPE_CHEW)) {
+            continue;
+        }
+
+        const float aPlantCenterX = aPlant->mX + aPlant->mWidth * 0.5f;
+        const float aForwardDistance = IsWalkingBackwards() ? (aPlantCenterX - aDogCenterX) : (aDogCenterX - aPlantCenterX);
+        if (aForwardDistance < -60.0f) {
+            continue;
+        }
+
+        const float aDistance = std::max(0.0f, aForwardDistance);
+        if (aBestPlant == nullptr || aDistance < aBestDistance || (std::fabs(aDistance - aBestDistance) < 0.01f && aPlant->mRow == mRow && aBestPlant->mRow != mRow)) {
+            aBestPlant = aPlant;
+            aBestDistance = aDistance;
+        }
+    }
+
+    return aBestPlant;
+}
+
+void Zombie::SetDogPairRow(int theRow) {
+    const int aRowCount = mBoard->StageHas6Rows() ? 6 : 5;
+    if (theRow < 0 || theRow >= aRowCount || theRow == mRow) {
+        return;
+    }
+
+    StopEating();
+    Zombie *aPartner = GetDogPartner();
+    if (aPartner != nullptr && !aPartner->IsDeadOrDying()) {
+        aPartner->StopEating();
+    }
+
+    // Zombie::SetRow() 已负责同步仍存活的狗/主人，避免双方重复调用
+    // SetRow() 导致同一帧内重复刷新行坐标。
+    SetRow(theRow);
+
+    if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
+        U16U16_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_YUCKY_SETROW;
+        event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+        event.data2 = uint16_t(theRow);
+        netplay::PutEvent(event);
+    }
+}
+
+void Zombie::UpdateZombieDog() {
+    Zombie *aWalker = GetDogPartner();
+    if (aWalker == nullptr || aWalker->IsImmobilizied() || aWalker->mIsEating || (aWalker->mYuckyFace && aWalker->mYuckyFaceCounter <= 169)) {
+        return;
+    }
+
+    if (mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
+        return;
+    }
+
+    const bool aChangingRow = std::fabs(mPosY - GetPosYBasedOnRow(mRow)) > 1.0f || std::fabs(aWalker->mPosY - aWalker->GetPosYBasedOnRow(aWalker->mRow)) > 1.0f;
+    if (aChangingRow) {
+        return;
+    }
+
+    Plant *aTarget = FindDogTarget();
+    const int aRowCount = mBoard->StageHas6Rows() ? 6 : 5;
+    const int aHomeRow = ClampInt(mTargetRow, 0, aRowCount - 1);
+    const int aDesiredRow = aTarget != nullptr ? aTarget->mRow : aHomeRow;
+
+    if (aDesiredRow != mRow) {
+        SetDogPairRow(aDesiredRow);
+    }
+}
+
 
 void Zombie::LandFlyer(unsigned int theDamageFlags) {
     if (!TestBit(theDamageFlags, (int)DamageFlags::DAMAGE_DOESNT_LEAVE_BODY) && mZombiePhase == ZombiePhase::PHASE_BALLOON_FLYING) {
@@ -1236,7 +1454,7 @@ bool Zombie::CanRevived() const {
     return mZombieType != ZombieType::ZOMBIE_DANCER && mZombieType != ZombieType::ZOMBIE_SNORKEL && mZombieType != ZombieType::ZOMBIE_ZAMBONI && mZombieType != ZombieType::ZOMBIE_BOBSLED
         && mZombieType != ZombieType::ZOMBIE_DOLPHIN_RIDER && mZombieType != ZombieType::ZOMBIE_BALLOON && mZombieType != ZombieType::ZOMBIE_DIGGER && mZombieType != ZombieType::ZOMBIE_POGO
         && mZombieType != ZombieType::ZOMBIE_BUNGEE && mZombieType != ZombieType::ZOMBIE_CATAPULT && mZombieType != ZombieType::ZOMBIE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_BOSS
-        && mZombieType != ZombieType::ZOMBIE_REDEYE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_JACKSON && !IsZomblob(mZombieType);
+        && mZombieType != ZombieType::ZOMBIE_REDEYE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_JACKSON && mZombieType != ZombieType::ZOMBIE_DOGWALKER && !IsZomblob(mZombieType);
 }
 
 ZombieID Zombie::RaiseDeadZombie(ZombieType theZombieType, int theRow, int theCol) {
@@ -3482,10 +3700,14 @@ void Zombie::UpdateZombieRiseFromGrave() {
                 break;
             case ZOMBIE_IMP:
             case ZOMBIE_SUPER_FAN_IMP:
+            case ZOMBIE_GIGA_IMP:
                 mZombiePhase = PHASE_IMP_PRE_RUN;
                 break;
             case ZOMBIE_GIGA_FOOTBALL:
                 mZombiePhase = PHASE_FOOTBALL_PRE_CHARGE;
+                break;
+            case ZOMBIE_DOG:
+                mZombiePhase = PHASE_DOG_RUNNING;
                 break;
             default:
                 mZombiePhase = PHASE_ZOMBIE_NORMAL;
@@ -3703,6 +3925,8 @@ void Zombie::UpdateDeath() {
             case ZombieType::ZOMBIE_IMP:
             case ZombieType::ZOMBIE_BOSS:
             case ZombieType::ZOMBIE_SUPER_FAN_IMP:
+            case ZombieType::ZOMBIE_GIGA_IMP:
+            case ZombieType::ZOMBIE_DOG:
                 aFallTime = -1.0f;
                 break;
 
@@ -3719,6 +3943,7 @@ void Zombie::UpdateDeath() {
             case ZombieType::ZOMBIE_SQUASH_HEAD:
             case ZombieType::ZOMBIE_DUCKY_TUBE:
             case ZombieType::ZOMBIE_EXPLORER:
+            case ZombieType::ZOMBIE_DOGWALKER:
                 if (aBodyReanim->IsAnimPlaying("anim_superlongdeath")) {
                     aFallTime = 0.788f;
                 } else if (aBodyReanim->IsAnimPlaying("anim_death2")) {
@@ -4494,6 +4719,9 @@ void Zombie::EatPlant(Plant *thePlant) {
             thePlant->mPlantHealth -= DAMAGE_PER_EAT; // 2 倍啃咬伤害
         }
     }
+    if (mZombieType == ZombieType::ZOMBIE_DOG) {
+        thePlant->mPlantHealth -= DAMAGE_PER_EAT; // 僵尸狗固定为 2 倍啃咬伤害
+    }
 
     if (thePlant->mPlantHealth <= 0) {
         if (!(mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))) {
@@ -4861,6 +5089,11 @@ bool Zombie::EffectedByDamage(unsigned int theDamageRangeFlags) {
         return false; // 存在雪橇时，只有领头僵尸会受到攻击
     }
 
+    // 僵尸狗不按普通地面僵尸处理；只有显式携带 DAMAGES_DOG 的攻击能命中。
+    if (mZombieType == ZombieType::ZOMBIE_DOG) {
+        return TestBit(theDamageRangeFlags, int(DamageRangeFlags::DAMAGES_DOG));
+    }
+
     if (mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT || mZombiePhase == ZombiePhase::PHASE_IMP_GETTING_THROWN || mZombiePhase == ZombiePhase::PHASE_DIGGER_RISING
         || mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING_PAUSE_WITHOUT_AXE || mZombiePhase == ZombiePhase::PHASE_DIGGER_RISE_WITHOUT_AXE || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_INTO_POOL
         || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP || mZombiePhase == ZombiePhase::PHASE_SNORKEL_INTO_POOL || mZombiePhase == ZombiePhase::PHASE_BALLOON_POPPING
@@ -4929,7 +5162,8 @@ void Zombie::MowDown() {
         || mZombiePhase == ZombiePhase::PHASE_DANCER_RISING || mZombiePhase == ZombiePhase::PHASE_SNORKEL_INTO_POOL || mZombiePhase == ZombiePhase::PHASE_ZOMBIE_BURNED
         || mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR
         || mZombieType == ZombieType::ZOMBIE_BUNGEE || mZombieType == ZombieType::ZOMBIE_DIGGER || mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP
-        || mZombieType == ZombieType::ZOMBIE_YETI || mZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER || IsBobsledTeamWithSled() || IsFlying() || mInPool) {
+        || mZombieType == ZombieType::ZOMBIE_GIGA_IMP || mZombieType == ZombieType::ZOMBIE_YETI || mZombieType == ZombieType::ZOMBIE_DOLPHIN_RIDER || IsBobsledTeamWithSled() || IsFlying()
+        || mInPool) {
         Reanimation *aPuffReanim = mApp->AddReanimation(mPosX - 73.0f, mPosY - 56.0f, mRenderOrder + 2, ReanimationType::REANIM_PUFF);
         aPuffReanim->SetFramesForLayer("anim_puff");
         mApp->AddTodParticle(mPosX + 110.0f, mPosY + 0.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_MOWER_CLOUD);
@@ -4963,6 +5197,8 @@ void Zombie::MowDown() {
     } else if (mZombieType == ZombieType::ZOMBIE_POGO) {
         DropHead(0U);
         mAltitude = 0.0f;
+    } else if (mZombieType == ZOMBIE_DOGWALKER) {
+        BreakRope();
     }
 
     Reanimation *aMoweredReanim = mApp->AddReanimation(0.0f, 0.0f, mRenderOrder, ReanimationType::REANIM_LAWN_MOWERED_ZOMBIE);
@@ -5075,6 +5311,14 @@ void Zombie::DieNoLoot() {
 }
 
 void Zombie::DieNoLoot_Origin() {
+    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
+        Zombie *aPartner = GetDogPartner();
+        if (aPartner != nullptr && !aPartner->IsDeadOrDying()) {
+            aPartner->HandleDogPartnerLost();
+        }
+        mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+    }
+
     old_Zombie_DieNoLoot(this);
 }
 
@@ -5643,7 +5887,7 @@ void Zombie::DrawReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos, int t
 bool Zombie::CanLoseBodyParts() {
     return mZombieType != ZombieType::ZOMBIE_ZAMBONI && mZombieType != ZombieType::ZOMBIE_BUNGEE && mZombieType != ZombieType::ZOMBIE_CATAPULT && mZombieType != ZombieType::ZOMBIE_GARGANTUAR
         && mZombieType != ZombieType::ZOMBIE_REDEYE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_BOSS && mZombieHeight != ZombieHeight::HEIGHT_ZOMBIQUARIUM && !IsFlying()
-        && !IsBobsledTeamWithSled() && !IsZomblob(mZombieType) && mZombieType != ZombieType::ZOMBIE_GIGA_GARGANTUAR;
+        && !IsBobsledTeamWithSled() && !IsZomblob(mZombieType) && mZombieType != ZombieType::ZOMBIE_GIGA_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_DOG;
 }
 
 void Zombie::SetupReanimForLostHead() {
@@ -5753,6 +5997,9 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
                 ReanimShowPrefix("zombie_explorer_beard", RENDER_GROUP_HIDDEN);
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_EXPLORER_HEAD);
                 ExplorerTorchConvert(false);
+            } else if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+                aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_DOGWALKER_HEAD);
+                BreakRope();
             }
         }
         return;
@@ -5915,6 +6162,13 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
     }
 }
 
+void Zombie::BreakRope() {
+    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+        ReanimShowTrack("Zombie_dogwalker_rope2", RENDER_GROUP_HIDDEN);
+        ReanimShowTrack("Zombie_dogwalker_rope2_2", RENDER_GROUP_NORMAL);
+    }
+}
+
 void Zombie::DropPole() {
     if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
         ReanimShowPrefix("Zombie_polevaulter_innerarm", RENDER_GROUP_HIDDEN);
@@ -6057,6 +6311,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
             ReanimShowTrack("Zombie_explorer_outerarm_lower", RENDER_GROUP_HIDDEN);
             ReanimShowTrack("Zombie_explorer_outerarm_hand", RENDER_GROUP_HIDDEN);
             break;
+        case ZombieType::ZOMBIE_DOGWALKER:
+            ReanimShowTrack("Zombie_dogwalker_outerarm_lower", RENDER_GROUP_HIDDEN);
+            ReanimShowTrack("Zombie_dogwalker_outerarm_hand", RENDER_GROUP_HIDDEN);
+            break;
         default:
             ReanimShowPrefix("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
             ReanimShowPrefix("Zombie_outerarm_hand", RENDER_GROUP_HIDDEN);
@@ -6102,6 +6360,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
                 GetTrackPosition("Zombie_explorer_outerarm_lower", aPosX, aPosY);
                 aBodyReanim->SetImageOverride("Zombie_explorer_outerarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_EXPLORER_OUTERARM_UPPER2);
                 break;
+            case ZombieType::ZOMBIE_DOGWALKER:
+                GetTrackPosition("Zombie_dogwalker_outerarm_lower", aPosX, aPosY);
+                aBodyReanim->SetImageOverride("Zombie_dogwalker_outerarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_DOGWALKER_OUTERARM_UPPER2);
+                break;
             default:
                 GetTrackPosition("Zombie_outerarm_lower", aPosX, aPosY);
                 aBodyReanim->SetImageOverride("Zombie_outerarm_upper", IMAGE_REANIM_ZOMBIE_OUTERARM_UPPER2);
@@ -6142,13 +6404,12 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_DANCER_INNERARM_HAND);
                     break;
                 case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
+                case ZombieType::ZOMBIE_EXPLORER:
+                case ZombieType::ZOMBIE_DOGWALKER:
                     aParticle->OverrideImage(nullptr, IMAGE_REANIM_ZOMBIE_OUTERARM_HAND);
                     break;
                 case ZombieType::ZOMBIE_SUNDAY_EDITION:
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_LOWER);
-                    break;
-                case ZombieType::ZOMBIE_EXPLORER:
-                    aParticle->OverrideImage(nullptr, IMAGE_REANIM_ZOMBIE_OUTERARM_HAND);
                     break;
                 default:
                     break;
@@ -6319,13 +6580,13 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
 
     if (thePlant->mSeedType == SeedType::SEED_CELERY_STALKER) {
         return mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR
-            || theAttackType == ZombieAttackType::ATTACKTYPE_DRIVE_OVER
+            || mZombieType == ZombieType::ZOMBIE_DOG || theAttackType == ZombieAttackType::ATTACKTYPE_DRIVE_OVER
             || (theAttackType != ZombieAttackType::ATTACKTYPE_LADDER && thePlant->mState != PlantState::STATE_CELERY_STALKER_LOW && thePlant->mState != PlantState::STATE_CELERY_STALKER_LOWERING);
     }
 
     if (thePlant->IsSpiky()) {
         return mZombieType == ZombieType::ZOMBIE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_REDEYE_GARGANTUAR || mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR
-            || mZombieType == ZombieType::ZOMBIE_ZAMBONI || mBoard->IsPoolSquare(thePlant->mPlantCol, thePlant->mRow)
+            || mZombieType == ZombieType::ZOMBIE_ZAMBONI || mZombieType == ZombieType::ZOMBIE_DOG || mBoard->IsPoolSquare(thePlant->mPlantCol, thePlant->mRow)
             || mBoard->GetFlowerPotAt(thePlant->mPlantCol, thePlant->mRow); // 扶梯僵尸给花盆上的地刺/地刺王搭梯的原理
     }
 
@@ -6790,7 +7051,9 @@ void Zombie::StartWalkAnim(int theBlendTime) {
         return;
 
     PickRandomSpeed();
-    if (mZombiePhase == ZombiePhase::PHASE_LADDER_CARRYING) {
+    if (mZombieType == ZombieType::ZOMBIE_DOG && mZombiePhase == ZombiePhase::PHASE_DOG_RUNNING) {
+        PlayZombieReanim("anim_run", ReanimLoopType::REANIM_LOOP, theBlendTime, 0.0f);
+    } else if (mZombiePhase == ZombiePhase::PHASE_LADDER_CARRYING) {
         PlayZombieReanim("anim_ladderwalk", ReanimLoopType::REANIM_LOOP, theBlendTime, 0.0f);
     } else if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD) {
         PlayZombieReanim("anim_walk_nopaper", ReanimLoopType::REANIM_LOOP, theBlendTime, 0.0f);
@@ -6845,6 +7108,15 @@ float Zombie::GetPosYBasedOnRow(int theRow) {
 
 void Zombie::SetRow(int theRow) {
     old_Zombie_SetRow(this, theRow);
+
+    if (mZombieType != ZombieType::ZOMBIE_DOGWALKER && mZombieType != ZombieType::ZOMBIE_DOG) {
+        return;
+    }
+
+    Zombie *aPartner = GetDogPartner();
+    if (aPartner != nullptr && !aPartner->IsDeadOrDying() && aPartner->mRow != theRow) {
+        aPartner->SetRow(theRow);
+    }
 }
 
 void Zombie::StartMindControlled() {
@@ -6884,6 +7156,8 @@ void Zombie::StartMindControlled_Origin() {
         }
 
         mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+    } else if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
+        mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
     } else {
         Zombie *aZombie = mBoard->ZombieTryToGet(mRelatedZombieID);
         if (aZombie) {
@@ -6913,7 +7187,7 @@ void Zombie::ConvertToImp() {
 }
 
 void Zombie::ConvertToImp_Origin() {
-    if (mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
+    if (mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP || mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
         mPoisoned = true;
         mPoisonedCounter = ZOMBIE_POISONING_TIME;
         StopEating();
@@ -7170,14 +7444,15 @@ void Zombie::PickRandomSpeed() {
         mVelX = 0.4f;
     } else if (mZombieType == ZombieType::ZOMBIE_DANCER || mZombieType == ZombieType::ZOMBIE_BACKUP_DANCER || mZombieType == ZombieType::ZOMBIE_POGO || mZombieType == ZombieType::ZOMBIE_FLAG
                || mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING || mZombieType == ZombieType::ZOMBIE_JACKSON || mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON
-               || mZombieType == ZombieType::ZOMBIE_EXPLORER) {
+               || mZombieType == ZombieType::ZOMBIE_EXPLORER || mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombiePhase == ZombiePhase::PHASE_DOG_WALKING) {
         mVelX = 0.45f;
     } else if (mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT || mZombieType == ZombieType::ZOMBIE_FOOTBALL
                || mZombieType == ZombieType::ZOMBIE_SNORKEL || mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX) {
         mVelX = RandRangeFloat(0.66f, 0.68f);
     } else if (mZombiePhase == ZombiePhase::PHASE_LADDER_CARRYING || mZombieType == ZombieType::ZOMBIE_SQUASH_HEAD) {
         mVelX = RandRangeFloat(0.79f, 0.81f);
-    } else if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING_WITHOUT_DOLPHIN) {
+    } else if (mZombiePhase == ZombiePhase::PHASE_NEWSPAPER_MAD || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_WALKING_WITHOUT_DOLPHIN
+               || mZombiePhase == ZombiePhase::PHASE_DOG_RUNNING) {
         mVelX = RandRangeFloat(0.89f, 0.91f);
     } else if (mZombiePhase == ZombiePhase::PHASE_FOOTBALL_CHARGING) {
         mVelX = 1.5f;
@@ -7297,7 +7572,7 @@ void Zombie::ApplyBurn() {
         if (mZombieType == ZombieType::ZOMBIE_BALLOON) {
             aCharredPosY += 31.0f;
         }
-        if (mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
+        if (mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP || mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
             aCharredPosX -= 6.0f;
             aReanimType = ReanimationType::REANIM_ZOMBIE_CHARRED_IMP;
         }
@@ -7363,10 +7638,12 @@ void Zombie::ApplyButter() {
         return;
 
     mButteredCounter = 400;
-    Zombie *aZombie = mBoard->ZombieTryToGet(mRelatedZombieID);
-    if (aZombie) {
-        aZombie->mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
-        mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+    if (mZombieType != ZombieType::ZOMBIE_DOGWALKER && mZombieType != ZombieType::ZOMBIE_DOG) {
+        Zombie *aZombie = mBoard->ZombieTryToGet(mRelatedZombieID);
+        if (aZombie) {
+            aZombie->mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+            mRelatedZombieID = ZombieID::ZOMBIEID_NULL;
+        }
     }
 
     if (mZombieType == ZombieType::ZOMBIE_POGO) {
@@ -7488,7 +7765,7 @@ bool Zombie::ZombieNotWalking() {
         || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_TAKE || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_THROW || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_TACKLING
         || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_KICKING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_THROW_PREPARING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_THROW_END
         || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_PREPARING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_ATTACK
-        || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_END) {
+        || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_END || mZombiePhase == ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK) {
         return true;
     }
 
@@ -7532,6 +7809,26 @@ bool Zombie::ZombieNotWalking() {
                 if (aDancer && (aDancer->IsImmobilizied() || aDancer->mIsEating)) {
                     return true;
                 }
+            }
+        }
+    }
+
+    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
+        Zombie *aLeader = nullptr;
+        if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+            aLeader = this;
+        } else {
+            aLeader = mBoard->ZombieTryToGet(mRelatedZombieID);
+        }
+
+        if (aLeader) {
+            if (aLeader->IsImmobilizied() || aLeader->mIsEating) {
+                return true;
+            }
+
+            Zombie *aDog = mBoard->ZombieTryToGet(aLeader->mRelatedZombieID);
+            if (aDog && (aDog->IsImmobilizied() || aDog->mIsEating)) {
+                return true;
             }
         }
     }
@@ -7587,6 +7884,26 @@ bool Zombie::IsMovingAtChilledSpeed() {
         }
     }
 
+    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
+        Zombie *aLeader = nullptr;
+        if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+            aLeader = this;
+        } else {
+            aLeader = mBoard->ZombieTryToGet(mRelatedZombieID);
+        }
+
+        if (aLeader && !aLeader->IsDeadOrDying()) {
+            if (aLeader->mChilledCounter > 0 || aLeader->mIceTrapCounter > 0) {
+                return true;
+            }
+
+            Zombie *aDog = mBoard->ZombieTryToGet(aLeader->mRelatedZombieID);
+            if (aDog && !aDog->IsDeadOrDying() && (aDog->mChilledCounter > 0 || aDog->mIceTrapCounter > 0)) {
+                return true;
+            }
+        }
+    }
+
     return false;
 }
 
@@ -7611,7 +7928,7 @@ void Zombie::UpdateAnimSpeed() {
     if (mIsEating) {
         if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_BALLOON || mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_DIGGER
             || mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX || mZombieType == ZombieType::ZOMBIE_SNORKEL || mZombieType == ZombieType::ZOMBIE_YETI
-            || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER || IsZomblob(mZombieType)) {
+            || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP || mZombieType == ZombieType::ZOMBIE_GIGA_IMP || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER || IsZomblob(mZombieType)) {
             ApplyAnimRate(20.0f);
         } else {
             ApplyAnimRate(36.0f);
@@ -7631,6 +7948,13 @@ void Zombie::UpdateAnimSpeed() {
         if (aDistance >= 1e-6f) {
             float aOneOverSpeed = aBodyReanim->mFrameCount / aDistance;
             float aAnimRate = mVelX * aOneOverSpeed * 47.0f / mScaleZombie;
+
+            const bool aIsDogPairMember = mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG;
+            const bool aHasOwnChill = mChilledCounter > 0 || mIceTrapCounter > 0;
+            if (aIsDogPairMember && !aHasOwnChill && IsMovingAtChilledSpeed()) {
+                aAnimRate *= CHILLED_SPEED_FACTOR;
+            }
+
             ApplyAnimRate(aAnimRate);
         }
     }
@@ -7640,6 +7964,17 @@ void Zombie::UpdateZombieWalking() {
     if (ZombieNotWalking())
         return;
 
+    // 绳子未断时由遛狗僵尸统一决定组合的水平位移。
+    // 狗保留自己的动画，但不再独立消费 _ground 位移，避免减速/恢复
+    // 多次切换后两条动画曲线的微小差异不断累积成位置偏差。
+    if (mZombieType == ZombieType::ZOMBIE_DOG) {
+        Zombie *aWalker = GetDogPartner();
+        if (aWalker != nullptr && !aWalker->IsDeadOrDying()) {
+            return;
+        }
+    }
+
+    const float aOldPosX = mPosX;
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
     if (aBodyReanim) {
         float aSpeed = NAN;
@@ -7686,6 +8021,39 @@ void Zombie::UpdateZombieWalking() {
                         if (aDancer->ZombieNotWalking())
                             aSpeed = 0;
                     }
+                }
+            }
+        }
+
+        if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
+            Zombie *aLeader = nullptr;
+            if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+                aLeader = this;
+            } else {
+                aLeader = mBoard->ZombieTryToGet(mRelatedZombieID);
+            }
+
+            if (aLeader && !aLeader->IsDeadOrDying()) {
+                if (aLeader->IsImmobilizied() || aLeader->mIsEating) {
+                    aSpeed = 0;
+                }
+
+                if (aLeader->mRelatedZombieID != ZombieID::ZOMBIEID_NULL) {
+                    Zombie *aDog = mBoard->ZombieTryToGet(aLeader->mRelatedZombieID);
+                    if (aDog && aDog != this && !aDog->IsDeadOrDying()) {
+                        if (aDog->ZombieNotWalking())
+                            aSpeed = 0;
+                    }
+                }
+            }
+
+            Zombie *aPartner = GetDogPartner();
+            if (aPartner != nullptr) {
+                const float aTargetY = GetPosYBasedOnRow(mRow);
+                const float aPartnerTargetY = aPartner->GetPosYBasedOnRow(aPartner->mRow);
+                const bool aChangingRow = std::fabs(mPosY - aTargetY) > 1.0f || std::fabs(aPartner->mPosY - aPartnerTargetY) > 1.0f;
+                if (aChangingRow) {
+                    aSpeed = 0;
                 }
             }
         }
@@ -7741,6 +8109,18 @@ void Zombie::UpdateZombieWalking() {
             } else {
                 mPosX -= aSpeed;
             }
+        }
+    }
+
+    // 主人本帧实际走了多少，狗就走多少。这里同步的是最终世界位移，
+    // 而不是 mVelX 或动画速率，因此 _ground 曲线、冰冻倍率和动画相位
+    // 都只由主人结算一次，不会产生累计误差。
+    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+        Zombie *aDog = GetDogPartner();
+        if (aDog != nullptr && !aDog->IsDeadOrDying()) {
+            const float aDeltaX = mPosX - aOldPosX;
+            aDog->mPosX += aDeltaX;
+            aDog->mX = int(aDog->mPosX);
         }
     }
 }
@@ -8004,7 +8384,7 @@ void Zombie::Animate() {
             } else if (mZombieType == ZombieType::ZOMBIE_BOBSLED) {
                 aLeftHandTime = 0.33f;
                 aRightHandTime = 0.83f;
-            } else if (mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
+            } else if (mZombieType == ZombieType::ZOMBIE_IMP || mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP || mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
                 aLeftHandTime = 0.33f;
                 aRightHandTime = 0.79f;
             } else if (IsZomblob(mZombieType)) {

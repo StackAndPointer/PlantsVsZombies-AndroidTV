@@ -1790,6 +1790,22 @@ Zombie *Board::AddZombieInRow(ZombieType theZombieType, int theRow, int theFromW
                     event.data4[i + 1].f32 = aFollowerZombie->mPosX;
                 }
                 netplay::PutEvent(event);
+            } else if (theZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+                Zombie *aZombieDog = mZombies.DataArrayGet(aZombie->mRelatedZombieID);
+                if (aZombieDog != nullptr) {
+                    U8x2U16x4UNI32x8_Event event{};
+                    event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_DOGWALKER_ADD;
+                    event.data1[0] = uint8_t(theRow);
+                    event.data1[1] = int8_t(theFromWave);
+                    event.data2[0] = uint16_t(mZombies.DataArrayGetID(aZombie));
+                    event.data2[1] = uint16_t(mZombies.DataArrayGetID(aZombieDog));
+                    event.data2[2] = uint16_t(theIsRustle);
+                    event.data3[0].f32 = aZombie->mVelX;
+                    event.data3[1].f32 = aZombieDog->mVelX;
+                    event.data4[0].f32 = aZombie->mPosX;
+                    event.data4[1].f32 = aZombieDog->mPosX;
+                    netplay::PutEvent(event);
+                }
             } else {
                 U8x5U16UNI32x2_Event event{};
                 event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_ADD;
@@ -1817,9 +1833,20 @@ Zombie *Board::AddZombieInRow(ZombieType theZombieType, int theRow, int theFromW
 
 Zombie *Board::AddZombieInRow_Origin(ZombieType theZombieType, int theRow, int theFromWave, bool theIsRustle) {
     // 修复蹦极僵尸出现时草丛也会摇晃
-    if (theZombieType == ZombieType::ZOMBIE_BUNGEE)
+    if (theZombieType == ZombieType::ZOMBIE_BUNGEE) {
         theIsRustle = false;
-    return old_Board_AddZombieInRow(this, theZombieType, theRow, theFromWave, theIsRustle);
+    }
+    Zombie *aZombie = old_Board_AddZombieInRow(this, theZombieType, theRow, theFromWave, theIsRustle);
+    if (theZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+        Zombie *aZombieDog = AddZombieInRow_Origin(ZombieType::ZOMBIE_DOG, aZombie->mRow, aZombie->mFromWave, false);
+        if (aZombieDog != nullptr) {
+            aZombieDog->mPosX = aZombie->mPosX + (aZombie->IsWalkingBackwards() ? 80.0f : -80.0f);
+            aZombieDog->mRelatedZombieID = ZombieGetID(aZombie);
+            aZombieDog->mRenderOrder = aZombie->mRenderOrder + 1;
+            aZombie->mRelatedZombieID = ZombieGetID(aZombieDog);
+        }
+    }
+    return aZombie;
 }
 
 Zombie *Board::AddZombie(ZombieType theZombieType, int theFromWave, bool theIsRustle) {
@@ -2425,6 +2452,33 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aFollowerZombie->ApplySyncedSpeed(eventZombieBobseldAdd->data3[i + 1].f32, short(aFollowerZombie->mAnimTicksPerFrame));
                 aFollowerZombie->mPosX = eventZombieBobseldAdd->data4[i + 1].f32;
             }
+        } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_DOGWALKER_ADD: {
+            auto *eventDogWalkerAdd = static_cast<const U8x2U16x4UNI32x8_Event *>(event);
+            const int aRow = eventDogWalkerAdd->data1[0];
+            const int aFromWave = int8_t(eventDogWalkerAdd->data1[1]);
+            const bool aIsRustle = eventDogWalkerAdd->data2[2] != 0;
+
+            Zombie *aZombie = AddZombieInRow_Origin(ZombieType::ZOMBIE_DOGWALKER, aRow, aFromWave, aIsRustle);
+            if (aZombie == nullptr) {
+                break;
+            }
+
+            Zombie *aZombieDog = mZombies.DataArrayGet(aZombie->mRelatedZombieID);
+            if (aZombieDog == nullptr) {
+                break;
+            }
+
+            serverZombieIDMap[eventDogWalkerAdd->data2[0]] = uint16_t(mZombies.DataArrayGetID(aZombie));
+            serverZombieIDMap[eventDogWalkerAdd->data2[1]] = uint16_t(mZombies.DataArrayGetID(aZombieDog));
+
+            aZombie->ApplySyncedSpeed(eventDogWalkerAdd->data3[0].f32, short(aZombie->mAnimTicksPerFrame));
+            aZombieDog->ApplySyncedSpeed(eventDogWalkerAdd->data3[1].f32, short(aZombieDog->mAnimTicksPerFrame));
+
+            aZombie->mPosX = eventDogWalkerAdd->data4[0].f32;
+            aZombieDog->mPosX = eventDogWalkerAdd->data4[1].f32;
+            aZombie->mX = int(aZombie->mPosX);
+            aZombieDog->mX = int(aZombieDog->mPosX);
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_SET_STEAL_GRID: {
             auto *eventZombieBungeeAdd = static_cast<const U16UNI32UNI32_Event *>(event);

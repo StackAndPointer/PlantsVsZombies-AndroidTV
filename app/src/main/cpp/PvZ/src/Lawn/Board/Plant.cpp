@@ -196,7 +196,10 @@ int Plant::GetDamageRangeFlags(PlantWeapon thePlantWeapon) const {
         case SeedType::SEED_FUMESHROOM:
         case SeedType::SEED_GLOOMSHROOM:
         case SeedType::SEED_CHOMPER:
-            return 9;
+        case SeedType::SEED_ICEBERG_LETTUCE:
+        case SeedType::SEED_BONK_CHOY:
+        case SeedType::SEED_CELERY_STALKER:
+            return 9; // DAMANGES_GROUND | DAMAGES_DOG
         case SeedType::SEED_CATTAIL:
             return 11;
         case SeedType::SEED_TANGLEKELP:
@@ -2043,6 +2046,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
         case SeedType::SEED_ZOMBIE_EXPLORER:
+        case SeedType::SEED_ZOMBIE_DOGWALKER:
             return 100;
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_BLOOMERANG:
@@ -2110,6 +2114,7 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
             case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
             case SeedType::SEED_ZOMBIE_EXPLORER:
             case SeedType::SEED_ZOMBIE_ZOMBLOB:
+            case SeedType::SEED_ZOMBIE_DOGWALKER:
                 return 3000;
             case SeedType::SEED_ZOMBIE_NEWSPAPER:
             case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -2462,6 +2467,11 @@ bool Plant::IsAquatic(SeedType theSeedType) {
 
 bool Plant::IsFlying(SeedType theSeedType) {
     return theSeedType == SeedType::SEED_INSTANT_COFFEE;
+}
+
+bool Plant::IsLobber(SeedType theSeedType) {
+    return theSeedType == SeedType::SEED_CABBAGEPULT || theSeedType == SeedType::SEED_KERNELPULT || theSeedType == SeedType::SEED_MELONPULT || theSeedType == SeedType::SEED_WINTERMELON
+        || theSeedType == SeedType::SEED_SPORESHROOM;
 }
 
 bool Plant::IsUpgrade(SeedType theSeedType) {

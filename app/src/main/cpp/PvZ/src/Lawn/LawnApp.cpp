@@ -215,6 +215,7 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_ZOMBIEBACKUPDANCERHEAD = GetImageByFileName("particles/ZombieBackupDancerHead");
     addonImages.IMAGE_GIGA_ZOMBIEPOLEVAULTERHEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieGigaPolevaulterHead");
     addonImages.IMAGE_REANIM_ZOMBIE_EXPLORER_HEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieExplorerHead");
+    addonImages.IMAGE_REANIM_ZOMBIE_DOGWALKER_HEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieDogWalkerHead");
     addonImages.IMAGE_PROJECTILEPOLE = GetImageByFileName("addonFiles/images/ExtendedZombies/Zombie_giga_polevaulter_pole");
     addonImages.IMAGE_PROJECTILEZOMBLOB = GetImageByFileName("addonFiles/images/ExtendedZombies/zombie_zomblob_split");
     addonImages.IMAGE_PROJECTILESPORE = GetImageByFileName("addonFiles/images/ProjectileSpore");
@@ -260,6 +261,7 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_FOOT2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_foot2");
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_HEAD2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_head2");
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_TELEPHONEPOLE_COIL = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_telephonepole_coil");
+    addonImages.IMAGE_REANIM_ZOMBIE_DOGWALKER_OUTERARM_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_dogwalker_outerarm_upper2");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower2");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower3");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_upper2");
