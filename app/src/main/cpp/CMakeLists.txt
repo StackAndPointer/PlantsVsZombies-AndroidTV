@@ -4,16 +4,14 @@ project(PvZTV)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 启用链接时优化
-string(APPEND CMAKE_C_FLAGS_RELWITHDEBINFO " -flto=thin")
-string(APPEND CMAKE_CXX_FLAGS_RELWITHDEBINFO " -flto=thin")
-
-if ((CMAKE_BUILD_TYPE STREQUAL "Release") OR (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel"))
-    set(CMAKE_C_VISIBILITY_PRESET hidden)
-    set(CMAKE_CXX_VISIBILITY_PRESET hidden) # 隐藏非 inline 符号
-    set(CMAKE_VISIBILITY_INLINES_HIDDEN ON) # 隐藏 inline 符号
-    string(APPEND CMAKE_C_FLAGS " -flto")
-    string(APPEND CMAKE_CXX_FLAGS " -flto")
+if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
+    if (NOT CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+        set(CMAKE_C_VISIBILITY_PRESET hidden)
+        set(CMAKE_CXX_VISIBILITY_PRESET hidden) # 隐藏非 inline 符号
+        set(CMAKE_VISIBILITY_INLINES_HIDDEN ON) # 隐藏 inline 符号
+    endif ()
+    string(APPEND CMAKE_C_FLAGS " -flto=thin")
+    string(APPEND CMAKE_CXX_FLAGS " -flto=thin") # 启用链接时优化
 endif ()
 
 file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
