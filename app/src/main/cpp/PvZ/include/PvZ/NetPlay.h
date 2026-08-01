@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3188;
+inline constexpr uint32_t NETPLAY_VERSION = 3189;
 
 // 联机事件只传输 DataArray ID 的低 16 位；slot/index 0 是合法对象 ID，
 // 因此不能使用游戏内部值为 0 的 PLANTID_NULL / ZOMBIEID_NULL / GRIDITEMID_NULL 作为网络空值。
@@ -169,7 +169,7 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_ZOMBIE_IMP_KICKED,
     EVENT_SERVER_BOARD_ZOMBIE_IMP_POP,
     EVENT_SERVER_BOARD_ZOMBIE_HUGE_WAVE,    // 同步"一大波僵尸"提示
-    EVENT_SERVER_BOARD_ZOMBIE_YUCKY_SETROW, // 同步吃大蒜换行
+    EVENT_SERVER_BOARD_ZOMBIE_SET_ROW,   // 同步僵尸换行
     EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER,
     EVENT_SERVER_BOARD_ZOMBIE_DO_SPECIAL, // 同步僵尸触发特性
     EVENT_SERVER_BOARD_ZOMBIE_EXPLORER_BURN_PLANT,

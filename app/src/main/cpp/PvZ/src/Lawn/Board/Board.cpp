@@ -2876,7 +2876,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             mApp->PlaySample(Sexy::SOUND_HUGE_WAVE);
             DisplayAdviceAgain("[ADVICE_HUGE_WAVE]", MESSAGE_STYLE_HUGE_WAVE, ADVICE_HUGE_WAVE);
         } break;
-        case EVENT_SERVER_BOARD_ZOMBIE_YUCKY_SETROW: {
+        case EVENT_SERVER_BOARD_ZOMBIE_SET_ROW: {
             auto *event1 = static_cast<const U16U16_Event *>(event);
             uint16_t serverZombieID = event1->data1;
             uint16_t clientZombieID = 0;

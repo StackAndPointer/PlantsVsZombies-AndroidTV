@@ -526,6 +526,10 @@ void Plant::UpdateBloomerang() {
 }
 
 void Plant::UpdateSweetPotato() {
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
+        return;
+    }
+
     const int aFrontCol = mPlantCol + 1;
     if (aFrontCol >= MAX_GRID_SIZE_X) {
         return;
@@ -585,7 +589,13 @@ void Plant::UpdateSweetPotato() {
         }
 
         aZombie->StopEating();
+        aZombie->StartWalkAnim(20);
         aZombie->SetRow(mRow);
+
+        if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
+            U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_SET_ROW}, uint16_t(mBoard->mZombies.DataArrayGetID(aZombie)), uint16_t(mRow)};
+            netplay::PutEvent(event);
+        }
     }
 }
 

@@ -808,7 +808,7 @@ void Zombie::SetDogPairRow(int theRow) {
 
     if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
         U16U16_Event event{};
-        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_YUCKY_SETROW;
+        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_SET_ROW;
         event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
         event.data2 = uint16_t(theRow);
         netplay::PutEvent(event);
@@ -8336,7 +8336,7 @@ void Zombie::UpdateYuckyFace() {
             }
 
             if (gTcpClientSocket >= 0) {
-                U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_YUCKY_SETROW}, uint16_t(mBoard->mZombies.DataArrayGetID(this)), uint16_t(mRow)};
+                U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_SET_ROW}, uint16_t(mBoard->mZombies.DataArrayGetID(this)), uint16_t(mRow)};
                 netplay::PutEvent(event);
             }
         }
