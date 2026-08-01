@@ -435,6 +435,7 @@ public:
     void DoFwoosh(int theRow) {
         reinterpret_cast<void (*)(Board *, int)>(Board_DoFwooshAddr)(this, theRow);
     }
+    void DoChillyFwoosh(int theRow, float theX, float theY);
     bool IteratePlants(Plant *&thePlant) {
         return reinterpret_cast<bool (*)(Board *, Plant *&)>(Board_IteratePlantsAddr)(this, thePlant);
     }

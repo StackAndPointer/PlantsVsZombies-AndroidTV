@@ -7746,3 +7746,33 @@ Plant *Board::FindBloomerangPlant(int theGridX, int theGridY) {
     }
     return nullptr;
 }
+
+void Board::DoChillyFwoosh(int theRow, float theX, float theY) {
+    const int aRenderOrder = MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, theRow, 1);
+
+    for (int i = 0; i < 12; ++i) {
+        Reanimation *anOldFwoosh = mApp->ReanimationTryToGet(mFwooshID[theRow][i]);
+        if (anOldFwoosh != nullptr) {
+            anOldFwoosh->ReanimationDie();
+        }
+
+        const float aPosX = 750.0f * static_cast<float>(i) / 11.0f + 10.0f;
+        const float aPosY = GetPosYBasedOnRow(aPosX + 10.0f, theRow) - 10.0f;
+
+        Reanimation *anIce = mApp->AddReanimation(aPosX, aPosY, aRenderOrder, ReanimationType::REANIM_ICE);
+        anIce->SetFramesForLayer("anim_start");
+        anIce->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_FULL_LAST_FRAME;
+        anIce->mAnimRate *= 0.7f;
+
+        const float aScale = RandRangeFloat(0.9f, 1.1f);
+        const float aFlip = Rand(2) ? 1.0f : -1.0f;
+        anIce->OverrideScale(aScale * aFlip, 1.0f);
+
+        mFwooshID[theRow][i] = mApp->ReanimationGetID(anIce);
+    }
+
+    Reanimation *aChiloosh = mApp->AddReanimation(theX, theY, aRenderOrder + 1, ReanimationType::REANIM_CHILOOSH);
+    aChiloosh->SetFramesForLayer("anim_chiloosh");
+    aChiloosh->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE;
+    mFwooshCountDown = 100;
+}

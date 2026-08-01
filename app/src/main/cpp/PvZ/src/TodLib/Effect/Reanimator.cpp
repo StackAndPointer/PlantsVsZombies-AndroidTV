@@ -124,6 +124,9 @@ static ReanimationParams gExtendedReanimationParamArray[] = {
     {ReanimationType::REANIM_BLOOMERANG, "addonFiles/compiled/reanim/Bloomerang.reanim", 0},
     {ReanimationType::REANIM_BONK_CHOY, "addonFiles/compiled/reanim/BonkChoy.reanim", 0},
     {ReanimationType::REANIM_SWEET_POTATO, "addonFiles/compiled/reanim/SweetPotato.reanim", 0},
+    {ReanimationType::REANIM_CHILLY_PEPPER, "addonFiles/compiled/reanim/ChillyPepper.reanim", 0},
+    {ReanimationType::REANIM_ICE, "addonFiles/compiled/reanim/ice.reanim", 0},
+    {ReanimationType::REANIM_CHILOOSH, "addonFiles/compiled/reanim/chiloosh.reanim", 0},
     {ReanimationType::REANIM_IMP_PEAR, "addonFiles/compiled/reanim/ImpPear.reanim", 0},
     {ReanimationType::REANIM_APPLE_CLOCK, "addonFiles/compiled/reanim/apple_clock.reanim", 0},
 };

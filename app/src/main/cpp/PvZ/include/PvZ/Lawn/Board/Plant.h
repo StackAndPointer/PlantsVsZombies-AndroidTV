@@ -334,6 +334,7 @@ public:
     void PlayIdleAnim(float theRate);
     void IceZombies();
     static bool IsDisposable(SeedType theSeedType);
+    bool IsInvulnerable();
     bool FindTargetAndFire(int theRow, PlantWeapon thePlantWeapon);
     ReanimationID GetPlantReanimationIDByIndex(int index) const;
     void SyncAnimationToClient();

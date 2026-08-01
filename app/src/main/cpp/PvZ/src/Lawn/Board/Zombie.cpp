@@ -1262,10 +1262,8 @@ void Zombie::UpdateGigaFootball() {
 
             if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
                 SeedType aSeedType = aPlant->mSeedType;
-                if (aSeedType == SEED_CHERRYBOMB || aSeedType == SEED_ICESHROOM || aSeedType == SEED_DOOMSHROOM || aSeedType == SEED_SQUASH || aSeedType == SEED_JALAPENO || aSeedType == SEED_BLOVER) {
-                    if (!aPlant->mIsAsleep) {
-                        return;
-                    }
+                if (aPlant->IsInvulnerable()) {
+                    return;
                 }
                 if (aSeedType == SEED_TALLNUT || aSeedType == SEED_TALLNUT) {
                     aPlant->mPlantHealth -= aPlant->mPlantHealth + 1; // 造成伤害可触发坚果损伤的粒子特效
@@ -2312,12 +2310,8 @@ void Zombie::UpdateZombieExplorer() {
 
     if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
         if (mHasObject) {
-            if (aPlant->mSeedType == SeedType::SEED_CHERRYBOMB || (aPlant->mSeedType == SeedType::SEED_POTATOMINE && aPlant->mState == PlantState::STATE_POTATO_ARMED)
-                || aPlant->mSeedType == SeedType::SEED_ICESHROOM || aPlant->mSeedType == SeedType::SEED_DOOMSHROOM || aPlant->mSeedType == SeedType::SEED_SQUASH
-                || aPlant->mSeedType == SeedType::SEED_JALAPENO || aPlant->mSeedType == SeedType::SEED_BLOVER || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
-                if (!aPlant->mIsAsleep) {
-                    return;
-                }
+            if (aPlant->IsInvulnerable()) {
+                return;
             }
             if (mApp->IsVSMode()) {
                 if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
@@ -2452,11 +2446,8 @@ void Zombie::UpdateGigaGargantuar() {
             return;
         }
 
-        if (thePlant->mSeedType == SeedType::SEED_JALAPENO || thePlant->mSeedType == SeedType::SEED_CHERRYBOMB || thePlant->mSeedType == SeedType::SEED_DOOMSHROOM
-            || thePlant->mSeedType == SeedType::SEED_ICESHROOM || thePlant->mState == PlantState::STATE_SQUASH_LOOK || thePlant->mState == PlantState::STATE_SQUASH_PRE_LAUNCH) {
-            if (!thePlant->mIsAsleep) {
-                return;
-            }
+        if (thePlant->IsInvulnerable()) {
+            return;
         }
 
         thePlant->mPlantHealth -= theDamage;
@@ -3383,9 +3374,7 @@ void Zombie::UpdateZombieJalapenoHead() {
                 if (FindZombieTarget()) {
                     doBurn = true;
                 } else if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
-                    if (aPlant->mSeedType == SeedType::SEED_JALAPENO || aPlant->mSeedType == SeedType::SEED_CHERRYBOMB || aPlant->mSeedType == SeedType::SEED_DOOMSHROOM
-                        || aPlant->mSeedType == SeedType::SEED_ICESHROOM || aPlant->mSeedType == SeedType::SEED_HYPNOSHROOM || aPlant->mSeedType == SeedType::SEED_SQUASH
-                        || aPlant->mSeedType == SeedType::SEED_GARLIC || aPlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+                    if (aPlant->IsInvulnerable() || aPlant->mSeedType == SeedType::SEED_HYPNOSHROOM || aPlant->mSeedType == SeedType::SEED_GARLIC) {
                         if (!aPlant->mIsAsleep) {
                             return;
                         }
@@ -4661,7 +4650,7 @@ void Zombie::EatPlant(Plant *thePlant) {
     if (thePlant->mSeedType == SeedType::SEED_JALAPENO || thePlant->mSeedType == SeedType::SEED_CHERRYBOMB || thePlant->mSeedType == SeedType::SEED_DOOMSHROOM
         || thePlant->mSeedType == SeedType::SEED_ICESHROOM || thePlant->mSeedType == SeedType::SEED_HYPNOSHROOM || thePlant->mState == PlantState::STATE_FLOWERPOT_INVULNERABLE
         || thePlant->mState == PlantState::STATE_LILYPAD_INVULNERABLE || thePlant->mState == PlantState::STATE_SQUASH_LOOK || thePlant->mState == PlantState::STATE_SQUASH_PRE_LAUNCH
-        || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+        || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE || thePlant->mSeedType == SeedType::SEED_CHILLY_PEPPER) {
         if (!thePlant->mIsAsleep) {
             return;
         }
@@ -6592,7 +6581,7 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
 
     if (theAttackType == ZombieAttackType::ATTACKTYPE_DRIVE_OVER) {
         if (thePlant->mSeedType == SeedType::SEED_CHERRYBOMB || thePlant->mSeedType == SeedType::SEED_JALAPENO || thePlant->mSeedType == SeedType::SEED_BLOVER
-            || thePlant->mSeedType == SeedType::SEED_SQUASH || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+            || thePlant->mSeedType == SeedType::SEED_SQUASH || thePlant->mSeedType == SeedType::SEED_ICEBERG_LETTUCE || thePlant->mSeedType == SeedType::SEED_CHILLY_PEPPER) {
             return false;
         }
         if (thePlant->mSeedType == SeedType::SEED_DOOMSHROOM || thePlant->mSeedType == SeedType::SEED_ICESHROOM) {
