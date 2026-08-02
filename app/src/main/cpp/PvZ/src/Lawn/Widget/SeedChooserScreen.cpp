@@ -1298,9 +1298,9 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
 
         // 当植物完成第三次选卡，开启第二轮禁用
         if (!mIsZombieChooser && mSeedsInBanned > 0 && mSeedsIn1PBank == 4) {
-            // 需禁用数量增加1，额外卡槽模式则为2
-            mApp->mSeedChooserScreen->mNumBanPackets += mHas7Packets ? 2 : 1;
-            mApp->mZombieChooserScreen->mNumBanPackets += mHas7Packets ? 2 : 1;
+            // 需禁用数量增加 2
+            mApp->mSeedChooserScreen->mNumBanPackets += 2;
+            mApp->mZombieChooserScreen->mNumBanPackets += 2;
             // 重新开启禁用阶段
             mApp->mSeedChooserScreen->mBanningPhase = true;
             mApp->mZombieChooserScreen->mBanningPhase = true;
@@ -3179,34 +3179,127 @@ void SeedChooserScreen::DrawBanIcon(Sexy::Graphics *g) {
         aBanGraphics.DrawString(TodStringTranslate("[VS_UI_BAN_PHASE_BIG]"), 440, 110);
     }
 
-    for (auto &aBannedSeed : mBannedSeed) {
-        if (aBannedSeed.mSeedState == BannedSeedState::SEED_BANNED) {
-            const int seedPacketIndex = GetSeedPacketIndex(aBannedSeed.mSeedType);
-            if (seedPacketIndex < 0 || seedPacketIndex >= GetSeedStorageCount()) {
-                continue;
-            }
-            if (mIsZombieChooser) {
-                if (mPageIndex == 0 && aBannedSeed.mSeedType > GetZombieFirstPageLastSeedType(this)) {
-                    continue;
-                } else if (mPageIndex == 1 && aBannedSeed.mSeedType <= GetZombieFirstPageLastSeedType(this)) {
-                    continue;
-                }
-            } else {
-                if (mPageIndex == 0 && aBannedSeed.mSeedType > NUM_SEEDS_IN_CHOOSER) {
-                    continue;
-                } else if (mPageIndex == 1 && aBannedSeed.mSeedType <= NUM_SEEDS_IN_CHOOSER) {
-                    continue;
-                }
-            }
-            int x = 0;
-            int y = 0;
-            int drawSeedIndex = seedPacketIndex;
-            if (!mIsZombieChooser && mPageIndex == 1) {
-                drawSeedIndex -= NUM_SEEDS_IN_CHOOSER;
-            }
-            GetSeedPositionInChooser(drawSeedIndex, x, y);
-            g->DrawImage(IMAGE_MP_TARGETS_X, x + 5, y + 5);
+    const int firstPageSeedCount = mIsZombieChooser ? GetZombieFirstPageSeedCount(this) : int(SeedType::SEED_MELONPULT) + 1;
+    const int secondPageStorageStart = mIsZombieChooser ? firstPageSeedCount : NUM_SEEDS_IN_CHOOSER;
+
+    auto getSeedPage = [&](int theSeedPacketIndex) {
+        if (theSeedPacketIndex < 0 || theSeedPacketIndex >= GetSeedStorageCount()) {
+            return -1;
         }
+        if (theSeedPacketIndex < firstPageSeedCount) {
+            return 0;
+        }
+        if (mShowExtendedSeeds && theSeedPacketIndex >= secondPageStorageStart) {
+            return 1;
+        }
+        return -1;
+    };
+
+    const int globalBpPlayerIndex = ResolveGlobalBpPlayerIndex();
+    auto isGlobalBpSeed = [&](SeedType theSeedType) {
+        if (VSSetupAddonWidget::msGlobalBpMode == VSSetupAddonWidget::GLOBALBP_CLOSED || globalBpPlayerIndex < 0 || globalBpPlayerIndex > 1) {
+            return false;
+        }
+
+        for (SeedType globalBpSeed : VSSetupAddonWidget::msGlobalBpSeeds[globalBpPlayerIndex]) {
+            if (globalBpSeed == theSeedType) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    SeedType otherPageBannedSeeds[NUM_SEEDS_IN_CHOOSER_EXTENDED]{};
+    int otherPageBannedSeedCount = 0;
+
+    for (const auto &aBannedSeed : mBannedSeed) {
+        if (aBannedSeed.mSeedState != BannedSeedState::SEED_BANNED) {
+            continue;
+        }
+
+        const int seedPacketIndex = GetSeedPacketIndex(aBannedSeed.mSeedType);
+        const int seedPage = getSeedPage(seedPacketIndex);
+        if (seedPage < 0) {
+            continue;
+        }
+
+        if (seedPage != mPageIndex) {
+            // 全局 BP 禁卡只在它所属页面正常显示，不加入底部的“另一页禁卡”列表。
+            if (!isGlobalBpSeed(aBannedSeed.mSeedType)) {
+                otherPageBannedSeeds[otherPageBannedSeedCount++] = aBannedSeed.mSeedType;
+            }
+            continue;
+        }
+
+        int drawSeedIndex = seedPacketIndex;
+        if (mPageIndex == 1) {
+            drawSeedIndex -= secondPageStorageStart;
+        }
+
+        int x = 0;
+        int y = 0;
+        GetSeedPositionInChooser(drawSeedIndex, x, y);
+        g->DrawImage(IMAGE_MP_TARGETS_X, x + 5, y + 5);
+    }
+
+    if (otherPageBannedSeedCount == 0) {
+        return;
+    }
+
+    // 在翻页按钮旁的底栏集中显示另一页的普通 BP 禁卡。
+    constexpr int kCardSpacing = 53;
+    constexpr int kBottomMargin = 8;
+    constexpr int kPlantBottomCardsOffsetX = 40;
+    constexpr int kZombieBottomCardsOffsetX = 8;
+    const int cardWidth = Sexy::IMAGE_SEEDPACKETSILHOUETTE->mWidth;
+    const int cardHeight = Sexy::IMAGE_SEEDPACKETSILHOUETTE->mHeight;
+    const int bottomY = 500;
+    const int smallBanIconWidth = IMAGE_MP_TARGETS_X->mWidth / 2;
+    const int smallBanIconHeight = IMAGE_MP_TARGETS_X->mHeight / 2;
+
+    Image *backgroundImage = mIsZombieChooser ? Sexy::IMAGE_SEEDCHOOSER_BACKGROUND2 : Sexy::IMAGE_SEEDCHOOSER_BACKGROUND;
+    int areaLeft = kBottomMargin;
+    int areaRight = backgroundImage->mWidth - kBottomMargin;
+
+    if (mPageButton != nullptr) {
+        if (mIsZombieChooser) {
+            areaRight = mPageButton->mX - kBottomMargin;
+        } else {
+            areaLeft = mPageButton->mX + mPageButton->mWidth + kBottomMargin;
+        }
+    }
+
+    int drawCount = otherPageBannedSeedCount;
+    const int areaWidth = areaRight - areaLeft;
+    const int maxCards = areaWidth >= cardWidth ? 1 + (areaWidth - cardWidth) / kCardSpacing : 0;
+    if (drawCount > maxCards) {
+        drawCount = maxCards;
+    }
+    if (drawCount <= 0) {
+        return;
+    }
+
+    const int totalWidth = cardWidth + (drawCount - 1) * kCardSpacing;
+    int drawX = areaLeft;
+    if (areaWidth > totalWidth) {
+        drawX += (areaWidth - totalWidth) / 2;
+    }
+    if (mIsZombieChooser) {
+        drawX += kZombieBottomCardsOffsetX;
+    } else {
+        drawX -= kPlantBottomCardsOffsetX;
+    }
+
+    Color cardColor(255, 255, 255, 255);
+    for (int i = 0; i < drawCount; ++i) {
+        const SeedType seedType = otherPageBannedSeeds[i];
+        DrawPacket(g, drawX, bottomY, seedType, SeedType::SEED_NONE, 0.0f, 155, &cardColor, true, true);
+
+        const int banX = drawX + (cardWidth - smallBanIconWidth) / 2;
+        const int banY = bottomY + (cardHeight - smallBanIconHeight) / 2;
+        g->DrawImage(IMAGE_MP_TARGETS_X, banX, banY, smallBanIconWidth, smallBanIconHeight);
+
+        drawX += kCardSpacing;
     }
 }
 
