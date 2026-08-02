@@ -20,6 +20,7 @@
 #include "PvZ/STL/bits/stdexcept_throw.h"
 
 #include <cstdarg>
+#include <cstring>
 
 #include <memory>
 
