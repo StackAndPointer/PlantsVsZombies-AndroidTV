@@ -581,7 +581,8 @@ void Plant::UpdateSweetPotato() {
             continue;
         }
 
-        if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE || aZombie->mZombieType == ZombieType::ZOMBIE_CATAPULT || aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || !aZombie->CanBeFrozen()) {
+        if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE || aZombie->mZombieType == ZombieType::ZOMBIE_CATAPULT || aZombie->mZombieType == ZombieType::ZOMBIE_BOSS
+            || aZombie->mZombieType == ZombieType::ZOMBIE_DOGWALKER || aZombie->mZombieType == ZombieType::ZOMBIE_DOG || !aZombie->CanBeFrozen() || aZombie->ZombieNotWalking()) {
             continue;
         }
 

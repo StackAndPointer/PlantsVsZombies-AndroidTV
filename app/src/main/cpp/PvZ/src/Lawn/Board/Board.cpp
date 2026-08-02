@@ -7762,7 +7762,7 @@ void Board::DoChillyFwoosh(int theRow, float theX, float theY) {
         Reanimation *anIce = mApp->AddReanimation(aPosX, aPosY, aRenderOrder, ReanimationType::REANIM_ICE);
         anIce->SetFramesForLayer("anim_start");
         anIce->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_FULL_LAST_FRAME;
-        anIce->mAnimRate *= 0.7f;
+        anIce->mAnimRate *= 0.5f;
 
         const float aScale = RandRangeFloat(0.9f, 1.1f);
         const float aFlip = Rand(2) ? 1.0f : -1.0f;

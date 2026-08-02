@@ -319,7 +319,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             break;
 
         case ZombieType::ZOMBIE_DOG:
-            mBodyHealth = 340;
+            mBodyHealth = 300;
             mVariant = false;
             mZombieRect = Rect(20, 60, 50, 55);
             mZombieAttackRect = Rect(15, 60, 40, 55);
@@ -827,16 +827,40 @@ void Zombie::UpdateZombieDog() {
 
     const bool aChangingRow = std::fabs(mPosY - GetPosYBasedOnRow(mRow)) > 1.0f || std::fabs(aWalker->mPosY - aWalker->GetPosYBasedOnRow(aWalker->mRow)) > 1.0f;
     if (aChangingRow) {
+        // 由追猎目标引发的换行完成前保持完整的 300 帧回程等待。
+        if (mPhaseCounter > 0) {
+            mPhaseCounter = 300;
+        }
         return;
     }
 
-    Plant *aTarget = FindDogTarget();
     const int aRowCount = mBoard->StageHas6Rows() ? 6 : 5;
     const int aHomeRow = ClampInt(mTargetRow, 0, aRowCount - 1);
-    const int aDesiredRow = aTarget != nullptr ? aTarget->mRow : aHomeRow;
+    Plant *aTarget = FindDogTarget();
+    if (aTarget != nullptr) {
+        // 只要追猎范围内仍有目标，就持续刷新回程倒计时。
+        mPhaseCounter = 300;
+        if (aTarget->mRow != mRow) {
+            SetDogPairRow(aTarget->mRow);
+        }
+        return;
+    }
 
-    if (aDesiredRow != mRow) {
-        SetDogPairRow(aDesiredRow);
+    if (mRow == aHomeRow) {
+        mPhaseCounter = -1;
+        return;
+    }
+
+    // 大蒜等外部机制将组合移离出生行时，首次稳定到达新行后
+    // 才启动 300 帧等待，不会在没有追猎目标时立即折返。
+    if (mPhaseCounter < 0) {
+        mPhaseCounter = 300;
+        return;
+    }
+
+    if (mPhaseCounter == 0) {
+        SetDogPairRow(aHomeRow);
+        mPhaseCounter = -1;
     }
 }
 
@@ -1452,7 +1476,8 @@ bool Zombie::CanRevived() const {
     return mZombieType != ZombieType::ZOMBIE_DANCER && mZombieType != ZombieType::ZOMBIE_SNORKEL && mZombieType != ZombieType::ZOMBIE_ZAMBONI && mZombieType != ZombieType::ZOMBIE_BOBSLED
         && mZombieType != ZombieType::ZOMBIE_DOLPHIN_RIDER && mZombieType != ZombieType::ZOMBIE_BALLOON && mZombieType != ZombieType::ZOMBIE_DIGGER && mZombieType != ZombieType::ZOMBIE_POGO
         && mZombieType != ZombieType::ZOMBIE_BUNGEE && mZombieType != ZombieType::ZOMBIE_CATAPULT && mZombieType != ZombieType::ZOMBIE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_BOSS
-        && mZombieType != ZombieType::ZOMBIE_REDEYE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_JACKSON && mZombieType != ZombieType::ZOMBIE_DOGWALKER && !IsZomblob(mZombieType);
+        && mZombieType != ZombieType::ZOMBIE_REDEYE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_JACKSON && mZombieType != ZombieType::ZOMBIE_DOGWALKER && mZombieType != ZombieType::ZOMBIE_DOG
+        && !IsZomblob(mZombieType);
 }
 
 ZombieID Zombie::RaiseDeadZombie(ZombieType theZombieType, int theRow, int theCol) {
@@ -2392,15 +2417,13 @@ void Zombie::ExplorerTorchConvert(bool theBurn) {
         mHasObject = true;
         mZombieAttackRect = Rect(-10, 0, 50, 115);
         if (Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID)) {
-            aBodyReanim->AssignRenderGroupToPrefix("Fire_flames", RENDER_GROUP_NORMAL);
-            aBodyReanim->AssignRenderGroupToPrefix("Fire_spark", RENDER_GROUP_NORMAL);
+            aBodyReanim->AssignRenderGroupToPrefix("Fire", RENDER_GROUP_NORMAL);
         }
     } else {
         mHasObject = false;
         mZombieAttackRect = Rect(20, 0, 50, 115);
         if (Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID)) {
-            aBodyReanim->AssignRenderGroupToPrefix("Fire_flames", RENDER_GROUP_HIDDEN);
-            aBodyReanim->AssignRenderGroupToPrefix("Fire_spark", RENDER_GROUP_HIDDEN);
+            aBodyReanim->AssignRenderGroupToPrefix("Fire", RENDER_GROUP_HIDDEN);
         }
     }
 }
@@ -5665,6 +5688,8 @@ void Zombie::DrawButter(Graphics *g, const ZombieDrawPosition &theDrawPos) {
         GetTrackPosition("anim_head_look", aOffsetX, aOffsetY);
     } else if (mZombieType == ZombieType::ZOMBIE_CATAPULT) {
         GetTrackPosition("Zombie_catapult_driver_head", aOffsetX, aOffsetY);
+    } else if (mZombieType == ZombieType::ZOMBIE_DOG) {
+        GetTrackPosition("Zombie_dog_outer_head1", aOffsetX, aOffsetY);
     } else if (mBodyReanimID != ReanimationID::REANIMATIONID_NULL) {
         GetTrackPosition("anim_head1", aOffsetX, aOffsetY);
     }
@@ -5696,6 +5721,15 @@ void Zombie::DrawButter(Graphics *g, const ZombieDrawPosition &theDrawPos) {
         case ZombieType::ZOMBIE_TALLNUT_HEAD:
             aOffsetX -= 24.0f;
             aOffsetY -= 39.0f;
+            break;
+        case ZombieType::ZOMBIE_DOGWALKER:
+            aOffsetX -= 3.0f;
+            aOffsetY -= 35.0f;
+            break;
+        case ZombieType::ZOMBIE_DOG:
+            aOffsetX -= 4.0f;
+            aOffsetY += 5.0f;
+            aScale = 0.6f;
             break;
         default:
             break;
@@ -7539,7 +7573,7 @@ void Zombie::ApplyBurn() {
         || mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING || mZombiePhase == ZombiePhase::PHASE_DIGGER_TUNNELING_PAUSE_WITHOUT_AXE || mZombiePhase == ZombiePhase::PHASE_DIGGER_RISING
         || mZombiePhase == ZombiePhase::PHASE_DIGGER_RISE_WITHOUT_AXE || mZombiePhase == ZombiePhase::PHASE_ZOMBIE_MOWERED || mInPool) {
         DieWithLoot();
-    } else if (mZombieType == ZOMBIE_BUNGEE || mZombieType == ZOMBIE_YETI || Zombie::IsZombotany(mZombieType) || IsBobsledTeamWithSled() || IsFlying() || !mHasHead) {
+    } else if (mZombieType == ZOMBIE_BUNGEE || mZombieType == ZOMBIE_YETI || mZombieType == ZOMBIE_DOG || Zombie::IsZombotany(mZombieType) || IsBobsledTeamWithSled() || IsFlying() || !mHasHead) {
         SetAnimRate(0.0f);
         Reanimation *aHeadReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
         if (aHeadReanim) {
@@ -8041,7 +8075,8 @@ void Zombie::UpdateZombieWalking() {
                 const float aTargetY = GetPosYBasedOnRow(mRow);
                 const float aPartnerTargetY = aPartner->GetPosYBasedOnRow(aPartner->mRow);
                 const bool aChangingRow = std::fabs(mPosY - aTargetY) > 1.0f || std::fabs(aPartner->mPosY - aPartnerTargetY) > 1.0f;
-                if (aChangingRow) {
+                const bool aGarlicChangingRow = (mYuckyFace && mYuckyFaceCounter >= 170) || (aPartner->mYuckyFace && aPartner->mYuckyFaceCounter >= 170);
+                if (aChangingRow && !aGarlicChangingRow) {
                     aSpeed = 0;
                 }
             }
