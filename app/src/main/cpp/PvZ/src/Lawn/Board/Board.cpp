@@ -7774,7 +7774,7 @@ void Board::DoChillyFwoosh(int theRow, float theX, float theY) {
         mFwooshID[theRow][i] = mApp->ReanimationGetID(anIce);
     }
 
-    Reanimation *aChiloosh = mApp->AddReanimation(theX - 40.0f, theY - 40.0f, aRenderOrder + 1, ReanimationType::REANIM_CHILOOSH);
+    Reanimation *aChiloosh = mApp->AddReanimation(theX + 10.0f, theY - 40.0f, aRenderOrder + 1, ReanimationType::REANIM_CHILOOSH);
     aChiloosh->SetFramesForLayer("anim_chiloosh");
     aChiloosh->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_FULL_LAST_FRAME;
     mFwooshCountDown = 100;

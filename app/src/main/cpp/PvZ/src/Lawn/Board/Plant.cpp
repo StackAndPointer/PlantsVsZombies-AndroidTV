@@ -136,7 +136,7 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
                 mDoSpecialCountdown = 100;
                 aBodyReanim->SetFramesForLayer("anim_explode");
                 aBodyReanim->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD;
-                mApp->PlayFoley(FoleyType::FOLEY_REVERSE_EXPLOSION);
+                aBodyReanim->SetAnimRate(18.0f);
             }
             break;
         }
@@ -2098,7 +2098,6 @@ static int GetVSCostDefault(SeedType theSeedType) {
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_SPORESHROOM:
-        case SeedType::SEED_BONK_CHOY:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -2110,6 +2109,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
             return 100;
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_BLOOMERANG:
+        case SeedType::SEED_BONK_CHOY:
         case SeedType::SEED_ZOMBIE_BUNGEE:
         case SeedType::SEED_ZOMBIE_SNORKEL:
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
