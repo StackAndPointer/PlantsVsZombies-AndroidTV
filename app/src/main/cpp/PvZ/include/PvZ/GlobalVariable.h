@@ -256,6 +256,10 @@ struct AddonImages {
     Sexy::Image *IMAGE_REANIM_SWEET_POTATO_MOUTH2;
     Sexy::Image *IMAGE_REANIM_SWEET_POTATO_MOUTH3;
     Sexy::Image *IMAGE_REANIM_SWEET_POTATO_EYE3;
+    Sexy::Image *IMAGE_REANIM_ICE1;
+    Sexy::Image *IMAGE_REANIM_ICE2;
+    Sexy::Image *IMAGE_REANIM_ICE3;
+    Sexy::Image *IMAGE_REANIM_ICE4;
     Sexy::Image *IMAGE_SHOVELBANK_VERTICAL;
     Sexy::Image *IMAGE_SHOVEL_VERTICAL;
 } inline addonImages; // 此处是新增贴图的列表；
