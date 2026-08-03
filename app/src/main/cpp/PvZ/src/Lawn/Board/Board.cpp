@@ -4869,7 +4869,14 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         if (aGameScene == GameScenes::SCENE_LEVEL_INTRO)
             return;
         auto *aSeedPacket = (SeedPacket *)hitResult.mObject;
-        gPlayerIndex = (TouchPlayerIndex)aSeedPacket->GetPlayerIndex(); // 玩家1或玩家2
+        const auto seedPacketPlayerIndex = static_cast<TouchPlayerIndex>(aSeedPacket->GetPlayerIndex());
+        if (aGameMode == GameMode::GAMEMODE_MP_VS && gTcpClientSocket >= 0) {
+            gPlayerIndex = mGamepadControls[0]->mGamepadIndex == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
+            if (seedPacketPlayerIndex != gPlayerIndex)
+                return;
+        } else {
+            gPlayerIndex = seedPacketPlayerIndex;
+        }
         if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             requestDrawShovelInCursor = false; // 不再绘制铲子
             if (gTcpClientSocket) {
@@ -5569,7 +5576,14 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             return;
         auto *aSeedPacket = (SeedPacket *)hitResult.mObject;
         int newSeedPacketIndex = aSeedPacket->mIndex;
-        gPlayerIndexSecond = (TouchPlayerIndex)aSeedPacket->GetPlayerIndex(); // 玩家1或玩家2
+        const auto seedPacketPlayerIndex = static_cast<TouchPlayerIndex>(aSeedPacket->GetPlayerIndex());
+        if (aGameMode == GameMode::GAMEMODE_MP_VS && gTcpClientSocket >= 0) {
+            gPlayerIndexSecond = mGamepadControls[1]->mGamepadIndex == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
+            if (seedPacketPlayerIndex != gPlayerIndexSecond)
+                return;
+        } else {
+            gPlayerIndexSecond = seedPacketPlayerIndex;
+        }
 
         if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             requestDrawShovelInCursor = false; // 不再绘制铲子
