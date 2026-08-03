@@ -6023,8 +6023,10 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
             } else if (mZombieType == ZombieType::ZOMBIE_SUPER_FAN_IMP) {
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_SUPERFAN_ZOMBIEIMPHEAD);
                 ReanimShowPrefix("Zombie_Ghost_Fans5", RENDER_GROUP_HIDDEN);
-                ReanimShowPrefix("Zombie_Ghost_Fans6b", RENDER_GROUP_HIDDEN);
                 ReanimShowPrefix("Zombie_Ghost_Fans6", RENDER_GROUP_HIDDEN);
+            } else if (mZombieType == ZombieType::ZOMBIE_GIGA_IMP) {
+                aParticle->OverrideImage(nullptr, IMAGE_ZOMBIEIMPHEAD);
+                ReanimShowTrack("anim_glasses", RENDER_GROUP_HIDDEN);
             } else if (mZombieType == ZombieType::ZOMBIE_JACKSON) {
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_ZOMBIEJACKSONHEAD);
             } else if (mZombieType == ZombieType::ZOMBIE_BACKUP_JACKSON) {
@@ -6333,9 +6335,17 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
             ReanimShowPrefix("Zombie_football_leftarm_lower", RENDER_GROUP_HIDDEN);
             ReanimShowPrefix("Zombie_football_leftarm_hand", RENDER_GROUP_HIDDEN);
             break;
+        case ZombieType::ZOMBIE_SUPER_FAN_IMP:
+            ReanimShowTrack("Zombie_Ghost_Fans2", RENDER_GROUP_HIDDEN);
+            ReanimShowTrack("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
+            break;
+        case ZombieType::ZOMBIE_GIGA_IMP:
+            ReanimShowTrack("Zombie_giga_outerarm_lower", RENDER_GROUP_HIDDEN);
+            break;
         case ZombieType::ZOMBIE_JACKSON:
             ReanimShowTrack("Zombie_disco_outerarm_lower", RENDER_GROUP_HIDDEN);
             ReanimShowTrack("Zombie_disco_outerhand_point", RENDER_GROUP_HIDDEN);
+            ReanimShowTrack("Zombie_disco_outerhand", RENDER_GROUP_HIDDEN);
             break;
         case ZombieType::ZOMBIE_BACKUP_JACKSON:
             ReanimShowTrack("Zombie_disco_outerarm_lower", RENDER_GROUP_HIDDEN);
@@ -6381,6 +6391,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
             case ZombieType::ZOMBIE_SUPER_FAN_IMP:
                 GetTrackPosition("Zombie_outerarm_lower", aPosX, aPosY);
                 aBodyReanim->SetImageOverride("Zombie_imp_outerarm_upper", IMAGE_REANIM_ZOMBIE_IMP_ARM1_BONE);
+                break;
+            case ZombieType::ZOMBIE_GIGA_IMP:
+                GetTrackPosition("Zombie_giga_outerarm_lower", aPosX, aPosY);
+                aBodyReanim->SetImageOverride("Zombie_giga_imp_outerarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_GIGA_IMP_ARM1_BONE);
                 break;
             case ZombieType::ZOMBIE_JACKSON:
                 GetTrackPosition("Zombie_disco_outerarm_lower", aPosX, aPosY);
@@ -6429,20 +6443,16 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_GIGA_FOOTBALL_LEFTARM_HAND);
                     break;
                 case ZombieType::ZOMBIE_SUPER_FAN_IMP:
-                    ReanimShowTrack("Zombie_Ghost_Fans2", RENDER_GROUP_HIDDEN);
-                    ReanimShowTrack("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_SUPER_FAN_IMP_OUTARM_GLOVE);
                     aParticle->OverrideScale(nullptr, 0.45f);
                     break;
+                case ZombieType::ZOMBIE_GIGA_IMP:
+                    aParticle->OverrideImage(nullptr, IMAGE_REANIM_ZOMBIE_IMP_ARM2);
+                    break;
                 case ZombieType::ZOMBIE_JACKSON:
-                    ReanimShowTrack("Zombie_disco_outerarm_lower", RENDER_GROUP_HIDDEN);
-                    ReanimShowTrack("Zombie_disco_outerhand_point", RENDER_GROUP_HIDDEN);
-                    ReanimShowTrack("Zombie_disco_outerhand", RENDER_GROUP_HIDDEN);
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_JACKSON_OUTERARM_HAND);
                     break;
                 case ZombieType::ZOMBIE_BACKUP_JACKSON:
-                    ReanimShowTrack("Zombie_disco_outerarm_lower", RENDER_GROUP_HIDDEN);
-                    ReanimShowTrack("Zombie_disco_outerhand", RENDER_GROUP_HIDDEN);
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_DANCER_INNERARM_HAND);
                     break;
                 case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
@@ -7359,6 +7369,13 @@ void Zombie::SetupLostArmReanim() {
             ReanimShowPrefix("Zombie_disco_outerarm_lower", -1);
             ReanimShowPrefix("Zombie_disco_outerhand", -1);
             break;
+        case ZombieType::ZOMBIE_SUPER_FAN_IMP:
+            ReanimShowTrack("Zombie_Ghost_Fans2", RENDER_GROUP_HIDDEN);
+            ReanimShowTrack("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
+            break;
+        case ZombieType::ZOMBIE_GIGA_IMP:
+            ReanimShowTrack("Zombie_giga_outerarm_lower", RENDER_GROUP_HIDDEN);
+            break;
         default:
             ReanimShowPrefix("Zombie_outerarm_lower", -1);
             ReanimShowPrefix("Zombie_outerarm_hand", -1);
@@ -7382,6 +7399,12 @@ void Zombie::SetupLostArmReanim() {
                 break;
             case ZombieType::ZOMBIE_IMP:
                 aBodyReanim->SetImageOverride("Zombie_imp_outerarm_upper", Sexy::IMAGE_REANIM_ZOMBIE_IMP_ARM1_BONE);
+                break;
+            case ZombieType::ZOMBIE_SUPER_FAN_IMP:
+                aBodyReanim->SetImageOverride("Zombie_imp_outerarm_upper", IMAGE_REANIM_ZOMBIE_IMP_ARM1_BONE);
+                break;
+            case ZombieType::ZOMBIE_GIGA_IMP:
+                aBodyReanim->SetImageOverride("Zombie_giga_imp_outerarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_GIGA_IMP_ARM1_BONE);
                 break;
             case ZombieType::ZOMBIE_DIGGER:
                 aBodyReanim->SetImageOverride("Zombie_digger_outerarm_upper", Sexy::IMAGE_REANIM_ZOMBIE_IMP_ARM1_BONE);
