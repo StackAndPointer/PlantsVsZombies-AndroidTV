@@ -1192,13 +1192,13 @@ void Zombie::UpdateSuperFanImp() {
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING) {
         if (mApp->IsVSMode()) {
             if (mIsEating) {
-                Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
-                if (aPlant != nullptr && Plant::IsDefender(aPlant->mSeedType)) {
-                    ++mPhaseCounter;
+                //                Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
+                //                if (aPlant != nullptr && Plant::IsDefender(aPlant->mSeedType)) {
+                //                    ++mPhaseCounter;
+                //                }
+                if (mPhaseCounter <= 0) {
+                    doPop = true;
                 }
-            }
-            if (mPhaseCounter <= 0) {
-                doPop = true;
             }
         } else {
             int aTargetX = mBoard->GridToPixelX(mTargetCol, mRow) + RandRangeInt(-20, 60);
@@ -5733,6 +5733,9 @@ void Zombie::DrawButter(Graphics *g, const ZombieDrawPosition &theDrawPos) {
             aOffsetX -= 24.0f;
             aOffsetY -= 39.0f;
             break;
+        case ZombieType::ZOMBIE_EXPLORER:
+            aOffsetY -= 15.0f;
+            break;
         case ZombieType::ZOMBIE_DOGWALKER:
             aOffsetX -= 3.0f;
             aOffsetY -= 35.0f;
@@ -5959,6 +5962,11 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
         const bool aCanDropButteredZomblobHead = IsZomblob(mZombieType) && mButtered;
         if ((!CanLoseBodyParts() && !aCanDropButteredZomblobHead) || !mHasHead)
             return;
+
+        if (mButteredCounter > 0) {
+            mButteredCounter = 0;
+            UpdateAnimSpeed();
+        }
 
         mHasHead = false;
         SetupReanimForLostHead();
