@@ -1113,7 +1113,7 @@ void Plant::DoSpecial() {
 }
 
 void Plant::IcebergLettuceDoSpecial(Zombie *theZombie) {
-    if (theZombie != nullptr) {
+    if (theZombie != nullptr && theZombie->CanBeFrozen()) {
         theZombie->mIceTrapCounter = 1000;
         theZombie->StopZombieSound();
         if (theZombie->mZombieType == ZombieType::ZOMBIE_BALLOON) {
@@ -1799,13 +1799,16 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
         }
 
         if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
-            if (!aZombie->CanBeFrozen() || aZombie->IsImmobilizied() || (aZombie->mZombieType == ZombieType::ZOMBIE_POGO && aZombie->mHasObject)
+            if ((!aZombie->CanBeFrozen() && aZombie->mZombieType != ZombieType::ZOMBIE_ZAMBONI) || aZombie->IsImmobilizied() || (aZombie->mZombieType == ZombieType::ZOMBIE_POGO && aZombie->mHasObject)
                 || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT
                 || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_RISING || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_FALLING
                 || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_DONE_FALLING || aZombie->IsFlying() || aZombie->mZombieHeight != ZombieHeight::HEIGHT_ZOMBIE_NORMAL) {
                 continue;
             }
             if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE && aZombie->mTargetCol != mPlantCol) {
+                continue;
+            }
+            if (aZombie->IsChangingRow()) {
                 continue;
             }
         }

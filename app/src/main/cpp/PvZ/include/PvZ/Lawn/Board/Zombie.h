@@ -546,6 +546,7 @@ public:
     void ZomblobSplit();
     void SetupButteredZomblobReanim();
     void WalkIntoHouse();
+    bool IsChangingRow();
 
 protected:
     void _constructor() {

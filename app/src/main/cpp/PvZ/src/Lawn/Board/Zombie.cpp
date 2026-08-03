@@ -367,9 +367,7 @@ void Zombie::CheckIfPreyCaught() {
     if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
         Zombie *aPartner = GetDogPartner();
         if (aPartner != nullptr) {
-            const float aTargetY = GetPosYBasedOnRow(mRow);
-            const float aPartnerTargetY = aPartner->GetPosYBasedOnRow(aPartner->mRow);
-            const bool aChangingRow = std::fabs(mPosY - aTargetY) > 1.0f || std::fabs(aPartner->mPosY - aPartnerTargetY) > 1.0f;
+            const bool aChangingRow = IsChangingRow() || aPartner->IsChangingRow();
             if (aChangingRow) {
                 if (mIsEating) {
                     StopEating();
@@ -700,6 +698,7 @@ void Zombie::HandleDogPartnerLost() {
             return;
         }
         mZombiePhase = ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK;
+        ReanimShowTrack("Zombie_dogwalker_rope2_2", RENDER_GROUP_NORMAL);
         PlayZombieReanim("anim_ropebreak", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 10, 18.0f);
         return;
     }
@@ -836,7 +835,7 @@ void Zombie::UpdateZombieDog() {
         return;
     }
 
-    const bool aChangingRow = std::fabs(mPosY - GetPosYBasedOnRow(mRow)) > 1.0f || std::fabs(aWalker->mPosY - aWalker->GetPosYBasedOnRow(aWalker->mRow)) > 1.0f;
+    const bool aChangingRow = IsChangingRow() || aWalker->IsChangingRow();
     if (aChangingRow) {
         // 由追猎目标引发的换行完成前保持完整的 300 帧回程等待。
         if (mPhaseCounter > 0) {
@@ -6205,7 +6204,6 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
 void Zombie::BreakRope() {
     if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
         ReanimShowTrack("Zombie_dogwalker_rope2", RENDER_GROUP_HIDDEN);
-        ReanimShowTrack("Zombie_dogwalker_rope2_2", RENDER_GROUP_NORMAL);
     }
 }
 
@@ -8082,9 +8080,7 @@ void Zombie::UpdateZombieWalking() {
 
             Zombie *aPartner = GetDogPartner();
             if (aPartner != nullptr) {
-                const float aTargetY = GetPosYBasedOnRow(mRow);
-                const float aPartnerTargetY = aPartner->GetPosYBasedOnRow(aPartner->mRow);
-                const bool aChangingRow = std::fabs(mPosY - aTargetY) > 1.0f || std::fabs(aPartner->mPosY - aPartnerTargetY) > 1.0f;
+                const bool aChangingRow = IsChangingRow() || aPartner->IsChangingRow();
                 const bool aGarlicChangingRow = (mYuckyFace && mYuckyFaceCounter >= 170) || (aPartner->mYuckyFace && aPartner->mYuckyFaceCounter >= 170);
                 if (aChangingRow && !aGarlicChangingRow) {
                     aSpeed = 0;
@@ -9054,4 +9050,9 @@ void Zombie::WalkIntoHouse() {
             PlayZombieReanim("anim_idle", ReanimLoopType::REANIM_LOOP, 0, 15.0f);
         }
     }
+}
+
+bool Zombie::IsChangingRow() {
+    const float aTargetY = GetPosYBasedOnRow(mRow);
+    return std::fabs(mPosY - aTargetY) > 1.0f;
 }
