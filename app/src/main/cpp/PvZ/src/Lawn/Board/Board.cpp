@@ -7208,7 +7208,7 @@ void Board::KillAllPlantsInRadius(int theX, int theY, int theRadius) {
 
 void Board::PlantsTakeDamageInGrid(int theGridX, int theGridY, int theDamage) {
     Plant *aPlant = GetTopPlantAt(theGridX, theGridY, PlantPriority::TOPPLANT_EATING_ORDER);
-    if (aPlant != nullptr) {
+    if (aPlant != nullptr && !aPlant->IsInvulnerable()) {
         aPlant->mPlantHealth -= theDamage;
         aPlant->mEatenFlashCountdown = std::max(aPlant->mEatenFlashCountdown, 50);
     }
