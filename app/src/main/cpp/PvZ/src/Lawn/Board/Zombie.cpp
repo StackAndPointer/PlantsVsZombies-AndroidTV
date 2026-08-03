@@ -5736,10 +5736,6 @@ void Zombie::DrawButter(Graphics *g, const ZombieDrawPosition &theDrawPos) {
         case ZombieType::ZOMBIE_EXPLORER:
             aOffsetY -= 15.0f;
             break;
-        case ZombieType::ZOMBIE_DOGWALKER:
-            aOffsetX -= 3.0f;
-            aOffsetY -= 35.0f;
-            break;
         case ZombieType::ZOMBIE_DOG:
             aOffsetX -= 4.0f;
             aOffsetY += 5.0f;
@@ -7566,7 +7562,18 @@ float Zombie::ZombieTargetLeadX(float theTime) {
     if (IsWalkingBackwards()) {
         aSpeed = -aSpeed;
     }
-    if (ZombieNotWalking()) {
+    bool aMovementBlocked = ZombieNotWalking();
+
+    if (!aMovementBlocked && (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG)) {
+        Zombie *aWalker = mZombieType == ZombieType::ZOMBIE_DOGWALKER ? this : GetDogPartner();
+        Zombie *aDog = mZombieType == ZombieType::ZOMBIE_DOG ? this : GetDogPartner();
+
+        if (aWalker != nullptr && aDog != nullptr && !aWalker->IsDeadOrDying() && !aDog->IsDeadOrDying() && aWalker->mMindControlled == aDog->mMindControlled) {
+            aMovementBlocked = aWalker->ZombieNotWalking() || aDog->ZombieNotWalking();
+        }
+    }
+
+    if (aMovementBlocked) {
         aSpeed = 0.0f;
     }
 
@@ -7886,26 +7893,6 @@ bool Zombie::ZombieNotWalking() {
         }
     }
 
-    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
-        Zombie *aLeader = nullptr;
-        if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
-            aLeader = this;
-        } else {
-            aLeader = mBoard->ZombieTryToGet(mRelatedZombieID);
-        }
-
-        if (aLeader) {
-            if (aLeader->IsImmobilizied() || aLeader->mIsEating) {
-                return true;
-            }
-
-            Zombie *aDog = mBoard->ZombieTryToGet(aLeader->mRelatedZombieID);
-            if (aDog && (aDog->IsImmobilizied() || aDog->mIsEating)) {
-                return true;
-            }
-        }
-    }
-
     return false;
 }
 
@@ -7957,26 +7944,6 @@ bool Zombie::IsMovingAtChilledSpeed() {
         }
     }
 
-    if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
-        Zombie *aLeader = nullptr;
-        if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
-            aLeader = this;
-        } else {
-            aLeader = mBoard->ZombieTryToGet(mRelatedZombieID);
-        }
-
-        if (aLeader && !aLeader->IsDeadOrDying()) {
-            if (aLeader->mChilledCounter > 0 || aLeader->mIceTrapCounter > 0) {
-                return true;
-            }
-
-            Zombie *aDog = mBoard->ZombieTryToGet(aLeader->mRelatedZombieID);
-            if (aDog && !aDog->IsDeadOrDying() && (aDog->mChilledCounter > 0 || aDog->mIceTrapCounter > 0)) {
-                return true;
-            }
-        }
-    }
-
     return false;
 }
 
@@ -8021,13 +7988,6 @@ void Zombie::UpdateAnimSpeed() {
         if (aDistance >= 1e-6f) {
             float aOneOverSpeed = aBodyReanim->mFrameCount / aDistance;
             float aAnimRate = mVelX * aOneOverSpeed * 47.0f / mScaleZombie;
-
-            const bool aIsDogPairMember = mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG;
-            const bool aHasOwnChill = mChilledCounter > 0 || mIceTrapCounter > 0;
-            if (aIsDogPairMember && !aHasOwnChill && IsMovingAtChilledSpeed()) {
-                aAnimRate *= CHILLED_SPEED_FACTOR;
-            }
-
             ApplyAnimRate(aAnimRate);
         }
     }
