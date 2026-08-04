@@ -786,7 +786,7 @@ Plant *Zombie::FindDogTarget() {
 
         const float aPlantCenterX = aPlant->mX + aPlant->mWidth * 0.5f;
         const float aForwardDistance = IsWalkingBackwards() ? (aPlantCenterX - aDogCenterX) : (aDogCenterX - aPlantCenterX);
-        if (aForwardDistance < -60.0f) {
+        if (aForwardDistance < -20.0f) {
             continue;
         }
 
@@ -861,8 +861,7 @@ void Zombie::UpdateZombieDog() {
         return;
     }
 
-    // 大蒜等外部机制将组合移离出生行时，首次稳定到达新行后
-    // 才启动 300 帧等待，不会在没有追猎目标时立即折返。
+    // 大蒜等外部机制将组合移离出生行时，首次稳定到达新行后才启动 300 帧等待，不会在没有追猎目标时立即折返。
     if (mPhaseCounter < 0) {
         mPhaseCounter = 300;
         return;
@@ -1185,7 +1184,7 @@ void Zombie::UpdateSuperFanImp() {
         mZombiePhase = PHASE_IMP_RUNNING;
         PickRandomSpeed();
         if (mApp->IsVSMode()) {
-            mPhaseCounter = RandRangeInt(1350, 2300);
+            mPhaseCounter = RandRangeInt(1100, 1650);
             syncPhaseCounter();
         }
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING) {
@@ -1480,14 +1479,15 @@ void Zombie::UpdateZombieJackson() {
 }
 
 bool Zombie::CanRevived() const {
-    if (mIsRevived)
+    if (mIsRevived) {
         return false;
+    }
 
     return mZombieType != ZombieType::ZOMBIE_DANCER && mZombieType != ZombieType::ZOMBIE_SNORKEL && mZombieType != ZombieType::ZOMBIE_ZAMBONI && mZombieType != ZombieType::ZOMBIE_BOBSLED
         && mZombieType != ZombieType::ZOMBIE_DOLPHIN_RIDER && mZombieType != ZombieType::ZOMBIE_BALLOON && mZombieType != ZombieType::ZOMBIE_DIGGER && mZombieType != ZombieType::ZOMBIE_POGO
         && mZombieType != ZombieType::ZOMBIE_BUNGEE && mZombieType != ZombieType::ZOMBIE_CATAPULT && mZombieType != ZombieType::ZOMBIE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_BOSS
-        && mZombieType != ZombieType::ZOMBIE_REDEYE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_JACKSON && mZombieType != ZombieType::ZOMBIE_DOGWALKER && mZombieType != ZombieType::ZOMBIE_DOG
-        && !IsZomblob(mZombieType);
+        && mZombieType != ZombieType::ZOMBIE_REDEYE_GARGANTUAR && mZombieType != ZombieType::ZOMBIE_JACKSON && mZombieType != ZombieType::ZOMBIE_GIGA_GARGANTUAR
+        && mZombieType != ZombieType::ZOMBIE_DOGWALKER && mZombieType != ZombieType::ZOMBIE_DOG && !IsZomblob(mZombieType);
 }
 
 ZombieID Zombie::RaiseDeadZombie(ZombieType theZombieType, int theRow, int theCol) {
@@ -4669,6 +4669,15 @@ void Zombie::EatPlant(Plant *thePlant) {
         if (mZombieHeight == ZombieHeight::HEIGHT_ZOMBIE_NORMAL && mUseLadderCol != thePlant->mPlantCol) {
             mZombieHeight = ZombieHeight::HEIGHT_UP_LADDER;
             mUseLadderCol = thePlant->mPlantCol;
+        }
+
+        if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
+            Zombie *aPartner = GetDogPartner();
+            if (aPartner != nullptr) {
+                HandleDogPartnerLost();
+                aPartner->HandleDogPartnerLost();
+                return;
+            }
         }
 
         return;

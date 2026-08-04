@@ -2261,6 +2261,9 @@ void Board::processServerEvent(const BaseEvent *event) {
                     aHeadReanim->SetAnimRate(aBodyReanim->mAnimRate);
                     aHeadReanim->mAnimTime = aBodyReanim->mAnimTime;
                 }
+                if (aPlant->mSeedType == SeedType::SEED_BLOOMERANG) {
+                    mApp->PlayFoley(FoleyType::FOLEY_BLOOMERANG);
+                }
             }
         } break;
         case EVENT_SERVER_BOARD_PLANT_KERNELPLUT_FINDTARGETANDFIRE: {
@@ -6480,7 +6483,8 @@ void Board::DrawUITop(Sexy::Graphics *g) {
             // 一路有巨人且种子栏处于选中种子状态时，置顶种子栏图层
             Zombie *aGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_GARGANTUAR);
             Zombie *aRedEyeGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_REDEYE_GARGANTUAR);
-            if ((aGargantuar != nullptr && aGargantuar->mRow == 0) || (aRedEyeGargantuar != nullptr && aRedEyeGargantuar->mRow == 0)) {
+            Zombie *aGigaGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_GIGA_GARGANTUAR);
+            if ((aGargantuar != nullptr && aGargantuar->mRow == 0) || (aRedEyeGargantuar != nullptr && aRedEyeGargantuar->mRow == 0) || (aGigaGargantuar != nullptr && aGigaGargantuar->mRow == 0)) {
                 for (int i = 0; i < 2; ++i) {
                     SeedBank *aSeedBank = mGamepadControls[i]->GetSeedBank();
                     if (aSeedBank != nullptr && mGamepadControls[i]->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
