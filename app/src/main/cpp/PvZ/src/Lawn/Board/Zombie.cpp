@@ -1004,19 +1004,6 @@ void Zombie::UpdateSuperFanImp() {
 
     const bool isRemoteClient = gTcpConnected || gIsReplayMode;
 
-    auto syncPhaseCounter = [this]() {
-        if (gTcpClientSocket < 0) {
-            return;
-        }
-
-        U8U8U16U16_Event event{};
-        event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER;
-        event.data1 = uint8_t(mZombiePhase);
-        event.data3 = uint16_t(mBoard->mZombies.DataArrayGetID(this));
-        event.data4 = uint16_t(std::max(0, mPhaseCounter));
-        netplay::PutEvent(event);
-    };
-
     if (Zombie *aZombie = FindZombieGigaFootball()) {
         mRelatedZombieID = mBoard->ZombieGetID(aZombie);
     }
@@ -1185,7 +1172,6 @@ void Zombie::UpdateSuperFanImp() {
         PickRandomSpeed();
         if (mApp->IsVSMode()) {
             mPhaseCounter = RandRangeInt(1100, 1650);
-            syncPhaseCounter();
         }
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_RUNNING) {
         if (mApp->IsVSMode()) {
