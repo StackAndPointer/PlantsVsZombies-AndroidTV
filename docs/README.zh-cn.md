@@ -15,7 +15,7 @@
 
 - 确保已安装下列组件:
     * Android SDK Platform 34
-    * NDK v27.2.12479018 (r27c)
+  * NDK v27.3.13750724 (r27d)
     * CMake v3.20+
 
 - 克隆仓库.

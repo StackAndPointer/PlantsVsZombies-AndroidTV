@@ -15,7 +15,7 @@ A mod of _Plants vs. Zombies_ Android TV version.
 
 - Ensure the following is installed:
     * Android SDK Platform 34
-    * NDK v27.2.12479018 (r27c)
+  * NDK v27.3.13750724 (r27d)
     * CMake v3.20+
 
 - Clone the repository.
