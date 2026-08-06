@@ -63,10 +63,6 @@
 
 参考[约定式提交](https://www.conventionalcommits.org/zh-hans/v1.0.0/).
 
-### 拉取请求 (PR)
-
-发送 PR 到 `dev` 分支.
-
 ## 许可协议
 
 本项目的源代码使用 [GPL-3.0][GPL-3.0] 许可进行授权.

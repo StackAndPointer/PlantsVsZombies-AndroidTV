@@ -9,13 +9,6 @@ on:
     paths-ignore:
       - '**.md'
 
-permissions:
-  contents: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -47,7 +40,6 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
         with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
           add-job-summary: on-failure
 
       - name: Decode keystore
@@ -69,11 +61,11 @@ jobs:
       - name: Build with Gradle
         id: build
         run: |
-          VERSION="${{ matrix.version }}"
-          BUILD_TYPE="${{ matrix.build_type }}"
+          version="${{ matrix.version }}"
+          build_type="${{ matrix.build_type }}"
           chmod +x gradlew
-          ./gradlew assemble${VERSION^}${BUILD_TYPE^}
-          echo "path=app/build/outputs/apk/$VERSION/$BUILD_TYPE/*.apk" >> "$GITHUB_OUTPUT"
+          ./gradlew assemble${version^}${build_type^}
+          echo "path=app/build/outputs/apk/$version/$build_type/*.apk" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
@@ -81,24 +73,17 @@ jobs:
           name: PvZ-TV-${{ matrix.version }}-${{ matrix.build_type }}
           path: ${{ steps.build.outputs.path }}
 
-      - name: Publish pre-release
-        uses: marvinpinto/action-automatic-releases@latest
-        if: >
-          github.ref == 'refs/heads/dev' &&
-          github.repository_owner == 'ZombieYetis' &&
-          matrix.version == 'v115' &&
-          matrix.build_type == 'release'
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          prerelease: true
-          automatic_release_tag: nightly
-          title: Nightly Build
-          files: ${{ steps.build.outputs.path }}
-
   release:
     needs: [ build ]
     if: github.ref == 'refs/heads/main' && github.repository_owner == 'ZombieYetis'
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    concurrency:
+      group: release
+      cancel-in-progress: false
 
     steps:
       - name: Checkout
@@ -106,17 +91,27 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set build variables
-        id: build_vars
+      - name: Get commit information
+        id: commit_info
         run: |
-          echo "date=$(git log --date=format:%y%m%d --pretty=format:'%cd' -n 1)" >> "$GITHUB_OUTPUT"
+          echo "commits_date=$(git log --date=format:%y%m%d --pretty=format:'%cd' -1)" >> "$GITHUB_OUTPUT"
           echo "commits_count=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+          echo "commit_msg=$(git log --pretty=format:'%s' -1)" >> "$GITHUB_OUTPUT"
 
       - name: Download artifact
         uses: actions/download-artifact@v8
         with:
           name: PvZ-TV-v115-release
           path: artifact
+
+      - name: Publish pre-release
+        uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: true
+          automatic_release_tag: nightly
+          title: Nightly Build
+          files: artifact/*.apk
 
       - name: Publish release
         uses: softprops/action-gh-release@v3
@@ -125,6 +120,6 @@ jobs:
           token: ${{ secrets.BUILDS_TOKEN }}
           prerelease: false
           make_latest: true
-          tag_name: ${{ steps.build_vars.outputs.date }}-${{ steps.build_vars.outputs.commits_count }}
-          body: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
+          tag_name: ${{ steps.commit_info.outputs.commits_date }}-${{ steps.commit_info.outputs.commits_count }}
+          body: ${{ steps.commit_info.outputs.commit_msg }} (${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
           files: artifact/*.apk

@@ -64,10 +64,6 @@ See [`.clang-format`](/.clang-format).
 
 Refer to [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/).
 
-### Pull Request (PR)
-
-Send the PR to branch `dev`.
-
 ## License
 
 The source code for this project is licensed under the [GPL-3.0][GPL-3.0] license.
