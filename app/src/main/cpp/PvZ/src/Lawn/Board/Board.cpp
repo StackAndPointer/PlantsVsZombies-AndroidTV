@@ -42,6 +42,7 @@
 #include "PvZ/Lawn/Common/Resources.h"
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/VSActionSystem.h"
 #include "PvZ/Lawn/System/Music.h"
 #include "PvZ/Lawn/System/ReanimationLawn.h"
 #include "PvZ/Lawn/Widget/ChallengeScreen.h"
@@ -1931,6 +1932,9 @@ void Board::processClientEvent(const BaseEvent *event) {
 void Board::processServerEvent(const BaseEvent *event) {
     LOG_DEBUG("TYPE:{}", (int)event->type);
     switch (event->type) {
+        case EVENT_LOCAL_BOARD_ACTION:
+            vsai::ExecuteReplayAction(this, *static_cast<const vsai::VSLocalActionReplayEvent *>(event));
+            break;
         case EVENT_BOARD_TOUCH_DOWN_REPLY: {
             auto *event1 = static_cast<const U8U8I16I16_Event *>(event);
             GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
@@ -3596,6 +3600,7 @@ void Board::Update() {
 
     UpdateButtons();
     old_Board_Update(this);
+    vsai::Update(this);
 }
 
 int Board::GetNumWavesPerFlag() const {
