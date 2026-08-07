@@ -68,24 +68,34 @@ VSSetupAddonWidget::VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu) {
     mExtendedSeedsMode = mApp->mPlayerInfo->mVSExtendedSeedsMode;
     mBanMode = mApp->mPlayerInfo->mVSBanMode;
     mBalancePatchMode = mApp->mPlayerInfo->mVSBalancePatchMode;
+    mPlantAIMode = mApp->mPlayerInfo->mVSPlantAIMode;
+    mZombieAIMode = mApp->mPlayerInfo->mVSZombieAIMode;
     msBalancePatchMode = mBalancePatchMode;
     msExtraPacketMode = mExtraPacketMode;
     msExtendedSeedsMode = mExtendedSeedsMode;
+    msPlantAIMode = mPlantAIMode;
+    msZombieAIMode = mZombieAIMode;
 
     mExtraPacketCheckbox = MakeNewCheckbox(VSSetupAddonWidget_ExtraPacket, this, theVSSetupMenu, mExtraPacketMode);
     mExtendedSeedsCheckbox = MakeNewCheckbox(VSSetupAddonWidget_ExtendedSeeds, this, theVSSetupMenu, mExtendedSeedsMode);
     mBanModeCheckbox = MakeNewCheckbox(VSSetupAddonWidget_BanMode, this, theVSSetupMenu, mBanMode);
     mBalancePatchCheckbox = MakeNewCheckbox(VSSetupAddonWidget_BalancePatch, this, theVSSetupMenu, mBalancePatchMode);
+    mPlantAICheckbox = MakeNewCheckbox(VSSetupAddonWidget_PlantAI, this, theVSSetupMenu, mPlantAIMode);
+    mZombieAICheckbox = MakeNewCheckbox(VSSetupAddonWidget_ZombieAI, this, theVSSetupMenu, mZombieAIMode);
 
     mBoard->AddWidget(mExtraPacketCheckbox);
     mBoard->AddWidget(mExtendedSeedsCheckbox);
     mBoard->AddWidget(mBanModeCheckbox);
     mBoard->AddWidget(mBalancePatchCheckbox);
+    mBoard->AddWidget(mPlantAICheckbox);
+    mBoard->AddWidget(mZombieAICheckbox);
 
     mExtraPacketCheckbox->Resize(VS_ADDON_BUTTON_X, VS_BUTTON_EXTRA_PACKET_Y, 175, 50);
     mExtendedSeedsCheckbox->Resize(VS_ADDON_BUTTON_X, VS_BUTTON_EXTENDED_SEEDS_Y, 175, 50);
     mBanModeCheckbox->Resize(VS_ADDON_BUTTON_X, VS_BUTTON_BAN_MODE_Y, 175, 50);
     mBalancePatchCheckbox->Resize(VS_ADDON_BUTTON_X, VS_BUTTON_BALANCE_PATCH_Y, 175, 50);
+    mPlantAICheckbox->Resize(VS_ADDON_BUTTON_X, VS_BUTTON_PLANT_AI_Y, 175, 50);
+    mZombieAICheckbox->Resize(VS_ADDON_BUTTON_X, VS_BUTTON_ZOMBIE_AI_Y, 175, 50);
 
     UpdateGlobalBpButtonState();
 
@@ -94,6 +104,8 @@ VSSetupAddonWidget::VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu) {
         SetDisable(mExtendedSeedsCheckbox);
         SetDisable(mBanModeCheckbox);
         SetDisable(mBalancePatchCheckbox);
+        SetDisable(mPlantAICheckbox);
+        SetDisable(mZombieAICheckbox);
         SetDisable(mGlobalBpButton);
         mBanMode = false;
     }
@@ -116,6 +128,12 @@ VSSetupAddonWidget::~VSSetupAddonWidget() {
         if (mBalancePatchCheckbox) {
             mBoard->RemoveWidget(mBalancePatchCheckbox);
         }
+        if (mPlantAICheckbox) {
+            mBoard->RemoveWidget(mPlantAICheckbox);
+        }
+        if (mZombieAICheckbox) {
+            mBoard->RemoveWidget(mZombieAICheckbox);
+        }
         if (mGlobalBpButton) {
             mBoard->RemoveWidget(mGlobalBpButton);
         }
@@ -126,6 +144,8 @@ VSSetupAddonWidget::~VSSetupAddonWidget() {
     delete mExtendedSeedsCheckbox;
     delete mBanModeCheckbox;
     delete mBalancePatchCheckbox;
+    delete mPlantAICheckbox;
+    delete mZombieAICheckbox;
     delete mGlobalBpButton;
 }
 
@@ -198,7 +218,7 @@ void VSSetupAddonWidget::ButtonDepress(this VSSetupAddonWidget &self, int theId)
 }
 
 void VSSetupAddonWidget::CheckboxChecked(int theId, bool checked) {
-    if (theId < VSSetupAddonWidget_ExtraPacket || theId > VSSetupAddonWidget_BalancePatch) {
+    if (theId < VSSetupAddonWidget_ExtraPacket || theId > VSSetupAddonWidget_ZombieAI) {
         return;
     }
     // guest 不能直接改选项，只能发起请求，随后回滚到当前状态
@@ -233,6 +253,10 @@ bool VSSetupAddonWidget::GetAddonMode(int theId) const {
             return mBanMode;
         case VSSetupAddonWidget_BalancePatch:
             return mBalancePatchMode;
+        case VSSetupAddonWidget_PlantAI:
+            return mPlantAIMode;
+        case VSSetupAddonWidget_ZombieAI:
+            return mZombieAIMode;
         default:
             return false;
     }
@@ -280,6 +304,22 @@ void VSSetupAddonWidget::SetAddonMode(int theId, bool checked, bool saveDetails)
                 mApp->mPlayerInfo->mVSBalancePatchMode = mBalancePatchMode;
             }
             break;
+        case VSSetupAddonWidget_PlantAI:
+            mPlantAIMode = checked;
+            mPlantAICheckbox->SetChecked(mPlantAIMode, false);
+            msPlantAIMode = mPlantAIMode;
+            if (saveDetails) {
+                mApp->mPlayerInfo->mVSPlantAIMode = mPlantAIMode;
+            }
+            break;
+        case VSSetupAddonWidget_ZombieAI:
+            mZombieAIMode = checked;
+            mZombieAICheckbox->SetChecked(mZombieAIMode, false);
+            msZombieAIMode = mZombieAIMode;
+            if (saveDetails) {
+                mApp->mPlayerInfo->mVSZombieAIMode = mZombieAIMode;
+            }
+            break;
         default:
             break;
     }
@@ -313,6 +353,14 @@ void VSSetupAddonWidget::Draw(Graphics *g) const {
     if (mBalancePatchCheckbox->mVisible) {
         g->SetColor(mBalancePatchMode ? Color(255, 255, 153) : Color(0, 205, 0, 255));
         g->DrawString(TodStringTranslate("[VS_UI_BALANCE_PATCH]"), VS_ADDON_BUTTON_X + 40, VS_BUTTON_BALANCE_PATCH_Y + 25);
+    }
+    if (mPlantAICheckbox->mVisible) {
+        g->SetColor(mPlantAIMode ? Color(255, 255, 153) : Color(0, 205, 0, 255));
+        g->DrawString(TodStringTranslate("[VS_UI_PLANT_AI]"), VS_ADDON_BUTTON_X + 40, VS_BUTTON_PLANT_AI_Y + 25);
+    }
+    if (mZombieAICheckbox->mVisible) {
+        g->SetColor(mZombieAIMode ? Color(255, 255, 153) : Color(0, 205, 0, 255));
+        g->DrawString(TodStringTranslate("[VS_UI_ZOMBIE_AI]"), VS_ADDON_BUTTON_X + 40, VS_BUTTON_ZOMBIE_AI_Y + 25);
     }
 }
 

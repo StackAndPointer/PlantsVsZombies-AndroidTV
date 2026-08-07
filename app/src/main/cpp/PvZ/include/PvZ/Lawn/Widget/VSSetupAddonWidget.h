@@ -31,6 +31,8 @@ inline int VS_BUTTON_EXTRA_PACKET_Y = 280;
 inline int VS_BUTTON_EXTENDED_SEEDS_Y = 240;
 inline int VS_BUTTON_BAN_MODE_Y = 320;
 inline int VS_BUTTON_BALANCE_PATCH_Y = 200;
+inline int VS_BUTTON_PLANT_AI_Y = 400;
+inline int VS_BUTTON_ZOMBIE_AI_Y = 440;
 
 namespace Sexy {
 class ButtonWidget;
@@ -44,6 +46,8 @@ public:
         VSSetupAddonWidget_ExtendedSeeds,
         VSSetupAddonWidget_BanMode,
         VSSetupAddonWidget_BalancePatch,
+        VSSetupAddonWidget_PlantAI,
+        VSSetupAddonWidget_ZombieAI,
         VSSetupAddonWidget_Back,
         VSSetupAddonWidget_GlobalBP,
     };
@@ -57,6 +61,8 @@ public:
     static inline bool msBalancePatchMode = false;
     static inline bool msExtraPacketMode = false;
     static inline bool msExtendedSeedsMode = false;
+    static inline bool msPlantAIMode = false;
+    static inline bool msZombieAIMode = false;
     static inline GlobalBpMode msGlobalBpMode = GlobalBpMode::GLOBALBP_CLOSED;
     static inline bool msGlobalBpSeedsInitialized = false;
     static inline int msGlobalBpWins[2] = {0, 0};
@@ -71,10 +77,14 @@ public:
     Sexy::Checkbox *mExtendedSeedsCheckbox = nullptr;
     Sexy::Checkbox *mBanModeCheckbox = nullptr;
     Sexy::Checkbox *mBalancePatchCheckbox = nullptr;
+    Sexy::Checkbox *mPlantAICheckbox = nullptr;
+    Sexy::Checkbox *mZombieAICheckbox = nullptr;
     bool mExtraPacketMode = false;
     bool mExtendedSeedsMode = false;
     bool mBanMode = false;
     bool mBalancePatchMode = false;
+    bool mPlantAIMode = false;
+    bool mZombieAIMode = false;
     bool mDrawString = true;
 
     VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu);

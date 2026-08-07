@@ -107,7 +107,9 @@ public:
     bool mHostAllowSpectate;
     Mode3RecentServerStorage serverStorage;
     bool mRenamed;
-    bool mUnused675[70];
+    bool mVSPlantAIMode;
+    bool mVSZombieAIMode;
+    bool mUnused675[68];
     bool mHapticFeedbackEnabled;
     bool mZombatarEnabled;
     unsigned char mZombatarHat;
