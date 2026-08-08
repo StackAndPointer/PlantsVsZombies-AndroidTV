@@ -124,6 +124,7 @@ bool IsHeavyZombie(std::uint16_t zombieType) {
         case ZombieType::ZOMBIE_FOOTBALL:
         case ZombieType::ZOMBIE_BOBSLED:
         case ZombieType::ZOMBIE_GARGANTUAR:
+        case ZombieType::ZOMBIE_TRASHCAN:
         case ZombieType::ZOMBIE_WALLNUT_HEAD:
         case ZombieType::ZOMBIE_GIGA_FOOTBALL:
         case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
@@ -161,16 +162,44 @@ bool IsDecisiveCounterZombie(std::uint16_t zombieType) {
     }
 }
 
-bool HasDecisiveCounterZombieInRow(const VSGameState &state, int row) {
-    return std::any_of(state.zombies.begin(), state.zombies.end(), [row](const VSZombieState &zombie) {
-        return !zombie.dead && zombie.row == row && IsDecisiveCounterZombie(zombie.zombieType);
-    });
-}
-
 bool HasZombieTypeInRow(const VSGameState &state, int row, ZombieType zombieType) {
     return std::any_of(state.zombies.begin(), state.zombies.end(), [row, zombieType](const VSZombieState &zombie) {
         return !zombie.dead && zombie.row == row && zombie.zombieType == static_cast<std::uint16_t>(zombieType);
     });
+}
+
+int ZombieThreatWeight(std::uint16_t zombieType);
+
+int CounterPressureScoreInRow(const VSGameState &state, int row) {
+    int count = 0;
+    int score = 0;
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.row != row) {
+            continue;
+        }
+        ++count;
+        score += ZombieThreatWeight(zombie.zombieType);
+        score += IsDecisiveCounterZombie(zombie.zombieType) ? 150 : 0;
+        score += zombie.eating ? 90 : 0;
+        score += std::clamp((880 - static_cast<int>(zombie.positionX)) / 8, 0, 70);
+        if (zombie.bodyMaxHealth > 0 && zombie.bodyHealth * 100 / zombie.bodyMaxHealth >= 70) {
+            score += IsHeavyZombie(zombie.zombieType) ? 45 : 0;
+        }
+    }
+    return score + count * 90;
+}
+
+int MostUrgentCounterRow(const VSGameState &state) {
+    int bestRow = 0;
+    int bestScore = 0;
+    for (int row = 0; row < state.rows; ++row) {
+        const int score = CounterPressureScoreInRow(state, row);
+        if (score > bestScore) {
+            bestScore = score;
+            bestRow = row;
+        }
+    }
+    return bestRow;
 }
 
 int ZombieThreatWeight(std::uint16_t zombieType) {
@@ -372,6 +401,36 @@ int EstimatedEconomyMaxHealth(const VSGridItemState &item) {
     return 350;
 }
 
+int StraightProjectileThreatToEconomy(const VSPlantState &plant, const VSGridItemState &economy) {
+    const int rowDistance = std::abs(static_cast<int>(plant.position.row) - static_cast<int>(economy.position.row));
+    if (plant.position.col >= economy.position.col) {
+        return 0;
+    }
+
+    const SeedType seed = static_cast<SeedType>(plant.seedType);
+    const bool reachesEconomyRow = rowDistance == 0 || (seed == SeedType::SEED_THREEPEATER && rowDistance == 1);
+    if (!reachesEconomyRow) {
+        return 0;
+    }
+
+    switch (seed) {
+        case SeedType::SEED_GATLINGPEA:
+            return 190;
+        case SeedType::SEED_REPEATER:
+            return 165;
+        case SeedType::SEED_SNOWPEA:
+            return 150;
+        case SeedType::SEED_THREEPEATER:
+            return 135;
+        case SeedType::SEED_PEASHOOTER:
+        case SeedType::SEED_SPLITPEA:
+        case SeedType::SEED_CACTUS:
+            return 120;
+        default:
+            return 0;
+    }
+}
+
 int PlantThreatToEconomy(const VSPlantState &plant, const VSGridItemState &economy) {
     if (IsDeadOrOutside(plant) || plant.position.row < 0 || economy.position.row < 0) {
         return 0;
@@ -391,10 +450,28 @@ int PlantThreatToEconomy(const VSPlantState &plant, const VSGridItemState &econo
     if (seed == SeedType::SEED_GRAVEBUSTER) {
         return rowDistance == 0 && columnDistance == 0 ? 250 : 0;
     }
+    if (const int projectileThreat = StraightProjectileThreatToEconomy(plant, economy); projectileThreat > 0) {
+        return projectileThreat;
+    }
     if (IsPlantCombatSeed(plant.seedType)) {
         return rowDistance == 0 && plant.position.col < economy.position.col ? 45 : 0;
     }
     return 0;
+}
+
+int StraightProjectileThreatScore(const VSGameState &state, int row) {
+    int score = 0;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.dead || !IsZombieEconomyItem(item.gridItemType) || item.position.row != row) {
+            continue;
+        }
+        for (const VSPlantState &plant : state.plants) {
+            if (!IsDeadOrOutside(plant)) {
+                score += StraightProjectileThreatToEconomy(plant, item);
+            }
+        }
+    }
+    return score;
 }
 
 int GraveThreatScore(const VSGameState &state, int row) {
@@ -598,18 +675,6 @@ bool IsHeavyZombieSeed(SeedType seed) {
         || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL;
 }
 
-bool HasZombieCluster(const VSGameState &state) {
-    if (CountActiveZombies(state) >= 3) {
-        return true;
-    }
-    for (int row = 0; row < state.rows; ++row) {
-        if (CountZombiesInRow(state, row) >= 2) {
-            return true;
-        }
-    }
-    return false;
-}
-
 class BuiltinVSAgent : public IVSAgent {
 protected:
     std::uint16_t mSequence = 0;
@@ -693,6 +758,15 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return MakePlayAction(VSSide::Plants, *card, target, state.boardTick);
     }
 
+    std::optional<VSAction> TryCounterPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn) {
+        for (int column = 5; column >= firstColumn; --column) {
+            if (std::optional<VSAction> action = TryPlantExactRow(state, seedType, row, column, column)) {
+                return action;
+            }
+        }
+        return std::nullopt;
+    }
+
     std::optional<VSAction> TryIncomePlant(const VSGameState &state, int row) {
         if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_SUNFLOWER, row, 0, 2)) {
             return action;
@@ -730,8 +804,9 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 continue;
             }
 
-            if (seed == SeedType::SEED_SQUASH
-                && (danger.closest == nullptr || (!HasDecisiveCounterZombieInRow(state, danger.row) && !danger.closest->eating && danger.closest->positionX >= 560.0f))) {
+            // Squash has a dedicated same-row counter path in Decide(). It
+            // must never become a generic emergency filler in another lane.
+            if (seed == SeedType::SEED_SQUASH) {
                 continue;
             }
 
@@ -778,47 +853,45 @@ public:
         const int openingIncomeTarget = state.rows >= 6 ? 7 : 6;
         const int incomePlantCount = CountPlantType(state, SeedType::SEED_SUNFLOWER) + CountPlantType(state, SeedType::SEED_SUNSHROOM);
         const bool hasActiveZombie = CountActiveZombies(state) > 0;
-        const bool closePush = danger.closest != nullptr && (danger.closest->positionX < 560.0f || danger.closest->eating);
-        const bool hasGargantuar = HasZombieTypeInRow(state, danger.row, ZombieType::ZOMBIE_GARGANTUAR)
-            || HasZombieTypeInRow(state, danger.row, ZombieType::ZOMBIE_GIGA_GARGANTUAR);
-        const bool hasSquashPriorityZombie = HasZombieTypeInRow(state, danger.row, ZombieType::ZOMBIE_BOBSLED)
-            || HasZombieTypeInRow(state, danger.row, ZombieType::ZOMBIE_FOOTBALL)
-            || HasZombieTypeInRow(state, danger.row, ZombieType::ZOMBIE_GIGA_FOOTBALL)
-            || HasZombieTypeInRow(state, danger.row, ZombieType::ZOMBIE_POLEVAULTER);
-        const bool squashThreat = hasSquashPriorityZombie || (hasGargantuar && closePush)
-            || (danger.closest != nullptr && (danger.closest->eating || danger.closest->positionX < 560.0f));
-        const bool impPearThreat = hasGargantuar && danger.closest != nullptr
-            && (danger.closest->eating || danger.closest->positionX < 780.0f || danger.danger >= 160);
-        const bool emergency = danger.danger >= 240 || (closePush && (danger.hasHeavy || danger.hasFast));
-        const bool zombieCluster = hasActiveZombie && HasZombieCluster(state);
+        const int counterRow = MostUrgentCounterRow(state);
+        const VSZombieState *counterClosest = FindClosestZombie(state, counterRow);
+        const int counterZombieCount = CountZombiesInRow(state, counterRow);
+        const PlantLaneAssessment counterLane = AssessPlantLane(state, counterRow);
+        const int counterCombatPlants = static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [counterRow](const VSPlantState &plant) {
+            return !IsDeadOrOutside(plant) && plant.position.row == counterRow && IsPlantCombatSeed(plant.seedType);
+        }));
+        const bool hasGargantuar = HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GARGANTUAR)
+            || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_GARGANTUAR);
+        const bool hasSquashPriorityZombie = HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_BOBSLED)
+            || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_FOOTBALL)
+            || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_FOOTBALL);
+        const bool earlySingleBucket = state.boardTick < 32000 && counterZombieCount == 1
+            && HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_PAIL) && counterCombatPlants == 0 && counterLane.plantCount <= 2;
+        const bool zombieCluster = hasActiveZombie && counterZombieCount >= 2;
+        const bool squashThreat = zombieCluster || hasSquashPriorityZombie || (hasGargantuar && counterClosest != nullptr
+            && (counterClosest->eating || counterClosest->positionX < 560.0f)) || earlySingleBucket;
+        const bool impPearThreat = hasGargantuar && counterClosest != nullptr
+            && (counterClosest->eating || counterClosest->positionX < 780.0f || counterLane.danger >= 160);
         const int areaCounterReserve = AreaCounterReserve(state);
+        const int incomeExpansionTarget = openingIncomeTarget + 4;
+        const bool immediateCounterThreat = squashThreat || impPearThreat;
 
         // The recorded plant side builds its sun base first, then answers a real
         // heavy/fast push with Squash. It is never an opening filler card.
         // Against Gargantuars the replay preserves Imp Pear for the first
         // answer; Squash is the follow-up when the giant reaches the line.
-        if (hasActiveZombie && impPearThreat && !HasPlantTypeInRow(state, SeedType::SEED_IMP_PEAR, danger.row)) {
-            if (std::optional<VSAction> action = TryPlantExactRow(state, SeedType::SEED_IMP_PEAR, danger.row, 4, 5)) {
+        if (hasActiveZombie && impPearThreat && !HasPlantTypeInRow(state, SeedType::SEED_IMP_PEAR, counterRow)) {
+            if (std::optional<VSAction> action = TryCounterPlant(state, SeedType::SEED_IMP_PEAR, counterRow, 4)) {
                 return action;
             }
         }
-        if (zombieCluster && danger.closest != nullptr && !HasPlantTypeInRow(state, SeedType::SEED_CHERRYBOMB, danger.row)) {
-            if (std::optional<VSAction> action = TryPlantExactRow(state, SeedType::SEED_CHERRYBOMB, danger.row, 3, 5)) {
+        if (zombieCluster && counterClosest != nullptr && !HasPlantTypeInRow(state, SeedType::SEED_CHERRYBOMB, counterRow)) {
+            if (std::optional<VSAction> action = TryCounterPlant(state, SeedType::SEED_CHERRYBOMB, counterRow, 3)) {
                 return action;
             }
         }
-        if (zombieCluster && danger.closest != nullptr && (!hasGargantuar || squashThreat)
-            && !HasPlantTypeInRow(state, SeedType::SEED_SQUASH, danger.row)) {
-            if (std::optional<VSAction> action = TryPlantExactRow(state, SeedType::SEED_SQUASH, danger.row, 4, 5)) {
-                return action;
-            }
-        } else if (hasActiveZombie && squashThreat && !HasPlantTypeInRow(state, SeedType::SEED_SQUASH, danger.row)) {
-            if (std::optional<VSAction> action = TryPlantExactRow(state, SeedType::SEED_SQUASH, danger.row, 4, 5)) {
-                return action;
-            }
-        }
-        if (hasActiveZombie && emergency && impPearThreat && !HasPlantTypeInRow(state, SeedType::SEED_IMP_PEAR, danger.row)) {
-            if (std::optional<VSAction> action = TryPlantExactRow(state, SeedType::SEED_IMP_PEAR, danger.row, 4, 5)) {
+        if (squashThreat && counterClosest != nullptr && !HasPlantTypeInRow(state, SeedType::SEED_SQUASH, counterRow)) {
+            if (std::optional<VSAction> action = TryCounterPlant(state, SeedType::SEED_SQUASH, counterRow, 4)) {
                 return action;
             }
         }
@@ -838,6 +911,15 @@ public:
             // defensive card merely because it is available.
             if (!hasActiveZombie || danger.danger < 90) {
                 return std::nullopt;
+            }
+        }
+
+        // The replay keeps adding Sunflowers after early probes arrive. Once
+        // the opening base exists, continue that expansion whenever no lane
+        // needs an instant counter instead of freezing income at six plants.
+        if (hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && danger.danger < 140) {
+            if (std::optional<VSAction> action = TryIncomePlant(state, LeastDevelopedPlantRow(state))) {
+                return action;
             }
         }
 
@@ -879,19 +961,9 @@ public:
                     return action;
                 }
             }
-            if (hasActiveZombie && impPearThreat && !HasPlantTypeInRow(state, SeedType::SEED_IMP_PEAR, danger.row)) {
-                if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_IMP_PEAR, danger.row, 4, 5)) {
-                    return action;
-                }
-            }
         }
 
         const int buildRow = LeastDevelopedPlantRow(state);
-        if (incomePlantCount < openingIncomeTarget + 2 && danger.danger < 80) {
-            if (std::optional<VSAction> action = TryIncomePlant(state, buildRow)) {
-                return action;
-            }
-        }
         if (!HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, buildRow)) {
             if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_SNOWPEA, buildRow, 1, 2)) {
                 return action;
@@ -907,7 +979,7 @@ public:
                 return action;
             }
         }
-        if (incomePlantCount < openingIncomeTarget + 4) {
+        if (incomePlantCount < incomeExpansionTarget) {
             return TryIncomePlant(state, buildRow);
         }
         return TryFallbackPlant(state, danger, buildRow);
@@ -981,6 +1053,9 @@ class ZombieVSAgent final : public BuiltinVSAgent {
         const bool hasWallnut = HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, targetRow) || HasPlantTypeInRow(state, SeedType::SEED_TALLNUT, targetRow);
         const int plantCount = CountPlantsInRow(state, targetRow);
         const int zombieCount = CountZombiesInRow(state, targetRow);
+        const int graveProjectileThreat = StraightProjectileThreatScore(state, targetRow);
+        const bool hasTrashcanGuard = HasZombieTypeInRow(state, targetRow, ZombieType::ZOMBIE_TRASHCAN);
+        const int economyTarget = state.rows * 3;
 
         int score = 20 + ZombieLaneAttackScore(state, targetRow);
         const int graveThreat = GraveThreatScore(state, targetRow);
@@ -997,6 +1072,13 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 break;
             case SeedType::SEED_ZOMBIE_PAIL:
                 score += 65 + plantCount * 14 + (hasSnowPea ? 135 : 0) + (hasBonkChoy ? 100 : 0);
+                break;
+            case SeedType::SEED_ZOMBIE_TRASHCAN:
+                // Trashcan is deliberately a slow front-line shield: a
+                // single one in the lane blocks pea-family fire before it
+                // reaches the graves behind it.
+                score += graveProjectileThreat > 0 && !hasTrashcanGuard ? 425 + graveProjectileThreat * 2 : -110;
+                score += graveThreat >= 100 ? 90 : 0;
                 break;
             case SeedType::SEED_ZOMBIE_GARGANTUAR:
             case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
@@ -1020,7 +1102,13 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += (hasWallnut || hasBonkChoy) ? 85 : 0;
                 break;
             case SeedType::SEED_ZOMBIE_GRAVESTONE:
-                score += economyCount < 4 ? 900 : (economyCount < 8 ? 125 : 15);
+                if (economyCount < economyTarget) {
+                    // Replay construction spans the full three zombie-side
+                    // columns. The fixed four-grave opening was too small.
+                    score += 450 + (economyTarget - economyCount) * 35;
+                } else {
+                    score -= 180;
+                }
                 score += plantCount * 4;
                 break;
             case SeedType::SEED_ZOMBIE_MOUND:
@@ -1057,10 +1145,15 @@ public:
         }
 
         const int economyCount = CountZombieEconomy(state);
+        const int economyTarget = state.rows * 3;
         const int graveDefenseRow = MostThreatenedEconomyRow(state);
         const int graveDefenseScore = GraveThreatScore(state, graveDefenseRow);
+        const int graveProjectileThreat = StraightProjectileThreatScore(state, graveDefenseRow);
+        const bool hasTrashcanGuard = HasZombieTypeInRow(state, graveDefenseRow, ZombieType::ZOMBIE_TRASHCAN);
+        const bool canDeployGraveGuard = graveProjectileThreat > 0 && !hasTrashcanGuard
+            && FindReadyCard(state, SeedType::SEED_ZOMBIE_TRASHCAN) != nullptr;
         const int economicRow = LeastThreatenedEconomyRow(state);
-        if (economyCount < 4 && graveDefenseScore < 100) {
+        if (economyCount < economyTarget && !canDeployGraveGuard && graveDefenseScore < 250) {
             if (std::optional<VSAction> action = TryBuildEconomy(state, economicRow)) {
                 return action;
             }
