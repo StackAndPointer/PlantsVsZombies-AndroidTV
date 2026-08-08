@@ -122,6 +122,39 @@ bool IsLocalBuiltinAIChooser(const SeedChooserScreen *screen) {
     return screen != nullptr && screen->mApp != nullptr && screen->mApp->IsVSMode() && !gTcpConnected && gTcpClientSocket < 0 && !gIsReplayMode && !gIsServerModeSpectator;
 }
 
+bool IsChooserFilled(const SeedChooserScreen *screen) {
+    return screen != nullptr && screen->mSeedBank1 != nullptr && screen->mSeedsInFlight == 0 && screen->mSeedsInBank >= screen->mSeedBank1->mNumPackets;
+}
+
+void TryAutoStartBuiltinVSMatch(SeedChooserScreen *screen) {
+    if (!IsLocalBuiltinAIChooser(screen) || screen->mApp == nullptr || screen->mApp->mSeedChooserScreen == nullptr || screen->mApp->mZombieChooserScreen == nullptr
+        || (!VSSetupAddonWidget::msPlantAIMode && !VSSetupAddonWidget::msZombieAIMode)) {
+        return;
+    }
+
+    SeedChooserScreen *plantChooser = screen->mApp->mSeedChooserScreen;
+    SeedChooserScreen *zombieChooser = screen->mApp->mZombieChooserScreen;
+    if (plantChooser->mBanningPhase || zombieChooser->mBanningPhase || !IsChooserFilled(plantChooser) || !IsChooserFilled(zombieChooser)) {
+        return;
+    }
+
+    // The VS start button is intentionally hidden. Close the two chooser widgets
+    // only after both banks have landed, otherwise the second bank can be lost.
+    static bool closing = false;
+    if (closing) {
+        return;
+    }
+    closing = true;
+    if (plantChooser != screen) {
+        plantChooser->CloseSeedChooser();
+    }
+    if (zombieChooser != screen) {
+        zombieChooser->CloseSeedChooser();
+    }
+    screen->CloseSeedChooser();
+    closing = false;
+}
+
 bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
     if (seedType == SeedType::SEED_NONE || seedType == SeedType::SEED_IMITATER) {
         return false;
@@ -670,6 +703,7 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
     }
 
     static constexpr SeedType kPlantBanPriority[] = {
+        SeedType::SEED_ZOMBIE_DANCER,
         SeedType::SEED_ZOMBIE_PEA_HEAD,
         SeedType::SEED_ZOMBIE_NEWSPAPER,
         SeedType::SEED_ZOMBIE_IMP,
@@ -680,6 +714,8 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
         SeedType::SEED_ZOMBIE_POGO,
     };
     static constexpr SeedType kZombieBanPriority[] = {
+        // Starfruit can damage a grave from its own or an adjacent lane.
+        SeedType::SEED_STARFRUIT,
         SeedType::SEED_REPEATER,
         SeedType::SEED_POTATOMINE,
         SeedType::SEED_CELERY_STALKER,
@@ -690,6 +726,7 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
         SeedType::SEED_SNOWPEA,
     };
     static constexpr SeedType kPlantPickPriority[] = {
+        SeedType::SEED_IMP_PEAR,
         SeedType::SEED_BONK_CHOY,
         SeedType::SEED_SQUASH,
         SeedType::SEED_WALLNUT,
@@ -820,6 +857,7 @@ void SeedChooserScreen::Update() {
 
     UpdateViewLawn();
     MarkDirty();
+    TryAutoStartBuiltinVSMatch(this);
 }
 
 
@@ -1354,25 +1392,38 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
                 aBannedSeed.mSeedType = theChosenSeed.mSeedType;
 
                 int aSeedBanned = aBannedSeed.mSeedType;
+                if (mSeedsInBanned >= mNumBanPackets || aSeedBanned < 0 || aSeedBanned >= NUM_SEEDS_IN_CHOOSER_EXTENDED
+                    || mBannedSeed[aSeedBanned].mSeedState == BannedSeedState::SEED_BANNED) {
+                    return;
+                }
 
                 mBannedSeed[aSeedBanned].mX = theChosenSeed.mX;
                 mBannedSeed[aSeedBanned].mY = theChosenSeed.mY;
                 mBannedSeed[aSeedBanned].mSeedState = BannedSeedState::SEED_BANNED; // 将被选卡设为禁用状态
 
                 mSeedsInBanned++; // 已禁用卡片数量 + 1
-                if (mIsZombieChooser) {
-                    // 如果已禁用数量与需禁用数量一致，结束禁用阶段
-                    if (mSeedsInBanned == mNumBanPackets) {
-                        mApp->mSeedChooserScreen->mBanningPhase = false;
-                        mApp->mZombieChooserScreen->mBanningPhase = false;
-                        OnPlayerPickedSeed(aGamepadIndex);
-                    }
+                bool banRoundFinished = false;
+                SeedChooserScreen *plantChooser = mApp->mSeedChooserScreen;
+                SeedChooserScreen *zombieChooser = mApp->mZombieChooserScreen;
+                if (plantChooser != nullptr && zombieChooser != nullptr && plantChooser->mSeedsInBanned >= plantChooser->mNumBanPackets
+                    && zombieChooser->mSeedsInBanned >= zombieChooser->mNumBanPackets) {
+                    // Each chooser tracks the ban round for the opposite
+                    // side. End the round only after both counters agree.
+                    plantChooser->mBanningPhase = false;
+                    zombieChooser->mBanningPhase = false;
+                    banRoundFinished = true;
                 }
 
                 // 记录禁卡
                 netplay::MetricsRecordSeedEvent(mIsZombieChooser, true, int(aSeedBanned));
                 mApp->PlayFoley(FoleyType::FOLEY_FLOOP);
                 OnPlayerPickedSeed(aGamepadIndex);
+                if (banRoundFinished && mIsZombieChooser) {
+                    // Preserve the original BP turn contract: the zombie chooser
+                    // performs the final ban and the extra callback keeps the
+                    // following normal pick on the expected side.
+                    OnPlayerPickedSeed(aGamepadIndex);
+                }
             }
             return;
         }

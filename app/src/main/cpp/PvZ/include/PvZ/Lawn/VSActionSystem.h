@@ -46,6 +46,7 @@ enum class VSActionResult : std::uint8_t {
     RejectedDisabled,
     RejectedNotLocalVS,
     RejectedMatchNotPlaying,
+    RejectedMatchPaused,
     RejectedStale,
     RejectedUnsupported,
     RejectedInvalidSide,
@@ -135,6 +136,7 @@ struct VSGameState {
     int plantSun = 0;
     int zombieBrains = 0;
     bool playing = false;
+    bool paused = false;
     std::array<std::vector<VSCardState>, 2> seedBanks;
     std::vector<VSPlantState> plants;
     std::vector<VSZombieState> zombies;
