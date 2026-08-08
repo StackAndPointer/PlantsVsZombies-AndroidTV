@@ -42,6 +42,7 @@
 #include <unistd.h>
 
 #include <climits>
+#include <cstddef>
 
 using namespace Sexy;
 
@@ -115,6 +116,59 @@ void NormalizeLocalPoint(SeedChooserScreen *screen, int &x, int &y) {
 
 int GetZombieIndexBySeedType(SeedType theSeedType) {
     return theSeedType >= SeedType::SEED_ZOMBIE_GRAVESTONE ? SeedType(theSeedType - SeedType::SEED_ZOMBIE_GRAVESTONE) : SeedType::SEED_NONE;
+}
+
+bool IsLocalBuiltinAIChooser(const SeedChooserScreen *screen) {
+    return screen != nullptr && screen->mApp != nullptr && screen->mApp->IsVSMode() && !gTcpConnected && gTcpClientSocket < 0 && !gIsReplayMode && !gIsServerModeSpectator;
+}
+
+bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
+    if (seedType == SeedType::SEED_NONE || seedType == SeedType::SEED_IMITATER) {
+        return false;
+    }
+    if (!screen->mShowExtendedSeeds
+        && ((screen->mIsZombieChooser && seedType > SeedType::SEED_ZOMBIE_GARGANTUAR)
+            || (!screen->mIsZombieChooser && seedType >= SeedType::SEED_ICEBERG_LETTUCE))) {
+        return false;
+    }
+
+    const int seedIndex = screen->GetSeedPacketIndex(seedType);
+    if (seedIndex < 0 || seedIndex >= screen->GetSeedStorageCount() || !screen->HasPacket(seedType, screen->mIsZombieChooser)) {
+        return false;
+    }
+    if (screen->GetChosenSeed(seedIndex).mSeedState != ChosenSeedState::SEED_IN_CHOOSER || screen->SeedNotAllowedToPick(seedType)) {
+        return false;
+    }
+
+    const int bannedSeedIndex = static_cast<int>(seedType);
+    return !screen->mBanningPhase || (bannedSeedIndex >= 0 && bannedSeedIndex < NUM_SEEDS_IN_CHOOSER_EXTENDED
+                                      && screen->mBannedSeed[bannedSeedIndex].mSeedState != BannedSeedState::SEED_BANNED);
+}
+
+SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
+    for (std::size_t i = 0; i < priorityCount; ++i) {
+        if (IsBuiltinAICandidate(screen, prioritySeeds[i])) {
+            return prioritySeeds[i];
+        }
+    }
+
+    for (int seedIndex = 0; seedIndex < screen->GetSeedStorageCount(); ++seedIndex) {
+        const SeedType seedType = screen->mIsZombieChooser ? screen->GetZombieSeedType(seedIndex) : screen->GetPlantSeedType(seedIndex);
+        if (IsBuiltinAICandidate(screen, seedType)) {
+            return seedType;
+        }
+    }
+    return SeedType::SEED_NONE;
+}
+
+int GetBuiltinAIPageForSeed(const SeedChooserScreen *screen, SeedType seedType) {
+    if (!screen->mShowExtendedSeeds) {
+        return 0;
+    }
+    if (screen->mIsZombieChooser) {
+        return seedType > GetZombieFirstPageLastSeedType(screen) ? 1 : 0;
+    }
+    return seedType >= SeedType::SEED_ICEBERG_LETTUCE ? 1 : 0;
 }
 
 } // namespace
@@ -592,6 +646,115 @@ void SeedChooserScreen::RebuildHelpbar() {
     old_SeedChooserScreen_RebuildHelpbar(this);
 }
 
+void SeedChooserScreen::UpdateBuiltinAIPick() {
+    if (!IsLocalBuiltinAIChooser(this) || mApp->mVSSetupMenu == nullptr || !CanPickNow() || mSeedsInFlight != 0) {
+        return;
+    }
+
+    const VSSide controlledSide = mBanningPhase ? (mIsZombieChooser ? VS_SIDE_PLANT : VS_SIDE_ZOMBIE)
+                                                  : (mIsZombieChooser ? VS_SIDE_ZOMBIE : VS_SIDE_PLANT);
+    const bool aiEnabled = controlledSide == VS_SIDE_PLANT ? VSSetupAddonWidget::msPlantAIMode : VSSetupAddonWidget::msZombieAIMode;
+    if (!aiEnabled || (mBanningPhase && mSeedsInBanned >= mNumBanPackets)) {
+        return;
+    }
+
+    int controllerIndex = -1;
+    for (int sideSlot = 0; sideSlot < 2; ++sideSlot) {
+        if (mApp->mVSSetupMenu->mSides[sideSlot] == controlledSide) {
+            controllerIndex = mApp->mVSSetupMenu->mControllerIndex[sideSlot];
+            break;
+        }
+    }
+    if (controllerIndex < 0 || controllerIndex > 1) {
+        return;
+    }
+
+    static constexpr SeedType kPlantBanPriority[] = {
+        SeedType::SEED_ZOMBIE_PEA_HEAD,
+        SeedType::SEED_ZOMBIE_NEWSPAPER,
+        SeedType::SEED_ZOMBIE_IMP,
+        SeedType::SEED_ZOMBIE_SCREEN_DOOR,
+        SeedType::SEED_ZOMBIE_BUNGEE,
+        SeedType::SEED_ZOMBIE_DIGGER,
+        SeedType::SEED_ZOMBIE_GARGANTUAR,
+        SeedType::SEED_ZOMBIE_POGO,
+    };
+    static constexpr SeedType kZombieBanPriority[] = {
+        SeedType::SEED_REPEATER,
+        SeedType::SEED_POTATOMINE,
+        SeedType::SEED_CELERY_STALKER,
+        SeedType::SEED_CHERRYBOMB,
+        SeedType::SEED_JALAPENO,
+        SeedType::SEED_SQUASH,
+        SeedType::SEED_COBCANNON,
+        SeedType::SEED_SNOWPEA,
+    };
+    static constexpr SeedType kPlantPickPriority[] = {
+        SeedType::SEED_BONK_CHOY,
+        SeedType::SEED_SQUASH,
+        SeedType::SEED_WALLNUT,
+        SeedType::SEED_SNOWPEA,
+        SeedType::SEED_CELERY_STALKER,
+        SeedType::SEED_SUNFLOWER,
+        SeedType::SEED_CHERRYBOMB,
+        SeedType::SEED_PEASHOOTER,
+    };
+    static constexpr SeedType kZombiePickPriority[] = {
+        SeedType::SEED_ZOMBIE_BOBSLED,
+        SeedType::SEED_ZOMBIE_WALLNUT_HEAD,
+        SeedType::SEED_ZOMBIE_PAIL,
+        SeedType::SEED_ZOMBIE_GARGANTUAR,
+        SeedType::SEED_ZOMBIE_GIGA_FOOTBALL,
+        SeedType::SEED_ZOMBIE_GRAVESTONE,
+        SeedType::SEED_ZOMBIE_BUNGEE,
+        SeedType::SEED_ZOMBIE_NORMAL,
+    };
+
+    const SeedType *prioritySeeds = nullptr;
+    std::size_t priorityCount = 0;
+    if (mBanningPhase) {
+        prioritySeeds = mIsZombieChooser ? kPlantBanPriority : kZombieBanPriority;
+        priorityCount = mIsZombieChooser ? std::size(kPlantBanPriority) : std::size(kZombieBanPriority);
+    } else {
+        prioritySeeds = mIsZombieChooser ? kZombiePickPriority : kPlantPickPriority;
+        priorityCount = mIsZombieChooser ? std::size(kZombiePickPriority) : std::size(kPlantPickPriority);
+    }
+
+    const SeedType selectedSeedType = FindBuiltinAICandidate(this, prioritySeeds, priorityCount);
+    if (selectedSeedType == SeedType::SEED_NONE) {
+        return;
+    }
+
+    const int seedIndex = GetSeedPacketIndex(selectedSeedType);
+    const int targetPage = GetBuiltinAIPageForSeed(this, selectedSeedType);
+    if (targetPage != mPageIndex) {
+        SetPageIndex(targetPage);
+    }
+
+    int seedX = 0;
+    int seedY = 0;
+    GetSeedPositionInChooser(seedIndex, seedX, seedY);
+    ChosenSeed &selectedSeed = GetChosenSeed(seedIndex);
+    selectedSeed.mX = seedX;
+    selectedSeed.mY = seedY;
+
+    // Ban processing reads the active selector, so keep both local selectors on the chosen card.
+    mCursorPositionX1 = mCursorPositionX2 = seedX;
+    mCursorPositionY1 = mCursorPositionY2 = seedY;
+    const int pageSeedIndex = targetPage == 0 ? seedIndex : (mIsZombieChooser ? seedIndex - GetZombieFirstPageSeedCount(this) : seedIndex - NUM_SEEDS_IN_CHOOSER);
+    mSeedIndex1 = mSeedIndex2 = pageSeedIndex;
+
+    const int playerIndex = mApp->GamepadToPlayerIndex(controllerIndex);
+    if (playerIndex < 0 || playerIndex > 1) {
+        return;
+    }
+
+    const bool mouseWasVisible = mMouseVisible;
+    mMouseVisible = true;
+    ClickedSeedInChooser_Orgin(selectedSeed, playerIndex);
+    mMouseVisible = mouseWasVisible;
+}
+
 
 void SeedChooserScreen::Update() {
     Sexy::Widget::Update();
@@ -606,6 +769,8 @@ void SeedChooserScreen::Update() {
         ApplyGlobalBpBans();
         mGlobalBpBansApplied = true;
     }
+
+    UpdateBuiltinAIPick();
 
     mDimCounter = CanPickNow() ? 0 : (mDimCounter + 1);
     mCursorBobPhase = (mCursorBobPhase + 0.01f <= 6.2832f) ? (mCursorBobPhase + 0.01f) : 0.0f;
