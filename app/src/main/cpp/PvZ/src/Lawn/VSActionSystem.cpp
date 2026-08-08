@@ -49,12 +49,313 @@ struct QueuedAction {
 struct RuntimeState {
     Board *board = nullptr;
     std::array<std::unique_ptr<IVSAgent>, kSideCount> agents;
+    std::array<bool, kSideCount> builtinAgents = {false, false};
     std::array<std::uint32_t, kSideCount> thinkIntervals = {kDefaultThinkIntervalTicks, kDefaultThinkIntervalTicks};
     std::array<std::uint32_t, kSideCount> nextThinkTicks = {0, 0};
     std::deque<QueuedAction> queuedActions;
 };
 
 RuntimeState gRuntime;
+
+bool IsDeadOrOutside(const VSPlantState &plant) {
+    return plant.dead || plant.position.row < 0 || plant.position.col < 0;
+}
+
+bool HasPlantAt(const VSGameState &state, VSGridPosition position) {
+    return std::any_of(state.plants.begin(), state.plants.end(), [position](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.position.col == position.col && plant.position.row == position.row;
+    });
+}
+
+bool HasGridItemAt(const VSGameState &state, VSGridPosition position) {
+    return std::any_of(state.gridItems.begin(), state.gridItems.end(), [position](const VSGridItemState &item) {
+        return !item.dead && item.position.col == position.col && item.position.row == position.row;
+    });
+}
+
+const VSZombieState *FindClosestZombie(const VSGameState &state, int row = -1) {
+    const VSZombieState *closest = nullptr;
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.row < 0 || (row >= 0 && zombie.row != row)) {
+            continue;
+        }
+        if (closest == nullptr || zombie.positionX < closest->positionX) {
+            closest = &zombie;
+        }
+    }
+    return closest;
+}
+
+int CountPlantsInRow(const VSGameState &state, int row) {
+    return static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [row](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.position.row == row;
+    }));
+}
+
+int CountZombiesInRow(const VSGameState &state, int row) {
+    return static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(), [row](const VSZombieState &zombie) {
+        return !zombie.dead && zombie.row == row;
+    }));
+}
+
+int MostThreatenedRow(const VSGameState &state) {
+    int bestRow = 0;
+    int bestScore = std::numeric_limits<int>::min();
+    for (int row = 0; row < state.rows; ++row) {
+        const VSZombieState *closest = FindClosestZombie(state, row);
+        const int distanceScore = closest == nullptr ? 0 : std::max(0, 900 - static_cast<int>(closest->positionX));
+        const int score = CountZombiesInRow(state, row) * 20 + distanceScore + (closest != nullptr && closest->eating ? 120 : 0);
+        if (score > bestScore) {
+            bestScore = score;
+            bestRow = row;
+        }
+    }
+    return bestRow;
+}
+
+VSGridPosition FindPlantCell(const VSGameState &state, int preferredRow, int preferredColumn) {
+    preferredRow = std::clamp(preferredRow, 0, std::max(0, state.rows - 1));
+    preferredColumn = std::clamp(preferredColumn, 0, 5);
+    for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
+        const int row = (preferredRow + rowOffset) % state.rows;
+        for (int columnOffset = 0; columnOffset <= 5; ++columnOffset) {
+            const int column = (preferredColumn + columnOffset) % 6;
+            const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+            if (!HasPlantAt(state, position) && !HasGridItemAt(state, position)) {
+                return position;
+            }
+        }
+    }
+    return {};
+}
+
+VSGridPosition FindZombieCell(const VSGameState &state, int row) {
+    row = std::clamp(row, 0, std::max(0, state.rows - 1));
+    return {static_cast<std::int8_t>(8), static_cast<std::int8_t>(row)};
+}
+
+bool IsReadyCard(const VSCardState &card, int resource) {
+    return card.seedType != static_cast<std::uint16_t>(SeedType::SEED_NONE) && card.active && !card.refreshing && card.refreshCounter <= 0 && card.cost <= resource;
+}
+
+class BuiltinVSAgent : public IVSAgent {
+protected:
+    std::uint16_t mSequence = 0;
+    std::array<std::uint8_t, 32> mBlockedSlots{};
+
+    void AdvanceBlockedSlots() {
+        for (std::uint8_t &blocked : mBlockedSlots) {
+            if (blocked > 0) {
+                --blocked;
+            }
+        }
+    }
+
+    bool IsSlotBlocked(std::uint8_t slot) const {
+        return slot < mBlockedSlots.size() && mBlockedSlots[slot] != 0;
+    }
+
+    void BlockSlot(std::uint8_t slot) {
+        if (slot < mBlockedSlots.size()) {
+            mBlockedSlots[slot] = 4;
+        }
+    }
+
+    VSAction MakePlayAction(VSSide side, const VSCardState &card, VSGridPosition target, std::uint32_t tick) {
+        return {
+            .side = side,
+            .kind = VSActionKind::PlaySeed,
+            .seedSlot = card.slot,
+            .expectedSeedType = card.seedType,
+            .target = target,
+            .notBeforeTick = tick,
+            .expiresAtTick = tick + 120,
+            .sequence = ++mSequence,
+        };
+    }
+
+public:
+    void Reset() override {
+        mSequence = 0;
+        mBlockedSlots.fill(0);
+    }
+
+    void OnActionResult(const VSAction &action, VSActionResult result) override {
+        if (result == VSActionResult::RejectedInvalidTarget || result == VSActionResult::RejectedUnsupported || result == VSActionResult::RejectedCardUnavailable) {
+            BlockSlot(action.seedSlot);
+        }
+    }
+};
+
+class PlantVSAgent final : public BuiltinVSAgent {
+    static bool IsEmergencySeed(std::uint16_t seed) {
+        switch (static_cast<SeedType>(seed)) {
+            case SeedType::SEED_CHERRYBOMB:
+            case SeedType::SEED_SQUASH:
+            case SeedType::SEED_JALAPENO:
+            case SeedType::SEED_ICESHROOM:
+            case SeedType::SEED_DOOMSHROOM:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    static bool IsDefenseSeed(std::uint16_t seed) {
+        switch (static_cast<SeedType>(seed)) {
+            case SeedType::SEED_WALLNUT:
+            case SeedType::SEED_TALLNUT:
+            case SeedType::SEED_PUMPKINSHELL:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    static int CardScore(const VSCardState &card, const VSGameState &state, int threatenedRow) {
+        int score = 10;
+        const auto seed = static_cast<SeedType>(card.seedType);
+        if (IsEmergencySeed(card.seedType)) {
+            score += FindClosestZombie(state, threatenedRow) == nullptr ? 15 : 110;
+        } else if (IsDefenseSeed(card.seedType)) {
+            score += CountPlantsInRow(state, threatenedRow) < 3 ? 90 : 25;
+        } else {
+            switch (seed) {
+                case SeedType::SEED_SUNFLOWER:
+                case SeedType::SEED_SUNSHROOM:
+                    score += 75;
+                    break;
+                case SeedType::SEED_PEASHOOTER:
+                case SeedType::SEED_REPEATER:
+                case SeedType::SEED_SNOWPEA:
+                case SeedType::SEED_THREEPEATER:
+                case SeedType::SEED_GATLINGPEA:
+                case SeedType::SEED_MELONPULT:
+                case SeedType::SEED_WINTERMELON:
+                    score += 70;
+                    break;
+                default:
+                    score += 35;
+                    break;
+            }
+        }
+        score -= card.cost / 50;
+        return score;
+    }
+
+public:
+    std::optional<VSAction> Decide(const VSGameState &state) override {
+        AdvanceBlockedSlots();
+        for (const VSResourceState &resource : state.resources) {
+            if (resource.side == VSSide::Plants && !resource.dead && !resource.beingCollected) {
+                return VSAction{.side = VSSide::Plants, .kind = VSActionKind::CollectResource, .objectId = resource.id, .sequence = ++mSequence};
+            }
+        }
+
+        const int threatenedRow = MostThreatenedRow(state);
+        const VSZombieState *closest = FindClosestZombie(state, threatenedRow);
+        const bool underPressure = closest != nullptr && (closest->positionX < 480.0f || closest->eating);
+        const VSCardState *bestCard = nullptr;
+        int bestScore = std::numeric_limits<int>::min();
+        for (const VSCardState &card : state.seedBanks[0]) {
+            if (IsSlotBlocked(card.slot) || !IsReadyCard(card, state.plantSun)) {
+                continue;
+            }
+            int score = CardScore(card, state, threatenedRow);
+            if (underPressure == IsEmergencySeed(card.seedType)) {
+                score += 35;
+            }
+            if (bestCard == nullptr || score > bestScore) {
+                bestCard = &card;
+                bestScore = score;
+            }
+        }
+        if (bestCard == nullptr) {
+            return std::nullopt;
+        }
+
+        const SeedType seed = static_cast<SeedType>(bestCard->seedType);
+        int targetColumn = IsDefenseSeed(bestCard->seedType) ? 4 : 2;
+        if (IsEmergencySeed(bestCard->seedType)) {
+            targetColumn = closest == nullptr ? 4 : std::clamp(static_cast<int>(closest->positionX / 80.0f), 0, 5);
+        }
+        if (seed == SeedType::SEED_COBCANNON) {
+            targetColumn = 2;
+        }
+        const VSGridPosition target = FindPlantCell(state, threatenedRow, targetColumn);
+        if (target.col < 0 || target.row < 0) {
+            return std::nullopt;
+        }
+        return MakePlayAction(VSSide::Plants, *bestCard, target, state.boardTick);
+    }
+};
+
+class ZombieVSAgent final : public BuiltinVSAgent {
+    static bool IsTargetedSeed(std::uint16_t seed) {
+        return static_cast<SeedType>(seed) == SeedType::SEED_ZOMBIE_BUNGEE;
+    }
+
+    static int CardScore(const VSCardState &card, const VSGameState &state, int targetRow) {
+        int score = 20;
+        const auto seed = static_cast<SeedType>(card.seedType);
+        if (seed == SeedType::SEED_ZOMBIE_BUNGEE) {
+            score += std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); }) ? 180 : -60;
+        } else if (seed == SeedType::SEED_ZOMBIE_MOUND || seed == SeedType::SEED_ZOMBIE_GRAVESTONE) {
+            score += 85;
+        } else if (seed == SeedType::SEED_ZOMBIE_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) {
+            score += CountPlantsInRow(state, targetRow) * 8 + 80;
+        } else {
+            score += CountPlantsInRow(state, targetRow) * 5;
+        }
+        score -= card.cost / 50;
+        return score;
+    }
+
+public:
+    std::optional<VSAction> Decide(const VSGameState &state) override {
+        AdvanceBlockedSlots();
+        for (const VSResourceState &resource : state.resources) {
+            if (resource.side == VSSide::Zombies && !resource.dead && !resource.beingCollected) {
+                return VSAction{.side = VSSide::Zombies, .kind = VSActionKind::CollectResource, .objectId = resource.id, .sequence = ++mSequence};
+            }
+        }
+
+        const int targetRow = MostThreatenedRow(state);
+        const VSCardState *bestCard = nullptr;
+        int bestScore = std::numeric_limits<int>::min();
+        for (const VSCardState &card : state.seedBanks[1]) {
+            if (IsSlotBlocked(card.slot) || !IsReadyCard(card, state.zombieBrains)) {
+                continue;
+            }
+            const int score = CardScore(card, state, targetRow);
+            if (bestCard == nullptr || score > bestScore) {
+                bestCard = &card;
+                bestScore = score;
+            }
+        }
+        if (bestCard == nullptr) {
+            return std::nullopt;
+        }
+
+        VSGridPosition target = FindZombieCell(state, targetRow);
+        if (IsTargetedSeed(bestCard->seedType)) {
+            const VSPlantState *targetPlant = nullptr;
+            for (const VSPlantState &plant : state.plants) {
+                if (IsDeadOrOutside(plant)) {
+                    continue;
+                }
+                if (targetPlant == nullptr || plant.position.col > targetPlant->position.col) {
+                    targetPlant = &plant;
+                }
+            }
+            if (targetPlant == nullptr) {
+                return std::nullopt;
+            }
+            target = targetPlant->position;
+        }
+        return MakePlayAction(VSSide::Zombies, *bestCard, target, state.boardTick);
+    }
+};
 
 constexpr std::size_t SideIndex(VSSide side) {
     return static_cast<std::size_t>(side);
@@ -411,6 +712,26 @@ void RunAgent(Board *board, VSSide side, const VSGameState &state) {
     Notify(agent, *action, result);
 }
 
+void SyncBuiltinAgents() {
+    const std::array<bool, kSideCount> enabled = {IsSideEnabled(VSSide::Plants), IsSideEnabled(VSSide::Zombies)};
+    const std::size_t plantIndex = SideIndex(VSSide::Plants);
+    const std::size_t zombieIndex = SideIndex(VSSide::Zombies);
+    if (enabled[plantIndex] && gRuntime.agents[plantIndex] == nullptr) {
+        gRuntime.agents[plantIndex] = std::make_unique<PlantVSAgent>();
+        gRuntime.builtinAgents[plantIndex] = true;
+    } else if (!enabled[plantIndex] && gRuntime.builtinAgents[plantIndex]) {
+        gRuntime.agents[plantIndex].reset();
+        gRuntime.builtinAgents[plantIndex] = false;
+    }
+    if (enabled[zombieIndex] && gRuntime.agents[zombieIndex] == nullptr) {
+        gRuntime.agents[zombieIndex] = std::make_unique<ZombieVSAgent>();
+        gRuntime.builtinAgents[zombieIndex] = true;
+    } else if (!enabled[zombieIndex] && gRuntime.builtinAgents[zombieIndex]) {
+        gRuntime.agents[zombieIndex].reset();
+        gRuntime.builtinAgents[zombieIndex] = false;
+    }
+}
+
 } // namespace
 
 void SetAgent(VSSide side, std::unique_ptr<IVSAgent> agent) {
@@ -423,6 +744,7 @@ void SetAgent(VSSide side, std::unique_ptr<IVSAgent> agent) {
         return queuedAction.sourceSide == side;
     });
     gRuntime.agents[index] = std::move(agent);
+    gRuntime.builtinAgents[index] = false;
     gRuntime.nextThinkTicks[index] = 0;
     if (gRuntime.agents[index] != nullptr) {
         gRuntime.agents[index]->Reset();
@@ -571,6 +893,7 @@ VSActionResult ExecuteActionNow(Board *board, const VSAction &action) {
 
 void Update(Board *board) {
     ResetForBoard(board);
+    SyncBuiltinAgents();
     if (!IsLocalVSMatch(board) || !IsMatchPlaying(board)) {
         return;
     }
