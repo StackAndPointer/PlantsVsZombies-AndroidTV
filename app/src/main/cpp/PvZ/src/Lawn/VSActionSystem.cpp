@@ -168,16 +168,37 @@ bool HasZombieTypeInRow(const VSGameState &state, int row, ZombieType zombieType
     });
 }
 
+int LargestZombieStackInRow(const VSGameState &state, int row) {
+    constexpr float kGridCellWidth = 80.0f;
+    int largestStack = 0;
+    for (const VSZombieState &anchor : state.zombies) {
+        if (anchor.dead || anchor.row != row) {
+            continue;
+        }
+
+        int stackSize = 0;
+        for (const VSZombieState &zombie : state.zombies) {
+            if (zombie.dead || zombie.row != row) {
+                continue;
+            }
+            const float distance = zombie.positionX - anchor.positionX;
+            if (distance > -kGridCellWidth && distance < kGridCellWidth) {
+                ++stackSize;
+            }
+        }
+        largestStack = std::max(largestStack, stackSize);
+    }
+    return largestStack;
+}
+
 int ZombieThreatWeight(std::uint16_t zombieType);
 
 int CounterPressureScoreInRow(const VSGameState &state, int row) {
-    int count = 0;
     int score = 0;
     for (const VSZombieState &zombie : state.zombies) {
         if (zombie.dead || zombie.row != row) {
             continue;
         }
-        ++count;
         score += ZombieThreatWeight(zombie.zombieType);
         score += IsDecisiveCounterZombie(zombie.zombieType) ? 150 : 0;
         score += zombie.eating ? 90 : 0;
@@ -186,7 +207,9 @@ int CounterPressureScoreInRow(const VSGameState &state, int row) {
             score += IsHeavyZombie(zombie.zombieType) ? 45 : 0;
         }
     }
-    return score + count * 90;
+    // A genuine pileup is more urgent than the same number of separated
+    // zombies, but the stack must fit inside one lawn cell.
+    return score + LargestZombieStackInRow(state, row) * 90;
 }
 
 int MostUrgentCounterRow(const VSGameState &state) {
@@ -856,6 +879,7 @@ public:
         const int counterRow = MostUrgentCounterRow(state);
         const VSZombieState *counterClosest = FindClosestZombie(state, counterRow);
         const int counterZombieCount = CountZombiesInRow(state, counterRow);
+        const int counterStackCount = LargestZombieStackInRow(state, counterRow);
         const PlantLaneAssessment counterLane = AssessPlantLane(state, counterRow);
         const int counterCombatPlants = static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [counterRow](const VSPlantState &plant) {
             return !IsDeadOrOutside(plant) && plant.position.row == counterRow && IsPlantCombatSeed(plant.seedType);
@@ -867,7 +891,7 @@ public:
             || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_FOOTBALL);
         const bool earlySingleBucket = state.boardTick < 32000 && counterZombieCount == 1
             && HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_PAIL) && counterCombatPlants == 0 && counterLane.plantCount <= 2;
-        const bool zombieCluster = hasActiveZombie && counterZombieCount >= 2;
+        const bool zombieCluster = hasActiveZombie && counterStackCount >= 2;
         const bool squashThreat = zombieCluster || hasSquashPriorityZombie || (hasGargantuar && counterClosest != nullptr
             && (counterClosest->eating || counterClosest->positionX < 560.0f)) || earlySingleBucket;
         const bool impPearThreat = hasGargantuar && counterClosest != nullptr
@@ -1029,17 +1053,9 @@ class ZombieVSAgent final : public BuiltinVSAgent {
     }
 
     static int BungeeTargetScore(const VSGameState &state, const VSPlantState &plant, int row) {
-        const bool anyCombatPlant = std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &candidate) {
-            return !IsDeadOrOutside(candidate) && IsPlantCombatSeed(candidate.seedType);
-        });
-        const bool combatPlant = IsPlantCombatSeed(plant.seedType);
         int score = PlantValueScore(plant) + static_cast<int>(plant.position.col) * 8;
-        if (combatPlant) {
-            score += anyCombatPlant ? 220 : 80;
-        } else if (IsPlantEconomySeed(plant.seedType)) {
-            // Economy is a fallback target only when the opponent has no
-            // combat plant worth stealing.
-            score += anyCombatPlant ? -180 : 45;
+        if (IsPlantCombatSeed(plant.seedType)) {
+            score += 220;
         }
         score += PlantLaneWeaknessScore(state, row) / 3;
         return score;
@@ -1172,7 +1188,7 @@ public:
                 const VSPlantState *targetPlant = nullptr;
                 int targetScore = std::numeric_limits<int>::min();
                 for (const VSPlantState &plant : state.plants) {
-                    if (IsDeadOrOutside(plant) || plant.position.row != row) {
+                    if (IsDeadOrOutside(plant) || plant.position.row != row || PlantValueScore(plant) < 100) {
                         continue;
                     }
                     const int plantScore = BungeeTargetScore(state, plant, row);
