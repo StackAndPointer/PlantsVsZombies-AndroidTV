@@ -98,13 +98,108 @@ int CountZombiesInRow(const VSGameState &state, int row) {
     }));
 }
 
+bool HasPlantTypeInRow(const VSGameState &state, SeedType seedType, int row) {
+    return std::any_of(state.plants.begin(), state.plants.end(), [seedType, row](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.position.row == row && plant.seedType == static_cast<std::uint16_t>(seedType);
+    });
+}
+
+bool IsHeavyZombie(std::uint16_t zombieType) {
+    switch (static_cast<ZombieType>(zombieType)) {
+        case ZombieType::ZOMBIE_PAIL:
+        case ZombieType::ZOMBIE_FOOTBALL:
+        case ZombieType::ZOMBIE_BOBSLED:
+        case ZombieType::ZOMBIE_GARGANTUAR:
+        case ZombieType::ZOMBIE_WALLNUT_HEAD:
+        case ZombieType::ZOMBIE_GIGA_FOOTBALL:
+        case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool IsFastZombie(std::uint16_t zombieType) {
+    switch (static_cast<ZombieType>(zombieType)) {
+        case ZombieType::ZOMBIE_BOBSLED:
+        case ZombieType::ZOMBIE_FOOTBALL:
+        case ZombieType::ZOMBIE_GIGA_FOOTBALL:
+        case ZombieType::ZOMBIE_POLEVAULTER:
+        case ZombieType::ZOMBIE_DIGGER:
+        case ZombieType::ZOMBIE_IMP:
+            return true;
+        default:
+            return false;
+    }
+}
+
+int PlantThreatScore(const VSGameState &state, int row) {
+    int score = CountZombiesInRow(state, row) * 24;
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.row != row) {
+            continue;
+        }
+        score += std::max(0, 900 - static_cast<int>(zombie.positionX)) / 5;
+        score += zombie.eating ? 130 : 0;
+        score += IsHeavyZombie(zombie.zombieType) ? 80 : 0;
+        score += IsFastZombie(zombie.zombieType) ? 35 : 0;
+        score += zombie.shieldHealth / 30;
+    }
+    return score;
+}
+
 int MostThreatenedRow(const VSGameState &state) {
     int bestRow = 0;
     int bestScore = std::numeric_limits<int>::min();
     for (int row = 0; row < state.rows; ++row) {
-        const VSZombieState *closest = FindClosestZombie(state, row);
-        const int distanceScore = closest == nullptr ? 0 : std::max(0, 900 - static_cast<int>(closest->positionX));
-        const int score = CountZombiesInRow(state, row) * 20 + distanceScore + (closest != nullptr && closest->eating ? 120 : 0);
+        const int score = PlantThreatScore(state, row);
+        if (score > bestScore) {
+            bestScore = score;
+            bestRow = row;
+        }
+    }
+    return bestRow;
+}
+
+int PlantValueScore(const VSPlantState &plant) {
+    // Health is intentionally capped: a full Wall-nut should be a worthwhile target,
+    // not erase every other lane from the zombie agent's comparison.
+    int score = std::clamp(plant.health / 10, 10, 80);
+    switch (static_cast<SeedType>(plant.seedType)) {
+        case SeedType::SEED_SUNFLOWER:
+        case SeedType::SEED_SUNSHROOM:
+            score += 35;
+            break;
+        case SeedType::SEED_SNOWPEA:
+            score += 90;
+            break;
+        case SeedType::SEED_BONK_CHOY:
+        case SeedType::SEED_CELERY_STALKER:
+            score += 75;
+            break;
+        case SeedType::SEED_WALLNUT:
+        case SeedType::SEED_TALLNUT:
+        case SeedType::SEED_PUMPKINSHELL:
+            score += 55;
+            break;
+        default:
+            score += 45;
+            break;
+    }
+    return score;
+}
+
+int MostValuablePlantRow(const VSGameState &state) {
+    int bestRow = 0;
+    int bestScore = std::numeric_limits<int>::min();
+    for (int row = 0; row < state.rows; ++row) {
+        int score = 0;
+        for (const VSPlantState &plant : state.plants) {
+            if (!IsDeadOrOutside(plant) && plant.position.row == row) {
+                score += PlantValueScore(plant);
+            }
+        }
+        score += CountZombiesInRow(state, row) * 3;
         if (score > bestScore) {
             bestScore = score;
             bestRow = row;
@@ -213,31 +308,65 @@ class PlantVSAgent final : public BuiltinVSAgent {
     }
 
     static int CardScore(const VSCardState &card, const VSGameState &state, int threatenedRow) {
-        int score = 10;
-        const auto seed = static_cast<SeedType>(card.seedType);
-        if (IsEmergencySeed(card.seedType)) {
-            score += FindClosestZombie(state, threatenedRow) == nullptr ? 15 : 110;
-        } else if (IsDefenseSeed(card.seedType)) {
-            score += CountPlantsInRow(state, threatenedRow) < 3 ? 90 : 25;
-        } else {
-            switch (seed) {
-                case SeedType::SEED_SUNFLOWER:
-                case SeedType::SEED_SUNSHROOM:
-                    score += 75;
-                    break;
-                case SeedType::SEED_PEASHOOTER:
-                case SeedType::SEED_REPEATER:
-                case SeedType::SEED_SNOWPEA:
-                case SeedType::SEED_THREEPEATER:
-                case SeedType::SEED_GATLINGPEA:
-                case SeedType::SEED_MELONPULT:
-                case SeedType::SEED_WINTERMELON:
-                    score += 70;
-                    break;
-                default:
-                    score += 35;
-                    break;
-            }
+        const SeedType seed = static_cast<SeedType>(card.seedType);
+        const VSZombieState *closest = FindClosestZombie(state, threatenedRow);
+        const bool hasZombie = closest != nullptr;
+        const bool closeThreat = hasZombie && (closest->positionX < 520.0f || closest->eating);
+        const bool heavyThreat = std::any_of(state.zombies.begin(), state.zombies.end(), [threatenedRow](const VSZombieState &zombie) {
+            return !zombie.dead && zombie.row == threatenedRow && IsHeavyZombie(zombie.zombieType);
+        });
+        const bool fastThreat = std::any_of(state.zombies.begin(), state.zombies.end(), [threatenedRow](const VSZombieState &zombie) {
+            return !zombie.dead && zombie.row == threatenedRow && IsFastZombie(zombie.zombieType);
+        });
+
+        int score = 20;
+        switch (seed) {
+            case SeedType::SEED_SQUASH:
+                // The replay uses Squash as the immediate answer to armored pushes and sled lanes.
+                score += heavyThreat ? 310 : (closeThreat ? 230 : 35);
+                break;
+            case SeedType::SEED_CHERRYBOMB:
+            case SeedType::SEED_JALAPENO:
+            case SeedType::SEED_ICESHROOM:
+            case SeedType::SEED_DOOMSHROOM:
+                score += heavyThreat ? 240 : (closeThreat ? 190 : 25);
+                break;
+            case SeedType::SEED_BONK_CHOY:
+                // Bonk Choy holds a selected lane against Pail, Bobsled, and football pressure.
+                score += hasZombie ? 105 : 40;
+                score += (heavyThreat || fastThreat) ? 150 : 0;
+                break;
+            case SeedType::SEED_SNOWPEA:
+                // Slow is the durable answer to the replay's Bobsled and Giga Football tempo.
+                score += hasZombie ? 95 : 45;
+                score += fastThreat ? 150 : 0;
+                score += heavyThreat ? 80 : 0;
+                break;
+            case SeedType::SEED_CELERY_STALKER:
+                score += hasZombie ? 130 : 35;
+                score += closeThreat ? 70 : 0;
+                break;
+            case SeedType::SEED_WALLNUT:
+            case SeedType::SEED_TALLNUT:
+            case SeedType::SEED_PUMPKINSHELL:
+                score += closeThreat ? 210 : 35;
+                score += CountPlantsInRow(state, threatenedRow) < 3 ? 65 : 0;
+                break;
+            case SeedType::SEED_SUNFLOWER:
+            case SeedType::SEED_SUNSHROOM:
+                score += hasZombie ? 5 : 115;
+                break;
+            case SeedType::SEED_PEASHOOTER:
+            case SeedType::SEED_REPEATER:
+            case SeedType::SEED_THREEPEATER:
+            case SeedType::SEED_GATLINGPEA:
+            case SeedType::SEED_MELONPULT:
+            case SeedType::SEED_WINTERMELON:
+                score += hasZombie ? 100 : 60;
+                break;
+            default:
+                score += IsEmergencySeed(card.seedType) ? (hasZombie ? 150 : 20) : 45;
+                break;
         }
         score -= card.cost / 50;
         return score;
@@ -254,7 +383,7 @@ public:
 
         const int threatenedRow = MostThreatenedRow(state);
         const VSZombieState *closest = FindClosestZombie(state, threatenedRow);
-        const bool underPressure = closest != nullptr && (closest->positionX < 480.0f || closest->eating);
+        const bool underPressure = closest != nullptr && (closest->positionX < 520.0f || closest->eating);
         const VSCardState *bestCard = nullptr;
         int bestScore = std::numeric_limits<int>::min();
         for (const VSCardState &card : state.seedBanks[0]) {
@@ -279,6 +408,12 @@ public:
         if (IsEmergencySeed(bestCard->seedType)) {
             targetColumn = closest == nullptr ? 4 : std::clamp(static_cast<int>(closest->positionX / 80.0f), 0, 5);
         }
+        if (seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER) {
+            targetColumn = closest == nullptr ? 3 : std::clamp(static_cast<int>(closest->positionX / 80.0f) - 1, 1, 5);
+        }
+        if (seed == SeedType::SEED_SNOWPEA) {
+            targetColumn = 2;
+        }
         if (seed == SeedType::SEED_COBCANNON) {
             targetColumn = 2;
         }
@@ -292,20 +427,56 @@ public:
 
 class ZombieVSAgent final : public BuiltinVSAgent {
     static bool IsTargetedSeed(std::uint16_t seed) {
-        return static_cast<SeedType>(seed) == SeedType::SEED_ZOMBIE_BUNGEE;
+        const SeedType seedType = static_cast<SeedType>(seed);
+        return seedType == SeedType::SEED_ZOMBIE_BUNGEE;
     }
 
     static int CardScore(const VSCardState &card, const VSGameState &state, int targetRow) {
-        int score = 20;
-        const auto seed = static_cast<SeedType>(card.seedType);
-        if (seed == SeedType::SEED_ZOMBIE_BUNGEE) {
-            score += std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); }) ? 180 : -60;
-        } else if (seed == SeedType::SEED_ZOMBIE_MOUND || seed == SeedType::SEED_ZOMBIE_GRAVESTONE) {
-            score += 85;
-        } else if (seed == SeedType::SEED_ZOMBIE_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) {
-            score += CountPlantsInRow(state, targetRow) * 8 + 80;
-        } else {
-            score += CountPlantsInRow(state, targetRow) * 5;
+        const SeedType seed = static_cast<SeedType>(card.seedType);
+        const bool hasPlants = std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); });
+        const bool hasSnowPea = HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, targetRow);
+        const bool hasBonkChoy = HasPlantTypeInRow(state, SeedType::SEED_BONK_CHOY, targetRow);
+        const bool hasWallnut = HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, targetRow) || HasPlantTypeInRow(state, SeedType::SEED_TALLNUT, targetRow);
+        const int plantCount = CountPlantsInRow(state, targetRow);
+
+        int score = 25;
+        switch (seed) {
+            case SeedType::SEED_ZOMBIE_BOBSLED:
+                // Sleds are sent where Snow Pea/Bonk Choy is buying the plants time.
+                score += plantCount * 16 + (hasSnowPea ? 190 : 0) + (hasBonkChoy ? 120 : 0);
+                break;
+            case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
+                score += plantCount * 12 + (hasSnowPea ? 115 : 0) + (hasWallnut ? 80 : 0);
+                break;
+            case SeedType::SEED_ZOMBIE_PAIL:
+                // Bucket armor is the cheap answer to lane plants and Snow Pea chip damage.
+                score += plantCount * 14 + (hasSnowPea ? 135 : 0) + (hasBonkChoy ? 100 : 0);
+                break;
+            case SeedType::SEED_ZOMBIE_GARGANTUAR:
+            case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
+            case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
+                score += plantCount * 18 + (hasWallnut ? 135 : 0) + (hasBonkChoy ? 100 : 0) + (hasSnowPea ? 75 : 0);
+                break;
+            case SeedType::SEED_ZOMBIE_PEA_HEAD:
+            case SeedType::SEED_ZOMBIE_NEWSPAPER:
+            case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
+                score += plantCount * 10 + (hasSnowPea ? 120 : 0);
+                break;
+            case SeedType::SEED_ZOMBIE_IMP:
+            case SeedType::SEED_ZOMBIE_DIGGER:
+                score += plantCount * 8 + (hasWallnut ? 90 : 0);
+                break;
+            case SeedType::SEED_ZOMBIE_BUNGEE:
+                score += hasPlants ? 220 : -80;
+                score += (hasWallnut || hasBonkChoy) ? 85 : 0;
+                break;
+            case SeedType::SEED_ZOMBIE_MOUND:
+            case SeedType::SEED_ZOMBIE_GRAVESTONE:
+                score += 95 + plantCount * 4;
+                break;
+            default:
+                score += plantCount * 7;
+                break;
         }
         score -= card.cost / 50;
         return score;
@@ -320,17 +491,20 @@ public:
             }
         }
 
-        const int targetRow = MostThreatenedRow(state);
         const VSCardState *bestCard = nullptr;
+        int targetRow = MostValuablePlantRow(state);
         int bestScore = std::numeric_limits<int>::min();
         for (const VSCardState &card : state.seedBanks[1]) {
             if (IsSlotBlocked(card.slot) || !IsReadyCard(card, state.zombieBrains)) {
                 continue;
             }
-            const int score = CardScore(card, state, targetRow);
-            if (bestCard == nullptr || score > bestScore) {
-                bestCard = &card;
-                bestScore = score;
+            for (int row = 0; row < state.rows; ++row) {
+                const int score = CardScore(card, state, row);
+                if (bestCard == nullptr || score > bestScore) {
+                    bestCard = &card;
+                    targetRow = row;
+                    bestScore = score;
+                }
             }
         }
         if (bestCard == nullptr) {
@@ -344,7 +518,14 @@ public:
                 if (IsDeadOrOutside(plant)) {
                     continue;
                 }
-                if (targetPlant == nullptr || plant.position.col > targetPlant->position.col) {
+                const int plantScore = PlantValueScore(plant) + static_cast<int>(plant.position.col) * 6
+                    + (plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_WALLNUT) ? 45 : 0)
+                    + (plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_BONK_CHOY) ? 40 : 0);
+                const int currentScore = targetPlant == nullptr ? std::numeric_limits<int>::min()
+                                                                 : PlantValueScore(*targetPlant) + static_cast<int>(targetPlant->position.col) * 6
+                                                                       + (targetPlant->seedType == static_cast<std::uint16_t>(SeedType::SEED_WALLNUT) ? 45 : 0)
+                                                                       + (targetPlant->seedType == static_cast<std::uint16_t>(SeedType::SEED_BONK_CHOY) ? 40 : 0);
+                if (targetPlant == nullptr || plantScore > currentScore) {
                     targetPlant = &plant;
                 }
             }
