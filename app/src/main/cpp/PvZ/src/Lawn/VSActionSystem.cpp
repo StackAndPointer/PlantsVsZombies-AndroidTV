@@ -24,6 +24,8 @@
 #include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 #include "PvZ/ReplaySystem.h"
+#include "PvZ/SexyAppFramework/Buffer.h"
+#include "PvZ/SexyAppFramework/SexyAppBase.h"
 
 #include <algorithm>
 #include <array>
@@ -34,6 +36,7 @@
 #include <iterator>
 #include <limits>
 #include <optional>
+#include <string_view>
 #include <utility>
 
 namespace vsai {
@@ -1064,6 +1067,170 @@ int CountZombieEconomy(const VSGameState &state) {
     }));
 }
 
+int StrategyBucket(int value) {
+    return value <= 0 ? 0 : value <= 2 ? 1 : value <= 4 ? 2 : 3;
+}
+
+int CountLivePlants(const VSGameState &state) {
+    return static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); }));
+}
+
+int CountPlantIncome(const VSGameState &state) {
+    return CountPlantType(state, SeedType::SEED_SUNFLOWER) + CountPlantType(state, SeedType::SEED_SUNSHROOM);
+}
+
+struct StrategyRule {
+    VSSide side = VSSide::Plants;
+    std::uint16_t seed = 0;
+    int phase = 0;
+    std::array<int, 4> buckets = {-1, -1, -1, -1};
+    int bonus = 0;
+};
+
+bool ParseStrategyInteger(std::string_view text, int &value) {
+    if (text.empty()) {
+        return false;
+    }
+    bool negative = false;
+    std::size_t offset = 0;
+    if (text.front() == '-') {
+        negative = true;
+        offset = 1;
+    }
+    if (offset == text.size()) {
+        return false;
+    }
+    int result = 0;
+    for (; offset < text.size(); ++offset) {
+        const char character = text[offset];
+        if (character < '0' || character > '9' || result > 1000000) {
+            return false;
+        }
+        result = result * 10 + character - '0';
+    }
+    value = negative ? -result : result;
+    return true;
+}
+
+class StrategyDatabase {
+    std::vector<StrategyRule> mRules;
+    bool mLoaded = false;
+
+    void Load() {
+        if (mLoaded || Sexy::gSexyAppBase == nullptr) {
+            return;
+        }
+        mLoaded = true;
+
+        Sexy::Buffer buffer;
+        if (!Sexy::gSexyAppBase->ReadBufferFromFile("addonFiles/data/vs_ai_strategy_db.txt", &buffer, false)) {
+            return;
+        }
+
+        const auto &data = buffer.mData;
+        bool validHeader = false;
+        std::size_t lineStart = 0;
+        while (lineStart < data.size()) {
+            std::size_t lineEnd = lineStart;
+            while (lineEnd < data.size() && data[lineEnd] != '\n' && data[lineEnd] != '\r') {
+                ++lineEnd;
+            }
+            const std::string_view line(reinterpret_cast<const char *>(data.data() + lineStart), lineEnd - lineStart);
+            lineStart = lineEnd;
+            while (lineStart < data.size() && (data[lineStart] == '\n' || data[lineStart] == '\r')) {
+                ++lineStart;
+            }
+
+            if (!validHeader) {
+                validHeader = line == "PVZ_VS_STRATEGY_DB|1";
+                if (!validHeader) {
+                    return;
+                }
+                continue;
+            }
+            if (line.empty() || line.front() == '#') {
+                continue;
+            }
+
+            std::array<std::string_view, 9> fields{};
+            std::size_t fieldStart = 0;
+            int fieldCount = 0;
+            for (std::size_t index = 0; index <= line.size() && fieldCount < static_cast<int>(fields.size()); ++index) {
+                if (index == line.size() || line[index] == '|') {
+                    fields[fieldCount++] = line.substr(fieldStart, index - fieldStart);
+                    fieldStart = index + 1;
+                }
+            }
+            if (fieldCount != static_cast<int>(fields.size())) {
+                continue;
+            }
+
+            StrategyRule rule{};
+            if (fields[0] == "plants") {
+                rule.side = VSSide::Plants;
+            } else if (fields[0] == "zombies") {
+                rule.side = VSSide::Zombies;
+            } else {
+                continue;
+            }
+            int seed = 0;
+            if (!ParseStrategyInteger(fields[1], seed) || seed < 0 || seed > std::numeric_limits<std::uint16_t>::max()
+                || !ParseStrategyInteger(fields[2], rule.phase)) {
+                continue;
+            }
+            rule.seed = static_cast<std::uint16_t>(seed);
+            bool validRule = ParseStrategyInteger(fields[3], rule.buckets[0]) && ParseStrategyInteger(fields[4], rule.buckets[1])
+                && ParseStrategyInteger(fields[5], rule.buckets[2]) && ParseStrategyInteger(fields[6], rule.buckets[3])
+                && ParseStrategyInteger(fields[7], rule.bonus);
+            if (!validRule || rule.phase < 0 || rule.phase > 2 || rule.bonus <= 0 || rule.bonus > 100) {
+                continue;
+            }
+            mRules.push_back(rule);
+        }
+    }
+
+public:
+    int Bonus(const VSGameState &state, VSSide side, SeedType seed, int targetRow) {
+        Load();
+        if (mRules.empty() || targetRow < 0 || targetRow >= state.rows) {
+            return 0;
+        }
+
+        const int ownEconomy = side == VSSide::Plants ? CountPlantIncome(state) : CountZombieEconomy(state);
+        const int opponentUnits = side == VSSide::Plants ? CountActiveZombies(state) : CountLivePlants(state);
+        const int ownLaneUnits = side == VSSide::Plants ? CountPlantsInRow(state, targetRow) : CountZombiesInRow(state, targetRow);
+        const int opponentLaneUnits = side == VSSide::Plants ? CountZombiesInRow(state, targetRow) : CountPlantsInRow(state, targetRow);
+        const int totalLiveUnits = CountLivePlants(state) + CountActiveZombies(state);
+        const int phase = ownEconomy < 3 && totalLiveUnits < 11 ? 0 : totalLiveUnits < 25 ? 1 : 2;
+        const std::array<int, 4> buckets = {
+            StrategyBucket(ownEconomy),
+            StrategyBucket(opponentUnits),
+            StrategyBucket(ownLaneUnits),
+            StrategyBucket(opponentLaneUnits),
+        };
+
+        int bestBonus = 0;
+        for (const StrategyRule &rule : mRules) {
+            if (rule.side != side || rule.seed != static_cast<std::uint16_t>(seed) || rule.phase != phase) {
+                continue;
+            }
+            bool matches = true;
+            for (std::size_t index = 0; index < buckets.size(); ++index) {
+                matches = matches && (rule.buckets[index] < 0 || rule.buckets[index] == buckets[index]);
+            }
+            if (matches) {
+                bestBonus = std::max(bestBonus, rule.bonus);
+            }
+        }
+        return bestBonus;
+    }
+};
+
+int StrategyBonus(const VSGameState &state, VSSide side, SeedType seed, int targetRow) {
+    static StrategyDatabase database;
+    return database.Bonus(state, side, seed, targetRow);
+}
+
 bool IsReadyCard(const VSCardState &card, int resource) {
     return card.seedType != static_cast<std::uint16_t>(SeedType::SEED_NONE) && card.active && !card.refreshing && card.refreshCounter <= 0 && card.cost <= resource;
 }
@@ -1254,15 +1421,21 @@ class PlantVSAgent final : public BuiltinVSAgent {
         if (target.col < 0 || target.row < 0) {
             return std::nullopt;
         }
+        const VSCardState *bestCard = nullptr;
+        int bestScore = std::numeric_limits<int>::min();
         for (const SeedType seedType : {SeedType::SEED_SUNFLOWER, SeedType::SEED_SUNSHROOM}) {
             if (const VSCardState *card = FindReadyCard(state, seedType); card != nullptr) {
                 if (state.plantSun - card->cost < protectedSun) {
                     continue;
                 }
-                return MakePlayAction(VSSide::Plants, *card, target, state.boardTick);
+                const int score = StrategyBonus(state, VSSide::Plants, seedType, target.row);
+                if (bestCard == nullptr || score > bestScore) {
+                    bestCard = card;
+                    bestScore = score;
+                }
             }
         }
-        return std::nullopt;
+        return bestCard == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *bestCard, target, state.boardTick));
     }
 
     std::optional<VSAction> TryGraveBuster(const VSGameState &state, int protectedSun) {
@@ -1325,6 +1498,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 score += std::max(0, 110 - existingOutput) * 2;
                 score -= existingOutput / 2;
                 score += SeedEconomyPressureOpportunity(state, seed, targetRow) * 2;
+                score += StrategyBonus(state, VSSide::Plants, seed, targetRow);
                 score += lane.danger >= 85 ? 55 : 0;
                 score += targetRow == row ? 25 : 0;
                 if (seed == SeedType::SEED_SNOWPEA) {
@@ -1855,6 +2029,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score -= 90;
             }
         }
+        score += StrategyBonus(state, VSSide::Zombies, seed, targetRow);
         score -= effectiveCost / 50;
         return score;
     }
