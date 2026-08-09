@@ -234,6 +234,29 @@ struct BuiltinAIDeckPlans {
 };
 
 BuiltinAIDeckPlans gBuiltinAIDeckPlans;
+int gLastBuiltinAIPlantProfile = -1;
+int gLastBuiltinAIZombieProfile = -1;
+
+int PickBuiltinAIPlantProfile() {
+    // The Bonk Choy + Snow Pea plan is a valid counter-tempo archetype, but
+    // it is narrower than the ranged pressure plans observed in the replays.
+    // Keep it available without making it appear as often as every other deck.
+    static constexpr int kPlantProfileWeights[] = {1, 3, 3, 3, 3, 3};
+    static_assert(std::size(kPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
+
+    int totalWeight = 0;
+    for (const int weight : kPlantProfileWeights) {
+        totalWeight += weight;
+    }
+    int ticket = Sexy::Rand(totalWeight);
+    for (int profile = 0; profile < static_cast<int>(std::size(kPlantProfileWeights)); ++profile) {
+        ticket -= kPlantProfileWeights[profile];
+        if (ticket < 0) {
+            return profile;
+        }
+    }
+    return static_cast<int>(std::size(kPlantProfileWeights) - 1);
+}
 
 void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
     if (screen == nullptr || screen->mApp == nullptr) {
@@ -245,8 +268,24 @@ void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
     }
 
     gBuiltinAIDeckPlans.app = screen->mApp;
-    gBuiltinAIDeckPlans.plantProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantDecks)));
+    gBuiltinAIDeckPlans.plantProfile = PickBuiltinAIPlantProfile();
     gBuiltinAIDeckPlans.zombieProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIZombieDecks)));
+    // A new chooser is a new match plan. Avoid repeating the same archetype
+    // when the engine's deterministic RNG starts consecutive local matches
+    // from the same seed.
+    if (std::size(kBuiltinAIPlantDecks) > 1 && gBuiltinAIDeckPlans.plantProfile == gLastBuiltinAIPlantProfile) {
+        gBuiltinAIDeckPlans.plantProfile = PickBuiltinAIPlantProfile();
+        if (gBuiltinAIDeckPlans.plantProfile == gLastBuiltinAIPlantProfile) {
+            gBuiltinAIDeckPlans.plantProfile = (gBuiltinAIDeckPlans.plantProfile + 1) % static_cast<int>(std::size(kBuiltinAIPlantDecks));
+        }
+    }
+    if (std::size(kBuiltinAIZombieDecks) > 1 && gBuiltinAIDeckPlans.zombieProfile == gLastBuiltinAIZombieProfile) {
+        gBuiltinAIDeckPlans.zombieProfile = (gBuiltinAIDeckPlans.zombieProfile + 1
+                                             + Sexy::Rand(static_cast<int>(std::size(kBuiltinAIZombieDecks) - 1)))
+            % static_cast<int>(std::size(kBuiltinAIZombieDecks));
+    }
+    gLastBuiltinAIPlantProfile = gBuiltinAIDeckPlans.plantProfile;
+    gLastBuiltinAIZombieProfile = gBuiltinAIDeckPlans.zombieProfile;
 }
 
 const SeedType *GetBuiltinAIDeckPriority(SeedChooserScreen *screen) {
@@ -410,6 +449,8 @@ bool HasBuiltinAIOpponentMetalTargets(SeedChooserScreen *screen) {
     return targetCount >= 2;
 }
 
+bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen);
+
 bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedType) {
     if (screen == nullptr || screen->mIsZombieChooser) {
         return true;
@@ -425,6 +466,13 @@ bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedTy
         // Magnet-shroom is nocturnal and has no value without Coffee Bean;
         // it is also too narrow when the opponent brings few magnet targets.
         return HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE) && HasBuiltinAIOpponentMetalTargets(screen);
+    }
+
+    if (seedType == SeedType::SEED_ICEBERG_LETTUCE) {
+        // Iceberg is a tempo/support card, not a standalone deck. Select it
+        // only after a real damage plant is already in the bank so a Ban or
+        // shuffled fallback cannot produce a Bonk/Iceberg-only opening.
+        return HasBuiltinAIPlantMainDamage(screen);
     }
 
     return true;

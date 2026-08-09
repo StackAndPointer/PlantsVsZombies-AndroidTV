@@ -650,26 +650,40 @@ int PlantThreatToEconomy(const VSPlantState &plant, const VSGridItemState &econo
     }
 
     const int rowDistance = std::abs(static_cast<int>(plant.position.row) - static_cast<int>(economy.position.row));
-    const int columnDistance = std::abs(static_cast<int>(plant.position.col) - static_cast<int>(economy.position.col));
     const SeedType seed = static_cast<SeedType>(plant.seedType);
     if (seed == SeedType::SEED_STARFRUIT) {
         // Starfruit fires in five directions and is the one plant that can
         // threaten a grave from an adjacent row as well as its own row.
         return rowDistance == 0 ? 145 : (rowDistance == 1 ? 75 : 0);
     }
-    if (seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER) {
-        return rowDistance == 0 && columnDistance <= 2 ? 125 : 0;
-    }
     if (seed == SeedType::SEED_GRAVEBUSTER) {
-        return rowDistance == 0 && columnDistance == 0 ? 250 : 0;
+        return rowDistance == 0 && plant.position.col == economy.position.col ? 250 : 0;
     }
     if (const int projectileThreat = StraightProjectileThreatToEconomy(plant, economy); projectileThreat > 0) {
         return projectileThreat;
     }
-    if (IsPlantCombatSeed(plant.seedType)) {
-        return rowDistance == 0 && plant.position.col < economy.position.col ? 45 : 0;
+    // Pults and mushrooms can lock onto VS graves. Keep this list explicit so
+    // melee plants (Bonk Choy, Celery Stalker, Chomper) never inflate grave
+    // threat when they cannot reach the zombie economy.
+    if (rowDistance != 0 || plant.position.col >= economy.position.col) {
+        return 0;
     }
-    return 0;
+    switch (seed) {
+        case SeedType::SEED_CABBAGEPULT:
+        case SeedType::SEED_KERNELPULT:
+        case SeedType::SEED_SPORESHROOM:
+            return 75;
+        case SeedType::SEED_FUMESHROOM:
+            return 90;
+        case SeedType::SEED_MELONPULT:
+            return 115;
+        case SeedType::SEED_WINTERMELON:
+            return 135;
+        case SeedType::SEED_GLOOMSHROOM:
+            return 100;
+        default:
+            return 0;
+    }
 }
 
 int StraightProjectileThreatScore(const VSGameState &state, int row) {

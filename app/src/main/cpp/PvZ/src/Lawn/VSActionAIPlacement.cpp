@@ -123,11 +123,20 @@ VSGridPosition FindZombieCell(const VSGameState &state, SeedType seed, int row) 
 
 VSGridPosition FindZombieEconomyCell(const VSGameState &state, int preferredRow) {
     preferredRow = std::clamp(preferredRow, 0, std::max(0, state.rows - 1));
+    auto HasBlockingGridItem = [&](VSGridPosition position) {
+        return std::any_of(state.gridItems.begin(), state.gridItems.end(), [position](const VSGridItemState &item) {
+            // VS creates a target marker at column 8 for every row. The
+            // engine permits a grave on that marker, so it must not consume
+            // the back-column economy slot in the AI's board snapshot.
+            return !item.dead && item.position.col == position.col && item.position.row == position.row
+                && item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE);
+        });
+    };
     for (int column = 8; column >= 6; --column) {
         for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
             const int row = (preferredRow + rowOffset) % state.rows;
             const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
-            if (!HasPlantAt(state, position) && !HasGridItemAt(state, position)) {
+            if (!HasPlantAt(state, position) && !HasBlockingGridItem(position)) {
                 return position;
             }
         }
