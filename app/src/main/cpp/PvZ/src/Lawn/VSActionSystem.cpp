@@ -2018,12 +2018,12 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += graveThreat >= 100 ? 90 : 0;
                 break;
             case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
-                // Unlike the true endgame giants, the recordings spend Giga
-                // Polevaulter from two graves onward to crack a developed
-                // lane before its repeatable damage becomes overwhelming.
+                // Giga Polevaulter can break a developed lane before true
+                // endgame, but two graves are not a stable enough economy to
+                // fund that commitment. Keep at least four income graves.
                 {
                     const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || hasPumpkinShell || sustainedOutput >= 80 || economyValue >= 120;
-                    score += economyCount >= 2 ? (hasBreakthroughTarget ? 250 : 15) : -100;
+                    score += economyCount >= 4 ? (hasBreakthroughTarget ? 250 : 15) : -160;
                     score += plantCount * 16 + sustainedOutput / 2 + economyValue / 3;
                     score += (hasWallnut ? 145 : 0) + (hasPumpkinShell ? 105 : 0) + (hasSnowPea ? 70 : 0);
                     score += targetLane.defense >= 120 ? 75 : 0;
