@@ -214,7 +214,7 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIDeckSize] = {
     {SEED_SUNSHROOM, SEED_SPORESHROOM, SEED_INSTANT_COFFEE, SEED_PUMPKINSHELL, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_STARFRUIT, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_REPEATER, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
-    {SEED_SUNFLOWER, SEED_CABBAGEPULT, SEED_PUMPKINSHELL, SEED_ICEBERG_LETTUCE, SEED_TORCHWOOD, SEED_CHERRYBOMB},
+    {SEED_SUNFLOWER, SEED_CABBAGEPULT, SEED_PUMPKINSHELL, SEED_ICEBERG_LETTUCE, SEED_SQUASH, SEED_CHERRYBOMB},
     {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_WALLNUT, SEED_SQUASH, SEED_IMP_PEAR, SEED_BONK_CHOY},
 };
 
@@ -320,6 +320,7 @@ bool IsBuiltinAIPlantMainDamageSeed(SeedType seedType) {
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:
         case SeedType::SEED_THREEPEATER:
+        case SeedType::SEED_SPLITPEA:
         case SeedType::SEED_CABBAGEPULT:
         case SeedType::SEED_KERNELPULT:
         case SeedType::SEED_MELONPULT:
@@ -330,6 +331,103 @@ bool IsBuiltinAIPlantMainDamageSeed(SeedType seedType) {
         default:
             return false;
     }
+}
+
+bool HasBuiltinAIPlantSeed(SeedChooserScreen *screen, SeedType seedType) {
+    if (screen == nullptr || screen->mIsZombieChooser || seedType == SeedType::SEED_NONE) {
+        return false;
+    }
+
+    const int seedIndex = screen->GetSeedPacketIndex(seedType);
+    return seedIndex >= 0 && seedIndex < screen->GetSeedStorageCount()
+        && screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK;
+}
+
+bool IsBuiltinAIPeaMainDamageSeed(SeedType seedType) {
+    switch (seedType) {
+        case SeedType::SEED_PEASHOOTER:
+        case SeedType::SEED_SNOWPEA:
+        case SeedType::SEED_REPEATER:
+        case SeedType::SEED_THREEPEATER:
+        case SeedType::SEED_SPLITPEA:
+        case SeedType::SEED_GATLINGPEA:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool HasBuiltinAIPlantPeaMain(SeedChooserScreen *screen) {
+    if (screen == nullptr || screen->mIsZombieChooser) {
+        return false;
+    }
+
+    const int storageCount = screen->GetSeedStorageCount();
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        if (screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
+            && IsBuiltinAIPeaMainDamageSeed(screen->GetPlantSeedType(seedIndex))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsBuiltinAIMagnetTargetZombieSeed(SeedType seedType) {
+    // These are the cards for which Magnet-shroom has a meaningful object to
+    // remove in VS. Keep this list aligned with Plant::UpdateMagnetShroom.
+    switch (seedType) {
+        case SeedType::SEED_ZOMBIE_PAIL:
+        case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
+        case SeedType::SEED_ZOMBIE_FOOTBALL:
+        case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX:
+        case SeedType::SEED_ZOMBIE_DIGGER:
+        case SeedType::SEED_ZOMBIE_POGO:
+        case SeedType::SEED_ZOMBIE_LADDER:
+        case SeedType::SEED_ZOMBIE_TRASHCAN:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool HasBuiltinAIOpponentMetalTargets(SeedChooserScreen *screen) {
+    if (screen == nullptr || screen->mIsZombieChooser || screen->mApp == nullptr || screen->mApp->mZombieChooserScreen == nullptr) {
+        return false;
+    }
+
+    SeedChooserScreen *zombieScreen = screen->mApp->mZombieChooserScreen;
+    int targetCount = 0;
+    const int storageCount = zombieScreen->GetSeedStorageCount();
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        if (zombieScreen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
+            && IsBuiltinAIMagnetTargetZombieSeed(zombieScreen->GetZombieSeedType(seedIndex))) {
+            ++targetCount;
+        }
+    }
+
+    // A single target is too narrow for a six-card VS deck. The shuffle
+    // selector uses the same two-card threshold for Magnet-shroom.
+    return targetCount >= 2;
+}
+
+bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedType) {
+    if (screen == nullptr || screen->mIsZombieChooser) {
+        return true;
+    }
+
+    if (seedType == SeedType::SEED_TORCHWOOD) {
+        // Torchwood amplifies peas, not pults or starfruit. Require the pea
+        // main card to be in the bank before allowing the support card.
+        return HasBuiltinAIPlantPeaMain(screen);
+    }
+
+    if (seedType == SeedType::SEED_MAGNETSHROOM) {
+        // Magnet-shroom is nocturnal and has no value without Coffee Bean;
+        // it is also too narrow when the opponent brings few magnet targets.
+        return HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE) && HasBuiltinAIOpponentMetalTargets(screen);
+    }
+
+    return true;
 }
 
 bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen) {
@@ -375,7 +473,8 @@ SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prior
 SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
     const bool alreadyHasMainDamage = HasBuiltinAIPlantMainDamage(screen);
     auto IsCompatible = [&](SeedType seedType) {
-        return IsBuiltinAICandidate(screen, seedType) && (!alreadyHasMainDamage || !IsBuiltinAIPlantMainDamageSeed(seedType));
+        return IsBuiltinAICandidate(screen, seedType) && IsBuiltinAIPlantSupportCandidate(screen, seedType)
+            && (!alreadyHasMainDamage || !IsBuiltinAIPlantMainDamageSeed(seedType));
     };
 
     if (priorityCount > 0) {
