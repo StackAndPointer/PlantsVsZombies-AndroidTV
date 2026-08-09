@@ -936,6 +936,45 @@ bool IsReadyCard(const VSCardState &card, int resource) {
     return card.seedType != static_cast<std::uint16_t>(SeedType::SEED_NONE) && card.active && !card.refreshing && card.refreshCounter <= 0 && card.cost <= resource;
 }
 
+bool IsAreaCounterSeed(SeedType seed);
+bool IsZombieGraveGuardSeed(SeedType seed);
+
+int ReadyPlantAreaCounterCount(const VSGameState &state) {
+    return static_cast<int>(std::count_if(state.seedBanks[0].begin(), state.seedBanks[0].end(), [&state](const VSCardState &card) {
+        return IsAreaCounterSeed(static_cast<SeedType>(card.seedType)) && IsReadyCard(card, state.plantSun);
+    }));
+}
+
+int PlantAreaCounterExposure(const VSGameState &state, int row) {
+    const int readyCounters = ReadyPlantAreaCounterCount(state);
+    const VSZombieState *closest = FindClosestZombie(state, row);
+    if (readyCounters == 0 || closest == nullptr) {
+        return 0;
+    }
+
+    const int zombieCount = CountZombiesInRow(state, row);
+    const int stackCount = LargestZombieStackInRow(state, row);
+    int score = 0;
+    if (zombieCount >= 2) {
+        score += 130 + (zombieCount - 2) * 90;
+    }
+    if (stackCount >= 2) {
+        score += 150 + (stackCount - 2) * 120;
+    }
+    // Once a front reaches the plant half, its exact position is already a
+    // legal Squash/Cherry target.  Do not make that trade easier for plants.
+    if (closest->positionX < 760.0f) {
+        score += 110;
+    }
+    return score * std::min(readyCounters, 2);
+}
+
+bool HasReadyZombieGraveGuard(const VSGameState &state) {
+    return std::any_of(state.seedBanks[1].begin(), state.seedBanks[1].end(), [&state](const VSCardState &card) {
+        return IsZombieGraveGuardSeed(static_cast<SeedType>(card.seedType)) && IsReadyCard(card, state.zombieBrains);
+    });
+}
+
 bool IsAreaCounterSeed(SeedType seed) {
     return seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO
         || seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM;
@@ -944,6 +983,25 @@ bool IsAreaCounterSeed(SeedType seed) {
 bool IsHeavyZombieSeed(SeedType seed) {
     return seed == SeedType::SEED_ZOMBIE_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR
         || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL;
+}
+
+bool IsZombieGraveGuardSeed(SeedType seed) {
+    switch (seed) {
+        case SeedType::SEED_ZOMBIE_TRASHCAN:
+        case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
+        case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
+        case SeedType::SEED_ZOMBIE_PAIL:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool HasZombieGraveGuardInRow(const VSGameState &state, int row) {
+    return HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_TRASHCAN)
+        || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_DOOR)
+        || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_WALLNUT_HEAD)
+        || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_PAIL);
 }
 
 class BuiltinVSAgent : public IVSAgent {
@@ -1462,7 +1520,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
         const int plantCount = CountPlantsInRow(state, targetRow);
         const int zombieCount = CountZombiesInRow(state, targetRow);
         const int graveProjectileThreat = StraightProjectileThreatScore(state, targetRow);
-        const bool hasTrashcanGuard = HasZombieTypeInRow(state, targetRow, ZombieType::ZOMBIE_TRASHCAN);
+        const bool hasGraveGuard = HasZombieGraveGuardInRow(state, targetRow);
         const int economyTarget = state.rows * 3;
 
         int score = 20 + ZombieLaneAttackScore(state, targetRow);
@@ -1490,7 +1548,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 // Trashcan is deliberately a slow front-line shield: a
                 // single one in the lane blocks pea-family fire before it
                 // reaches the graves behind it.
-                score += graveProjectileThreat > 0 && !hasTrashcanGuard ? 425 + graveProjectileThreat * 2 : -110;
+                score += graveProjectileThreat > 0 && !hasGraveGuard ? 425 + graveProjectileThreat * 2 : -110;
                 score += graveThreat >= 100 ? 90 : 0;
                 break;
             case SeedType::SEED_ZOMBIE_GARGANTUAR:
@@ -1539,13 +1597,21 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += plantCount * 7;
                 break;
         }
+        if (seed != SeedType::SEED_ZOMBIE_TRASHCAN && IsZombieGraveGuardSeed(seed)) {
+            // The replay with Screen Door has no Trashcan.  A Door, Pail or
+            // Wall-nut Head must still be allowed to screen direct fire from
+            // the zombie-side economy instead of treating Trashcan as unique.
+            score += graveProjectileThreat > 0 && !hasGraveGuard ? 260 + graveProjectileThreat : -35;
+        }
         const bool isEconomyOrTargetedSeed = seed == SeedType::SEED_ZOMBIE_GRAVESTONE || seed == SeedType::SEED_ZOMBIE_MOUND
             || seed == SeedType::SEED_ZOMBIE_BUNGEE;
-        if (zombieCount > 0 && !isEconomyOrTargetedSeed && !IsHeavyZombieSeed(seed) && seed != SeedType::SEED_ZOMBIE_TRASHCAN) {
+        const bool isEmergencyGraveGuard = IsZombieGraveGuardSeed(seed) && graveProjectileThreat > 0 && !hasGraveGuard;
+        if (zombieCount > 0 && !isEconomyOrTargetedSeed && !IsHeavyZombieSeed(seed) && !isEmergencyGraveGuard) {
             // A cheap/medium zombie is a probe, not a reason to feed the
             // same Ash target.  After one probe, opening another line with
             // Sunflowers is more valuable than reinforcing this line.
-            score -= 180 + (zombieCount - 1) * 170;
+            score -= 340 + (zombieCount - 1) * 210;
+            score -= PlantAreaCounterExposure(state, targetRow);
             if (EconomyPlantsInRow(state, targetRow) == 0) {
                 score -= 90;
             }
@@ -1573,9 +1639,8 @@ public:
         const int graveDefenseRow = MostThreatenedEconomyRow(state);
         const int graveDefenseScore = GraveThreatScore(state, graveDefenseRow);
         const int graveProjectileThreat = StraightProjectileThreatScore(state, graveDefenseRow);
-        const bool hasTrashcanGuard = HasZombieTypeInRow(state, graveDefenseRow, ZombieType::ZOMBIE_TRASHCAN);
-        const bool canDeployGraveGuard = graveProjectileThreat > 0 && !hasTrashcanGuard
-            && FindReadyCard(state, SeedType::SEED_ZOMBIE_TRASHCAN) != nullptr;
+        const bool hasGraveGuard = HasZombieGraveGuardInRow(state, graveDefenseRow);
+        const bool canDeployGraveGuard = graveProjectileThreat > 0 && !hasGraveGuard && HasReadyZombieGraveGuard(state);
         const int economicRow = LeastThreatenedEconomyRow(state);
         if (economyCount < economyTarget && !canDeployGraveGuard && graveDefenseScore < 250) {
             if (std::optional<VSAction> action = TryBuildEconomy(state, economicRow)) {
