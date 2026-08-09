@@ -206,16 +206,16 @@ bool IsChooserFilled(const SeedChooserScreen *screen) {
 
 constexpr int kBuiltinAIDeckSize = 6;
 
-// Each entry is a replay-derived or balanced VS archetype.  A profile is
-// chosen once per local match, then unavailable or banned cards fall through
-// to the generic legal-card picker below.
+// Each replay-derived deck has exactly one durable main damage plant.  The
+// plant fallback picker below preserves that invariant after a Ban instead of
+// filling the last slot with a second pea or pult family card.
 static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIDeckSize] = {
     {SEED_IMP_PEAR, SEED_BONK_CHOY, SEED_SQUASH, SEED_WALLNUT, SEED_SNOWPEA, SEED_SUNFLOWER},
-    {SEED_CHERRYBOMB, SEED_PUMPKINSHELL, SEED_SQUASH, SEED_INSTANT_COFFEE, SEED_SPORESHROOM, SEED_SUNSHROOM},
-    {SEED_SUNFLOWER, SEED_SUNSHROOM, SEED_STARFRUIT, SEED_WALLNUT, SEED_CHERRYBOMB, SEED_SQUASH},
+    {SEED_SUNSHROOM, SEED_SPORESHROOM, SEED_INSTANT_COFFEE, SEED_PUMPKINSHELL, SEED_CHERRYBOMB, SEED_SQUASH},
+    {SEED_SUNFLOWER, SEED_STARFRUIT, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_REPEATER, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
-    {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_CABBAGEPULT, SEED_PUMPKINSHELL, SEED_ICEBERG_LETTUCE, SEED_TORCHWOOD},
-    {SEED_SUNFLOWER, SEED_SUNSHROOM, SEED_REPEATER, SEED_WALLNUT, SEED_SQUASH, SEED_IMP_PEAR},
+    {SEED_SUNFLOWER, SEED_CABBAGEPULT, SEED_PUMPKINSHELL, SEED_ICEBERG_LETTUCE, SEED_TORCHWOOD, SEED_CHERRYBOMB},
+    {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_WALLNUT, SEED_SQUASH, SEED_IMP_PEAR, SEED_BONK_CHOY},
 };
 
 static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIDeckSize] = {
@@ -314,6 +314,38 @@ bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
                                       && screen->mBannedSeed[bannedSeedIndex].mSeedState != BannedSeedState::SEED_BANNED);
 }
 
+bool IsBuiltinAIPlantMainDamageSeed(SeedType seedType) {
+    switch (seedType) {
+        case SeedType::SEED_PEASHOOTER:
+        case SeedType::SEED_SNOWPEA:
+        case SeedType::SEED_REPEATER:
+        case SeedType::SEED_THREEPEATER:
+        case SeedType::SEED_CABBAGEPULT:
+        case SeedType::SEED_KERNELPULT:
+        case SeedType::SEED_MELONPULT:
+        case SeedType::SEED_STARFRUIT:
+        case SeedType::SEED_FUMESHROOM:
+        case SeedType::SEED_SPORESHROOM:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen) {
+    if (screen == nullptr || screen->mIsZombieChooser) {
+        return false;
+    }
+    const int storageCount = screen->GetSeedStorageCount();
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        if (screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
+            && IsBuiltinAIPlantMainDamageSeed(screen->GetPlantSeedType(seedIndex))) {
+            return true;
+        }
+    }
+    return false;
+}
+
 SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
     if (priorityCount > 0) {
         const std::size_t firstPriority = static_cast<std::size_t>(Sexy::Rand(static_cast<int>(priorityCount)));
@@ -334,6 +366,37 @@ SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prior
         const int seedIndex = (firstSeedIndex + offset) % storageCount;
         const SeedType seedType = screen->mIsZombieChooser ? screen->GetZombieSeedType(seedIndex) : screen->GetPlantSeedType(seedIndex);
         if (IsBuiltinAICandidate(screen, seedType)) {
+            return seedType;
+        }
+    }
+    return SeedType::SEED_NONE;
+}
+
+SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
+    const bool alreadyHasMainDamage = HasBuiltinAIPlantMainDamage(screen);
+    auto IsCompatible = [&](SeedType seedType) {
+        return IsBuiltinAICandidate(screen, seedType) && (!alreadyHasMainDamage || !IsBuiltinAIPlantMainDamageSeed(seedType));
+    };
+
+    if (priorityCount > 0) {
+        const std::size_t firstPriority = static_cast<std::size_t>(Sexy::Rand(static_cast<int>(priorityCount)));
+        for (std::size_t offset = 0; offset < priorityCount; ++offset) {
+            const SeedType seedType = prioritySeeds[(firstPriority + offset) % priorityCount];
+            if (IsCompatible(seedType)) {
+                return seedType;
+            }
+        }
+    }
+
+    const int storageCount = screen->GetSeedStorageCount();
+    if (storageCount <= 0) {
+        return SeedType::SEED_NONE;
+    }
+    const int firstSeedIndex = Sexy::Rand(storageCount);
+    for (int offset = 0; offset < storageCount; ++offset) {
+        const int seedIndex = (firstSeedIndex + offset) % storageCount;
+        const SeedType seedType = screen->GetPlantSeedType(seedIndex);
+        if (IsCompatible(seedType)) {
             return seedType;
         }
     }
@@ -924,7 +987,8 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
     }
 
     const SeedType selectedSeedType = mBanningPhase ? FindBuiltinAIBanCandidate(this, prioritySeeds, priorityCount)
-                                                    : FindBuiltinAICandidate(this, prioritySeeds, priorityCount);
+                                                    : (mIsZombieChooser ? FindBuiltinAICandidate(this, prioritySeeds, priorityCount)
+                                                                        : FindBuiltinAIPlantDeckCandidate(this, prioritySeeds, priorityCount));
     if (selectedSeedType == SeedType::SEED_NONE) {
         return;
     }

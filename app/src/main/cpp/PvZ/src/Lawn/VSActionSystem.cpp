@@ -289,6 +289,34 @@ int ZombieThreatWeight(std::uint16_t zombieType) {
     }
 }
 
+int ZombieFrontlineValueInRow(const VSGameState &state, int row) {
+    int score = 0;
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.row != row) {
+            continue;
+        }
+        score += ZombieThreatWeight(zombie.zombieType);
+        score += IsHeavyZombie(zombie.zombieType) ? 70 : 0;
+        score += zombie.shieldHealth > 0 ? 20 : 0;
+        score += zombie.eating ? 35 : 0;
+        score += zombie.positionX < 760.0f ? 25 : 0;
+    }
+    return score;
+}
+
+int MostValuableZombieFrontRow(const VSGameState &state) {
+    int bestRow = 0;
+    int bestScore = std::numeric_limits<int>::min();
+    for (int row = 0; row < state.rows; ++row) {
+        const int score = ZombieFrontlineValueInRow(state, row);
+        if (score > bestScore) {
+            bestScore = score;
+            bestRow = row;
+        }
+    }
+    return bestRow;
+}
+
 int ZombiePressureInRow(const VSGameState &state, int row) {
     int pressure = 0;
     for (const VSZombieState &zombie : state.zombies) {
@@ -947,6 +975,29 @@ bool IsIncomeRowSafe(const VSGameState &state, int row) {
     return true;
 }
 
+bool IsRangedOutputTradeUnfavorable(const VSGameState &state, int row) {
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.row != row) {
+            continue;
+        }
+        // A door or trashcan is designed to win a straight projectile trade.
+        // Put new repeatable fire on a different grave route and use a real
+        // answer for this lane when it becomes urgent.
+        switch (static_cast<ZombieType>(zombie.zombieType)) {
+            case ZombieType::ZOMBIE_TRASHCAN:
+            case ZombieType::ZOMBIE_DOOR:
+            case ZombieType::ZOMBIE_WALLNUT_HEAD:
+                return true;
+            default:
+                break;
+        }
+        if (zombie.eating || zombie.positionX < 640.0f) {
+            return true;
+        }
+    }
+    return false;
+}
+
 VSGridPosition FindSafeIncomeCell(const VSGameState &state, int preferredRow) {
     preferredRow = std::clamp(preferredRow, 0, std::max(0, state.rows - 1));
     for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
@@ -1574,6 +1625,9 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 if (seed == SeedType::SEED_SNOWPEA && HasPlantTypeInRow(state, seed, targetRow)) {
                     continue;
                 }
+                if (IsRangedOutputTradeUnfavorable(state, targetRow)) {
+                    continue;
+                }
 
                 const VSGridPosition target = FindPlantCellInExactRow(state, targetRow, 1, 3);
                 if (target.col < 0 || target.row < 0) {
@@ -1594,7 +1648,10 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 // another safe Sunflower after the opening has stabilized.
                 score += SeedEconomyPressureOpportunity(state, seed, targetRow) * 4;
                 score += StrategyBonus(state, VSSide::Plants, seed, targetRow);
-                score += lane.danger >= 85 ? 55 : 0;
+                // Local danger is handled by the counter branch. Durable
+                // output belongs on a safe route where it can threaten the
+                // grave economy instead of becoming a free blocker target.
+                score -= lane.danger >= 105 ? 80 : 0;
                 score += targetRow == row ? 25 : 0;
                 if (seed == SeedType::SEED_SNOWPEA) {
                     score += 45;
@@ -1758,6 +1815,9 @@ class PlantVSAgent final : public BuiltinVSAgent {
             }
 
             int row = danger.danger >= 105 ? danger.row : buildRow;
+            if (IsSustainedOutputSeed(seed) && IsRangedOutputTradeUnfavorable(state, row)) {
+                continue;
+            }
             int firstColumn = 2;
             int lastColumn = 3;
             if (emergencySeed) {
@@ -1834,9 +1894,8 @@ public:
             && HasReadyZombieBreakthroughCard(state);
         const int protectedSun = mustHoldCounterReserve ? areaCounterReserve : 0;
         const int zombieEconomyStrikeRow = MostVulnerableZombieEconomyRow(state);
-        const int zombieEconomyStrikeValue = ZombieEconomyAttackOpportunity(state, zombieEconomyStrikeRow);
-        const bool canStrikeZombieEconomy = incomePlantCount >= minimumIncomeBeforeOutput && zombieEconomyStrikeValue >= 220
-            && danger.danger < 150 && !immediateCounterThreat;
+        const bool canStrikeZombieEconomy = incomePlantCount >= minimumIncomeBeforeOutput && hasSustainedOutputSeed
+            && CountZombieEconomy(state) > 0 && danger.danger < 150 && !immediateCounterThreat;
         // Every two economy plants should fund one durable attacker, up to a
         // line per row.  This prevents the old all-Sunflower opening from
         // leaving the board without enough repeatable damage.
@@ -1980,7 +2039,7 @@ public:
         }
 
         if (danger.danger >= 105) {
-            if (!HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, danger.row)) {
+            if (!IsRangedOutputTradeUnfavorable(state, danger.row) && !HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, danger.row)) {
                 if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_SNOWPEA, danger.row, 1, 2)) {
                     return action;
                 }
@@ -2077,6 +2136,23 @@ class ZombieVSAgent final : public BuiltinVSAgent {
             return std::nullopt;
         }
         return MakePlayAction(VSSide::Zombies, *card, target, state.boardTick);
+    }
+
+    int LeastCommittedZombieRow(const VSGameState &state) const {
+        int bestRow = 0;
+        int bestScore = std::numeric_limits<int>::max();
+        for (int row = 0; row < state.rows; ++row) {
+            int economy = 0;
+            for (const VSGridItemState &item : state.gridItems) {
+                economy += !item.dead && item.position.row == row && IsZombieEconomyItem(item.gridItemType) ? 1 : 0;
+            }
+            const int score = economy * 130 + CountZombiesInRow(state, row) * 85 + GraveThreatScore(state, row) * 2;
+            if (score < bestScore) {
+                bestScore = score;
+                bestRow = row;
+            }
+        }
+        return bestRow;
     }
 
     static int BungeeTargetScore(const VSGameState &state, const VSPlantState &plant, int row) {
@@ -2265,8 +2341,13 @@ public:
         const int graveProjectileThreat = StraightProjectileThreatScore(state, graveDefenseRow);
         const bool hasGraveGuard = HasZombieGraveGuardInRow(state, graveDefenseRow);
         const bool canDeployGraveGuard = graveProjectileThreat > 0 && !hasGraveGuard && HasReadyZombieGraveGuard(state);
-        const int economicRow = LeastThreatenedEconomyRow(state);
-        if (economyCount < economyTarget && !canDeployGraveGuard && graveDefenseScore < 250) {
+        const int activePressureRows = CountActiveZombieRows(state);
+        const int survivingFrontRow = MostValuableZombieFrontRow(state);
+        const int survivingFrontValue = ZombieFrontlineValueInRow(state, survivingFrontRow);
+        const bool preserveSurvivingFront = economyCount >= state.rows && activePressureRows == 1 && survivingFrontValue >= 90;
+        const bool survivingFrontGuarded = HasZombieGraveGuardInRow(state, survivingFrontRow);
+        const int economicRow = economyCount < state.rows * 2 ? LeastCommittedZombieRow(state) : LeastThreatenedEconomyRow(state);
+        if (economyCount < economyTarget && !canDeployGraveGuard && graveDefenseScore < 250 && !preserveSurvivingFront) {
             if (std::optional<VSAction> action = TryBuildEconomy(state, economicRow)) {
                 return action;
             }
@@ -2274,7 +2355,6 @@ public:
 
         const int heavyZombieReserve = HeavyZombieReserve(state);
         const int heavyEconomyThreshold = HeavyZombieEconomyThreshold(state);
-        const int activePressureRows = CountActiveZombieRows(state);
         const bool saveForHeavy = heavyZombieReserve > 0 && economyCount >= heavyEconomyThreshold && activePressureRows >= 2
             && state.zombieBrains < heavyZombieReserve && graveDefenseScore < 100;
 
@@ -2337,13 +2417,25 @@ public:
                 if (graveDefenseUrgent && row == graveDefenseRow) {
                     score += 140;
                 }
+                if (preserveSurvivingFront && row == survivingFrontRow) {
+                    const SeedType seed = static_cast<SeedType>(card.seedType);
+                    if (IsZombieGraveGuardSeed(seed) && !survivingFrontGuarded) {
+                        // After two attack lanes have been cleared, keep the
+                        // remaining valuable front alive before restarting
+                        // economic expansion on an empty route.
+                        score += 320;
+                    } else if (!IsHeavyZombieSeed(seed) && seed != SeedType::SEED_ZOMBIE_GRAVESTONE
+                               && seed != SeedType::SEED_ZOMBIE_MOUND) {
+                        score += 75;
+                    }
+                }
                 if (saveForHeavy && !IsHeavyZombieSeed(static_cast<SeedType>(card.seedType))) {
                     // Keep the giant plan in mind without freezing the board:
                     // cheap probes remain legal, while medium-cost cards are
                     // less attractive until the heavy card can be afforded.
                     score += card.cost <= std::max(75, heavyZombieReserve / 3) ? 18 : -45;
                 }
-                if (!graveDefenseUrgent && row == mLastAttackRow) {
+                if (!graveDefenseUrgent && !preserveSurvivingFront && row == mLastAttackRow) {
                     // Do not keep feeding the same lane while another lane can
                     // accept a zombie. This penalty is intentionally skipped
                     // during urgent grave defense.
