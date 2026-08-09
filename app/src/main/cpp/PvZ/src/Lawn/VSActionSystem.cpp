@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <deque>
@@ -160,6 +161,7 @@ bool IsFastZombie(std::uint16_t zombieType) {
 bool IsDecisiveCounterZombie(std::uint16_t zombieType) {
     switch (static_cast<ZombieType>(zombieType)) {
         case ZombieType::ZOMBIE_BOBSLED:
+        case ZombieType::ZOMBIE_ZAMBONI:
         case ZombieType::ZOMBIE_FOOTBALL:
         case ZombieType::ZOMBIE_POLEVAULTER:
         case ZombieType::ZOMBIE_GARGANTUAR:
@@ -198,6 +200,25 @@ int LargestZombieStackInRow(const VSGameState &state, int row) {
         largestStack = std::max(largestStack, stackSize);
     }
     return largestStack;
+}
+
+int LargestCherryBombClusterInRow(const VSGameState &state, int row) {
+    constexpr float kCherryBombRadius = 115.0f;
+    int largestCluster = 0;
+    for (const VSZombieState &anchor : state.zombies) {
+        if (anchor.dead || anchor.row != row) {
+            continue;
+        }
+
+        int clusterSize = 0;
+        for (const VSZombieState &zombie : state.zombies) {
+            if (!zombie.dead && zombie.row == row && std::abs(zombie.positionX - anchor.positionX) <= kCherryBombRadius) {
+                ++clusterSize;
+            }
+        }
+        largestCluster = std::max(largestCluster, clusterSize);
+    }
+    return largestCluster;
 }
 
 int ZombieThreatWeight(std::uint16_t zombieType);
@@ -241,6 +262,7 @@ int ZombieThreatWeight(std::uint16_t zombieType) {
         case ZombieType::ZOMBIE_GIGA_FOOTBALL:
             return 115;
         case ZombieType::ZOMBIE_BOBSLED:
+        case ZombieType::ZOMBIE_ZAMBONI:
         case ZombieType::ZOMBIE_FOOTBALL:
         case ZombieType::ZOMBIE_WALLNUT_HEAD:
             return 80;
@@ -705,6 +727,9 @@ VSGridPosition FindZombieEconomyCell(const VSGameState &state, int preferredRow)
 VSGridPosition FindZombieMoundCell(const VSGameState &state, int row) {
     const VSGridItemState *bestItem = nullptr;
     int bestScore = std::numeric_limits<int>::min();
+    const bool hasUpgradeableMound = std::any_of(state.gridItems.begin(), state.gridItems.end(), [](const VSGridItemState &item) {
+        return !item.dead && item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_BURIAL_MOUND) && item.level < 4;
+    });
     for (const VSGridItemState &item : state.gridItems) {
         if (item.dead || item.position.row != row) {
             continue;
@@ -712,11 +737,13 @@ VSGridPosition FindZombieMoundCell(const VSGameState &state, int row) {
 
         int score = std::numeric_limits<int>::min();
         if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_GRAVESTONE)) {
-            // The first mound upgrade turns a basic grave into a stronger,
-            // income-producing burial mound.
-            score = 260;
+            // Establish one mound first, then retain its accumulated upgrade
+            // value instead of spreading every mound card across new graves.
+            if (!hasUpgradeableMound) {
+                score = 260;
+            }
         } else if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_BURIAL_MOUND) && item.level < 4) {
-            score = 210 - item.level * 25;
+            score = 360 + item.level * 80;
         }
         if (score > bestScore) {
             bestItem = &item;
@@ -965,9 +992,9 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 continue;
             }
 
-            // Squash has a dedicated same-row counter path in Decide(). It
-            // must never become a generic emergency filler in another lane.
-            if (seed == SeedType::SEED_SQUASH) {
+            // Instant counters are selected by their dedicated target logic;
+            // they must never become generic emergency fillers in another lane.
+            if (seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB) {
                 continue;
             }
 
@@ -1025,6 +1052,7 @@ public:
         const VSZombieState *counterClosest = FindClosestZombie(state, counterRow);
         const int counterZombieCount = CountZombiesInRow(state, counterRow);
         const int counterStackCount = LargestZombieStackInRow(state, counterRow);
+        const int counterCherryClusterCount = LargestCherryBombClusterInRow(state, counterRow);
         const PlantLaneAssessment counterLane = AssessPlantLane(state, counterRow);
         const int counterCombatPlants = static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [counterRow](const VSPlantState &plant) {
             return !IsDeadOrOutside(plant) && plant.position.row == counterRow && IsPlantCombatSeed(plant.seedType);
@@ -1038,6 +1066,8 @@ public:
         const bool earlySingleBucket = state.boardTick < 32000 && counterZombieCount == 1
             && HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_PAIL) && counterCombatPlants == 0 && counterLane.plantCount <= 2;
         const bool zombieCluster = hasActiveZombie && counterStackCount >= 2;
+        const bool cherryThreat = counterClosest != nullptr && counterCherryClusterCount >= 2
+            && (counterClosest->eating || counterClosest->positionX < 650.0f);
         const bool squashThreat = zombieCluster || hasSquashPriorityZombie || (hasGargantuar && counterClosest != nullptr
             && (counterClosest->eating || counterClosest->positionX < 560.0f)) || earlySingleBucket;
         const bool impPearThreat = hasGargantuar && counterClosest != nullptr
@@ -1055,7 +1085,7 @@ public:
                 return action;
             }
         }
-        if (zombieCluster && counterClosest != nullptr && !HasPlantTypeInRow(state, SeedType::SEED_CHERRYBOMB, counterRow)) {
+        if (cherryThreat && !HasPlantTypeInRow(state, SeedType::SEED_CHERRYBOMB, counterRow)) {
             if (std::optional<VSAction> action = TryCounterPlant(state, SeedType::SEED_CHERRYBOMB, counterRow, 3)) {
                 return action;
             }
