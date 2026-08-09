@@ -445,6 +445,26 @@ int PlantValueScore(const VSPlantState &plant) {
         case SeedType::SEED_SNOWPEA:
             score += 90;
             break;
+        case SeedType::SEED_GATLINGPEA:
+        case SeedType::SEED_WINTERMELON:
+        case SeedType::SEED_GLOOMSHROOM:
+            score += 135;
+            break;
+        case SeedType::SEED_MELONPULT:
+        case SeedType::SEED_THREEPEATER:
+        case SeedType::SEED_REPEATER:
+            score += 95;
+            break;
+        case SeedType::SEED_FUMESHROOM:
+        case SeedType::SEED_CABBAGEPULT:
+        case SeedType::SEED_KERNELPULT:
+            score += 75;
+            break;
+        case SeedType::SEED_PEASHOOTER:
+        case SeedType::SEED_CACTUS:
+        case SeedType::SEED_SPLITPEA:
+            score += 55;
+            break;
         case SeedType::SEED_BONK_CHOY:
         case SeedType::SEED_CELERY_STALKER:
             score += 75;
@@ -555,6 +575,45 @@ int CountSustainedOutputPlants(const VSGameState &state) {
     return static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) {
         return !IsDeadOrOutside(plant) && IsSustainedOutputSeed(static_cast<SeedType>(plant.seedType));
     }));
+}
+
+int SustainedOutputScoreInRow(const VSGameState &state, int row) {
+    int score = 0;
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant) || plant.position.row != row) {
+            continue;
+        }
+
+        const SeedType seed = static_cast<SeedType>(plant.seedType);
+        int plantScore = SustainedOutputValue(seed);
+        if (seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER) {
+            plantScore = 55;
+        } else if (seed == SeedType::SEED_CHOMPER) {
+            plantScore = 65;
+        }
+        if (plantScore == 0) {
+            continue;
+        }
+        const int healthRatio = plant.maxHealth > 0 ? std::clamp(plant.health * 100 / plant.maxHealth, 0, 100) : 50;
+        // A sleeping mushroom is an investment, but does not yet hold a lane.
+        score += plantScore * (plant.asleep ? 25 : healthRatio) / 100;
+    }
+    return score;
+}
+
+int PlantEconomyValueInRow(const VSGameState &state, int row) {
+    int score = 0;
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant) || plant.position.row != row || !IsPlantEconomySeed(plant.seedType)) {
+            continue;
+        }
+        const int healthRatio = plant.maxHealth > 0 ? std::clamp(plant.health * 100 / plant.maxHealth, 0, 100) : 50;
+        score += 70 * healthRatio / 100;
+        // A rear economy plant takes longer to replace than a disposable
+        // front filler and is a better route to protect with lasting fire.
+        score += std::max(0, 3 - static_cast<int>(plant.position.col)) * 8;
+    }
+    return score;
 }
 
 bool HasSustainedOutputSeed(const VSGameState &state) {
@@ -980,6 +1039,27 @@ bool IsAreaCounterSeed(SeedType seed) {
         || seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM;
 }
 
+bool IsZombieBreakthroughSeed(SeedType seed) {
+    switch (seed) {
+        case SeedType::SEED_ZOMBIE_BOBSLED:
+        case SeedType::SEED_ZOMBONI:
+        case SeedType::SEED_ZOMBIE_FOOTBALL:
+        case SeedType::SEED_ZOMBIE_GARGANTUAR:
+        case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
+        case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
+        case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool HasReadyZombieBreakthroughCard(const VSGameState &state) {
+    return std::any_of(state.seedBanks[1].begin(), state.seedBanks[1].end(), [&state](const VSCardState &card) {
+        return IsZombieBreakthroughSeed(static_cast<SeedType>(card.seedType)) && IsReadyCard(card, state.zombieBrains);
+    });
+}
+
 bool IsHeavyZombieSeed(SeedType seed) {
     return seed == SeedType::SEED_ZOMBIE_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR
         || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL;
@@ -1096,46 +1176,73 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return std::nullopt;
     }
 
-    std::optional<VSAction> TryIncomePlant(const VSGameState &state, int row) {
+    std::optional<VSAction> TryIncomePlant(const VSGameState &state, int row, int protectedSun) {
         const VSGridPosition target = FindSafeIncomeCell(state, row);
         if (target.col < 0 || target.row < 0) {
             return std::nullopt;
         }
         for (const SeedType seedType : {SeedType::SEED_SUNFLOWER, SeedType::SEED_SUNSHROOM}) {
             if (const VSCardState *card = FindReadyCard(state, seedType); card != nullptr) {
+                if (state.plantSun - card->cost < protectedSun) {
+                    continue;
+                }
                 return MakePlayAction(VSSide::Plants, *card, target, state.boardTick);
             }
         }
         return std::nullopt;
     }
 
-    std::optional<VSAction> TrySustainedOutputPlant(const VSGameState &state, int row) {
+    std::optional<VSAction> TrySustainedOutputPlant(const VSGameState &state, int row, int protectedSun) {
         const VSCardState *bestCard = nullptr;
         VSGridPosition bestTarget{};
         int bestScore = std::numeric_limits<int>::min();
         for (const VSCardState &card : state.seedBanks[0]) {
-            if (IsSlotBlocked(card.slot) || !IsReadyCard(card, state.plantSun)) {
+            if (IsSlotBlocked(card.slot) || !IsReadyCard(card, state.plantSun) || state.plantSun - card.cost < protectedSun) {
                 continue;
             }
 
             const SeedType seed = static_cast<SeedType>(card.seedType);
-            if (!IsSustainedOutputSeed(seed) || (seed == SeedType::SEED_SNOWPEA && HasPlantTypeInRow(state, seed, row))) {
+            if (!IsSustainedOutputSeed(seed)) {
                 continue;
             }
 
-            const VSGridPosition target = FindPlantCellInExactRow(state, row, 1, 3);
-            if (target.col < 0 || target.row < 0) {
-                continue;
-            }
+            for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
+                const int targetRow = (row + rowOffset) % state.rows;
+                if (seed == SeedType::SEED_SNOWPEA && HasPlantTypeInRow(state, seed, targetRow)) {
+                    continue;
+                }
 
-            int score = SustainedOutputValue(seed) * 3 - card.cost / 3;
-            score += seed == SeedType::SEED_SNOWPEA ? 45 : 0;
-            score += seed == SeedType::SEED_STARFRUIT ? 50 : 0;
-            score += seed == SeedType::SEED_SPORESHROOM ? 35 : 0;
-            if (bestCard == nullptr || score > bestScore) {
-                bestCard = &card;
-                bestTarget = target;
-                bestScore = score;
+                const VSGridPosition target = FindPlantCellInExactRow(state, targetRow, 1, 3);
+                if (target.col < 0 || target.row < 0) {
+                    continue;
+                }
+
+                const PlantLaneAssessment lane = AssessPlantLane(state, targetRow);
+                const int existingOutput = SustainedOutputScoreInRow(state, targetRow);
+                int score = SustainedOutputValue(seed) * 3 - card.cost / 3;
+                // The recordings invest firepower behind established sun
+                // rows.  This protects sunk economy while avoiding a full
+                // one-lane turtle: existing output lowers the next score.
+                score += PlantEconomyValueInRow(state, targetRow) * 2;
+                score += std::max(0, 110 - existingOutput) * 2;
+                score -= existingOutput / 2;
+                score += lane.danger >= 85 ? 55 : 0;
+                score += targetRow == row ? 25 : 0;
+                if (seed == SeedType::SEED_SNOWPEA) {
+                    score += 45;
+                }
+                if (seed == SeedType::SEED_STARFRUIT) {
+                    const int centerDistance = std::abs(targetRow * 2 - (state.rows - 1));
+                    score += 50 + (state.rows - centerDistance) * 8;
+                }
+                if (seed == SeedType::SEED_SPORESHROOM) {
+                    score += 35;
+                }
+                if (bestCard == nullptr || score > bestScore) {
+                    bestCard = &card;
+                    bestTarget = target;
+                    bestScore = score;
+                }
             }
         }
         return bestCard == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *bestCard, bestTarget, state.boardTick));
@@ -1310,6 +1417,9 @@ public:
         const int areaCounterReserve = AreaCounterReserve(state);
         const int incomeExpansionTarget = state.rows * 3;
         const bool immediateCounterThreat = squashThreat || impPearThreat;
+        const bool mustHoldCounterReserve = areaCounterReserve > 0 && state.plantSun >= areaCounterReserve
+            && HasReadyZombieBreakthroughCard(state);
+        const int protectedSun = mustHoldCounterReserve ? areaCounterReserve : 0;
         // Every two economy plants should fund one durable attacker, up to a
         // line per row.  This prevents the old all-Sunflower opening from
         // leaving the board without enough repeatable damage.
@@ -1348,11 +1458,11 @@ public:
 
         if (hasIncomeSeed && incomePlantCount < openingIncomeTarget && danger.danger < 150) {
             if (incomePlantCount >= minimumIncomeBeforeOutput && needsSustainedOutput) {
-                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state))) {
+                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
                     return action;
                 }
             }
-            if (std::optional<VSAction> action = TryIncomePlant(state, LeastDevelopedPlantRow(state))) {
+            if (std::optional<VSAction> action = TryIncomePlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
                 return action;
             }
             // Safe but unaffordable: wait for sun instead of spending a
@@ -1368,11 +1478,11 @@ public:
         const bool canExpandIncome = danger.danger < 105 || (counterCombatPlants > 0 && danger.danger < 140);
         if (hasIncomeSeed && hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && canExpandIncome) {
             if (needsSustainedOutput) {
-                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state))) {
+                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
                     return action;
                 }
             }
-            if (std::optional<VSAction> action = TryIncomePlant(state, LeastDevelopedPlantRow(state))) {
+            if (std::optional<VSAction> action = TryIncomePlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
                 return action;
             }
         }
@@ -1380,23 +1490,23 @@ public:
         if (!hasActiveZombie) {
             const int buildRow = LeastDevelopedPlantRow(state);
             if (hasIncomeSeed && incomePlantCount < minimumIncomeBeforeOutput) {
-                if (std::optional<VSAction> action = TryIncomePlant(state, buildRow)) {
+                if (std::optional<VSAction> action = TryIncomePlant(state, buildRow, protectedSun)) {
                     return action;
                 }
             }
             if (needsSustainedOutput) {
-                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, buildRow)) {
+                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, buildRow, protectedSun)) {
                     return action;
                 }
             }
             if (hasIncomeSeed && incomePlantCount < openingIncomeTarget + 2) {
-                if (std::optional<VSAction> action = TryIncomePlant(state, buildRow)) {
+                if (std::optional<VSAction> action = TryIncomePlant(state, buildRow, protectedSun)) {
                     return action;
                 }
             }
             // Once the replay-like economy is established, pre-build only a
             // combat plant. Nuts and instant counters wait for a visible lane.
-            if (std::optional<VSAction> action = TrySustainedOutputPlant(state, buildRow)) {
+            if (std::optional<VSAction> action = TrySustainedOutputPlant(state, buildRow, protectedSun)) {
                 return action;
             }
             if (!HasPlantTypeInRow(state, SeedType::SEED_BONK_CHOY, buildRow)) {
@@ -1429,7 +1539,7 @@ public:
         }
 
         const int buildRow = LeastDevelopedPlantRow(state);
-        if (std::optional<VSAction> action = TrySustainedOutputPlant(state, buildRow)) {
+        if (std::optional<VSAction> action = TrySustainedOutputPlant(state, buildRow, protectedSun)) {
             return action;
         }
         if (!HasPlantTypeInRow(state, SeedType::SEED_BONK_CHOY, buildRow)) {
@@ -1443,7 +1553,7 @@ public:
             }
         }
         if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget) {
-            return TryIncomePlant(state, buildRow);
+            return TryIncomePlant(state, buildRow, protectedSun);
         }
         return TryFallbackPlant(state, danger, buildRow);
     }
@@ -1522,6 +1632,10 @@ class ZombieVSAgent final : public BuiltinVSAgent {
         const int graveProjectileThreat = StraightProjectileThreatScore(state, targetRow);
         const bool hasGraveGuard = HasZombieGraveGuardInRow(state, targetRow);
         const int economyTarget = state.rows * 3;
+        const int sustainedOutput = SustainedOutputScoreInRow(state, targetRow);
+        const int economyValue = PlantEconomyValueInRow(state, targetRow);
+        const PlantLaneAssessment targetLane = AssessPlantLane(state, targetRow);
+        const int areaCounterExposure = PlantAreaCounterExposure(state, targetRow);
 
         int score = 20 + ZombieLaneAttackScore(state, targetRow);
         const int graveThreat = GraveThreatScore(state, targetRow);
@@ -1531,18 +1645,18 @@ class ZombieVSAgent final : public BuiltinVSAgent {
         switch (seed) {
             case SeedType::SEED_ZOMBIE_BOBSLED:
                 // After the opening graves, the replay's first proactive pressure is Bobsled into a held lane.
-                score += 95 + plantCount * 16 + (hasSnowPea ? 190 : 0) + (hasBonkChoy ? 120 : 0);
+                score += 95 + plantCount * 16 + sustainedOutput / 2 + economyValue / 3 + (hasSnowPea ? 190 : 0) + (hasBonkChoy ? 120 : 0);
                 break;
             case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
-                score += 80 + plantCount * 12 + (hasSnowPea ? 115 : 0) + (hasWallnut ? 80 : 0);
+                score += 80 + plantCount * 12 + sustainedOutput / 3 + (hasSnowPea ? 115 : 0) + (hasWallnut ? 80 : 0);
                 break;
             case SeedType::SEED_ZOMBIE_PAIL:
-                score += 65 + plantCount * 14 + (hasSnowPea ? 135 : 0) + (hasBonkChoy ? 100 : 0);
+                score += 65 + plantCount * 14 + sustainedOutput / 2 + economyValue / 4 + (hasSnowPea ? 135 : 0) + (hasBonkChoy ? 100 : 0);
                 break;
             case SeedType::SEED_ZOMBONI:
                 // The ice trail makes Zomboni a strong answer to protected,
                 // developed lanes, matching the second replay's breakthrough.
-                score += 115 + plantCount * 18 + (hasWallnut ? 135 : 0) + (hasSnowPea ? 90 : 0);
+                score += 115 + plantCount * 18 + sustainedOutput / 2 + economyValue / 3 + (hasWallnut ? 135 : 0) + (hasSnowPea ? 90 : 0);
                 break;
             case SeedType::SEED_ZOMBIE_TRASHCAN:
                 // Trashcan is deliberately a slow front-line shield: a
@@ -1554,19 +1668,28 @@ class ZombieVSAgent final : public BuiltinVSAgent {
             case SeedType::SEED_ZOMBIE_GARGANTUAR:
             case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
             case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
-                // Once the grave economy is online, this is the decisive
-                // release card, but do not spend it into an empty lane.
-                score += economyCount >= 4 ? ((zombieCount >= 2 || plantCount >= 3 || graveThreat >= 120) ? 270 : 65) : -140;
-                score += plantCount * 18 + (hasWallnut ? 135 : 0) + (hasBonkChoy ? 100 : 0) + (hasSnowPea ? 75 : 0);
+                // Heavy cards are release cards, not automatic reinforcements.
+                // A human-like commit seeks a defended economic line to force
+                // several answers, and avoids walking a giant into a formed
+                // Ash cluster merely because friendly zombies are already there.
+                {
+                    const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || sustainedOutput >= 100 || economyValue >= 150;
+                    score += economyCount >= 4 ? (hasBreakthroughTarget ? 285 : 35) : -140;
+                    score += plantCount * 18 + sustainedOutput / 2 + economyValue / 3;
+                    score += (hasWallnut ? 135 : 0) + (hasBonkChoy ? 100 : 0) + (hasSnowPea ? 75 : 0);
+                    score += targetLane.defense >= 150 ? 90 : 0;
+                    score -= areaCounterExposure / 2;
+                    score -= zombieCount >= 2 ? 125 : 0;
+                }
                 break;
             case SeedType::SEED_ZOMBIE_PEA_HEAD:
             case SeedType::SEED_ZOMBIE_NEWSPAPER:
             case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
-                score += plantCount * 10 + (hasSnowPea ? 120 : 0);
+                score += plantCount * 10 + sustainedOutput / 3 + economyValue / 4 + (hasSnowPea ? 120 : 0);
                 break;
             case SeedType::SEED_ZOMBIE_IMP:
             case SeedType::SEED_ZOMBIE_DIGGER:
-                score += plantCount * 8 + (hasWallnut ? 90 : 0);
+                score += plantCount * 8 + sustainedOutput / 4 + economyValue / 2 + (hasWallnut ? 90 : 0);
                 break;
             case SeedType::SEED_ZOMBIE_BUNGEE:
                 score += hasPlants ? 220 : -80;
@@ -1594,7 +1717,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += 65 + plantCount * 8 + (hasSnowPea ? 75 : 0);
                 break;
             default:
-                score += plantCount * 7;
+                score += plantCount * 7 + sustainedOutput / 4 + economyValue / 4;
                 break;
         }
         if (seed != SeedType::SEED_ZOMBIE_TRASHCAN && IsZombieGraveGuardSeed(seed)) {
@@ -1611,7 +1734,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
             // same Ash target.  After one probe, opening another line with
             // Sunflowers is more valuable than reinforcing this line.
             score -= 340 + (zombieCount - 1) * 210;
-            score -= PlantAreaCounterExposure(state, targetRow);
+            score -= areaCounterExposure;
             if (EconomyPlantsInRow(state, targetRow) == 0) {
                 score -= 90;
             }
@@ -1732,7 +1855,11 @@ public:
         if (!target.has_value()) {
             return std::nullopt;
         }
-        mLastAttackRow = targetRow;
+        const SeedType chosenSeed = static_cast<SeedType>(bestCard->seedType);
+        if (chosenSeed != SeedType::SEED_ZOMBIE_GRAVESTONE && chosenSeed != SeedType::SEED_ZOMBIE_MOUND
+            && chosenSeed != SeedType::SEED_ZOMBIE_BUNGEE) {
+            mLastAttackRow = targetRow;
+        }
         return MakePlayAction(VSSide::Zombies, *bestCard, *target, state.boardTick);
     }
 };
