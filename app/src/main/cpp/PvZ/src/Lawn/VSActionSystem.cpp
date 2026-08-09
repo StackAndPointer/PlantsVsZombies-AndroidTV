@@ -1270,6 +1270,11 @@ bool IsHeavyZombieSeed(SeedType seed) {
         || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL || seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER;
 }
 
+bool IsLateGameHeavyZombieSeed(SeedType seed) {
+    return seed == SeedType::SEED_ZOMBIE_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR
+        || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL;
+}
+
 bool IsZombieGraveGuardSeed(SeedType seed) {
     switch (seed) {
         case SeedType::SEED_ZOMBIE_TRASHCAN:
@@ -1575,9 +1580,9 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return bestPlant == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, bestPlant->position, state.boardTick));
     }
 
-    std::optional<VSAction> TryPumpkinShell(const VSGameState &state, int row) {
+    std::optional<VSAction> TryPumpkinShell(const VSGameState &state, int row, int protectedSun) {
         const VSCardState *card = FindReadyCard(state, SeedType::SEED_PUMPKINSHELL);
-        if (card == nullptr) {
+        if (card == nullptr || state.plantSun - card->cost < protectedSun) {
             return std::nullopt;
         }
 
@@ -1620,7 +1625,8 @@ class PlantVSAgent final : public BuiltinVSAgent {
 
             const SeedType seed = static_cast<SeedType>(card.seedType);
             if (seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_SUNSHROOM || seed == SeedType::SEED_IMP_PEAR
-                || seed == SeedType::SEED_INSTANT_COFFEE || seed == SeedType::SEED_PUMPKINSHELL) {
+                || seed == SeedType::SEED_INSTANT_COFFEE || seed == SeedType::SEED_PUMPKINSHELL || seed == SeedType::SEED_ICEBERG_LETTUCE
+                || seed == SeedType::SEED_TORCHWOOD) {
                 continue;
             }
             const bool emergencySeed = seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO
@@ -1849,6 +1855,14 @@ public:
             return TryFallbackPlant(state, danger, buildRow);
         }
 
+        const bool hasRangedHarasser = HasZombieTypeInRow(state, danger.row, ZombieType::ZOMBIE_PEA_HEAD)
+            || HasZombieTypeInRow(state, danger.row, ZombieType::ZOMBIE_SUNDAY_EDITION);
+        if (danger.danger >= 85 && (hasRangedHarasser || SustainedOutputScoreInRow(state, danger.row) >= 55)) {
+            if (std::optional<VSAction> action = TryPumpkinShell(state, danger.row, protectedSun)) {
+                return action;
+            }
+        }
+
         if (danger.danger >= 105) {
             if (!HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, danger.row)) {
                 if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_SNOWPEA, danger.row, 1, 2)) {
@@ -1860,7 +1874,7 @@ public:
                     return action;
                 }
             }
-            if (std::optional<VSAction> action = TryPumpkinShell(state, danger.row)) {
+            if (std::optional<VSAction> action = TryPumpkinShell(state, danger.row, protectedSun)) {
                 return action;
             }
             if (hasActiveZombie && danger.closest != nullptr && !HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, danger.row)) {
@@ -1930,7 +1944,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
             if (IsSlotBlocked(card.slot) || !card.active || card.seedType == static_cast<std::uint16_t>(SeedType::SEED_NONE)) {
                 continue;
             }
-            if (IsHeavyZombieSeed(static_cast<SeedType>(card.seedType))) {
+            if (IsLateGameHeavyZombieSeed(static_cast<SeedType>(card.seedType))) {
                 reserve = std::min(reserve, std::max(0, card.cost));
             }
         }
@@ -2003,10 +2017,23 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += graveProjectileThreat > 0 && !hasGraveGuard ? 425 + graveProjectileThreat * 2 : -110;
                 score += graveThreat >= 100 ? 90 : 0;
                 break;
+            case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
+                // Unlike the true endgame giants, the recordings spend Giga
+                // Polevaulter from two graves onward to crack a developed
+                // lane before its repeatable damage becomes overwhelming.
+                {
+                    const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || hasPumpkinShell || sustainedOutput >= 80 || economyValue >= 120;
+                    score += economyCount >= 2 ? (hasBreakthroughTarget ? 250 : 15) : -100;
+                    score += plantCount * 16 + sustainedOutput / 2 + economyValue / 3;
+                    score += (hasWallnut ? 145 : 0) + (hasPumpkinShell ? 105 : 0) + (hasSnowPea ? 70 : 0);
+                    score += targetLane.defense >= 120 ? 75 : 0;
+                    score -= areaCounterExposure / 3;
+                    score -= zombieCount >= 2 ? 145 : 0;
+                }
+                break;
             case SeedType::SEED_ZOMBIE_GARGANTUAR:
             case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
             case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
-            case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
                 // Heavy cards are release cards, not automatic reinforcements.
                 // A human-like commit seeks a defended economic line to force
                 // several answers, and avoids walking a giant into a formed
