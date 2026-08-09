@@ -69,6 +69,13 @@ bool HasPlantAt(const VSGameState &state, VSGridPosition position) {
     });
 }
 
+bool HasPlantTypeAt(const VSGameState &state, SeedType seedType, VSGridPosition position) {
+    return std::any_of(state.plants.begin(), state.plants.end(), [seedType, position](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.seedType == static_cast<std::uint16_t>(seedType) && plant.position.col == position.col
+            && plant.position.row == position.row;
+    });
+}
+
 bool HasGridItemAt(const VSGameState &state, VSGridPosition position) {
     return std::any_of(state.gridItems.begin(), state.gridItems.end(), [position](const VSGridItemState &item) {
         return !item.dead && item.position.col == position.col && item.position.row == position.row;
@@ -123,6 +130,7 @@ bool IsHeavyZombie(std::uint16_t zombieType) {
         case ZombieType::ZOMBIE_PAIL:
         case ZombieType::ZOMBIE_FOOTBALL:
         case ZombieType::ZOMBIE_BOBSLED:
+        case ZombieType::ZOMBIE_ZAMBONI:
         case ZombieType::ZOMBIE_GARGANTUAR:
         case ZombieType::ZOMBIE_TRASHCAN:
         case ZombieType::ZOMBIE_WALLNUT_HEAD:
@@ -137,6 +145,7 @@ bool IsHeavyZombie(std::uint16_t zombieType) {
 bool IsFastZombie(std::uint16_t zombieType) {
     switch (static_cast<ZombieType>(zombieType)) {
         case ZombieType::ZOMBIE_BOBSLED:
+        case ZombieType::ZOMBIE_ZAMBONI:
         case ZombieType::ZOMBIE_FOOTBALL:
         case ZombieType::ZOMBIE_GIGA_FOOTBALL:
         case ZombieType::ZOMBIE_POLEVAULTER:
@@ -279,6 +288,13 @@ int PlantDefenseValue(const VSPlantState &plant) {
         case SeedType::SEED_IMP_PEAR:
             score = 55;
             break;
+        case SeedType::SEED_STARFRUIT:
+        case SeedType::SEED_SPORESHROOM:
+            score = 70;
+            break;
+        case SeedType::SEED_CHOMPER:
+            score = 60;
+            break;
         default:
             score = 25;
             break;
@@ -374,6 +390,12 @@ int PlantValueScore(const VSPlantState &plant) {
         case SeedType::SEED_STARFRUIT:
             score += 100;
             break;
+        case SeedType::SEED_CHOMPER:
+            score += 95;
+            break;
+        case SeedType::SEED_SPORESHROOM:
+            score += 85;
+            break;
         case SeedType::SEED_WALLNUT:
         case SeedType::SEED_TALLNUT:
         case SeedType::SEED_PUMPKINSHELL:
@@ -396,6 +418,7 @@ bool IsPlantCombatSeed(std::uint16_t seedType) {
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_BONK_CHOY:
         case SeedType::SEED_CELERY_STALKER:
+        case SeedType::SEED_CHOMPER:
         case SeedType::SEED_STARFRUIT:
         case SeedType::SEED_REPEATER:
         case SeedType::SEED_PEASHOOTER:
@@ -403,6 +426,7 @@ bool IsPlantCombatSeed(std::uint16_t seedType) {
         case SeedType::SEED_THREEPEATER:
         case SeedType::SEED_FUMESHROOM:
         case SeedType::SEED_GLOOMSHROOM:
+        case SeedType::SEED_SPORESHROOM:
         case SeedType::SEED_MELONPULT:
         case SeedType::SEED_WINTERMELON:
         case SeedType::SEED_COBCANNON:
@@ -678,6 +702,67 @@ VSGridPosition FindZombieEconomyCell(const VSGameState &state, int preferredRow)
     return {};
 }
 
+VSGridPosition FindZombieMoundCell(const VSGameState &state, int row) {
+    const VSGridItemState *bestItem = nullptr;
+    int bestScore = std::numeric_limits<int>::min();
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.dead || item.position.row != row) {
+            continue;
+        }
+
+        int score = std::numeric_limits<int>::min();
+        if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_GRAVESTONE)) {
+            // The first mound upgrade turns a basic grave into a stronger,
+            // income-producing burial mound.
+            score = 260;
+        } else if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_BURIAL_MOUND) && item.level < 4) {
+            score = 210 - item.level * 25;
+        }
+        if (score > bestScore) {
+            bestItem = &item;
+            bestScore = score;
+        }
+    }
+    return bestItem == nullptr ? VSGridPosition{} : bestItem->position;
+}
+
+int MoundUpgradeCostAt(const VSGameState &state, VSGridPosition position) {
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.dead || item.position.col != position.col || item.position.row != position.row) {
+            continue;
+        }
+        if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_GRAVESTONE)) {
+            // Converting a basic grave creates level zero, which still uses
+            // the base mound card cost.
+            return 75;
+        }
+        if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_BURIAL_MOUND)) {
+            switch (item.level) {
+                case 0:
+                    return 150;
+                case 1:
+                    return 225;
+                case 2:
+                    return 300;
+                case 3:
+                    return 450;
+                default:
+                    return std::numeric_limits<int>::max();
+            }
+        }
+    }
+    return std::numeric_limits<int>::max();
+}
+
+bool IsReadyCard(const VSCardState &card, int resource);
+
+bool IsCardReadyForZombieTarget(const VSCardState &card, const VSGameState &state, VSGridPosition target) {
+    if (card.seedType != static_cast<std::uint16_t>(SeedType::SEED_ZOMBIE_MOUND)) {
+        return IsReadyCard(card, state.zombieBrains);
+    }
+    return card.active && !card.refreshing && card.refreshCounter <= 0 && MoundUpgradeCostAt(state, target) <= state.zombieBrains;
+}
+
 int CountZombieEconomy(const VSGameState &state) {
     return static_cast<int>(std::count_if(state.gridItems.begin(), state.gridItems.end(), [](const VSGridItemState &item) {
         return !item.dead && (item.gridItemType == GridItemType::GRIDITEM_GRAVESTONE || item.gridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND);
@@ -797,6 +882,58 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return TryPlant(state, SeedType::SEED_SUNSHROOM, row, 0, 2);
     }
 
+    bool HasIncomeSeed(const VSGameState &state) const {
+        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [](const VSCardState &card) {
+            return card.seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNFLOWER)
+                || card.seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNSHROOM);
+        });
+    }
+
+    std::optional<VSAction> TryWakeSleepingMushroom(const VSGameState &state, int preferredRow) {
+        const VSCardState *card = FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
+        if (card == nullptr) {
+            return std::nullopt;
+        }
+
+        const VSPlantState *bestPlant = nullptr;
+        int bestScore = std::numeric_limits<int>::min();
+        for (const VSPlantState &plant : state.plants) {
+            if (IsDeadOrOutside(plant) || !plant.asleep) {
+                continue;
+            }
+            int score = PlantValueScore(plant) + (IsPlantCombatSeed(plant.seedType) ? 220 : 0);
+            score += plant.position.row == preferredRow ? 70 : 0;
+            if (bestPlant == nullptr || score > bestScore) {
+                bestPlant = &plant;
+                bestScore = score;
+            }
+        }
+        return bestPlant == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, bestPlant->position, state.boardTick));
+    }
+
+    std::optional<VSAction> TryPumpkinShell(const VSGameState &state, int row) {
+        const VSCardState *card = FindReadyCard(state, SeedType::SEED_PUMPKINSHELL);
+        if (card == nullptr) {
+            return std::nullopt;
+        }
+
+        const VSPlantState *bestPlant = nullptr;
+        int bestScore = std::numeric_limits<int>::min();
+        for (const VSPlantState &plant : state.plants) {
+            if (IsDeadOrOutside(plant) || plant.position.row != row || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_PUMPKINSHELL)
+                || (!IsPlantCombatSeed(plant.seedType) && !IsPlantEconomySeed(plant.seedType))
+                || HasPlantTypeAt(state, SeedType::SEED_PUMPKINSHELL, plant.position)) {
+                continue;
+            }
+            const int score = PlantValueScore(plant) + (IsPlantCombatSeed(plant.seedType) ? 170 : 0) + static_cast<int>(plant.position.col) * 6;
+            if (bestPlant == nullptr || score > bestScore) {
+                bestPlant = &plant;
+                bestScore = score;
+            }
+        }
+        return bestPlant == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, bestPlant->position, state.boardTick));
+    }
+
     int AreaCounterReserve(const VSGameState &state) const {
         int reserve = std::numeric_limits<int>::max();
         for (const VSCardState &card : state.seedBanks[0]) {
@@ -818,7 +955,8 @@ class PlantVSAgent final : public BuiltinVSAgent {
             }
 
             const SeedType seed = static_cast<SeedType>(card.seedType);
-            if (seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_SUNSHROOM || seed == SeedType::SEED_IMP_PEAR) {
+            if (seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_SUNSHROOM || seed == SeedType::SEED_IMP_PEAR
+                || seed == SeedType::SEED_INSTANT_COFFEE || seed == SeedType::SEED_PUMPKINSHELL) {
                 continue;
             }
             const bool emergencySeed = seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO
@@ -837,8 +975,11 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 continue;
             }
 
-            if ((seed == SeedType::SEED_WALLNUT || seed == SeedType::SEED_TALLNUT || seed == SeedType::SEED_PUMPKINSHELL)
+            if ((seed == SeedType::SEED_WALLNUT || seed == SeedType::SEED_TALLNUT)
                 && (!hasActiveZombie || danger.closest == nullptr || danger.danger < 90)) {
+                continue;
+            }
+            if (seed == SeedType::SEED_CHOMPER && (!hasActiveZombie || danger.closest == nullptr || danger.danger < 90)) {
                 continue;
             }
 
@@ -848,14 +989,17 @@ class PlantVSAgent final : public BuiltinVSAgent {
             if (emergencySeed) {
                 firstColumn = 4;
                 lastColumn = 5;
-            } else if (seed == SeedType::SEED_WALLNUT || seed == SeedType::SEED_TALLNUT || seed == SeedType::SEED_PUMPKINSHELL) {
+            } else if (seed == SeedType::SEED_WALLNUT || seed == SeedType::SEED_TALLNUT) {
+                firstColumn = lastColumn = 4;
+            } else if (seed == SeedType::SEED_CHOMPER) {
                 firstColumn = lastColumn = 4;
             } else if (seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER) {
                 firstColumn = lastColumn = 3;
             }
 
-            const VSGridPosition target = emergencySeed ? FindPlantCellInExactRow(state, row, firstColumn, lastColumn)
-                                                         : FindPlantCellInColumns(state, row, firstColumn, lastColumn);
+            const bool requiresExactRow = emergencySeed || seed == SeedType::SEED_CHOMPER;
+            const VSGridPosition target = requiresExactRow ? FindPlantCellInExactRow(state, row, firstColumn, lastColumn)
+                                                           : FindPlantCellInColumns(state, row, firstColumn, lastColumn);
             if (target.col >= 0 && target.row >= 0) {
                 return MakePlayAction(VSSide::Plants, card, target, state.boardTick);
             }
@@ -875,6 +1019,7 @@ public:
         const PlantLaneAssessment danger = MostThreatenedPlantLane(state);
         const int openingIncomeTarget = state.rows >= 6 ? 7 : 6;
         const int incomePlantCount = CountPlantType(state, SeedType::SEED_SUNFLOWER) + CountPlantType(state, SeedType::SEED_SUNSHROOM);
+        const bool hasIncomeSeed = HasIncomeSeed(state);
         const bool hasActiveZombie = CountActiveZombies(state) > 0;
         const int counterRow = MostUrgentCounterRow(state);
         const VSZombieState *counterClosest = FindClosestZombie(state, counterRow);
@@ -887,6 +1032,7 @@ public:
         const bool hasGargantuar = HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GARGANTUAR)
             || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_GARGANTUAR);
         const bool hasSquashPriorityZombie = HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_BOBSLED)
+            || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_ZAMBONI)
             || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_FOOTBALL)
             || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_FOOTBALL);
         const bool earlySingleBucket = state.boardTick < 32000 && counterZombieCount == 1
@@ -919,6 +1065,9 @@ public:
                 return action;
             }
         }
+        if (std::optional<VSAction> action = TryWakeSleepingMushroom(state, danger.row)) {
+            return action;
+        }
 
         if (zombieCluster && areaCounterReserve > 0 && state.plantSun < areaCounterReserve) {
             // Keep the remaining sun for the first available area answer. A
@@ -927,7 +1076,7 @@ public:
             return std::nullopt;
         }
 
-        if (incomePlantCount < openingIncomeTarget && danger.danger < 150) {
+        if (hasIncomeSeed && incomePlantCount < openingIncomeTarget && danger.danger < 150) {
             if (std::optional<VSAction> action = TryIncomePlant(state, LeastDevelopedPlantRow(state))) {
                 return action;
             }
@@ -941,7 +1090,7 @@ public:
         // The replay keeps adding Sunflowers after early probes arrive. Once
         // the opening base exists, continue that expansion whenever no lane
         // needs an instant counter instead of freezing income at six plants.
-        if (hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && danger.danger < 140) {
+        if (hasIncomeSeed && hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && danger.danger < 140) {
             if (std::optional<VSAction> action = TryIncomePlant(state, LeastDevelopedPlantRow(state))) {
                 return action;
             }
@@ -949,7 +1098,7 @@ public:
 
         if (!hasActiveZombie) {
             const int buildRow = LeastDevelopedPlantRow(state);
-            if (incomePlantCount < openingIncomeTarget + 2) {
+            if (hasIncomeSeed && incomePlantCount < openingIncomeTarget + 2) {
                 if (std::optional<VSAction> action = TryIncomePlant(state, buildRow)) {
                     return action;
                 }
@@ -966,7 +1115,7 @@ public:
                     return action;
                 }
             }
-            return std::nullopt;
+            return TryFallbackPlant(state, danger, buildRow);
         }
 
         if (danger.danger >= 105) {
@@ -979,6 +1128,9 @@ public:
                 if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_BONK_CHOY, danger.row, 3, 3)) {
                     return action;
                 }
+            }
+            if (std::optional<VSAction> action = TryPumpkinShell(state, danger.row)) {
+                return action;
             }
             if (hasActiveZombie && danger.closest != nullptr && !HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, danger.row)) {
                 if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_WALLNUT, danger.row, 4, 4)) {
@@ -1003,7 +1155,7 @@ public:
                 return action;
             }
         }
-        if (incomePlantCount < incomeExpansionTarget) {
+        if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget) {
             return TryIncomePlant(state, buildRow);
         }
         return TryFallbackPlant(state, danger, buildRow);
@@ -1020,8 +1172,19 @@ class ZombieVSAgent final : public BuiltinVSAgent {
 
     const VSCardState *FindReadyCard(const VSGameState &state, SeedType seedType) const {
         for (const VSCardState &card : state.seedBanks[1]) {
-            if (!IsSlotBlocked(card.slot) && card.seedType == static_cast<std::uint16_t>(seedType) && IsReadyCard(card, state.zombieBrains)) {
+            if (IsSlotBlocked(card.slot) || card.seedType != static_cast<std::uint16_t>(seedType)) {
+                continue;
+            }
+            if (seedType != SeedType::SEED_ZOMBIE_MOUND && IsReadyCard(card, state.zombieBrains)) {
                 return &card;
+            }
+            if (seedType == SeedType::SEED_ZOMBIE_MOUND) {
+                for (int row = 0; row < state.rows; ++row) {
+                    const VSGridPosition target = FindZombieMoundCell(state, row);
+                    if (target.col >= 0 && target.row >= 0 && IsCardReadyForZombieTarget(card, state, target)) {
+                        return &card;
+                    }
+                }
             }
         }
         return nullptr;
@@ -1061,7 +1224,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
         return score;
     }
 
-    static int CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int economyCount) {
+    static int CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int economyCount, int effectiveCost) {
         const SeedType seed = static_cast<SeedType>(card.seedType);
         const bool hasPlants = std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); });
         const bool hasSnowPea = HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, targetRow);
@@ -1088,6 +1251,11 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 break;
             case SeedType::SEED_ZOMBIE_PAIL:
                 score += 65 + plantCount * 14 + (hasSnowPea ? 135 : 0) + (hasBonkChoy ? 100 : 0);
+                break;
+            case SeedType::SEED_ZOMBONI:
+                // The ice trail makes Zomboni a strong answer to protected,
+                // developed lanes, matching the second replay's breakthrough.
+                score += 115 + plantCount * 18 + (hasWallnut ? 135 : 0) + (hasSnowPea ? 90 : 0);
                 break;
             case SeedType::SEED_ZOMBIE_TRASHCAN:
                 // Trashcan is deliberately a slow front-line shield: a
@@ -1128,8 +1296,8 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += plantCount * 4;
                 break;
             case SeedType::SEED_ZOMBIE_MOUND:
-                score += economyCount > 0 ? 55 : -150;
-                score += graveThreat / 2;
+                score += economyCount > 0 ? 180 : -150;
+                score += graveThreat;
                 break;
             case SeedType::SEED_ZOMBIE_DANCER:
                 score += 75 + plantCount * 12 + (graveThreat > 0 ? 35 : 0);
@@ -1142,7 +1310,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += plantCount * 7;
                 break;
         }
-        score -= card.cost / 50;
+        score -= effectiveCost / 50;
         return score;
     }
 
@@ -1184,6 +1352,10 @@ public:
                 const VSGridPosition target = FindZombieEconomyCell(state, row);
                 return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
             }
+            if (seed == SeedType::SEED_ZOMBIE_MOUND) {
+                const VSGridPosition target = FindZombieMoundCell(state, row);
+                return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
+            }
             if (IsTargetedSeed(card.seedType)) {
                 const VSPlantState *targetPlant = nullptr;
                 int targetScore = std::numeric_limits<int>::min();
@@ -1208,17 +1380,21 @@ public:
         int targetRow = graveDefenseUrgent ? graveDefenseRow : MostVulnerablePlantRow(state);
         int bestScore = std::numeric_limits<int>::min();
         for (const VSCardState &card : state.seedBanks[1]) {
-            if (IsSlotBlocked(card.slot) || !IsReadyCard(card, state.zombieBrains)) {
+            if (IsSlotBlocked(card.slot) || !card.active || card.refreshing || card.refreshCounter > 0) {
                 continue;
             }
             if (graveDefenseScore >= 100 && card.seedType == static_cast<std::uint16_t>(SeedType::SEED_ZOMBIE_GRAVESTONE)) {
                 continue;
             }
             for (int row = 0; row < state.rows; ++row) {
-                if (!FindTarget(card, row).has_value()) {
+                const std::optional<VSGridPosition> target = FindTarget(card, row);
+                if (!target.has_value() || !IsCardReadyForZombieTarget(card, state, *target)) {
                     continue;
                 }
-                int score = CardScore(card, state, row, economyCount);
+                const int effectiveCost = static_cast<SeedType>(card.seedType) == SeedType::SEED_ZOMBIE_MOUND
+                    ? MoundUpgradeCostAt(state, *target)
+                    : card.cost;
+                int score = CardScore(card, state, row, economyCount, effectiveCost);
                 if (graveDefenseUrgent && row == graveDefenseRow) {
                     score += 140;
                 }
@@ -1369,6 +1545,10 @@ VSActionResult ExecutePlaySeed(Board *board, const VSAction &action) {
 
     const int gridX = static_cast<int>(action.target.col);
     const int gridY = static_cast<int>(action.target.row);
+    if (packet.mPacketType == SeedType::SEED_ZOMBIE_MOUND) {
+        // Mound upgrade cost depends on the level at the cursor target.
+        SetCursorForSeed(board, controls, packet, action.seedSlot, action.target);
+    }
     const int cost = board->GetCurrentPlantCost(packet.mPacketType, SeedType::SEED_NONE);
     if (action.side == VSSide::Plants) {
         if (!board->CanTakeSunMoney(cost, 0)) {
