@@ -83,6 +83,9 @@ struct VSCardState {
     int refreshTime = 0;
     bool active = false;
     bool refreshing = false;
+    // Disabled by a sudden-death rule even though the SeedPacket itself can
+    // still report active.
+    bool matchRestricted = false;
 };
 
 struct VSPlantState {
@@ -136,6 +139,8 @@ struct VSGameState {
     int plantSun = 0;
     int zombieBrains = 0;
     bool isNight = false;
+    bool isSuddenDeath = false;
+    bool resourceProductionDisabled = false;
     bool playing = false;
     bool paused = false;
     std::array<std::vector<VSCardState>, 2> seedBanks;
