@@ -1069,6 +1069,13 @@ int CountZombieEconomy(const VSGameState &state) {
     }));
 }
 
+int HeavyZombieEconomyThreshold(const VSGameState &state) {
+    // The zombie economy occupies its three rear columns.  Keep at most two
+    // positions open before committing to an expensive game-ending zombie.
+    const int economyTarget = std::max(0, state.rows * 3);
+    return std::max(0, economyTarget - std::min(2, std::max(0, state.rows - 1)));
+}
+
 int StrategyBucket(int value) {
     return value <= 0 ? 0 : value <= 2 ? 1 : value <= 4 ? 2 : 3;
 }
@@ -1984,6 +1991,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
         const int graveProjectileThreat = StraightProjectileThreatScore(state, targetRow);
         const bool hasGraveGuard = HasZombieGraveGuardInRow(state, targetRow);
         const int economyTarget = state.rows * 3;
+        const int heavyEconomyThreshold = HeavyZombieEconomyThreshold(state);
         const int sustainedOutput = SustainedOutputScoreInRow(state, targetRow);
         const int economyValue = PlantEconomyValueInRow(state, targetRow);
         const PlantLaneAssessment targetLane = AssessPlantLane(state, targetRow);
@@ -2018,12 +2026,11 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += graveThreat >= 100 ? 90 : 0;
                 break;
             case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
-                // Giga Polevaulter can break a developed lane before true
-                // endgame, but two graves are not a stable enough economy to
-                // fund that commitment. Keep at least four income graves.
+                // Giga Polevaulter is a committed breakthrough card, not an
+                // early-game answer. Require an almost complete grave field.
                 {
                     const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || hasPumpkinShell || sustainedOutput >= 80 || economyValue >= 120;
-                    score += economyCount >= 4 ? (hasBreakthroughTarget ? 250 : 15) : -160;
+                    score += economyCount >= heavyEconomyThreshold ? (hasBreakthroughTarget ? 250 : 15) : -240;
                     score += plantCount * 16 + sustainedOutput / 2 + economyValue / 3;
                     score += (hasWallnut ? 145 : 0) + (hasPumpkinShell ? 105 : 0) + (hasSnowPea ? 70 : 0);
                     score += targetLane.defense >= 120 ? 75 : 0;
@@ -2040,7 +2047,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 // Ash cluster merely because friendly zombies are already there.
                 {
                     const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || sustainedOutput >= 100 || economyValue >= 150;
-                    score += economyCount >= 4 ? (hasBreakthroughTarget ? 285 : 35) : -140;
+                    score += economyCount >= heavyEconomyThreshold ? (hasBreakthroughTarget ? 285 : 35) : -220;
                     score += plantCount * 18 + sustainedOutput / 2 + economyValue / 3;
                     score += (hasWallnut ? 135 : 0) + (hasPumpkinShell ? 110 : 0) + (hasBonkChoy ? 100 : 0) + (hasSnowPea ? 75 : 0);
                     score += targetLane.defense >= 150 ? 90 : 0;
@@ -2066,7 +2073,7 @@ class ZombieVSAgent final : public BuiltinVSAgent {
             case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
                 // The replay uses Sunday Edition as a late, multi-lane
                 // pressure card after the grave economy is established.
-                score += economyCount >= 4 ? 145 : -110;
+                score += economyCount >= heavyEconomyThreshold ? 145 : -170;
                 score += plantCount * 14 + sustainedOutput / 2 + economyValue / 3;
                 score += targetLane.defense >= 120 ? 70 : 0;
                 score -= areaCounterExposure / 3;
@@ -2157,8 +2164,9 @@ public:
         }
 
         const int heavyZombieReserve = HeavyZombieReserve(state);
+        const int heavyEconomyThreshold = HeavyZombieEconomyThreshold(state);
         const int activePressureRows = CountActiveZombieRows(state);
-        const bool saveForHeavy = heavyZombieReserve > 0 && economyCount >= 4 && activePressureRows >= 2
+        const bool saveForHeavy = heavyZombieReserve > 0 && economyCount >= heavyEconomyThreshold && activePressureRows >= 2
             && state.zombieBrains < heavyZombieReserve && graveDefenseScore < 100;
 
         auto FindTarget = [&](const VSCardState &card, int row) -> std::optional<VSGridPosition> {
