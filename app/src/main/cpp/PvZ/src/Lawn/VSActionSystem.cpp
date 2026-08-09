@@ -114,6 +114,16 @@ int CountActiveZombies(const VSGameState &state) {
     }));
 }
 
+int CountActiveZombieRows(const VSGameState &state) {
+    int count = 0;
+    for (int row = 0; row < state.rows; ++row) {
+        if (CountZombiesInRow(state, row) > 0) {
+            ++count;
+        }
+    }
+    return count;
+}
+
 int CountPlantType(const VSGameState &state, SeedType seedType) {
     return static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [seedType](const VSPlantState &plant) {
         return !IsDeadOrOutside(plant) && plant.seedType == static_cast<std::uint16_t>(seedType);
@@ -357,6 +367,12 @@ PlantLaneAssessment AssessPlantLane(const VSGameState &state, int row) {
         if (!IsDeadOrOutside(plant) && plant.position.row == row) {
             assessment.defense += PlantDefenseValue(plant);
             ++assessment.plantCount;
+        } else if (!IsDeadOrOutside(plant) && plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_STARFRUIT)
+                   && std::abs(static_cast<int>(plant.position.row) - row) == 1) {
+            // Starfruit's diagonal shots support both adjacent lanes. Treat
+            // that fire as partial cover instead of repeatedly overbuilding
+            // a lane next to an established Starfruit pattern.
+            assessment.defense += PlantDefenseValue(plant) / 2;
         }
     }
     assessment.danger = std::max(0, assessment.rawDanger - assessment.defense / 2);
@@ -1073,7 +1089,7 @@ public:
         const bool impPearThreat = hasGargantuar && counterClosest != nullptr
             && (counterClosest->eating || counterClosest->positionX < 780.0f || counterLane.danger >= 160);
         const int areaCounterReserve = AreaCounterReserve(state);
-        const int incomeExpansionTarget = openingIncomeTarget + 4;
+        const int incomeExpansionTarget = state.rows * 3;
         const bool immediateCounterThreat = squashThreat || impPearThreat;
 
         // The recorded plant side builds its sun base first, then answers a real
@@ -1120,7 +1136,8 @@ public:
         // The replay keeps adding Sunflowers after early probes arrive. Once
         // the opening base exists, continue that expansion whenever no lane
         // needs an instant counter instead of freezing income at six plants.
-        if (hasIncomeSeed && hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && danger.danger < 140) {
+        const bool canExpandIncome = danger.danger < 105 || (counterCombatPlants > 0 && danger.danger < 140);
+        if (hasIncomeSeed && hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && canExpandIncome) {
             if (std::optional<VSAction> action = TryIncomePlant(state, LeastDevelopedPlantRow(state))) {
                 return action;
             }
@@ -1374,7 +1391,9 @@ public:
         }
 
         const int heavyZombieReserve = HeavyZombieReserve(state);
-        const bool saveForHeavy = heavyZombieReserve > 0 && economyCount >= 4 && state.zombieBrains < heavyZombieReserve && graveDefenseScore < 100;
+        const int activePressureRows = CountActiveZombieRows(state);
+        const bool saveForHeavy = heavyZombieReserve > 0 && economyCount >= 4 && activePressureRows >= 2
+            && state.zombieBrains < heavyZombieReserve && graveDefenseScore < 100;
 
         auto FindTarget = [&](const VSCardState &card, int row) -> std::optional<VSGridPosition> {
             const SeedType seed = static_cast<SeedType>(card.seedType);
