@@ -145,7 +145,6 @@ bool IsHeavyZombie(std::uint16_t zombieType) {
         case ZombieType::ZOMBIE_BOBSLED:
         case ZombieType::ZOMBIE_ZAMBONI:
         case ZombieType::ZOMBIE_GARGANTUAR:
-        case ZombieType::ZOMBIE_TRASHCAN:
         case ZombieType::ZOMBIE_WALLNUT_HEAD:
         case ZombieType::ZOMBIE_GIGA_FOOTBALL:
         case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
@@ -1534,7 +1533,10 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 score += PlantEconomyValueInRow(state, targetRow) * 2;
                 score += std::max(0, 110 - existingOutput) * 2;
                 score -= existingOutput / 2;
-                score += SeedEconomyPressureOpportunity(state, seed, targetRow) * 2;
+                // Once a firing lane reaches a grave, further shots convert
+                // directly into lost zombie income.  That is worth more than
+                // another safe Sunflower after the opening has stabilized.
+                score += SeedEconomyPressureOpportunity(state, seed, targetRow) * 4;
                 score += StrategyBonus(state, VSSide::Plants, seed, targetRow);
                 score += lane.danger >= 85 ? 55 : 0;
                 score += targetRow == row ? 25 : 0;
@@ -1610,6 +1612,40 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return bestPlant == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, bestPlant->position, state.boardTick));
     }
 
+    bool ShouldDeployWallnut(const VSGameState &state, int row) const {
+        if (row < 0 || row >= state.rows || HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, row)
+            || HasPlantTypeInRow(state, SeedType::SEED_TALLNUT, row)) {
+            return false;
+        }
+
+        const VSZombieState *closest = FindClosestZombie(state, row);
+        if (closest == nullptr) {
+            return false;
+        }
+
+        bool hasProtectedInvestment = false;
+        for (const VSPlantState &plant : state.plants) {
+            if (IsDeadOrOutside(plant) || plant.position.row != row || plant.position.col > 3) {
+                continue;
+            }
+            if (IsPlantEconomySeed(plant.seedType) || IsPlantCombatSeed(plant.seedType)) {
+                hasProtectedInvestment = true;
+                break;
+            }
+        }
+        if (!hasProtectedInvestment) {
+            return false;
+        }
+
+        // The nut belongs at the front only after an actual intruder reaches
+        // the middle lawn.  A distant pail or trashcan is a reason to build
+        // firepower, not to lock 50 sun into a premature wall.
+        const bool decisive = IsDecisiveCounterZombie(closest->zombieType);
+        const float triggerDistance = IsHeavyZombie(closest->zombieType) || decisive ? 620.0f : 550.0f;
+        const PlantLaneAssessment lane = AssessPlantLane(state, row);
+        return closest->eating || (closest->positionX <= triggerDistance && lane.danger >= (decisive ? 80 : 105));
+    }
+
     int AreaCounterReserve(const VSGameState &state) const {
         int reserve = std::numeric_limits<int>::max();
         for (const VSCardState &card : state.seedBanks[0]) {
@@ -1652,8 +1688,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 continue;
             }
 
-            if ((seed == SeedType::SEED_WALLNUT || seed == SeedType::SEED_TALLNUT)
-                && (!hasActiveZombie || danger.closest == nullptr || danger.danger < 90)) {
+            if ((seed == SeedType::SEED_WALLNUT || seed == SeedType::SEED_TALLNUT) && !ShouldDeployWallnut(state, danger.row)) {
                 continue;
             }
             if (seed == SeedType::SEED_CHOMPER && (!hasActiveZombie || danger.closest == nullptr || danger.danger < 90)) {
@@ -1727,14 +1762,18 @@ public:
         const bool impPearThreat = (hasGargantuar || hasGigaPoleVaulter) && counterClosest != nullptr
             && (counterClosest->eating || counterClosest->positionX < 780.0f || counterLane.danger >= 160);
         const int areaCounterReserve = AreaCounterReserve(state);
-        const int incomeExpansionTarget = state.rows * 3;
+        // During an active match, eleven income plants on a five-row lawn is
+        // enough to fund the main damage line.  More Sunflowers are only a
+        // good investment while the zombie side has left the board alone.
+        const int incomeExpansionTarget = state.rows * 2 + (hasActiveZombie ? 1 : state.rows);
         const bool immediateCounterThreat = squashThreat || impPearThreat;
         const bool mustHoldCounterReserve = areaCounterReserve > 0 && state.plantSun >= areaCounterReserve
             && HasReadyZombieBreakthroughCard(state);
         const int protectedSun = mustHoldCounterReserve ? areaCounterReserve : 0;
         const int zombieEconomyStrikeRow = MostVulnerableZombieEconomyRow(state);
         const int zombieEconomyStrikeValue = ZombieEconomyAttackOpportunity(state, zombieEconomyStrikeRow);
-        const bool canStrikeZombieEconomy = zombieEconomyStrikeValue >= 220 && danger.danger < 130 && !immediateCounterThreat;
+        const bool canStrikeZombieEconomy = incomePlantCount >= minimumIncomeBeforeOutput && zombieEconomyStrikeValue >= 220
+            && danger.danger < 150 && !immediateCounterThreat;
         // Every two economy plants should fund one durable attacker, up to a
         // line per row.  This prevents the old all-Sunflower opening from
         // leaving the board without enough repeatable damage.
@@ -1884,7 +1923,7 @@ public:
             if (std::optional<VSAction> action = TryPumpkinShell(state, danger.row, protectedSun)) {
                 return action;
             }
-            if (hasActiveZombie && danger.closest != nullptr && !HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, danger.row)) {
+            if (ShouldDeployWallnut(state, danger.row)) {
                 if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_WALLNUT, danger.row, 4, 4)) {
                     return action;
                 }
@@ -1905,8 +1944,8 @@ public:
                 return action;
             }
         }
-        if (hasActiveZombie && danger.danger >= 90 && !HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, buildRow)) {
-            if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_WALLNUT, buildRow, 4, 4)) {
+        if (ShouldDeployWallnut(state, danger.row)) {
+            if (std::optional<VSAction> action = TryPlant(state, SeedType::SEED_WALLNUT, danger.row, 4, 4)) {
                 return action;
             }
         }
@@ -2178,6 +2217,13 @@ public:
             if (seed == SeedType::SEED_ZOMBIE_MOUND) {
                 const VSGridPosition target = FindZombieMoundCell(state, row);
                 return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
+            }
+            if (seed == SeedType::SEED_ZOMBIE_TRASHCAN) {
+                // Trashcan advances too slowly to be an attacking probe. Its
+                // job is to absorb pea-family fire before it reaches a grave.
+                if (StraightProjectileThreatScore(state, row) <= 0 || HasZombieGraveGuardInRow(state, row)) {
+                    return std::nullopt;
+                }
             }
             if (IsTargetedSeed(card.seedType)) {
                 const VSPlantState *targetPlant = nullptr;
