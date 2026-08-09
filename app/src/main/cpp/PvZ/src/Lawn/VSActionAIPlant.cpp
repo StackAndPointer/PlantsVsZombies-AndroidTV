@@ -306,6 +306,48 @@ class PlantVSAgent final : public BuiltinVSAgent {
         });
     }
 
+    bool HasEconomyPressurePlan(const VSGameState &state) const {
+        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [](const VSCardState &card) {
+            if (card.matchRestricted || !card.active) {
+                return false;
+            }
+            const SeedType seed = static_cast<SeedType>(card.seedType);
+            return seed == SeedType::SEED_GRAVEBUSTER || IsSustainedOutputSeed(seed);
+        });
+    }
+
+    int EconomyPressureIncomeTarget(const VSGameState &state) const {
+        bool hasGraveBuster = false;
+        bool hasCrossLaneOutput = false;
+        int cheapestOutputCost = std::numeric_limits<int>::max();
+        for (const VSCardState &card : state.seedBanks[0]) {
+            if (card.matchRestricted || !card.active) {
+                continue;
+            }
+            const SeedType seed = static_cast<SeedType>(card.seedType);
+            if (seed == SeedType::SEED_GRAVEBUSTER) {
+                hasGraveBuster = true;
+                continue;
+            }
+            if (!IsSustainedOutputSeed(seed)) {
+                continue;
+            }
+            cheapestOutputCost = std::min(cheapestOutputCost, std::max(0, card.cost));
+            hasCrossLaneOutput = hasCrossLaneOutput || seed == SeedType::SEED_STARFRUIT || seed == SeedType::SEED_THREEPEATER;
+        }
+
+        // A Gravebuster or cross-lane shooter begins denying tombstone income
+        // earlier. Expensive, single-lane damage needs one more producer to
+        // maintain both pressure and a defensive reserve. Decks with neither
+        // option retain a larger economy because they cannot tax graves yet.
+        int target = state.rows + 3;
+        target -= hasGraveBuster ? 1 : 0;
+        target -= hasCrossLaneOutput ? 1 : 0;
+        target += cheapestOutputCost >= 125 ? 1 : 0;
+        target += cheapestOutputCost == std::numeric_limits<int>::max() ? 1 : 0;
+        return std::clamp(target, std::max(3, state.rows - 1), state.rows * 2);
+    }
+
     std::optional<VSAction> TryWakeSleepingMushroom(const VSGameState &state, int preferredRow) {
         const VSCardState *card = FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
         if (card == nullptr) {
@@ -505,16 +547,14 @@ public:
         const bool impPearThreat = (hasGargantuar || hasGigaPoleVaulter) && counterClosest != nullptr
             && (counterClosest->eating || counterClosest->positionX < 780.0f || counterLane.danger >= 160);
         const int areaCounterReserve = AreaCounterReserve(state);
-        // During an active match, eleven income plants on a five-row lawn is
-        // enough to fund the main damage line.  More Sunflowers are only a
-        // good investment while the zombie side has left the board alone.
-        const int incomeExpansionTarget = state.isSuddenDeath ? 0 : state.rows * 2 + (hasActiveZombie ? 1 : state.rows);
+        const bool hasEconomyPressurePlan = HasEconomyPressurePlan(state);
+        const int incomeExpansionTarget = state.isSuddenDeath ? 0 : EconomyPressureIncomeTarget(state);
         const bool immediateCounterThreat = squashThreat || impPearThreat;
         const bool mustHoldCounterReserve = areaCounterReserve > 0 && state.plantSun >= areaCounterReserve
             && HasReadyZombieBreakthroughCard(state);
         const int protectedSun = mustHoldCounterReserve ? areaCounterReserve : 0;
         const int zombieEconomyStrikeRow = MostVulnerableZombieEconomyRow(state);
-        const bool canStrikeZombieEconomy = (state.isSuddenDeath || incomePlantCount >= minimumIncomeBeforeOutput) && hasSustainedOutputSeed
+        const bool canStrikeZombieEconomy = (state.isSuddenDeath || incomePlantCount >= minimumIncomeBeforeOutput) && hasEconomyPressurePlan
             && CountZombieEconomy(state) > 0 && danger.danger < 150 && !immediateCounterThreat;
         // Every two economy plants should fund one durable attacker, up to a
         // line per row.  This prevents the old all-Sunflower opening from
@@ -627,7 +667,7 @@ public:
                     return action;
                 }
             }
-            if (hasIncomeSeed && incomePlantCount < openingIncomeTarget + 2) {
+            if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget) {
                 if (std::optional<VSAction> action = TryIncomePlant(state, buildRow, protectedSun)) {
                     return action;
                 }

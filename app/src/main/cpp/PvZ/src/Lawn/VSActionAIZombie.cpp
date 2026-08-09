@@ -73,6 +73,60 @@ class ZombieVSAgent final : public BuiltinVSAgent {
         return MakePlayAction(VSSide::Zombies, *card, target, state.boardTick);
     }
 
+    static int GraveGuardPriority(SeedType seed) {
+        switch (seed) {
+            case SeedType::SEED_ZOMBIE_TRASHCAN:
+                return 520;
+            case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
+                return 410;
+            case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
+                return 380;
+            case SeedType::SEED_ZOMBIE_PAIL:
+                return 340;
+            case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
+                return 285;
+            case SeedType::SEED_ZOMBIE_NEWSPAPER:
+                return 255;
+            case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
+                return 160;
+            default:
+                return 0;
+        }
+    }
+
+    std::optional<VSAction> TryProtectEconomy(const VSGameState &state, int row) {
+        if (row < 0 || row >= state.rows || HasZombieGraveGuardInRow(state, row) || GraveThreatScore(state, row) < 100) {
+            return std::nullopt;
+        }
+
+        const VSCardState *bestCard = nullptr;
+        int bestScore = std::numeric_limits<int>::min();
+        for (const VSCardState &card : state.seedBanks[1]) {
+            const SeedType seed = static_cast<SeedType>(card.seedType);
+            if (IsSlotBlocked(card.slot) || !IsZombieGraveGuardSeed(seed) || !IsReadyCard(card, state.zombieBrains)) {
+                continue;
+            }
+            const VSGridPosition target = FindZombieCell(state, seed, row);
+            if (!IsCardReadyForZombieTarget(card, state, target)) {
+                continue;
+            }
+
+            int score = GraveGuardPriority(seed) + GraveThreatScore(state, row) * 2;
+            score += StraightProjectileThreatScore(state, row) > 0 ? 240 : 0;
+            score += StrategyBonus(state, VSSide::Zombies, seed, row);
+            score -= card.cost / 4;
+            if (bestCard == nullptr || score > bestScore) {
+                bestCard = &card;
+                bestScore = score;
+            }
+        }
+
+        if (bestCard == nullptr) {
+            return std::nullopt;
+        }
+        return MakePlayAction(VSSide::Zombies, *bestCard, FindZombieCell(state, static_cast<SeedType>(bestCard->seedType), row), state.boardTick);
+    }
+
     int LeastCommittedZombieRow(const VSGameState &state) const {
         int bestRow = 0;
         int bestScore = std::numeric_limits<int>::max();
@@ -271,18 +325,26 @@ public:
 
         const int economyCount = CountZombieEconomy(state);
         const int economyTarget = state.isSuddenDeath ? economyCount : state.rows * 3;
+        const int economyDeficit = std::max(0, economyTarget - economyCount);
         const int graveDefenseRow = MostThreatenedEconomyRow(state);
         const int graveDefenseScore = GraveThreatScore(state, graveDefenseRow);
-        const int graveProjectileThreat = StraightProjectileThreatScore(state, graveDefenseRow);
         const bool hasGraveGuard = HasZombieGraveGuardInRow(state, graveDefenseRow);
-        const bool canDeployGraveGuard = graveProjectileThreat > 0 && !hasGraveGuard && HasReadyZombieGraveGuard(state);
+        const bool graveDefenseUrgent = graveDefenseScore >= 100;
+        const bool graveDefenseUncovered = graveDefenseUrgent && !hasGraveGuard;
+        if (graveDefenseUncovered) {
+            if (std::optional<VSAction> action = TryProtectEconomy(state, graveDefenseRow)) {
+                return action;
+            }
+        }
         const int activePressureRows = CountActiveZombieRows(state);
         const int survivingFrontRow = MostValuableZombieFrontRow(state);
         const int survivingFrontValue = ZombieFrontlineValueInRow(state, survivingFrontRow);
         const bool preserveSurvivingFront = economyCount >= state.rows && activePressureRows == 1 && survivingFrontValue >= 90;
         const bool survivingFrontGuarded = HasZombieGraveGuardInRow(state, survivingFrontRow);
         const int economicRow = economyCount < state.rows * 2 ? LeastCommittedZombieRow(state) : LeastThreatenedEconomyRow(state);
-        if (economyCount < economyTarget && !canDeployGraveGuard && graveDefenseScore < 250 && !preserveSurvivingFront) {
+        const bool restorationCanProceed = !graveDefenseUncovered || hasGraveGuard;
+        const bool restorationOutweighsFront = economyDeficit >= 2 || graveDefenseScore < 100 || hasGraveGuard;
+        if (economyDeficit > 0 && restorationCanProceed && (!preserveSurvivingFront || restorationOutweighsFront)) {
             if (std::optional<VSAction> action = TryBuildEconomy(state, economicRow)) {
                 return action;
             }
@@ -330,7 +392,6 @@ public:
         };
 
         const VSCardState *bestCard = nullptr;
-        const bool graveDefenseUrgent = graveDefenseScore >= 100;
         int targetRow = graveDefenseUrgent ? graveDefenseRow : MostVulnerablePlantRow(state);
         int bestScore = std::numeric_limits<int>::min();
         for (const VSCardState &card : state.seedBanks[1]) {
