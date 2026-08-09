@@ -34,6 +34,8 @@
 #include "PvZ/Lawn/Widget/ImitaterDialog.h"
 #include "PvZ/Lawn/Widget/StoreScreen.h"
 #include "PvZ/NetPlay.h"
+#include "PvZ/SexyAppFramework/Buffer.h"
+#include "PvZ/SexyAppFramework/SexyAppBase.h"
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/SexyAppFramework/Misc/MTRand.h"
 #include "PvZ/Symbols.h"
@@ -42,7 +44,11 @@
 #include <unistd.h>
 
 #include <climits>
+#include <algorithm>
 #include <cstddef>
+#include <iterator>
+#include <limits>
+#include <vector>
 
 using namespace Sexy;
 
@@ -52,6 +58,78 @@ constexpr uint32_t kSeedChooserDragSyncIntervalMs = 50;
 constexpr uintptr_t kSeedChooserButtonListenerVtableOffset = 0x20C;
 SeedType gLastDragSyncSeedType[2][2] = {{SeedType::SEED_NONE, SeedType::SEED_NONE}, {SeedType::SEED_NONE, SeedType::SEED_NONE}};
 uint32_t gLastDragSyncTickMs[2][2] = {{0, 0}, {0, 0}};
+
+struct BuiltinAIBanRule {
+    bool targetsZombies = false;
+    SeedType seed = SeedType::SEED_NONE;
+    int priority = 0;
+};
+
+constexpr unsigned char kBuiltinAIBanDatabaseMagic[] = {'P', 'V', 'Z', 'V', 'B', 'A', 'N', '\0'};
+constexpr std::uint16_t kBuiltinAIBanDatabaseVersion = 1;
+constexpr std::size_t kBuiltinAIBanDatabaseHeaderSize = 12;
+constexpr std::size_t kBuiltinAIBanDatabaseRuleSize = 7;
+
+std::uint16_t ReadBuiltinAIBanU16(const std::vector<unsigned char> &data, std::size_t offset) {
+    return static_cast<std::uint16_t>(data[offset]) | (static_cast<std::uint16_t>(data[offset + 1]) << 8);
+}
+
+class BuiltinAIBanDatabase {
+    std::vector<BuiltinAIBanRule> mRules;
+    bool mLoaded = false;
+
+    void Load() {
+        if (mLoaded || Sexy::gSexyAppBase == nullptr) {
+            return;
+        }
+        mLoaded = true;
+
+        Sexy::Buffer buffer;
+        if (!Sexy::gSexyAppBase->ReadBufferFromFile("addonFiles/data/vs_ai_ban_db.bin", &buffer, false)) {
+            return;
+        }
+
+        const auto &data = buffer.mData;
+        if (data.size() < kBuiltinAIBanDatabaseHeaderSize
+            || !std::equal(std::begin(kBuiltinAIBanDatabaseMagic), std::end(kBuiltinAIBanDatabaseMagic), data.begin())
+            || ReadBuiltinAIBanU16(data, 8) != kBuiltinAIBanDatabaseVersion) {
+            return;
+        }
+        const std::size_t ruleCount = ReadBuiltinAIBanU16(data, 10);
+        if (ruleCount > (data.size() - kBuiltinAIBanDatabaseHeaderSize) / kBuiltinAIBanDatabaseRuleSize
+            || kBuiltinAIBanDatabaseHeaderSize + ruleCount * kBuiltinAIBanDatabaseRuleSize != data.size()) {
+            return;
+        }
+
+        for (std::size_t index = 0; index < ruleCount; ++index) {
+            const std::size_t offset = kBuiltinAIBanDatabaseHeaderSize + index * kBuiltinAIBanDatabaseRuleSize;
+            const unsigned char sideCode = data[offset];
+            const int averageOrder = data[offset + 3];
+            const int samples = data[offset + 4];
+            const int priority = ReadBuiltinAIBanU16(data, offset + 5);
+            if (sideCode > 1 || averageOrder > 15 || samples <= 0 || priority <= 0 || priority > 1000) {
+                continue;
+            }
+            mRules.push_back({sideCode == 1, static_cast<SeedType>(ReadBuiltinAIBanU16(data, offset + 1)), priority});
+        }
+    }
+
+public:
+    int Priority(bool targetsZombies, SeedType seed) {
+        Load();
+        for (const BuiltinAIBanRule &rule : mRules) {
+            if (rule.targetsZombies == targetsZombies && rule.seed == seed) {
+                return rule.priority;
+            }
+        }
+        return 0;
+    }
+};
+
+int BuiltinAIBanPriority(bool targetsZombies, SeedType seed) {
+    static BuiltinAIBanDatabase database;
+    return database.Priority(targetsZombies, seed);
+}
 
 bool IsLocalChooserInputAllowed(SeedChooserScreen *screen) {
     if (!screen->mApp->IsVSMode()) {
@@ -212,6 +290,11 @@ bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
     if (seedType == SeedType::SEED_NONE || seedType == SeedType::SEED_IMITATER) {
         return false;
     }
+    // Upgrade plants are not legal VS cards, including during the opponent's
+    // Ban phase. Keep this before both priority and generic-card fallbacks.
+    if (!screen->mIsZombieChooser && Plant::IsUpgrade(seedType)) {
+        return false;
+    }
     if (!screen->mShowExtendedSeeds
         && ((screen->mIsZombieChooser && seedType > SeedType::SEED_ZOMBIE_GARGANTUAR)
             || (!screen->mIsZombieChooser && seedType >= SeedType::SEED_ICEBERG_LETTUCE))) {
@@ -255,6 +338,36 @@ SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prior
         }
     }
     return SeedType::SEED_NONE;
+}
+
+SeedType FindBuiltinAIBanCandidate(SeedChooserScreen *screen, const SeedType *fallbackSeeds, std::size_t fallbackCount) {
+    const int storageCount = screen->GetSeedStorageCount();
+    if (storageCount <= 0) {
+        return SeedType::SEED_NONE;
+    }
+
+    SeedType bestSeed = SeedType::SEED_NONE;
+    int bestScore = std::numeric_limits<int>::min();
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        const SeedType seedType = screen->mIsZombieChooser ? screen->GetZombieSeedType(seedIndex) : screen->GetPlantSeedType(seedIndex);
+        if (!IsBuiltinAICandidate(screen, seedType)) {
+            continue;
+        }
+
+        int fallbackScore = 0;
+        for (std::size_t index = 0; index < fallbackCount; ++index) {
+            if (fallbackSeeds[index] == seedType) {
+                fallbackScore = 180 - static_cast<int>(index) * 8;
+                break;
+            }
+        }
+        const int score = fallbackScore + BuiltinAIBanPriority(screen->mIsZombieChooser, seedType);
+        if (bestSeed == SeedType::SEED_NONE || score > bestScore || (score == bestScore && seedType < bestSeed)) {
+            bestSeed = seedType;
+            bestScore = score;
+        }
+    }
+    return bestSeed;
 }
 
 int GetBuiltinAIPageForSeed(const SeedChooserScreen *screen, SeedType seedType) {
@@ -810,7 +923,8 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
         priorityCount = kBuiltinAIDeckSize;
     }
 
-    const SeedType selectedSeedType = FindBuiltinAICandidate(this, prioritySeeds, priorityCount);
+    const SeedType selectedSeedType = mBanningPhase ? FindBuiltinAIBanCandidate(this, prioritySeeds, priorityCount)
+                                                    : FindBuiltinAICandidate(this, prioritySeeds, priorityCount);
     if (selectedSeedType == SeedType::SEED_NONE) {
         return;
     }

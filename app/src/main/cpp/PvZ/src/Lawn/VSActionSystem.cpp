@@ -419,16 +419,17 @@ PlantLaneAssessment MostThreatenedPlantLane(const VSGameState &state) {
     return best;
 }
 
+bool IsPlantEconomySeed(const VSGameState &state, std::uint16_t seedType);
+
 int LeastDevelopedPlantRow(const VSGameState &state) {
     int bestRow = 0;
     int bestScore = std::numeric_limits<int>::max();
     for (int row = 0; row < state.rows; ++row) {
         const PlantLaneAssessment assessment = AssessPlantLane(state, row);
-        const int sunflowerCount = static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [row](const VSPlantState &plant) {
-            const SeedType seed = static_cast<SeedType>(plant.seedType);
-            return !IsDeadOrOutside(plant) && plant.position.row == row && seed == SeedType::SEED_SUNFLOWER;
+        const int incomeCount = static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [&state, row](const VSPlantState &plant) {
+            return !IsDeadOrOutside(plant) && plant.position.row == row && IsPlantEconomySeed(state, plant.seedType);
         }));
-        const int score = assessment.defense + assessment.plantCount * 12 + sunflowerCount * 15;
+        const int score = assessment.defense + assessment.plantCount * 12 + incomeCount * 15;
         if (score < bestScore) {
             bestScore = score;
             bestRow = row;
@@ -494,8 +495,10 @@ int PlantValueScore(const VSPlantState &plant) {
     return score;
 }
 
-bool IsPlantEconomySeed(std::uint16_t seedType) {
-    return seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNFLOWER) || seedType == static_cast<std::uint16_t>(SeedType::SEED_TWINSUNFLOWER);
+bool IsPlantEconomySeed(const VSGameState &state, std::uint16_t seedType) {
+    return seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNFLOWER)
+        || seedType == static_cast<std::uint16_t>(SeedType::SEED_TWINSUNFLOWER)
+        || (state.isNight && seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNSHROOM));
 }
 
 bool IsPlantCombatSeed(std::uint16_t seedType) {
@@ -607,7 +610,7 @@ int SustainedOutputScoreInRow(const VSGameState &state, int row) {
 int PlantEconomyValueInRow(const VSGameState &state, int row) {
     int score = 0;
     for (const VSPlantState &plant : state.plants) {
-        if (IsDeadOrOutside(plant) || plant.position.row != row || !IsPlantEconomySeed(plant.seedType)) {
+        if (IsDeadOrOutside(plant) || plant.position.row != row || !IsPlantEconomySeed(state, plant.seedType)) {
             continue;
         }
         const int healthRatio = plant.maxHealth > 0 ? std::clamp(plant.health * 100 / plant.maxHealth, 0, 100) : 50;
@@ -840,7 +843,7 @@ int PlantLaneWeaknessScore(const VSGameState &state, int row) {
         if (IsDeadOrOutside(plant) || plant.position.row != row) {
             continue;
         }
-        economyPlants += IsPlantEconomySeed(plant.seedType) ? 1 : 0;
+        economyPlants += IsPlantEconomySeed(state, plant.seedType) ? 1 : 0;
         combatPlants += IsPlantCombatSeed(plant.seedType) ? 1 : 0;
         highValuePlants += PlantValueScore(plant) >= 100 ? 1 : 0;
     }
@@ -855,8 +858,8 @@ int PlantLaneWeaknessScore(const VSGameState &state, int row) {
 }
 
 int EconomyPlantsInRow(const VSGameState &state, int row) {
-    return static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [row](const VSPlantState &plant) {
-        return !IsDeadOrOutside(plant) && plant.position.row == row && IsPlantEconomySeed(plant.seedType);
+    return static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [&state, row](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.position.row == row && IsPlantEconomySeed(state, plant.seedType);
     }));
 }
 
@@ -1083,7 +1086,8 @@ int CountLivePlants(const VSGameState &state) {
 }
 
 int CountPlantIncome(const VSGameState &state) {
-    return CountPlantType(state, SeedType::SEED_SUNFLOWER);
+    return CountPlantType(state, SeedType::SEED_SUNFLOWER)
+        + (state.isNight ? CountPlantType(state, SeedType::SEED_SUNSHROOM) : 0);
 }
 
 struct StrategyRule {
@@ -1458,7 +1462,10 @@ class PlantVSAgent final : public BuiltinVSAgent {
         }
         const VSCardState *bestCard = nullptr;
         int bestScore = std::numeric_limits<int>::min();
-        for (const SeedType seedType : {SeedType::SEED_SUNFLOWER}) {
+        for (const SeedType seedType : {SeedType::SEED_SUNFLOWER, SeedType::SEED_SUNSHROOM}) {
+            if (seedType == SeedType::SEED_SUNSHROOM && !state.isNight) {
+                continue;
+            }
             if (const VSCardState *card = FindReadyCard(state, seedType); card != nullptr) {
                 if (state.plantSun - card->cost < protectedSun) {
                     continue;
@@ -1475,7 +1482,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
 
     std::optional<VSAction> TrySunshroomFiller(const VSGameState &state, int preferredRow, int protectedSun) {
         const VSCardState *card = FindReadyCard(state, SeedType::SEED_SUNSHROOM);
-        if (card == nullptr || state.plantSun - card->cost < protectedSun) {
+        if (state.isNight || card == nullptr || state.plantSun - card->cost < protectedSun) {
             return std::nullopt;
         }
 
@@ -1610,8 +1617,9 @@ class PlantVSAgent final : public BuiltinVSAgent {
     }
 
     bool HasIncomeSeed(const VSGameState &state) const {
-        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [](const VSCardState &card) {
-            return card.seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNFLOWER);
+        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [&state](const VSCardState &card) {
+            return card.seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNFLOWER)
+                || (state.isNight && card.seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNSHROOM));
         });
     }
 
@@ -1653,7 +1661,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
         int bestScore = std::numeric_limits<int>::min();
         for (const VSPlantState &plant : state.plants) {
             if (IsDeadOrOutside(plant) || plant.position.row != row || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_PUMPKINSHELL)
-                || (!IsPlantCombatSeed(plant.seedType) && !IsPlantEconomySeed(plant.seedType))
+                || (!IsPlantCombatSeed(plant.seedType) && !IsPlantEconomySeed(state, plant.seedType))
                 || HasPlantTypeAt(state, SeedType::SEED_PUMPKINSHELL, plant.position)) {
                 continue;
             }
@@ -1682,7 +1690,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
             if (IsDeadOrOutside(plant) || plant.position.row != row || plant.position.col > 3) {
                 continue;
             }
-            if (IsPlantEconomySeed(plant.seedType) || IsPlantCombatSeed(plant.seedType)) {
+            if (IsPlantEconomySeed(state, plant.seedType) || IsPlantCombatSeed(plant.seedType)) {
                 hasProtectedInvestment = true;
                 break;
             }
@@ -1785,7 +1793,7 @@ public:
         const PlantLaneAssessment danger = MostThreatenedPlantLane(state);
         const int openingIncomeTarget = state.rows >= 6 ? 7 : 6;
         const int minimumIncomeBeforeOutput = state.rows >= 6 ? 4 : 3;
-        const int incomePlantCount = CountPlantType(state, SeedType::SEED_SUNFLOWER);
+        const int incomePlantCount = CountPlantIncome(state);
         const int sustainedOutputCount = CountSustainedOutputPlants(state);
         const bool hasIncomeSeed = HasIncomeSeed(state);
         const bool hasSunshroomFiller = HasSunshroomSeed(state);
@@ -1877,7 +1885,7 @@ public:
             }
         }
 
-        if (hasActiveZombie && hasSunshroomFiller && !immediateCounterThreat && counterClosest != nullptr
+        if (!state.isNight && hasActiveZombie && hasSunshroomFiller && !immediateCounterThreat && counterClosest != nullptr
             && (incomePlantCount >= minimumIncomeBeforeOutput || sustainedOutputCount > 0)) {
             if (std::optional<VSAction> action = TrySunshroomFiller(state, danger.row, protectedSun)) {
                 return action;
@@ -2810,6 +2818,7 @@ VSGameState BuildGameState(Board *board) {
     state.rows = board->StageHas6Rows() ? 6 : 5;
     state.plantSun = board->mSunMoney1;
     state.zombieBrains = board->mDeathMoney;
+    state.isNight = board->StageIsNight();
     state.playing = IsMatchPlaying(board);
     state.paused = board->mPaused || requestPause;
 

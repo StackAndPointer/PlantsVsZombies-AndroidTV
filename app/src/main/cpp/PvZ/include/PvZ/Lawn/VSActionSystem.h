@@ -135,6 +135,7 @@ struct VSGameState {
     int rows = 5;
     int plantSun = 0;
     int zombieBrains = 0;
+    bool isNight = false;
     bool playing = false;
     bool paused = false;
     std::array<std::vector<VSCardState>, 2> seedBanks;
