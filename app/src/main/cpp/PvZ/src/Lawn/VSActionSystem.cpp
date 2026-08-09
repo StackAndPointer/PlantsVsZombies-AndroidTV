@@ -725,6 +725,76 @@ int GraveThreatScore(const VSGameState &state, int row) {
     return score;
 }
 
+int ZombieEconomyAssetValue(const VSGridItemState &item) {
+    if (!IsZombieEconomyItem(item.gridItemType)) {
+        return 0;
+    }
+    if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_BURIAL_MOUND)) {
+        return 135 + std::clamp(item.level, 0, 4) * 90;
+    }
+    return 110;
+}
+
+int ZombieEconomyAttackOpportunity(const VSGameState &state, int row) {
+    int score = 0;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.dead || item.position.row != row || !IsZombieEconomyItem(item.gridItemType)) {
+            continue;
+        }
+
+        const int assetValue = ZombieEconomyAssetValue(item);
+        const int maxHealth = std::max(1, EstimatedEconomyMaxHealth(item));
+        int existingPressure = 0;
+        for (const VSPlantState &plant : state.plants) {
+            existingPressure += PlantThreatToEconomy(plant, item);
+        }
+        // A fresh grave/mound is worth opening a firing lane for.  Once it is
+        // already under fire, finishing it remains useful but needs fewer
+        // additional resources than a completely untouched income source.
+        score += existingPressure > 0 ? assetValue : assetValue * 3;
+        if (item.health <= maxHealth / 2) {
+            score += assetValue / 2;
+        }
+    }
+    return score;
+}
+
+int SeedEconomyPressureOpportunity(const VSGameState &state, SeedType seed, int row) {
+    int score = 0;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.dead || !IsZombieEconomyItem(item.gridItemType)) {
+            continue;
+        }
+
+        const int rowDistance = std::abs(row - static_cast<int>(item.position.row));
+        int pressure = 0;
+        if (seed == SeedType::SEED_GRAVEBUSTER) {
+            pressure = rowDistance == 0 ? 4 : 0;
+        } else if (seed == SeedType::SEED_STARFRUIT) {
+            pressure = rowDistance == 0 ? 3 : (rowDistance == 1 ? 2 : 0);
+        } else if (seed == SeedType::SEED_THREEPEATER) {
+            pressure = rowDistance <= 1 ? 2 : 0;
+        } else if (IsSustainedOutputSeed(seed)) {
+            pressure = rowDistance == 0 ? 2 : 0;
+        }
+        score += pressure * ZombieEconomyAssetValue(item);
+    }
+    return score;
+}
+
+int MostVulnerableZombieEconomyRow(const VSGameState &state) {
+    int bestRow = 0;
+    int bestScore = std::numeric_limits<int>::min();
+    for (int row = 0; row < state.rows; ++row) {
+        const int score = ZombieEconomyAttackOpportunity(state, row);
+        if (score > bestScore) {
+            bestScore = score;
+            bestRow = row;
+        }
+    }
+    return bestRow;
+}
+
 int MostThreatenedEconomyRow(const VSGameState &state) {
     int bestRow = 0;
     int bestScore = std::numeric_limits<int>::min();
@@ -1192,6 +1262,31 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return std::nullopt;
     }
 
+    std::optional<VSAction> TryGraveBuster(const VSGameState &state, int protectedSun) {
+        const VSCardState *card = FindReadyCard(state, SeedType::SEED_GRAVEBUSTER);
+        if (card == nullptr || state.plantSun - card->cost < protectedSun) {
+            return std::nullopt;
+        }
+
+        const VSGridItemState *bestItem = nullptr;
+        int bestScore = std::numeric_limits<int>::min();
+        for (const VSGridItemState &item : state.gridItems) {
+            if (item.dead || !IsZombieEconomyItem(item.gridItemType)) {
+                continue;
+            }
+            const PlantLaneAssessment lane = AssessPlantLane(state, item.position.row);
+            const int maxHealth = std::max(1, EstimatedEconomyMaxHealth(item));
+            int score = ZombieEconomyAssetValue(item) * 4;
+            score += item.health <= maxHealth / 2 ? 80 : 0;
+            score -= lane.danger * 2;
+            if (bestItem == nullptr || score > bestScore) {
+                bestItem = &item;
+                bestScore = score;
+            }
+        }
+        return bestItem == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, bestItem->position, state.boardTick));
+    }
+
     std::optional<VSAction> TrySustainedOutputPlant(const VSGameState &state, int row, int protectedSun) {
         const VSCardState *bestCard = nullptr;
         VSGridPosition bestTarget{};
@@ -1226,6 +1321,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 score += PlantEconomyValueInRow(state, targetRow) * 2;
                 score += std::max(0, 110 - existingOutput) * 2;
                 score -= existingOutput / 2;
+                score += SeedEconomyPressureOpportunity(state, seed, targetRow) * 2;
                 score += lane.danger >= 85 ? 55 : 0;
                 score += targetRow == row ? 25 : 0;
                 if (seed == SeedType::SEED_SNOWPEA) {
@@ -1420,6 +1516,9 @@ public:
         const bool mustHoldCounterReserve = areaCounterReserve > 0 && state.plantSun >= areaCounterReserve
             && HasReadyZombieBreakthroughCard(state);
         const int protectedSun = mustHoldCounterReserve ? areaCounterReserve : 0;
+        const int zombieEconomyStrikeRow = MostVulnerableZombieEconomyRow(state);
+        const int zombieEconomyStrikeValue = ZombieEconomyAttackOpportunity(state, zombieEconomyStrikeRow);
+        const bool canStrikeZombieEconomy = zombieEconomyStrikeValue >= 220 && danger.danger < 130 && !immediateCounterThreat;
         // Every two economy plants should fund one durable attacker, up to a
         // line per row.  This prevents the old all-Sunflower opening from
         // leaving the board without enough repeatable damage.
@@ -1447,6 +1546,20 @@ public:
         }
         if (std::optional<VSAction> action = TryWakeSleepingMushroom(state, danger.row)) {
             return action;
+        }
+
+        // A healthy Sunflower count is not a win condition by itself.  When
+        // the opposing grave economy is exposed, convert the available tempo
+        // into direct pressure before investing another turn in own income.
+        if (canStrikeZombieEconomy) {
+            if (std::optional<VSAction> action = TryGraveBuster(state, protectedSun)) {
+                return action;
+            }
+            if (hasSustainedOutputSeed) {
+                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, zombieEconomyStrikeRow, protectedSun)) {
+                    return action;
+                }
+            }
         }
 
         if (zombieCluster && areaCounterReserve > 0 && state.plantSun < areaCounterReserve) {
