@@ -126,6 +126,55 @@ bool IsChooserFilled(const SeedChooserScreen *screen) {
     return screen != nullptr && screen->mSeedBank1 != nullptr && screen->mSeedsInFlight == 0 && screen->mSeedsInBank >= screen->mSeedBank1->mNumPackets;
 }
 
+constexpr int kBuiltinAIDeckSize = 6;
+
+// Each entry is a replay-derived or balanced VS archetype.  A profile is
+// chosen once per local match, then unavailable or banned cards fall through
+// to the generic legal-card picker below.
+static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIDeckSize] = {
+    {SEED_IMP_PEAR, SEED_BONK_CHOY, SEED_SQUASH, SEED_WALLNUT, SEED_SNOWPEA, SEED_SUNFLOWER},
+    {SEED_CHERRYBOMB, SEED_PUMPKINSHELL, SEED_SQUASH, SEED_INSTANT_COFFEE, SEED_SPORESHROOM, SEED_SUNSHROOM},
+    {SEED_SUNSHROOM, SEED_CHERRYBOMB, SEED_WALLNUT, SEED_CHOMPER, SEED_STARFRUIT, SEED_SQUASH},
+    {SEED_SUNFLOWER, SEED_REPEATER, SEED_SNOWPEA, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB},
+};
+
+static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIDeckSize] = {
+    {SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_WALLNUT_HEAD, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_GARGANTUAR, SEED_ZOMBIE_GIGA_FOOTBALL, SEED_ZOMBIE_GRAVESTONE},
+    {SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_IMP, SEED_ZOMBONI, SEED_ZOMBIE_SCREEN_DOOR, SEED_ZOMBIE_MOUND, SEED_ZOMBIE_TRASHCAN},
+    {SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_IMP, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_GARGANTUAR, SEED_ZOMBIE_GRAVESTONE},
+    {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_NORMAL, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_BUNGEE},
+};
+
+struct BuiltinAIDeckPlans {
+    LawnApp *app = nullptr;
+    int plantProfile = -1;
+    int zombieProfile = -1;
+};
+
+BuiltinAIDeckPlans gBuiltinAIDeckPlans;
+
+void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
+    if (screen == nullptr || screen->mApp == nullptr) {
+        return;
+    }
+
+    if (gBuiltinAIDeckPlans.app == screen->mApp && gBuiltinAIDeckPlans.plantProfile >= 0 && gBuiltinAIDeckPlans.zombieProfile >= 0) {
+        return;
+    }
+
+    gBuiltinAIDeckPlans.app = screen->mApp;
+    gBuiltinAIDeckPlans.plantProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantDecks)));
+    gBuiltinAIDeckPlans.zombieProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIZombieDecks)));
+}
+
+const SeedType *GetBuiltinAIDeckPriority(SeedChooserScreen *screen) {
+    EnsureBuiltinAIDeckPlans(screen);
+    if (screen->mIsZombieChooser) {
+        return kBuiltinAIZombieDecks[gBuiltinAIDeckPlans.zombieProfile];
+    }
+    return kBuiltinAIPlantDecks[gBuiltinAIDeckPlans.plantProfile];
+}
+
 void TryAutoStartBuiltinVSMatch(SeedChooserScreen *screen) {
     if (!IsLocalBuiltinAIChooser(screen) || screen->mApp == nullptr || screen->mApp->mSeedChooserScreen == nullptr || screen->mApp->mZombieChooserScreen == nullptr
         || (!VSSetupAddonWidget::msPlantAIMode && !VSSetupAddonWidget::msZombieAIMode)) {
@@ -179,13 +228,23 @@ bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
 }
 
 SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
-    for (std::size_t i = 0; i < priorityCount; ++i) {
-        if (IsBuiltinAICandidate(screen, prioritySeeds[i])) {
-            return prioritySeeds[i];
+    if (priorityCount > 0) {
+        const std::size_t firstPriority = static_cast<std::size_t>(Sexy::Rand(static_cast<int>(priorityCount)));
+        for (std::size_t offset = 0; offset < priorityCount; ++offset) {
+            const SeedType seedType = prioritySeeds[(firstPriority + offset) % priorityCount];
+            if (IsBuiltinAICandidate(screen, seedType)) {
+                return seedType;
+            }
         }
     }
 
-    for (int seedIndex = 0; seedIndex < screen->GetSeedStorageCount(); ++seedIndex) {
+    const int storageCount = screen->GetSeedStorageCount();
+    if (storageCount <= 0) {
+        return SeedType::SEED_NONE;
+    }
+    const int firstSeedIndex = Sexy::Rand(storageCount);
+    for (int offset = 0; offset < storageCount; ++offset) {
+        const int seedIndex = (firstSeedIndex + offset) % storageCount;
         const SeedType seedType = screen->mIsZombieChooser ? screen->GetZombieSeedType(seedIndex) : screen->GetPlantSeedType(seedIndex);
         if (IsBuiltinAICandidate(screen, seedType)) {
             return seedType;
@@ -291,6 +350,12 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
     auto &buttonList = mButtons.Construct();
     mApp = reinterpret_cast<LawnApp *>(Sexy::gSexyAppBase);
     mBoard = mApp->mBoard;
+    if (mApp->IsVSMode() && !theIsZombieChooser) {
+        // A VS match always constructs the plant chooser first.  Clearing the
+        // old plan here gives a fresh random archetype even when a human
+        // performs the opening pick before the local AI gets its turn.
+        gBuiltinAIDeckPlans = {};
+    }
 
     if (mBoard->mCutScene->IsSurvivalRepick() && !mApp->IsCoopMode()) {
         GamepadControls *gamePad = mBoard->mGamepadControls[0];
@@ -690,6 +755,7 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
     if (!aiEnabled || (mBanningPhase && mSeedsInBanned >= mNumBanPackets)) {
         return;
     }
+    EnsureBuiltinAIDeckPlans(this);
 
     int controllerIndex = -1;
     for (int sideSlot = 0; sideSlot < 2; ++sideSlot) {
@@ -725,36 +791,14 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
         SeedType::SEED_COBCANNON,
         SeedType::SEED_SNOWPEA,
     };
-    static constexpr SeedType kPlantPickPriority[] = {
-        SeedType::SEED_IMP_PEAR,
-        SeedType::SEED_BONK_CHOY,
-        SeedType::SEED_SQUASH,
-        SeedType::SEED_WALLNUT,
-        SeedType::SEED_SNOWPEA,
-        SeedType::SEED_CELERY_STALKER,
-        SeedType::SEED_SUNFLOWER,
-        SeedType::SEED_CHERRYBOMB,
-        SeedType::SEED_PEASHOOTER,
-    };
-    static constexpr SeedType kZombiePickPriority[] = {
-        SeedType::SEED_ZOMBIE_BOBSLED,
-        SeedType::SEED_ZOMBIE_WALLNUT_HEAD,
-        SeedType::SEED_ZOMBIE_PAIL,
-        SeedType::SEED_ZOMBIE_GARGANTUAR,
-        SeedType::SEED_ZOMBIE_GIGA_FOOTBALL,
-        SeedType::SEED_ZOMBIE_GRAVESTONE,
-        SeedType::SEED_ZOMBIE_BUNGEE,
-        SeedType::SEED_ZOMBIE_NORMAL,
-    };
-
     const SeedType *prioritySeeds = nullptr;
     std::size_t priorityCount = 0;
     if (mBanningPhase) {
         prioritySeeds = mIsZombieChooser ? kPlantBanPriority : kZombieBanPriority;
         priorityCount = mIsZombieChooser ? std::size(kPlantBanPriority) : std::size(kZombieBanPriority);
     } else {
-        prioritySeeds = mIsZombieChooser ? kZombiePickPriority : kPlantPickPriority;
-        priorityCount = mIsZombieChooser ? std::size(kZombiePickPriority) : std::size(kPlantPickPriority);
+        prioritySeeds = GetBuiltinAIDeckPriority(this);
+        priorityCount = kBuiltinAIDeckSize;
     }
 
     const SeedType selectedSeedType = FindBuiltinAICandidate(this, prioritySeeds, priorityCount);

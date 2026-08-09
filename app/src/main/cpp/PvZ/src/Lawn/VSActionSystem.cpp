@@ -765,6 +765,9 @@ int SeedEconomyPressureOpportunity(const VSGameState &state, SeedType seed, int 
         if (item.dead || !IsZombieEconomyItem(item.gridItemType)) {
             continue;
         }
+        if (seed == SeedType::SEED_GRAVEBUSTER && item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_GRAVESTONE)) {
+            continue;
+        }
 
         const int rowDistance = std::abs(row - static_cast<int>(item.position.row));
         int pressure = 0;
@@ -1271,7 +1274,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
         const VSGridItemState *bestItem = nullptr;
         int bestScore = std::numeric_limits<int>::min();
         for (const VSGridItemState &item : state.gridItems) {
-            if (item.dead || !IsZombieEconomyItem(item.gridItemType)) {
+            if (item.dead || item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_GRAVESTONE)) {
                 continue;
             }
             const PlantLaneAssessment lane = AssessPlantLane(state, item.position.row);
