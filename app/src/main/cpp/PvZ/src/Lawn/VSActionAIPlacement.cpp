@@ -73,6 +73,7 @@ bool IsRangedOutputTradeUnfavorable(const VSGameState &state, int row) {
             case ZombieType::ZOMBIE_TRASHCAN:
             case ZombieType::ZOMBIE_DOOR:
             case ZombieType::ZOMBIE_WALLNUT_HEAD:
+            case ZombieType::ZOMBIE_TALLNUT_HEAD:
                 return true;
             default:
                 break;

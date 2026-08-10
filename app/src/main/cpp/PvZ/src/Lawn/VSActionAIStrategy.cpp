@@ -221,6 +221,7 @@ bool IsZombieGraveGuardSeed(SeedType seed) {
         case SeedType::SEED_ZOMBIE_TRASHCAN:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
+        case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_NEWSPAPER:
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
@@ -235,6 +236,7 @@ bool HasZombieGraveGuardInRow(const VSGameState &state, int row) {
     return HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_TRASHCAN)
         || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_DOOR)
         || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_WALLNUT_HEAD)
+        || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_TALLNUT_HEAD)
         || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_PAIL)
         || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_NEWSPAPER)
         || HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_SUNDAY_EDITION)

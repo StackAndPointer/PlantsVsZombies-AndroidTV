@@ -77,6 +77,8 @@ class ZombieVSAgent final : public BuiltinVSAgent {
         switch (seed) {
             case SeedType::SEED_ZOMBIE_TRASHCAN:
                 return 520;
+            case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
+                return 465;
             case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
                 return 410;
             case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -184,6 +186,13 @@ class ZombieVSAgent final : public BuiltinVSAgent {
             case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
                 score += 80 + plantCount * 12 + sustainedOutput / 3 + (hasSnowPea ? 115 : 0) + (hasWallnut ? 80 : 0);
                 break;
+            case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
+                // Mound games protect the upgraded economic asset with a
+                // durable head rather than treating Trashcan as the only
+                // viable grave screen.
+                score += graveProjectileThreat > 0 && !hasGraveGuard ? 440 + graveProjectileThreat * 2 : -95;
+                score += graveThreat >= 100 ? 115 : 0;
+                break;
             case SeedType::SEED_ZOMBIE_PAIL:
                 score += 65 + plantCount * 14 + sustainedOutput / 2 + economyValue / 4 + (hasSnowPea ? 135 : 0) + (hasBonkChoy ? 100 : 0);
                 break;
@@ -263,6 +272,16 @@ class ZombieVSAgent final : public BuiltinVSAgent {
             case SeedType::SEED_ZOMBIE_DIGGER:
                 score += plantCount * 8 + sustainedOutput / 4 + economyValue / 2 + (hasWallnut ? 90 : 0);
                 break;
+            case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
+                // Cheap fast pressure should fan out through under-defended
+                // sunflower lanes, not shadow an existing zombie stack.
+                score += 105 + plantCount * 9 + sustainedOutput / 3 + economyValue / 2;
+                score += zombieCount == 0 ? 110 : -90;
+                break;
+            case SeedType::SEED_ZOMBIE_SQUASH_HEAD:
+                score += 95 + plantCount * 11 + sustainedOutput / 3 + economyValue / 3;
+                score += zombieCount == 0 ? 90 : -75;
+                break;
             case SeedType::SEED_ZOMBIE_BUNGEE:
                 score += hasPlants ? 220 : -80;
                 score += (hasWallnut || hasBonkChoy) ? 85 : 0;
@@ -278,7 +297,9 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 score += plantCount * 4;
                 break;
             case SeedType::SEED_ZOMBIE_MOUND:
-                score += economyCount > 0 ? 180 : -150;
+                // A mound is an upgrade to a grave economy, not a substitute
+                // for the initial rear field.
+                score += economyCount >= std::max(3, state.rows / 2) ? 220 : -220;
                 score += graveThreat;
                 break;
             case SeedType::SEED_ZOMBIE_DANCER:
@@ -372,9 +393,10 @@ public:
                 const VSGridPosition target = FindZombieMoundCell(state, row);
                 return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
             }
-            if (seed == SeedType::SEED_ZOMBIE_TRASHCAN) {
+            if (seed == SeedType::SEED_ZOMBIE_TRASHCAN || seed == SeedType::SEED_ZOMBIE_TALLNUT_HEAD) {
                 // Trashcan advances too slowly to be an attacking probe. Its
-                // job is to absorb pea-family fire before it reaches a grave.
+                // job is to absorb direct fire before it reaches a grave;
+                // Tall-nut Head takes the same role in mound decks.
                 if (StraightProjectileThreatScore(state, row) <= 0 || HasZombieGraveGuardInRow(state, row)) {
                     return std::nullopt;
                 }
@@ -405,6 +427,13 @@ public:
             if (IsSlotBlocked(card.slot) || !card.active || card.refreshing || card.refreshCounter > 0) {
                 continue;
             }
+            const SeedType seed = static_cast<SeedType>(card.seedType);
+            // Sudden death removes zombie-side economy actions.  Filter them
+            // before scoring so an otherwise attractive grave cannot stall
+            // the agent on a target the mode rejects.
+            if (state.isSuddenDeath && (seed == SeedType::SEED_ZOMBIE_GRAVESTONE || seed == SeedType::SEED_ZOMBIE_MOUND)) {
+                continue;
+            }
             if (graveDefenseScore >= 100 && card.seedType == static_cast<std::uint16_t>(SeedType::SEED_ZOMBIE_GRAVESTONE)) {
                 continue;
             }
@@ -417,6 +446,19 @@ public:
                     ? MoundUpgradeCostAt(state, *target)
                     : card.cost;
                 int score = CardScore(card, state, row, economyCount, effectiveCost);
+                const bool isEconomyAction = seed == SeedType::SEED_ZOMBIE_GRAVESTONE || seed == SeedType::SEED_ZOMBIE_MOUND;
+                const bool isTargetedAction = IsTargetedSeed(card.seedType);
+                const bool isProtectedGuard = IsZombieGraveGuardSeed(seed) && graveDefenseUrgent;
+                const int zombiesInRow = CountZombiesInRow(state, row);
+                const int desiredOpeningRows = std::min(3, state.rows);
+                if (!isEconomyAction && !isTargetedAction && !isProtectedGuard && !IsHeavyZombieSeed(seed)
+                    && activePressureRows < desiredOpeningRows) {
+                    // The new recordings use cheap cones, imps and normal
+                    // zombies to establish several live probes before any
+                    // lane receives a second body. This also denies one Ash
+                    // counter an entire zombie-side wave.
+                    score += zombiesInRow == 0 ? 210 : -280;
+                }
                 if (graveDefenseUrgent && row == graveDefenseRow) {
                     score += 140;
                 }

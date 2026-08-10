@@ -151,6 +151,17 @@ protected:
         };
     }
 
+    VSAction MakeShovelAction(VSGridPosition target, std::uint32_t tick) {
+        return {
+            .side = VSSide::Plants,
+            .kind = VSActionKind::Shovel,
+            .target = target,
+            .notBeforeTick = tick,
+            .expiresAtTick = tick + 120,
+            .sequence = ++mSequence,
+        };
+    }
+
 public:
     void Reset() override {
         mSequence = 0;

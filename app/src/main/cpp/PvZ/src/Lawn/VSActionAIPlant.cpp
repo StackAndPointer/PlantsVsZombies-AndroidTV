@@ -198,6 +198,57 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return std::nullopt;
     }
 
+    std::optional<VSAction> TryDaytimeScaredyFiller(const VSGameState &state, int preferredRow, int protectedSun) {
+        const VSCardState *card = FindReadyCard(state, SeedType::SEED_SCAREDYSHROOM);
+        // Without Coffee, Scaredy-shroom is cheap front padding rather than
+        // a main damage plant. It buys the actual carry another firing cycle.
+        if (state.isNight || card == nullptr || FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE) != nullptr
+            || state.plantSun - card->cost < protectedSun) {
+            return std::nullopt;
+        }
+
+        int bestRow = -1;
+        int bestScore = std::numeric_limits<int>::min();
+        for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
+            const int row = (preferredRow + rowOffset) % state.rows;
+            const VSZombieState *closest = FindClosestZombie(state, row);
+            if (closest == nullptr || closest->positionX > 760.0f) {
+                continue;
+            }
+            VSGridPosition target{};
+            for (int column = 5; column >= 4; --column) {
+                target = FindPlantCellInExactRow(state, row, column, column);
+                if (target.col >= 0 && target.row >= 0) {
+                    break;
+                }
+            }
+            if (target.col < 0 || target.row < 0) {
+                continue;
+            }
+
+            const PlantLaneAssessment lane = AssessPlantLane(state, row);
+            const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+            int score = lane.rawDanger * 2 + firepower.deficit * 12;
+            score += closest->positionX < 620.0f ? 120 : 0;
+            score += !firepower.canHold ? 85 : 0;
+            score += row == preferredRow ? 35 : 0;
+            if (bestRow < 0 || score > bestScore) {
+                bestRow = row;
+                bestScore = score;
+            }
+        }
+
+        if (bestRow < 0) {
+            return std::nullopt;
+        }
+        for (int column = 5; column >= 4; --column) {
+            if (std::optional<VSAction> action = TryPlantExactRow(state, SeedType::SEED_SCAREDYSHROOM, bestRow, column, column)) {
+                return action;
+            }
+        }
+        return std::nullopt;
+    }
+
     std::optional<VSAction> TryGraveBuster(const VSGameState &state, int protectedSun) {
         const VSCardState *card = FindReadyCard(state, SeedType::SEED_GRAVEBUSTER);
         if (card == nullptr || state.plantSun - card->cost < protectedSun) {
@@ -223,6 +274,83 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return bestItem == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, bestItem->position, state.boardTick));
     }
 
+    VSGridPosition FindSustainedOutputCell(const VSGameState &state, SeedType seed, int row) const {
+        switch (seed) {
+            case SeedType::SEED_FUMESHROOM:
+            case SeedType::SEED_GLOOMSHROOM:
+            case SeedType::SEED_SPORESHROOM:
+                // Short-range mushroom carries need to be far enough forward
+                // to engage, but never consume the emergency cells at 4/5.
+                return FindPlantCellInExactRow(state, row, 2, 3);
+            default:
+                // The replay pults and boomerangs establish their firing line
+                // behind the disposable front, including column zero when it
+                // remains open beside the opening Sunflowers.
+                return FindPlantCellInExactRow(state, row, 0, 3);
+        }
+    }
+
+    bool HasReadySustainedOutputCard(const VSGameState &state, int protectedSun) const {
+        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [&](const VSCardState &card) {
+            return !IsSlotBlocked(card.slot) && IsReadyCard(card, state.plantSun) && state.plantSun - card.cost >= protectedSun
+                && IsSustainedOutputSeed(static_cast<SeedType>(card.seedType));
+        });
+    }
+
+    std::optional<VSAction> TryRecycleIncomeForOutput(const VSGameState &state, int preferredRow, int protectedSun) {
+        // Replays keep a compact income base, then replace only its exposed
+        // front flower when it prevents a real firing line from being built.
+        // Do not trade economy during the opening or merely to make space.
+        if (state.isSuddenDeath || CountPlantIncome(state) < std::max(5, state.rows) || !HasReadySustainedOutputCard(state, protectedSun)) {
+            return std::nullopt;
+        }
+
+        const VSPlantState *bestPlant = nullptr;
+        int bestScore = std::numeric_limits<int>::min();
+        for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
+            const int row = (preferredRow + rowOffset) % state.rows;
+            if (IsRangedOutputTradeUnfavorable(state, row)) {
+                continue;
+            }
+
+            int incomeInRow = 0;
+            bool outputCellAvailable = false;
+            for (const VSPlantState &plant : state.plants) {
+                if (!IsDeadOrOutside(plant) && plant.position.row == row && IsPlantEconomySeed(state, plant.seedType)) {
+                    ++incomeInRow;
+                }
+            }
+            for (const VSCardState &card : state.seedBanks[0]) {
+                if (!IsReadyCard(card, state.plantSun) || state.plantSun - card.cost < protectedSun
+                    || !IsSustainedOutputSeed(static_cast<SeedType>(card.seedType))) {
+                    continue;
+                }
+                if (FindSustainedOutputCell(state, static_cast<SeedType>(card.seedType), row).col >= 0) {
+                    outputCellAvailable = true;
+                    break;
+                }
+            }
+            if (outputCellAvailable || incomeInRow < 2) {
+                continue;
+            }
+
+            for (const VSPlantState &plant : state.plants) {
+                if (IsDeadOrOutside(plant) || plant.position.row != row || !IsPlantEconomySeed(state, plant.seedType)
+                    || plant.position.col < 2 || plant.position.col > 3) {
+                    continue;
+                }
+                const int healthRatio = plant.maxHealth > 0 ? plant.health * 100 / plant.maxHealth : 100;
+                int score = static_cast<int>(plant.position.col) * 120 + (100 - std::clamp(healthRatio, 0, 100));
+                score += row == preferredRow ? 35 : 0;
+                if (bestPlant == nullptr || score > bestScore) {
+                    bestPlant = &plant;
+                    bestScore = score;
+                }
+            }
+        }
+        return bestPlant == nullptr ? std::nullopt : std::optional<VSAction>(MakeShovelAction(bestPlant->position, state.boardTick));
+    }
+
     std::optional<VSAction> TrySustainedOutputPlant(const VSGameState &state, int row, int protectedSun, bool allowLowCostCombat = false) {
         const VSCardState *bestCard = nullptr;
         VSGridPosition bestTarget{};
@@ -241,10 +369,14 @@ class PlantVSAgent final : public BuiltinVSAgent {
 
             for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
                 const int targetRow = (row + rowOffset) % state.rows;
+                const VSZombieState *closest = FindClosestZombie(state, targetRow);
                 if (seed == SeedType::SEED_SNOWPEA && HasPlantTypeInRow(state, seed, targetRow)) {
                     continue;
                 }
                 if (lowCostCombat && HasPlantTypeInRow(state, seed, targetRow)) {
+                    continue;
+                }
+                if (lowCostCombat && (closest == nullptr || (!closest->eating && closest->positionX > 660.0f))) {
                     continue;
                 }
                 if (!lowCostCombat && IsRangedOutputTradeUnfavorable(state, targetRow)) {
@@ -252,8 +384,8 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 }
 
                 const VSGridPosition target = lowCostCombat
-                    ? FindPlantCellInExactRow(state, targetRow, 3, 3)
-                    : FindPlantCellInExactRow(state, targetRow, 1, 3);
+                    ? FindPlantCellInExactRow(state, targetRow, 4, 4)
+                    : FindSustainedOutputCell(state, seed, targetRow);
                 if (target.col < 0 || target.row < 0) {
                     continue;
                 }
@@ -307,7 +439,10 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 }
             }
         }
-        return bestCard == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *bestCard, bestTarget, state.boardTick));
+        if (bestCard != nullptr) {
+            return MakePlayAction(VSSide::Plants, *bestCard, bestTarget, state.boardTick);
+        }
+        return allowLowCostCombat ? std::nullopt : TryRecycleIncomeForOutput(state, row, protectedSun);
     }
 
     bool HasIncomeSeed(const VSGameState &state) const {
@@ -376,7 +511,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
         const VSCardState *bestCard = nullptr;
         VSGridPosition bestTarget{};
         int bestScore = std::numeric_limits<int>::min();
-        for (const SeedType seed : {SeedType::SEED_PUFFSHROOM, SeedType::SEED_SCAREDYSHROOM}) {
+        for (const SeedType seed : {SeedType::SEED_PUFFSHROOM, SeedType::SEED_SCAREDYSHROOM, SeedType::SEED_FUMESHROOM}) {
             const VSCardState *card = FindReadyCard(state, seed);
             if (card == nullptr || (!state.isNight && coffee == nullptr)) {
                 continue;
@@ -557,7 +692,11 @@ class PlantVSAgent final : public BuiltinVSAgent {
             } else if (seed == SeedType::SEED_CHOMPER) {
                 firstColumn = lastColumn = 4;
             } else if (seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER) {
-                firstColumn = lastColumn = 3;
+                const VSZombieState *closest = FindClosestZombie(state, row);
+                if (closest == nullptr || (!closest->eating && closest->positionX > 660.0f)) {
+                    continue;
+                }
+                firstColumn = lastColumn = 4;
             }
 
             const bool requiresExactRow = emergencySeed || seed == SeedType::SEED_CHOMPER;
@@ -721,6 +860,12 @@ public:
         if (!state.isNight && hasActiveZombie && hasSunshroomFiller && !immediateCounterThreat && counterClosest != nullptr
             && (incomePlantCount >= minimumIncomeBeforeOutput || sustainedOutputCount > 0)) {
             if (std::optional<VSAction> action = TrySunshroomFiller(state, danger.row, protectedSun)) {
+                return action;
+            }
+        }
+        if (!state.isNight && hasActiveZombie && !immediateCounterThreat && counterClosest != nullptr
+            && (incomePlantCount >= minimumIncomeBeforeOutput || sustainedOutputCount > 0)) {
+            if (std::optional<VSAction> action = TryDaytimeScaredyFiller(state, danger.row, protectedSun)) {
                 return action;
             }
         }

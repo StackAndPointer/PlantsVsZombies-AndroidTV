@@ -122,6 +122,7 @@ bool IsFastZombie(std::uint16_t zombieType) {
         case ZombieType::ZOMBIE_POLEVAULTER:
         case ZombieType::ZOMBIE_DIGGER:
         case ZombieType::ZOMBIE_IMP:
+        case ZombieType::ZOMBIE_SUPER_FAN_IMP:
             return true;
         default:
             return false;
@@ -236,10 +237,12 @@ int ZombieThreatWeight(std::uint16_t zombieType) {
         case ZombieType::ZOMBIE_ZAMBONI:
         case ZombieType::ZOMBIE_FOOTBALL:
         case ZombieType::ZOMBIE_WALLNUT_HEAD:
+        case ZombieType::ZOMBIE_SQUASH_HEAD:
             return 80;
         case ZombieType::ZOMBIE_PAIL:
         case ZombieType::ZOMBIE_DIGGER:
         case ZombieType::ZOMBIE_POLEVAULTER:
+        case ZombieType::ZOMBIE_SUPER_FAN_IMP:
             return 55;
         default:
             return 30;
@@ -311,6 +314,7 @@ int PlantDefenseValue(const VSPlantState &plant) {
         case SeedType::SEED_FUMESHROOM:
         case SeedType::SEED_CABBAGEPULT:
         case SeedType::SEED_KERNELPULT:
+        case SeedType::SEED_BLOOMERANG:
             score = 65;
             break;
         case SeedType::SEED_THREEPEATER:
@@ -361,6 +365,8 @@ int PlantDamagePerSecond(SeedType seedType) {
             return 28;
         case SeedType::SEED_FUMESHROOM:
             return 24;
+        case SeedType::SEED_BLOOMERANG:
+            return 22;
         case SeedType::SEED_GLOOMSHROOM:
             return 45;
         case SeedType::SEED_CABBAGEPULT:
@@ -585,6 +591,7 @@ int PlantValueScore(const VSPlantState &plant) {
         case SeedType::SEED_FUMESHROOM:
         case SeedType::SEED_CABBAGEPULT:
         case SeedType::SEED_KERNELPULT:
+        case SeedType::SEED_BLOOMERANG:
             score += 75;
             break;
         case SeedType::SEED_PEASHOOTER:
@@ -640,6 +647,7 @@ bool IsPlantCombatSeed(std::uint16_t seedType) {
         case SeedType::SEED_FUMESHROOM:
         case SeedType::SEED_GLOOMSHROOM:
         case SeedType::SEED_SPORESHROOM:
+        case SeedType::SEED_BLOOMERANG:
         case SeedType::SEED_CABBAGEPULT:
         case SeedType::SEED_KERNELPULT:
         case SeedType::SEED_MELONPULT:
@@ -658,6 +666,7 @@ bool IsSustainedOutputSeed(SeedType seedType) {
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:
         case SeedType::SEED_FUMESHROOM:
+        case SeedType::SEED_BLOOMERANG:
         case SeedType::SEED_THREEPEATER:
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_SPLITPEA:
@@ -687,6 +696,7 @@ int SustainedOutputValue(SeedType seedType) {
             return 100;
         case SeedType::SEED_REPEATER:
         case SeedType::SEED_FUMESHROOM:
+        case SeedType::SEED_BLOOMERANG:
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_SPORESHROOM:
             return 80;
@@ -781,6 +791,8 @@ int StraightProjectileThreatToEconomy(const VSPlantState &plant, const VSGridIte
             return 190;
         case SeedType::SEED_REPEATER:
             return 165;
+        case SeedType::SEED_BLOOMERANG:
+            return 135;
         case SeedType::SEED_SNOWPEA:
             return 150;
         case SeedType::SEED_THREEPEATER:
@@ -824,6 +836,7 @@ int PlantThreatToEconomy(const VSPlantState &plant, const VSGridItemState &econo
         case SeedType::SEED_SPORESHROOM:
             return 75;
         case SeedType::SEED_FUMESHROOM:
+        case SeedType::SEED_BLOOMERANG:
             return 90;
         case SeedType::SEED_MELONPULT:
             return 115;

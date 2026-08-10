@@ -209,7 +209,7 @@ constexpr int kBuiltinAIDeckSize = 6;
 // Each replay-derived deck has exactly one durable main damage plant.  The
 // plant fallback picker below preserves that invariant after a Ban instead of
 // filling the last slot with a second pea or pult family card.
-// Five replay-derived archetypes.  Keep this list as the source of truth for
+// Ten replay-derived archetypes. Keep this list as the source of truth for
 // local VS AI selection; Ban replacements preserve the missing deck role.
 static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIDeckSize] = {
     {SEED_IMP_PEAR, SEED_BONK_CHOY, SEED_SQUASH, SEED_WALLNUT, SEED_SNOWPEA, SEED_SUNFLOWER},
@@ -218,6 +218,10 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIDeckSize] = {
     {SEED_SUNFLOWER, SEED_REPEATER, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_CABBAGEPULT, SEED_PUMPKINSHELL, SEED_ICEBERG_LETTUCE, SEED_SQUASH, SEED_CHERRYBOMB},
     {SEED_SUNFLOWER, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_STARFRUIT, SEED_WALLNUT, SEED_CHERRYBOMB},
+    {SEED_WALLNUT, SEED_DOOMSHROOM, SEED_SUNSHROOM, SEED_INSTANT_COFFEE, SEED_FUMESHROOM, SEED_IMP_PEAR},
+    {SEED_CHERRYBOMB, SEED_WALLNUT, SEED_POTATOMINE, SEED_JALAPENO, SEED_CELERY_STALKER, SEED_KERNELPULT},
+    {SEED_SCAREDYSHROOM, SEED_CHERRYBOMB, SEED_WALLNUT, SEED_JALAPENO, SEED_POTATOMINE, SEED_MELONPULT},
+    {SEED_WALLNUT, SEED_CHERRYBOMB, SEED_DOOMSHROOM, SEED_INSTANT_COFFEE, SEED_HYPNOSHROOM, SEED_BLOOMERANG},
 };
 
 static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIDeckSize] = {
@@ -227,6 +231,10 @@ static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIDeckSize] = {
     {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_NORMAL, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_BUNGEE},
     {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_PEA_HEAD, SEED_ZOMBIE_IMP, SEED_ZOMBIE_SUNDAY_EDITION, SEED_ZOMBIE_GARGANTUAR},
     {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_NORMAL, SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_GIGA_GARGANTUAR, SEED_ZOMBIE_DIGGER},
+    {SEED_ZOMBIE_NORMAL, SEED_ZOMBIE_FLAG, SEED_ZOMBIE_SQUASH_HEAD, SEED_ZOMBIE_SCREEN_DOOR, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_GIGA_GARGANTUAR},
+    {SEED_ZOMBIE_IMP, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_BUNGEE, SEED_ZOMBIE_SCREEN_DOOR, SEED_ZOMBIE_LADDER, SEED_ZOMBIE_GARGANTUAR},
+    {SEED_ZOMBIE_SQUASH_HEAD, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_SCREEN_DOOR, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_GIGA_FOOTBALL, SEED_ZOMBIE_SUPER_FAN_IMP},
+    {SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_TALLNUT_HEAD, SEED_ZOMBIE_MOUND},
 };
 
 struct BuiltinAIDeckPlans {
@@ -243,7 +251,7 @@ int PickBuiltinAIPlantProfile() {
     // The Bonk Choy + Snow Pea plan is a valid counter-tempo archetype, but
     // it is narrower than the ranged pressure plans observed in the replays.
     // Keep it available without making it appear as often as every other deck.
-    static constexpr int kPlantProfileWeights[] = {1, 3, 3, 3, 3, 2};
+    static constexpr int kPlantProfileWeights[] = {1, 3, 3, 3, 3, 2, 3, 3, 2, 2};
     static_assert(std::size(kPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
 
     int totalWeight = 0;
@@ -365,6 +373,7 @@ bool IsBuiltinAIPlantMainDamageSeed(SeedType seedType) {
         case SeedType::SEED_CABBAGEPULT:
         case SeedType::SEED_KERNELPULT:
         case SeedType::SEED_MELONPULT:
+        case SeedType::SEED_BLOOMERANG:
         case SeedType::SEED_STARFRUIT:
         case SeedType::SEED_FUMESHROOM:
         case SeedType::SEED_SPORESHROOM:
@@ -530,6 +539,9 @@ static constexpr SeedType kBuiltinAIPlantMainFallbacks[] = {
     SeedType::SEED_REPEATER,
     SeedType::SEED_SNOWPEA,
     SeedType::SEED_CABBAGEPULT,
+    SeedType::SEED_KERNELPULT,
+    SeedType::SEED_MELONPULT,
+    SeedType::SEED_BLOOMERANG,
     SeedType::SEED_PEASHOOTER,
     SeedType::SEED_STARFRUIT,
     SeedType::SEED_FUMESHROOM,
