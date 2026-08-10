@@ -371,6 +371,50 @@ class PlantVSAgent final : public BuiltinVSAgent {
         return std::clamp(target, std::max(3, state.rows - 1), std::min(10, state.rows * 2));
     }
 
+    std::optional<VSAction> TryWakeableMushroomOutput(const VSGameState &state, int preferredRow, int protectedSun) {
+        const VSCardState *coffee = state.isNight ? nullptr : FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
+        const VSCardState *bestCard = nullptr;
+        VSGridPosition bestTarget{};
+        int bestScore = std::numeric_limits<int>::min();
+        for (const SeedType seed : {SeedType::SEED_PUFFSHROOM, SeedType::SEED_SCAREDYSHROOM}) {
+            const VSCardState *card = FindReadyCard(state, seed);
+            if (card == nullptr || (!state.isNight && coffee == nullptr)) {
+                continue;
+            }
+            const int totalCost = card->cost + (coffee == nullptr ? 0 : coffee->cost);
+            if (state.plantSun - totalCost < protectedSun) {
+                continue;
+            }
+
+            for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
+                const int row = (preferredRow + rowOffset) % state.rows;
+                const VSZombieState *closest = FindClosestZombie(state, row);
+                if (closest == nullptr || closest->positionX > 720.0f) {
+                    continue;
+                }
+
+                const int firstColumn = closest->positionX < 540.0f ? 4 : 3;
+                const VSGridPosition target = FindPlantCellInExactRow(state, row, firstColumn, 4);
+                if (target.col < 0 || target.row < 0) {
+                    continue;
+                }
+
+                const PlantLaneAssessment lane = AssessPlantLane(state, row);
+                const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+                int score = lane.danger * 2 + firepower.deficit * 16;
+                score += !firepower.canHold ? 120 : 0;
+                score += PlantEconomyValueInRow(state, row);
+                score += row == preferredRow ? 35 : 0;
+                if (bestCard == nullptr || score > bestScore) {
+                    bestCard = card;
+                    bestTarget = target;
+                    bestScore = score;
+                }
+            }
+        }
+        return bestCard == nullptr ? std::nullopt : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *bestCard, bestTarget, state.boardTick));
+    }
+
     std::optional<VSAction> TryWakeSleepingMushroom(const VSGameState &state, int preferredRow) {
         const VSCardState *card = FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
         if (card == nullptr) {
@@ -644,6 +688,14 @@ public:
         }
         if (std::optional<VSAction> action = TryWakeSleepingMushroom(state, danger.row)) {
             return action;
+        }
+        // Puff-shroom is not the deck's primary ranged carry, but the new
+        // replay uses Coffee-backed puffs to turn a short-range deficit into
+        // cheap front-line fire before committing another expensive plant.
+        if (hasActiveZombie && !immediateCounterThreat && (largestFirepowerDeficit > 0 || counterLane.danger >= 95)) {
+            if (std::optional<VSAction> action = TryWakeableMushroomOutput(state, firepowerRow, protectedSun)) {
+                return action;
+            }
         }
 
         if (highSunCombatPressure && !immediateCounterThreat) {

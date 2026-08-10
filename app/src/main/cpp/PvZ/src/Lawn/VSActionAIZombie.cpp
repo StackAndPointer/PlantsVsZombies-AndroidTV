@@ -221,7 +221,14 @@ class ZombieVSAgent final : public BuiltinVSAgent {
                 // Ash cluster merely because friendly zombies are already there.
                 {
                     const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || sustainedOutput >= 100 || economyValue >= 150;
-                    score += economyCount >= heavyEconomyThreshold ? (hasBreakthroughTarget ? 285 : 35) : -220;
+                    // The new replay starts its first giant once ten to
+                    // eleven graves are producing, rather than waiting for a
+                    // mathematically perfect rear field.  Require a real
+                    // target for this early release so it remains a commit,
+                    // not an opening all-in.
+                    const bool hasMidGameHeavyEconomy = economyCount >= std::max(state.rows * 2, heavyEconomyThreshold - 2)
+                        && hasBreakthroughTarget;
+                    score += (economyCount >= heavyEconomyThreshold || hasMidGameHeavyEconomy) ? (hasBreakthroughTarget ? 285 : 35) : -220;
                     score += plantCount * 18 + sustainedOutput / 2 + economyValue / 3;
                     score += (hasWallnut ? 135 : 0) + (hasPumpkinShell ? 110 : 0) + (hasBonkChoy ? 100 : 0) + (hasSnowPea ? 75 : 0);
                     score += targetLane.defense >= 150 ? 90 : 0;

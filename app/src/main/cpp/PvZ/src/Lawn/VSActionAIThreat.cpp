@@ -373,6 +373,10 @@ int PlantDamagePerSecond(SeedType seedType) {
         case SeedType::SEED_SPLITPEA:
         case SeedType::SEED_THREEPEATER:
             return 14;
+        case SeedType::SEED_PUFFSHROOM:
+            return 10;
+        case SeedType::SEED_SCAREDYSHROOM:
+            return 16;
         case SeedType::SEED_STARFRUIT:
             return 18;
         case SeedType::SEED_SPORESHROOM:
@@ -622,6 +626,8 @@ bool IsPlantEconomySeed(const VSGameState &state, std::uint16_t seedType) {
 bool IsPlantCombatSeed(std::uint16_t seedType) {
     switch (static_cast<SeedType>(seedType)) {
         case SeedType::SEED_SNOWPEA:
+        case SeedType::SEED_PUFFSHROOM:
+        case SeedType::SEED_SCAREDYSHROOM:
         case SeedType::SEED_BONK_CHOY:
         case SeedType::SEED_CELERY_STALKER:
         case SeedType::SEED_CHOMPER:

@@ -217,6 +217,7 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIDeckSize] = {
     {SEED_SUNFLOWER, SEED_STARFRUIT, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_REPEATER, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_CABBAGEPULT, SEED_PUMPKINSHELL, SEED_ICEBERG_LETTUCE, SEED_SQUASH, SEED_CHERRYBOMB},
+    {SEED_SUNFLOWER, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_STARFRUIT, SEED_WALLNUT, SEED_CHERRYBOMB},
 };
 
 static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIDeckSize] = {
@@ -225,6 +226,7 @@ static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIDeckSize] = {
     {SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_IMP, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_GARGANTUAR, SEED_ZOMBIE_GRAVESTONE},
     {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_NORMAL, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_BUNGEE},
     {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_PEA_HEAD, SEED_ZOMBIE_IMP, SEED_ZOMBIE_SUNDAY_EDITION, SEED_ZOMBIE_GARGANTUAR},
+    {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_NORMAL, SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_GIGA_GARGANTUAR, SEED_ZOMBIE_DIGGER},
 };
 
 struct BuiltinAIDeckPlans {
@@ -241,7 +243,7 @@ int PickBuiltinAIPlantProfile() {
     // The Bonk Choy + Snow Pea plan is a valid counter-tempo archetype, but
     // it is narrower than the ranged pressure plans observed in the replays.
     // Keep it available without making it appear as often as every other deck.
-    static constexpr int kPlantProfileWeights[] = {1, 3, 3, 3, 3};
+    static constexpr int kPlantProfileWeights[] = {1, 3, 3, 3, 3, 2};
     static_assert(std::size(kPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
 
     int totalWeight = 0;
