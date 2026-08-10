@@ -15,7 +15,7 @@
 
 - 确保已安装下列组件:
     * Android SDK Platform 34
-    * NDK v27.2.12479018 (r27c)
+    * NDK v27.3.13750724 (r27d)
     * CMake v3.20+
 
 - 克隆仓库.
@@ -62,10 +62,6 @@
 ### 提交
 
 参考[约定式提交](https://www.conventionalcommits.org/zh-hans/v1.0.0/).
-
-### 拉取请求 (PR)
-
-发送 PR 到 `dev` 分支.
 
 ## 许可协议
 

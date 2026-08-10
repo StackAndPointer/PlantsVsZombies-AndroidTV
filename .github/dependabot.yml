@@ -6,7 +6,6 @@ updates:
       interval: monthly
     commit-message:
       prefix: ci
-    target-branch: dev
     groups:
       ci-deps:
         patterns:

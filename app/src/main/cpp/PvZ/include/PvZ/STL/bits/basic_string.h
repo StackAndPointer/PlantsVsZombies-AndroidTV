@@ -33,6 +33,7 @@
 #include "PvZ/STL/debug/debug.h"
 
 #include "PvZ/STL/bits/alloc_traits.h"
+#include "PvZ/STL/bits/iterator_concepts.h"
 #include "PvZ/STL/bits/ranges_base.h"
 #include "PvZ/STL/bits/stl_iterator_base_types.h"
 
@@ -899,7 +900,7 @@ public:
         };
         Terminator term{this, 0};
         auto r = std::move(op)(p, n);
-        static_assert(std::is_integral_v<decltype(r)>, "resize_and_overwrite operation must return an integer");
+        static_assert(ranges::detail::is_integer_like<decltype(r)>);
         assert(r >= 0 && size_type(r) <= n);
         term._r = size_type(r);
         if (term._r > n) {

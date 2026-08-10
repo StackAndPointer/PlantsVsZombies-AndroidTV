@@ -299,6 +299,7 @@ public:
     static bool IsNocturnal(SeedType theSeedType);
     static bool IsAquatic(SeedType theSeedType);
     static bool IsFlying(SeedType theSeedType);
+    static bool IsLobber(SeedType theSeedType);
     static bool IsUpgrade(SeedType theSeedType);
     static bool IsDefender(SeedType theSeedType);
     int GetDamageRangeFlags(PlantWeapon thePlantWeapon) const;
@@ -333,6 +334,7 @@ public:
     void PlayIdleAnim(float theRate);
     void IceZombies();
     static bool IsDisposable(SeedType theSeedType);
+    bool IsInvulnerable();
     bool FindTargetAndFire(int theRow, PlantWeapon thePlantWeapon);
     ReanimationID GetPlantReanimationIDByIndex(int index) const;
     void SyncAnimationToClient();

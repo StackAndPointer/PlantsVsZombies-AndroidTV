@@ -109,6 +109,7 @@ PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_CELERY_STALKER, nullptr, ReanimationType::REANIM_CELERY_STALKER, 0, 50, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "CELERY_STALKER"},
     {SeedType::SEED_SPORESHROOM, nullptr, ReanimationType::REANIM_SPORE_SHROOM, 0, 125, 750, PlantSubClass::SUBCLASS_SHOOTER, 300, "SPORE_SHROOM"},
     {SeedType::SEED_SWEET_POTATO, nullptr, ReanimationType::REANIM_SWEET_POTATO, 0, 150, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "SWEET_POTATO"},
+    {SeedType::SEED_CHILLY_PEPPER, nullptr, ReanimationType::REANIM_CHILLY_PEPPER, 0, 100, 5000, PlantSubClass::SUBCLASS_NORMAL, 0, "CHILLY_PEPPER"},
     {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
 
@@ -129,6 +130,16 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
         case SeedType::SEED_SWEET_POTATO:
             mPlantMaxHealth = 4000;
             break;
+        case SeedType::SEED_CHILLY_PEPPER: {
+            Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+            if (IsInPlay() && aBodyReanim != nullptr) {
+                mDoSpecialCountdown = 100;
+                aBodyReanim->SetFramesForLayer("anim_explode");
+                aBodyReanim->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD;
+                aBodyReanim->SetAnimRate(18.0f);
+            }
+            break;
+        }
         default:
             break;
     }
@@ -180,6 +191,7 @@ int Plant::GetDamageRangeFlags(PlantWeapon thePlantWeapon) const {
         case SeedType::SEED_JALAPENO:
         case SeedType::SEED_COBCANNON:
         case SeedType::SEED_DOOMSHROOM:
+        case SeedType::SEED_CHILLY_PEPPER:
             return 127;
         case SeedType::SEED_MELONPULT:
         case SeedType::SEED_CABBAGEPULT:
@@ -196,7 +208,10 @@ int Plant::GetDamageRangeFlags(PlantWeapon thePlantWeapon) const {
         case SeedType::SEED_FUMESHROOM:
         case SeedType::SEED_GLOOMSHROOM:
         case SeedType::SEED_CHOMPER:
-            return 9;
+        case SeedType::SEED_ICEBERG_LETTUCE:
+        case SeedType::SEED_BONK_CHOY:
+        case SeedType::SEED_CELERY_STALKER:
+            return 9; // DAMANGES_GROUND | DAMAGES_DOG
         case SeedType::SEED_CATTAIL:
             return 11;
         case SeedType::SEED_TANGLEKELP:
@@ -523,6 +538,10 @@ void Plant::UpdateBloomerang() {
 }
 
 void Plant::UpdateSweetPotato() {
+    if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode)) {
+        return;
+    }
+
     const int aFrontCol = mPlantCol + 1;
     if (aFrontCol >= MAX_GRID_SIZE_X) {
         return;
@@ -562,7 +581,8 @@ void Plant::UpdateSweetPotato() {
             continue;
         }
 
-        if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE || aZombie->mZombieType == ZombieType::ZOMBIE_CATAPULT || aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || !aZombie->CanBeFrozen()) {
+        if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE || aZombie->mZombieType == ZombieType::ZOMBIE_CATAPULT || aZombie->mZombieType == ZombieType::ZOMBIE_BOSS
+            || aZombie->mZombieType == ZombieType::ZOMBIE_DOGWALKER || aZombie->mZombieType == ZombieType::ZOMBIE_DOG || !aZombie->CanBeFrozen() || aZombie->ZombieNotWalking()) {
             continue;
         }
 
@@ -582,7 +602,13 @@ void Plant::UpdateSweetPotato() {
         }
 
         aZombie->StopEating();
+        aZombie->StartWalkAnim(20);
         aZombie->SetRow(mRow);
+
+        if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
+            U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_SET_ROW}, uint16_t(mBoard->mZombies.DataArrayGetID(aZombie)), uint16_t(mRow)};
+            netplay::PutEvent(event);
+        }
     }
 }
 
@@ -592,7 +618,7 @@ void Plant::Squish() {
 
     if (!mIsAsleep) {
         if (mSeedType == SeedType::SEED_CHERRYBOMB || mSeedType == SeedType::SEED_JALAPENO || mSeedType == SeedType::SEED_DOOMSHROOM || mSeedType == SeedType::SEED_ICESHROOM
-            || mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
+            || mSeedType == SeedType::SEED_ICEBERG_LETTUCE || mSeedType == SeedType::SEED_CHILLY_PEPPER) {
             DoSpecial();
             return;
         } else if (mSeedType == SeedType::SEED_POTATOMINE && mState != PlantState::STATE_NOTREADY) {
@@ -1087,7 +1113,7 @@ void Plant::DoSpecial() {
 }
 
 void Plant::IcebergLettuceDoSpecial(Zombie *theZombie) {
-    if (theZombie != nullptr) {
+    if (theZombie != nullptr && theZombie->CanBeFrozen()) {
         theZombie->mIceTrapCounter = 1000;
         theZombie->StopZombieSound();
         if (theZombie->mZombieType == ZombieType::ZOMBIE_BALLOON) {
@@ -1209,6 +1235,26 @@ void Plant::DoSpecial_Origin() {
         }
         case SeedType::SEED_ICEBERG_LETTUCE: {
             IcebergLettuceDoSpecial(FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY));
+            break;
+        }
+        case SeedType::SEED_CHILLY_PEPPER: {
+            mApp->PlayFoley(FoleyType::FOLEY_FROZEN);
+            mApp->PlayFoley(FoleyType::FOLEY_JUICY);
+
+            mBoard->DoChillyFwoosh(mRow, mX, mY);
+            mBoard->ShakeBoard(3, -4);
+
+            Zombie *aZombie = nullptr;
+            while (mBoard->IterateZombies(aZombie)) {
+                if ((aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || aZombie->mRow == mRow) && aZombie->EffectedByDamage(aDamageRangeFlags)) {
+                    aZombie->HitIceTrap();
+                    if (aZombie->CanBeFrozen()) {
+                        aZombie->TakeDamage(880, 1U);
+                    }
+                }
+            }
+
+            Die();
             break;
         }
         default:
@@ -1569,6 +1615,10 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
                 }
             }
 
+            // 墓碑只锁定本行最靠近回旋镖射手的一个。
+            GridItem *aClosestGravestone = nullptr;
+            float aClosestGravestoneX = 0.0f;
+
             aGridItem = nullptr;
             while (mBoard->IterateGridItems(aGridItem)) {
                 if (aGridItem->mGridY != theRow) {
@@ -1579,8 +1629,8 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
                     continue;
                 }
 
-                const bool aDamageableGridItem = aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND
-                    || (aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE && aGridItem->mVSTargetZombieHealth > 0);
+                const bool aIsGravestone = aGridItem->mGridItemType == GridItemType::GRIDITEM_GRAVESTONE || aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_BURIAL_MOUND;
+                const bool aDamageableGridItem = aIsGravestone || (aGridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE && aGridItem->mVSTargetZombieHealth > 0);
                 if (!aDamageableGridItem) {
                     continue;
                 }
@@ -1590,7 +1640,20 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
                     continue;
                 }
 
+                if (aIsGravestone) {
+                    const float aGridItemX = float(aGridItemRect.mX);
+                    if (aClosestGravestone == nullptr || aGridItemX < aClosestGravestoneX) {
+                        aClosestGravestone = aGridItem;
+                        aClosestGravestoneX = aGridItemX;
+                    }
+                    continue;
+                }
+
                 AddBoomerangTarget(float(aGridItemRect.mX), ZombieID::ZOMBIEID_NULL, mBoard->GridItemGetID(aGridItem));
+            }
+
+            if (aClosestGravestone != nullptr) {
+                AddBoomerangTarget(aClosestGravestoneX, ZombieID::ZOMBIEID_NULL, mBoard->GridItemGetID(aClosestGravestone));
             }
         }
 
@@ -1736,13 +1799,16 @@ Zombie *Plant::FindTargetZombie(int theRow, PlantWeapon thePlantWeapon) {
         }
 
         if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
-            if (!aZombie->CanBeFrozen() || aZombie->IsImmobilizied() || (aZombie->mZombieType == ZombieType::ZOMBIE_POGO && aZombie->mHasObject)
+            if ((!aZombie->CanBeFrozen() && aZombie->mZombieType != ZombieType::ZOMBIE_ZAMBONI) || aZombie->IsImmobilizied() || (aZombie->mZombieType == ZombieType::ZOMBIE_POGO && aZombie->mHasObject)
                 || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_IN_VAULT || aZombie->mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_PRE_VAULT
                 || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_RISING || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_FALLING
                 || aZombie->mZombiePhase == ZombiePhase::PHASE_SQUASH_DONE_FALLING || aZombie->IsFlying() || aZombie->mZombieHeight != ZombieHeight::HEIGHT_ZOMBIE_NORMAL) {
                 continue;
             }
             if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE && aZombie->mTargetCol != mPlantCol) {
+                continue;
+            }
+            if (aZombie->IsChangingRow()) {
                 continue;
             }
         }
@@ -2035,7 +2101,6 @@ static int GetVSCostDefault(SeedType theSeedType) {
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_SPORESHROOM:
-        case SeedType::SEED_BONK_CHOY:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -2043,9 +2108,11 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
         case SeedType::SEED_ZOMBIE_EXPLORER:
+        case SeedType::SEED_ZOMBIE_DOGWALKER:
             return 100;
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_BLOOMERANG:
+        case SeedType::SEED_BONK_CHOY:
         case SeedType::SEED_ZOMBIE_BUNGEE:
         case SeedType::SEED_ZOMBIE_SNORKEL:
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
@@ -2110,6 +2177,7 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
             case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
             case SeedType::SEED_ZOMBIE_EXPLORER:
             case SeedType::SEED_ZOMBIE_ZOMBLOB:
+            case SeedType::SEED_ZOMBIE_DOGWALKER:
                 return 3000;
             case SeedType::SEED_ZOMBIE_NEWSPAPER:
             case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -2134,6 +2202,7 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
         case SeedType::SEED_ICESHROOM:
         case SeedType::SEED_DOOMSHROOM:
         case SeedType::SEED_JALAPENO:
+        case SeedType::SEED_CHILLY_PEPPER:
             return 6000;
         case SeedType::SEED_GRAVEBUSTER:
         case SeedType::SEED_SQUASH:
@@ -2224,6 +2293,7 @@ static int GetVSCostShuffle(SeedType theSeedType) {
         case SeedType::SEED_SQUASH: // 75 -> 100
         case SeedType::SEED_GARLIC: // 75 -> 100
             return 100;
+        case SeedType::SEED_CHILLY_PEPPER: // 100 -> 125
         case SeedType::SEED_ZOMBIE_PAIL:   // 100 -> 125
         case SeedType::SEED_ZOMBIE_DIGGER: // 150 -> 125
             return 125;
@@ -2437,6 +2507,7 @@ int Plant::GetRefreshTime(SeedType theSeedType, SeedType theImitaterType) {
                 case SeedType::SEED_DOOMSHROOM:
                 case SeedType::SEED_ICESHROOM:
                 case SeedType::SEED_ICEBERG_LETTUCE:
+                case SeedType::SEED_CHILLY_PEPPER:
                     if (Challenge::msVSShuffleMode || VSSetupAddonWidget::msBalancePatchMode) {
                         return aRefreshTime / 2;
                     }
@@ -2462,6 +2533,11 @@ bool Plant::IsAquatic(SeedType theSeedType) {
 
 bool Plant::IsFlying(SeedType theSeedType) {
     return theSeedType == SeedType::SEED_INSTANT_COFFEE;
+}
+
+bool Plant::IsLobber(SeedType theSeedType) {
+    return theSeedType == SeedType::SEED_CABBAGEPULT || theSeedType == SeedType::SEED_KERNELPULT || theSeedType == SeedType::SEED_MELONPULT || theSeedType == SeedType::SEED_WINTERMELON
+        || theSeedType == SeedType::SEED_SPORESHROOM;
 }
 
 bool Plant::IsUpgrade(SeedType theSeedType) {
@@ -3011,7 +3087,19 @@ void Plant::IceZombies() {
 }
 
 bool Plant::IsDisposable(SeedType theSeedType) {
-    return theSeedType == SeedType::SEED_CHERRYBOMB || theSeedType == SeedType::SEED_JALAPENO || theSeedType == SeedType::SEED_HYPNOSHROOM || theSeedType == SeedType::SEED_ICESHROOM;
+    return theSeedType == SeedType::SEED_CHERRYBOMB || theSeedType == SeedType::SEED_JALAPENO || theSeedType == SeedType::SEED_HYPNOSHROOM || theSeedType == SeedType::SEED_ICESHROOM
+        || theSeedType == SeedType::SEED_CHILLY_PEPPER;
+}
+
+bool Plant::IsInvulnerable() {
+    if (mSeedType == SeedType::SEED_CHERRYBOMB || mSeedType == SeedType::SEED_ICESHROOM || mSeedType == SeedType::SEED_DOOMSHROOM || mSeedType == SeedType::SEED_JALAPENO
+        || mSeedType == SeedType::SEED_BLOVER || mSeedType == SeedType::SEED_ICEBERG_LETTUCE || mSeedType == SeedType::SEED_CHILLY_PEPPER || mState == PlantState::STATE_SQUASH_LOOK
+        || mState == PlantState::STATE_SQUASH_PRE_LAUNCH) {
+        if (!mIsAsleep) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
@@ -3626,8 +3714,8 @@ void Plant::UpdateCeleryStalker() {
 void Plant::UpdateBonkChoy() {
     static constexpr int kBonkChoyGridItemRange = 2;
     static constexpr int kBonkChoyAttackInterval = 40;
-    static constexpr int kBonkChoyPunchDamage = 20;
-    static constexpr int kBonkChoyUppercutDamage = 40;
+    static constexpr int kBonkChoyPunchDamage = 15;
+    static constexpr int kBonkChoyUppercutDamage = 35;
 
     Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
     if (aBodyReanim == nullptr) {

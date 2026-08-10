@@ -1790,6 +1790,22 @@ Zombie *Board::AddZombieInRow(ZombieType theZombieType, int theRow, int theFromW
                     event.data4[i + 1].f32 = aFollowerZombie->mPosX;
                 }
                 netplay::PutEvent(event);
+            } else if (theZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+                Zombie *aZombieDog = mZombies.DataArrayGet(aZombie->mRelatedZombieID);
+                if (aZombieDog != nullptr) {
+                    U8x2U16x4UNI32x8_Event event{};
+                    event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_DOGWALKER_ADD;
+                    event.data1[0] = uint8_t(theRow);
+                    event.data1[1] = int8_t(theFromWave);
+                    event.data2[0] = uint16_t(mZombies.DataArrayGetID(aZombie));
+                    event.data2[1] = uint16_t(mZombies.DataArrayGetID(aZombieDog));
+                    event.data2[2] = uint16_t(theIsRustle);
+                    event.data3[0].f32 = aZombie->mVelX;
+                    event.data3[1].f32 = aZombieDog->mVelX;
+                    event.data4[0].f32 = aZombie->mPosX;
+                    event.data4[1].f32 = aZombieDog->mPosX;
+                    netplay::PutEvent(event);
+                }
             } else {
                 U8x5U16UNI32x2_Event event{};
                 event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_ADD;
@@ -1817,9 +1833,20 @@ Zombie *Board::AddZombieInRow(ZombieType theZombieType, int theRow, int theFromW
 
 Zombie *Board::AddZombieInRow_Origin(ZombieType theZombieType, int theRow, int theFromWave, bool theIsRustle) {
     // 修复蹦极僵尸出现时草丛也会摇晃
-    if (theZombieType == ZombieType::ZOMBIE_BUNGEE)
+    if (theZombieType == ZombieType::ZOMBIE_BUNGEE) {
         theIsRustle = false;
-    return old_Board_AddZombieInRow(this, theZombieType, theRow, theFromWave, theIsRustle);
+    }
+    Zombie *aZombie = old_Board_AddZombieInRow(this, theZombieType, theRow, theFromWave, theIsRustle);
+    if (theZombieType == ZombieType::ZOMBIE_DOGWALKER) {
+        Zombie *aZombieDog = AddZombieInRow_Origin(ZombieType::ZOMBIE_DOG, aZombie->mRow, aZombie->mFromWave, false);
+        if (aZombieDog != nullptr) {
+            aZombieDog->mPosX = aZombie->mPosX + (aZombie->IsWalkingBackwards() ? 80.0f : -80.0f);
+            aZombieDog->mRelatedZombieID = ZombieGetID(aZombie);
+            aZombieDog->mRenderOrder = aZombie->mRenderOrder + 1;
+            aZombie->mRelatedZombieID = ZombieGetID(aZombieDog);
+        }
+    }
+    return aZombie;
 }
 
 Zombie *Board::AddZombie(ZombieType theZombieType, int theFromWave, bool theIsRustle) {
@@ -2237,6 +2264,9 @@ void Board::processServerEvent(const BaseEvent *event) {
                     aHeadReanim->SetAnimRate(aBodyReanim->mAnimRate);
                     aHeadReanim->mAnimTime = aBodyReanim->mAnimTime;
                 }
+                if (aPlant->mSeedType == SeedType::SEED_BLOOMERANG) {
+                    mApp->PlayFoley(FoleyType::FOLEY_BLOOMERANG);
+                }
             }
         } break;
         case EVENT_SERVER_BOARD_PLANT_KERNELPLUT_FINDTARGETANDFIRE: {
@@ -2428,6 +2458,33 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aFollowerZombie->ApplySyncedSpeed(eventZombieBobseldAdd->data3[i + 1].f32, short(aFollowerZombie->mAnimTicksPerFrame));
                 aFollowerZombie->mPosX = eventZombieBobseldAdd->data4[i + 1].f32;
             }
+        } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_DOGWALKER_ADD: {
+            auto *eventDogWalkerAdd = static_cast<const U8x2U16x4UNI32x8_Event *>(event);
+            const int aRow = eventDogWalkerAdd->data1[0];
+            const int aFromWave = int8_t(eventDogWalkerAdd->data1[1]);
+            const bool aIsRustle = eventDogWalkerAdd->data2[2] != 0;
+
+            Zombie *aZombie = AddZombieInRow_Origin(ZombieType::ZOMBIE_DOGWALKER, aRow, aFromWave, aIsRustle);
+            if (aZombie == nullptr) {
+                break;
+            }
+
+            Zombie *aZombieDog = mZombies.DataArrayGet(aZombie->mRelatedZombieID);
+            if (aZombieDog == nullptr) {
+                break;
+            }
+
+            serverZombieIDMap[eventDogWalkerAdd->data2[0]] = uint16_t(mZombies.DataArrayGetID(aZombie));
+            serverZombieIDMap[eventDogWalkerAdd->data2[1]] = uint16_t(mZombies.DataArrayGetID(aZombieDog));
+
+            aZombie->ApplySyncedSpeed(eventDogWalkerAdd->data3[0].f32, short(aZombie->mAnimTicksPerFrame));
+            aZombieDog->ApplySyncedSpeed(eventDogWalkerAdd->data3[1].f32, short(aZombieDog->mAnimTicksPerFrame));
+
+            aZombie->mPosX = eventDogWalkerAdd->data4[0].f32;
+            aZombieDog->mPosX = eventDogWalkerAdd->data4[1].f32;
+            aZombie->mX = int(aZombie->mPosX);
+            aZombieDog->mX = int(aZombieDog->mPosX);
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_BUNGEE_SET_STEAL_GRID: {
             auto *eventZombieBungeeAdd = static_cast<const U16UNI32UNI32_Event *>(event);
@@ -2825,7 +2882,7 @@ void Board::processServerEvent(const BaseEvent *event) {
             mApp->PlaySample(Sexy::SOUND_HUGE_WAVE);
             DisplayAdviceAgain("[ADVICE_HUGE_WAVE]", MESSAGE_STYLE_HUGE_WAVE, ADVICE_HUGE_WAVE);
         } break;
-        case EVENT_SERVER_BOARD_ZOMBIE_YUCKY_SETROW: {
+        case EVENT_SERVER_BOARD_ZOMBIE_SET_ROW: {
             auto *event1 = static_cast<const U16U16_Event *>(event);
             uint16_t serverZombieID = event1->data1;
             uint16_t clientZombieID = 0;
@@ -4819,7 +4876,14 @@ void Board::__MouseDown(int x, int y, int theClickCount) {
         if (aGameScene == GameScenes::SCENE_LEVEL_INTRO)
             return;
         auto *aSeedPacket = (SeedPacket *)hitResult.mObject;
-        gPlayerIndex = (TouchPlayerIndex)aSeedPacket->GetPlayerIndex(); // 玩家1或玩家2
+        const auto seedPacketPlayerIndex = static_cast<TouchPlayerIndex>(aSeedPacket->GetPlayerIndex());
+        if (aGameMode == GameMode::GAMEMODE_MP_VS && gTcpClientSocket >= 0) {
+            gPlayerIndex = mGamepadControls[0]->mGamepadIndex == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
+            if (seedPacketPlayerIndex != gPlayerIndex)
+                return;
+        } else {
+            gPlayerIndex = seedPacketPlayerIndex;
+        }
         if (gPlayerIndex == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             requestDrawShovelInCursor = false; // 不再绘制铲子
             if (gTcpClientSocket) {
@@ -5519,7 +5583,14 @@ void Board::MouseDownSecond(int x, int y, int theClickCount) {
             return;
         auto *aSeedPacket = (SeedPacket *)hitResult.mObject;
         int newSeedPacketIndex = aSeedPacket->mIndex;
-        gPlayerIndexSecond = (TouchPlayerIndex)aSeedPacket->GetPlayerIndex(); // 玩家1或玩家2
+        const auto seedPacketPlayerIndex = static_cast<TouchPlayerIndex>(aSeedPacket->GetPlayerIndex());
+        if (aGameMode == GameMode::GAMEMODE_MP_VS && gTcpClientSocket >= 0) {
+            gPlayerIndexSecond = mGamepadControls[1]->mGamepadIndex == 0 ? TouchPlayerIndex::TOUCHPLAYER_PLAYER1 : TouchPlayerIndex::TOUCHPLAYER_PLAYER2;
+            if (seedPacketPlayerIndex != gPlayerIndexSecond)
+                return;
+        } else {
+            gPlayerIndexSecond = seedPacketPlayerIndex;
+        }
 
         if (gPlayerIndexSecond == TouchPlayerIndex::TOUCHPLAYER_PLAYER1) {
             requestDrawShovelInCursor = false; // 不再绘制铲子
@@ -6416,7 +6487,8 @@ void Board::DrawUITop(Sexy::Graphics *g) {
             // 一路有巨人且种子栏处于选中种子状态时，置顶种子栏图层
             Zombie *aGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_GARGANTUAR);
             Zombie *aRedEyeGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_REDEYE_GARGANTUAR);
-            if ((aGargantuar != nullptr && aGargantuar->mRow == 0) || (aRedEyeGargantuar != nullptr && aRedEyeGargantuar->mRow == 0)) {
+            Zombie *aGigaGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_GIGA_GARGANTUAR);
+            if ((aGargantuar != nullptr && aGargantuar->mRow == 0) || (aRedEyeGargantuar != nullptr && aRedEyeGargantuar->mRow == 0) || (aGigaGargantuar != nullptr && aGigaGargantuar->mRow == 0)) {
                 for (int i = 0; i < 2; ++i) {
                     SeedBank *aSeedBank = mGamepadControls[i]->GetSeedBank();
                     if (aSeedBank != nullptr && mGamepadControls[i]->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
@@ -7158,7 +7230,7 @@ void Board::KillAllPlantsInRadius(int theX, int theY, int theRadius) {
 
 void Board::PlantsTakeDamageInGrid(int theGridX, int theGridY, int theDamage) {
     Plant *aPlant = GetTopPlantAt(theGridX, theGridY, PlantPriority::TOPPLANT_EATING_ORDER);
-    if (aPlant != nullptr) {
+    if (aPlant != nullptr && !aPlant->IsInvulnerable()) {
         aPlant->mPlantHealth -= theDamage;
         aPlant->mEatenFlashCountdown = std::max(aPlant->mEatenFlashCountdown, 50);
     }
@@ -7695,4 +7767,36 @@ Plant *Board::FindBloomerangPlant(int theGridX, int theGridY) {
         }
     }
     return nullptr;
+}
+void Board::DoChillyFwoosh(int theRow, float theX, float theY) {
+    const int aRenderOrder = MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, theRow, 1);
+
+    Sexy::Image *const kIceImages[] = {addonImages.IMAGE_REANIM_ICE1, addonImages.IMAGE_REANIM_ICE2, addonImages.IMAGE_REANIM_ICE3, addonImages.IMAGE_REANIM_ICE4};
+
+    for (int i = 0; i < 12; ++i) {
+        Reanimation *anOldFwoosh = mApp->ReanimationTryToGet(mFwooshID[theRow][i]);
+        if (anOldFwoosh != nullptr) {
+            anOldFwoosh->ReanimationDie();
+        }
+
+        const float aPosX = 750.0f * static_cast<float>(i) / 11.0f + 10.0f;
+        const float aPosY = GetPosYBasedOnRow(aPosX + 10.0f, theRow) - 10.0f;
+
+        Reanimation *anIce = mApp->AddReanimation(aPosX, aPosY, aRenderOrder, ReanimationType::REANIM_ICE);
+        anIce->SetImageOverride("ice", kIceImages[Rand(4)]);
+        anIce->SetFramesForLayer("anim_start");
+        anIce->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD;
+        anIce->mAnimRate *= RandRangeFloat(0.7f, 1.3f);
+
+        const float aScale = RandRangeFloat(0.8f, 1.0f);
+        const float aFlip = Rand(2) ? 1.0f : -1.0f;
+        anIce->OverrideScale(aScale * aFlip, 1.0f);
+
+        mFwooshID[theRow][i] = mApp->ReanimationGetID(anIce);
+    }
+
+    Reanimation *aChiloosh = mApp->AddReanimation(theX + 10.0f, theY - 40.0f, aRenderOrder + 1, ReanimationType::REANIM_CHILOOSH);
+    aChiloosh->SetFramesForLayer("anim_chiloosh");
+    aChiloosh->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_FULL_LAST_FRAME;
+    mFwooshCountDown = 100;
 }
