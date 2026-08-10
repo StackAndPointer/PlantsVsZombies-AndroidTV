@@ -209,13 +209,14 @@ constexpr int kBuiltinAIDeckSize = 6;
 // Each replay-derived deck has exactly one durable main damage plant.  The
 // plant fallback picker below preserves that invariant after a Ban instead of
 // filling the last slot with a second pea or pult family card.
+// Five replay-derived archetypes.  Keep this list as the source of truth for
+// local VS AI selection; Ban replacements preserve the missing deck role.
 static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIDeckSize] = {
     {SEED_IMP_PEAR, SEED_BONK_CHOY, SEED_SQUASH, SEED_WALLNUT, SEED_SNOWPEA, SEED_SUNFLOWER},
     {SEED_SUNSHROOM, SEED_SPORESHROOM, SEED_INSTANT_COFFEE, SEED_PUMPKINSHELL, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_STARFRUIT, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_REPEATER, SEED_WALLNUT, SEED_GRAVEBUSTER, SEED_CHERRYBOMB, SEED_SQUASH},
     {SEED_SUNFLOWER, SEED_CABBAGEPULT, SEED_PUMPKINSHELL, SEED_ICEBERG_LETTUCE, SEED_SQUASH, SEED_CHERRYBOMB},
-    {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_WALLNUT, SEED_SQUASH, SEED_IMP_PEAR, SEED_BONK_CHOY},
 };
 
 static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIDeckSize] = {
@@ -224,7 +225,6 @@ static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIDeckSize] = {
     {SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_IMP, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_GARGANTUAR, SEED_ZOMBIE_GRAVESTONE},
     {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_NORMAL, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_BUNGEE},
     {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_PEA_HEAD, SEED_ZOMBIE_IMP, SEED_ZOMBIE_SUNDAY_EDITION, SEED_ZOMBIE_GARGANTUAR},
-    {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_LADDER, SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_GIGA_POLEVAULTER},
 };
 
 struct BuiltinAIDeckPlans {
@@ -241,7 +241,7 @@ int PickBuiltinAIPlantProfile() {
     // The Bonk Choy + Snow Pea plan is a valid counter-tempo archetype, but
     // it is narrower than the ranged pressure plans observed in the replays.
     // Keep it available without making it appear as often as every other deck.
-    static constexpr int kPlantProfileWeights[] = {1, 3, 3, 3, 3, 3};
+    static constexpr int kPlantProfileWeights[] = {1, 3, 3, 3, 3};
     static_assert(std::size(kPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
 
     int totalWeight = 0;
@@ -411,6 +411,31 @@ bool HasBuiltinAIPlantPeaMain(SeedChooserScreen *screen) {
     return false;
 }
 
+bool HasBuiltinAIPlantWakeableMushroom(SeedChooserScreen *screen) {
+    if (screen == nullptr || screen->mIsZombieChooser) {
+        return false;
+    }
+    const int storageCount = screen->GetSeedStorageCount();
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        if (screen->GetChosenSeed(seedIndex).mSeedState != ChosenSeedState::SEED_IN_BANK) {
+            continue;
+        }
+        switch (screen->GetPlantSeedType(seedIndex)) {
+            case SeedType::SEED_PUFFSHROOM:
+            case SeedType::SEED_SCAREDYSHROOM:
+            case SeedType::SEED_FUMESHROOM:
+            case SeedType::SEED_GLOOMSHROOM:
+            case SeedType::SEED_SPORESHROOM:
+            case SeedType::SEED_ICESHROOM:
+            case SeedType::SEED_DOOMSHROOM:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
+}
+
 bool IsBuiltinAIMagnetTargetZombieSeed(SeedType seedType) {
     // These are the cards for which Magnet-shroom has a meaningful object to
     // remove in VS. Keep this list aligned with Plant::UpdateMagnetShroom.
@@ -468,6 +493,13 @@ bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedTy
         return HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE) && HasBuiltinAIOpponentMetalTargets(screen);
     }
 
+    if (seedType == SeedType::SEED_INSTANT_COFFEE) {
+        // Sunshroom is a daytime padding card in VS.  Coffee is only a
+        // coherent pick when the deck also contains a sleeping combat
+        // mushroom that it can actually wake.
+        return HasBuiltinAIPlantWakeableMushroom(screen);
+    }
+
     if (seedType == SeedType::SEED_ICEBERG_LETTUCE) {
         // Iceberg is a tempo/support card, not a standalone deck. Select it
         // only after a real damage plant is already in the bank so a Ban or
@@ -491,6 +523,16 @@ bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen) {
     }
     return false;
 }
+
+static constexpr SeedType kBuiltinAIPlantMainFallbacks[] = {
+    SeedType::SEED_REPEATER,
+    SeedType::SEED_SNOWPEA,
+    SeedType::SEED_CABBAGEPULT,
+    SeedType::SEED_PEASHOOTER,
+    SeedType::SEED_STARFRUIT,
+    SeedType::SEED_FUMESHROOM,
+    SeedType::SEED_SPORESHROOM,
+};
 
 SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
     if (priorityCount > 0) {
@@ -520,15 +562,39 @@ SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prior
 
 SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
     const bool alreadyHasMainDamage = HasBuiltinAIPlantMainDamage(screen);
+    const auto IsAvailableMain = [&](SeedType seedType) {
+        return IsBuiltinAIPlantMainDamageSeed(seedType) && IsBuiltinAICandidate(screen, seedType)
+            && IsBuiltinAIPlantSupportCandidate(screen, seedType);
+    };
+    bool hasAvailableMainDamage = false;
+    for (std::size_t index = 0; index < priorityCount && !hasAvailableMainDamage; ++index) {
+        hasAvailableMainDamage = IsAvailableMain(prioritySeeds[index]);
+    }
+    for (const SeedType seedType : kBuiltinAIPlantMainFallbacks) {
+        hasAvailableMainDamage = hasAvailableMainDamage || IsAvailableMain(seedType);
+    }
+    const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage;
     auto IsCompatible = [&](SeedType seedType) {
         return IsBuiltinAICandidate(screen, seedType) && IsBuiltinAIPlantSupportCandidate(screen, seedType)
-            && (!alreadyHasMainDamage || !IsBuiltinAIPlantMainDamageSeed(seedType));
+            && (!alreadyHasMainDamage || !IsBuiltinAIPlantMainDamageSeed(seedType))
+            && (!mustPickMainDamage || IsBuiltinAIPlantMainDamageSeed(seedType));
     };
 
     if (priorityCount > 0) {
         const std::size_t firstPriority = static_cast<std::size_t>(Sexy::Rand(static_cast<int>(priorityCount)));
         for (std::size_t offset = 0; offset < priorityCount; ++offset) {
             const SeedType seedType = prioritySeeds[(firstPriority + offset) % priorityCount];
+            if (IsCompatible(seedType)) {
+                return seedType;
+            }
+        }
+    }
+
+    // If the planned main card was banned, fill that role before economy or
+    // support cards.  This is what keeps Ban substitutions playable instead
+    // of producing a melee-only deck.
+    if (!alreadyHasMainDamage) {
+        for (const SeedType seedType : kBuiltinAIPlantMainFallbacks) {
             if (IsCompatible(seedType)) {
                 return seedType;
             }

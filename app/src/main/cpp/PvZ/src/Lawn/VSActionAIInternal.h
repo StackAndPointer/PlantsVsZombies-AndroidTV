@@ -22,6 +22,21 @@ struct PlantLaneAssessment {
     const VSZombieState *closest = nullptr;
 };
 
+// Snapshot-only combat estimate used by both agents.  DPS is expressed in
+// PvZ damage per second; the estimate intentionally values time before the
+// closest zombie reaches the plant half of the lawn, not just unit counts.
+struct PlantLaneFirepower {
+    int row = 0;
+    int dps = 0;
+    int incomingHealth = 0;
+    int nearHealth = 0;
+    int closestDistance = 0;
+    int secondsToContact = 0;
+    int damageBeforeContact = 0;
+    int deficit = 0;
+    bool canHold = true;
+};
+
 bool IsDeadOrOutside(const VSPlantState &plant);
 bool HasPlantAt(const VSGameState &state, VSGridPosition position);
 bool HasPlantTypeAt(const VSGameState &state, SeedType seedType, VSGridPosition position);
@@ -46,6 +61,9 @@ int ZombieFrontlineValueInRow(const VSGameState &state, int row);
 int MostValuableZombieFrontRow(const VSGameState &state);
 int ZombiePressureInRow(const VSGameState &state, int row);
 int PlantDefenseValue(const VSPlantState &plant);
+int PlantDamagePerSecond(SeedType seedType);
+PlantLaneFirepower AssessPlantLaneFirepower(const VSGameState &state, int row);
+int PlantLaneFirepowerDeficit(const VSGameState &state, int row);
 PlantLaneAssessment AssessPlantLane(const VSGameState &state, int row);
 PlantLaneAssessment MostThreatenedPlantLane(const VSGameState &state);
 bool IsPlantEconomySeed(const VSGameState &state, std::uint16_t seedType);

@@ -347,6 +347,142 @@ int PlantDefenseValue(const VSPlantState &plant) {
     return score * healthRatio / 100;
 }
 
+int PlantDamagePerSecond(SeedType seedType) {
+    // These values mirror the relative damage/cadence of the VS plants.  The
+    // agent needs a stable tactical estimate rather than animation-perfect
+    // frame prediction, so values are rounded to whole damage per second.
+    switch (seedType) {
+        case SeedType::SEED_GATLINGPEA:
+            return 56;
+        case SeedType::SEED_MELONPULT:
+        case SeedType::SEED_WINTERMELON:
+            return 48;
+        case SeedType::SEED_REPEATER:
+            return 28;
+        case SeedType::SEED_FUMESHROOM:
+            return 24;
+        case SeedType::SEED_GLOOMSHROOM:
+            return 45;
+        case SeedType::SEED_CABBAGEPULT:
+            return 26;
+        case SeedType::SEED_KERNELPULT:
+            return 17;
+        case SeedType::SEED_SNOWPEA:
+        case SeedType::SEED_PEASHOOTER:
+        case SeedType::SEED_CACTUS:
+        case SeedType::SEED_SPLITPEA:
+        case SeedType::SEED_THREEPEATER:
+            return 14;
+        case SeedType::SEED_STARFRUIT:
+            return 18;
+        case SeedType::SEED_SPORESHROOM:
+            return 16;
+        case SeedType::SEED_BONK_CHOY:
+        case SeedType::SEED_CELERY_STALKER:
+            return 22;
+        case SeedType::SEED_CHOMPER:
+            return 30;
+        default:
+            return 0;
+    }
+}
+
+PlantLaneFirepower AssessPlantLaneFirepower(const VSGameState &state, int row) {
+    PlantLaneFirepower assessment{};
+    assessment.row = row;
+    if (row < 0 || row >= state.rows) {
+        return assessment;
+    }
+
+    float closestX = std::numeric_limits<float>::max();
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.row != row) {
+            continue;
+        }
+        const int health = std::max(0, zombie.bodyHealth) + std::max(0, zombie.shieldHealth);
+        assessment.incomingHealth += health;
+        if (zombie.positionX <= 700.0f || zombie.eating) {
+            assessment.nearHealth += health;
+        }
+        closestX = std::min(closestX, zombie.positionX);
+    }
+    if (closestX == std::numeric_limits<float>::max()) {
+        return assessment;
+    }
+
+    assessment.closestDistance = std::max(0, static_cast<int>(closestX));
+    // The plant half of the lawn begins near x=240.  Use a deliberately
+    // conservative walking estimate and then account for a present blocker.
+    assessment.secondsToContact = std::clamp((assessment.closestDistance - 240) / 42, 1, 16);
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant) || plant.position.row != row) {
+            continue;
+        }
+        switch (static_cast<SeedType>(plant.seedType)) {
+            case SeedType::SEED_WALLNUT:
+            case SeedType::SEED_TALLNUT:
+                assessment.secondsToContact += 7;
+                break;
+            case SeedType::SEED_PUMPKINSHELL:
+                assessment.secondsToContact += 4;
+                break;
+            default:
+                break;
+        }
+    }
+    assessment.secondsToContact = std::min(24, assessment.secondsToContact);
+
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant) || plant.asleep) {
+            continue;
+        }
+        const SeedType seed = static_cast<SeedType>(plant.seedType);
+        const int baseDps = PlantDamagePerSecond(seed);
+        if (baseDps == 0) {
+            continue;
+        }
+
+        const int rowDistance = std::abs(static_cast<int>(plant.position.row) - row);
+        int contribution = 0;
+        if (plant.position.row == row) {
+            contribution = baseDps;
+            // Melee output becomes real only after an intruder reaches its
+            // attack zone.  It cannot be used to justify a distant lane.
+            if ((seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER) && closestX > 560.0f) {
+                contribution = 0;
+            } else if (seed == SeedType::SEED_CHOMPER && closestX > 500.0f) {
+                contribution = 0;
+            }
+        } else if (seed == SeedType::SEED_THREEPEATER && rowDistance == 1) {
+            contribution = baseDps;
+        } else if (seed == SeedType::SEED_STARFRUIT && rowDistance == 1) {
+            contribution = baseDps * 2 / 3;
+        } else if (seed == SeedType::SEED_GLOOMSHROOM && rowDistance == 1 && closestX < 480.0f) {
+            contribution = baseDps / 2;
+        }
+        if (contribution == 0) {
+            continue;
+        }
+
+        const int healthRatio = plant.maxHealth > 0 ? std::clamp(plant.health * 100 / plant.maxHealth, 0, 100) : 50;
+        assessment.dps += contribution * healthRatio / 100;
+    }
+
+    // Distant units can still be addressed after the nearest contact; near
+    // health is the immediate requirement that decides whether a new shooter
+    // is needed before another economy plant.
+    const int requiredHealth = assessment.nearHealth > 0 ? assessment.nearHealth : assessment.incomingHealth;
+    assessment.damageBeforeContact = assessment.dps * assessment.secondsToContact;
+    const int requiredDps = (requiredHealth + assessment.secondsToContact - 1) / assessment.secondsToContact;
+    assessment.deficit = std::max(0, requiredDps - assessment.dps);
+    assessment.canHold = requiredHealth == 0 || assessment.damageBeforeContact >= requiredHealth;
+    return assessment;
+}
+
+int PlantLaneFirepowerDeficit(const VSGameState &state, int row) {
+    return AssessPlantLaneFirepower(state, row).deficit;
+}
+
 PlantLaneAssessment AssessPlantLane(const VSGameState &state, int row) {
     PlantLaneAssessment assessment{};
     assessment.row = row;
@@ -376,6 +512,14 @@ PlantLaneAssessment AssessPlantLane(const VSGameState &state, int row) {
             // a lane next to an established Starfruit pattern.
             assessment.defense += PlantDefenseValue(plant) / 2;
         }
+    }
+    const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+    // Unit counts alone hide the difference between a bucket zombie far away
+    // and one that reaches a sunflower before the available DPS can remove
+    // it.  Surface that shortfall to all existing lane-choice callers.
+    assessment.rawDanger += std::min(170, firepower.deficit * 5);
+    if (!firepower.canHold && firepower.nearHealth > 0) {
+        assessment.rawDanger += 35;
     }
     assessment.danger = std::max(0, assessment.rawDanger - assessment.defense / 2);
     return assessment;
@@ -820,6 +964,7 @@ int LeastThreatenedEconomyRow(const VSGameState &state) {
 
 int PlantLaneWeaknessScore(const VSGameState &state, int row) {
     const PlantLaneAssessment assessment = AssessPlantLane(state, row);
+    const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
     if (assessment.plantCount == 0) {
         return -20;
     }
@@ -842,6 +987,12 @@ int PlantLaneWeaknessScore(const VSGameState &state, int row) {
     score += std::max(0, 120 - assessment.defense);
     score += combatPlants == 0 ? 35 : 0;
     score += assessment.rawDanger / 4;
+    // This lane score feeds the zombie chooser.  Prefer a sunflower row
+    // whose actual output cannot clear a current push over a visually sparse
+    // row that already has sufficient DPS.
+    score += std::max(0, 34 - firepower.dps) * 3;
+    score += firepower.deficit * 6;
+    score += !firepower.canHold && firepower.nearHealth > 0 ? 95 : 0;
     return score;
 }
 
@@ -853,6 +1004,7 @@ int EconomyPlantsInRow(const VSGameState &state, int row) {
 
 int ZombieLaneAttackScore(const VSGameState &state, int row) {
     const PlantLaneAssessment assessment = AssessPlantLane(state, row);
+    const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
     const int zombieCount = CountZombiesInRow(state, row);
     const int economyPlants = EconomyPlantsInRow(state, row);
     const int graveThreat = GraveThreatScore(state, row);
@@ -865,6 +1017,9 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
     score += assessment.plantCount == 0 ? 28 : 0;
     score += assessment.defense < 100 ? 35 : 0;
     score += graveThreat * 3;
+    score += std::max(0, 32 - firepower.dps) * 3;
+    score += firepower.deficit * 5;
+    score += !firepower.canHold && firepower.nearHealth > 0 ? 80 : 0;
 
     // Spread the opening across lanes. A single zombie is useful as a probe;
     // additional zombies in that lane receive a progressively larger penalty.

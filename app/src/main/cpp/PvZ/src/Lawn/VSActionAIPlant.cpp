@@ -259,6 +259,7 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 }
 
                 const PlantLaneAssessment lane = AssessPlantLane(state, targetRow);
+                const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, targetRow);
                 const int existingOutput = SustainedOutputScoreInRow(state, targetRow);
                 const int outputValue = IsSustainedOutputSeed(seed) ? SustainedOutputValue(seed) : 48;
                 int score = outputValue * 3 - card.cost / 3;
@@ -268,6 +269,12 @@ class PlantVSAgent final : public BuiltinVSAgent {
                 score += PlantEconomyValueInRow(state, targetRow) * 2;
                 score += std::max(0, 110 - existingOutput) * 2;
                 score -= existingOutput / 2;
+                // A lane with enough plants on paper can still lose its
+                // nearest zombie before those plants deal its health total.
+                // Prioritize the concrete DPS shortfall over a second safe
+                // economy row whenever that happens.
+                score += firepower.deficit * 14;
+                score += !firepower.canHold && firepower.nearHealth > 0 ? 135 : 0;
                 // Once a firing lane reaches a grave, further shots convert
                 // directly into lost zombie income.  That is worth more than
                 // another safe Sunflower after the opening has stabilized.
@@ -358,7 +365,10 @@ class PlantVSAgent final : public BuiltinVSAgent {
         target -= hasCrossLaneOutput ? 1 : 0;
         target += cheapestOutputCost >= 125 ? 1 : 0;
         target += cheapestOutputCost == std::numeric_limits<int>::max() ? 1 : 0;
-        return std::clamp(target, std::max(3, state.rows - 1), state.rows * 2);
+        // Ten producers is the upper economic limit seen in the recordings.
+        // A sixth-row board must convert excess sun into pressure rather than
+        // looping forever on a twelfth Sunflower.
+        return std::clamp(target, std::max(3, state.rows - 1), std::min(10, state.rows * 2));
     }
 
     std::optional<VSAction> TryWakeSleepingMushroom(const VSGameState &state, int preferredRow) {
@@ -540,6 +550,18 @@ public:
         const int counterStackCount = LargestZombieStackInRow(state, counterRow);
         const int counterCherryClusterCount = LargestCherryBombClusterInRow(state, counterRow);
         const PlantLaneAssessment counterLane = AssessPlantLane(state, counterRow);
+        const PlantLaneFirepower counterFirepower = AssessPlantLaneFirepower(state, counterRow);
+        int firepowerRow = counterRow;
+        int largestFirepowerDeficit = counterFirepower.deficit;
+        for (int row = 0; row < state.rows; ++row) {
+            const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+            if (firepower.deficit > largestFirepowerDeficit
+                || (firepower.deficit == largestFirepowerDeficit && !firepower.canHold && row != counterRow)) {
+                firepowerRow = row;
+                largestFirepowerDeficit = firepower.deficit;
+            }
+        }
+        const PlantLaneFirepower weakestFirepower = AssessPlantLaneFirepower(state, firepowerRow);
         const int counterCombatPlants = static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [counterRow](const VSPlantState &plant) {
             return !IsDeadOrOutside(plant) && plant.position.row == counterRow && IsPlantCombatSeed(plant.seedType);
         }));
@@ -553,7 +575,8 @@ public:
             || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_GARGANTUAR);
         const bool hasGigaPoleVaulter = HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_POLEVAULTER);
         const bool earlySingleBucket = state.boardTick < 32000 && counterZombieCount == 1
-            && HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_PAIL) && counterCombatPlants == 0 && counterLane.plantCount <= 2;
+            && HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_PAIL) && counterCombatPlants == 0 && counterLane.plantCount <= 2
+            && !counterFirepower.canHold;
         // Squash is an area/tempo card. A bobsled team or Zomboni is not an
         // automatic target: only zombies sharing one cell-sized cluster, or
         // a genuinely advancing high-health single, justify the spend.
@@ -588,11 +611,12 @@ public:
             // more attacker instead of adding an eleventh Sunflower.
             desiredOutputCount = std::max(desiredOutputCount, std::min(state.rows, state.plantSun >= 300 ? 5 : 4));
         }
-        const bool needsSustainedOutput = hasSustainedOutputSeed && sustainedOutputCount < desiredOutputCount;
+        const bool needsSustainedOutput = hasSustainedOutputSeed
+            && (sustainedOutputCount < desiredOutputCount || (hasActiveZombie && largestFirepowerDeficit > 0));
         const int highSunCombatTarget = std::min(state.rows, state.plantSun >= 300 ? 5 : 4);
         const bool highSunCombatPressure = !state.isSuddenDeath && state.plantSun >= 200
             && incomePlantCount >= minimumIncomeBeforeOutput && hasCombatSeed
-            && (combatPlantCount < highSunCombatTarget || needsSustainedOutput);
+            && (combatPlantCount < highSunCombatTarget || needsSustainedOutput || largestFirepowerDeficit > 0);
 
         // The recorded plant side builds its sun base first, then answers a real
         // heavy/fast push with Squash. It is never an opening filler card.
@@ -623,7 +647,7 @@ public:
         }
 
         if (highSunCombatPressure && !immediateCounterThreat) {
-            if (std::optional<VSAction> action = TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state), protectedSun, true)) {
+            if (std::optional<VSAction> action = TrySustainedOutputPlant(state, firepowerRow, protectedSun, true)) {
                 return action;
             }
         }
@@ -681,11 +705,12 @@ public:
         // The replay keeps adding Sunflowers after early probes arrive. Once
         // the opening base exists, continue that expansion whenever no lane
         // needs an instant counter instead of freezing income at six plants.
-        const bool canExpandIncome = danger.danger < 105 || (counterCombatPlants > 0 && danger.danger < 140);
+        const bool canExpandIncome = (danger.danger < 105 || (counterCombatPlants > 0 && danger.danger < 140))
+            && (counterFirepower.canHold || weakestFirepower.closestDistance > 760);
         if (hasIncomeSeed && hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && canExpandIncome
             && !highSunCombatPressure) {
             if (needsSustainedOutput) {
-                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
+                if (std::optional<VSAction> action = TrySustainedOutputPlant(state, firepowerRow, protectedSun)) {
                     return action;
                 }
             }
