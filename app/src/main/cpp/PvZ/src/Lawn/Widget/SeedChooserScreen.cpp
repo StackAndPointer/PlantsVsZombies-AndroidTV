@@ -354,6 +354,10 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIMaxDeckSize] = {
     // while the durable carry remains the sole main damage card.
     {SEED_SUNFLOWER, SEED_REPEATER, SEED_SUNSHROOM, SEED_WALLNUT, SEED_SQUASH, SEED_CHILLY_PEPPER},
     {SEED_SUNFLOWER, SEED_STARFRUIT, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_WALLNUT, SEED_CHERRYBOMB},
+    // Five-card Ban-residual profiles from the latest recordings. Boomerang
+    // remains the carry in the first one; Peashooter is early tempo support.
+    {SEED_BLOOMERANG, SEED_PEASHOOTER, SEED_SQUASH, SEED_SPIKEWEED, SEED_PUMPKINSHELL},
+    {SEED_REPEATER, SEED_CHOMPER, SEED_CHILLY_PEPPER, SEED_WALLNUT, SEED_SUNSHROOM},
 };
 
 // Night VS changes both the income card and the legality of mushrooms. Keep
@@ -398,6 +402,8 @@ static constexpr SeedType kBuiltinAINightPlantDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_SUNSHROOM, SEED_MELONPULT, SEED_POTATOMINE, SEED_WALLNUT, SEED_CHILLY_PEPPER, SEED_SQUASH},
     {SEED_SUNSHROOM, SEED_REPEATER, SEED_WALLNUT, SEED_SQUASH, SEED_CHILLY_PEPPER, SEED_POTATOMINE},
     {SEED_SUNSHROOM, SEED_STARFRUIT, SEED_PUFFSHROOM, SEED_WALLNUT, SEED_CHERRYBOMB, SEED_POTATOMINE},
+    {SEED_BLOOMERANG, SEED_PEASHOOTER, SEED_SQUASH, SEED_SPIKEWEED, SEED_PUMPKINSHELL},
+    {SEED_REPEATER, SEED_CHOMPER, SEED_CHILLY_PEPPER, SEED_WALLNUT, SEED_SUNSHROOM},
 };
 static_assert(std::size(kBuiltinAINightPlantDecks) == std::size(kBuiltinAIPlantDecks));
 
@@ -450,6 +456,9 @@ static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIMaxDeckSize] = {
     // keep the six recorded combat choices intact instead of replacing the
     // Flag or Bungee with another generic grave screen.
     {SEED_ZOMBIE_PEA_HEAD, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_FOOTBALL, SEED_ZOMBIE_BUNGEE, SEED_ZOMBIE_FLAG},
+    // Five-card Ban-residual fast attack and giant-finisher profiles.
+    {SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_PEA_HEAD, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_ZOMBLOB, SEED_ZOMBIE_GIGA_GARGANTUAR},
+    {SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_IMP, SEED_ZOMBIE_GARGANTUAR, SEED_ZOMBIE_FOOTBALL},
 };
 
 std::size_t GetBuiltinAIPlanSize(const SeedChooserScreen *screen) {
@@ -477,7 +486,7 @@ int PickBuiltinAIPlantProfile() {
     // The strongest replay-compatible templates use a tier-one carry and
     // the Potato/Squash/Cherry answer package. Lower-tier carries still
     // occur, but do not drown out those reliable opening plans.
-    static constexpr int kPlantProfileWeights[] = {5, 5, 4, 3, 3, 2, 2, 2, 1, 2, 3, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 1};
+    static constexpr int kPlantProfileWeights[] = {5, 5, 4, 3, 3, 2, 2, 2, 1, 2, 3, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 1, 1, 1};
     static_assert(std::size(kPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
 
     int totalWeight = 0;
@@ -931,12 +940,13 @@ static constexpr SeedType kBuiltinAIPlantPostCarryFallbacks[] = {
     SeedType::SEED_CHERRYBOMB,
     SeedType::SEED_JALAPENO,
     SeedType::SEED_SQUASH,
+    SeedType::SEED_CHILLY_PEPPER,
     SeedType::SEED_DOOMSHROOM,
-    SeedType::SEED_ICEBERG_LETTUCE,
-    SeedType::SEED_SUNSHROOM,
     SeedType::SEED_POTATOMINE,
     SeedType::SEED_WALLNUT,
     SeedType::SEED_PUMPKINSHELL,
+    SeedType::SEED_SUNSHROOM,
+    SeedType::SEED_ICEBERG_LETTUCE,
     SeedType::SEED_SUNFLOWER,
 };
 
@@ -987,12 +997,27 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
             return SeedType::SEED_INSTANT_COFFEE;
         }
     }
-    const bool alreadyHasMainDamage = HasBuiltinAIPlantMainDamage(screen);
+    const bool hasSelectedCarry = HasBuiltinAIPlantMainDamage(screen);
     const SeedType plannedMain = useTemplate ? PlannedBuiltinAIPlantMainDamageSeed(screen) : SeedType::SEED_NONE;
     const int plannedIndex = plannedMain == SeedType::SEED_NONE ? -1 : screen->GetSeedPacketIndex(plannedMain);
     const bool plannedMainAvailable = plannedIndex >= 0 && plannedIndex < screen->GetSeedStorageCount()
         && (screen->GetChosenSeed(plannedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
             || IsBuiltinAICandidate(screen, plannedMain));
+    // A recorded plan can intentionally add one inexpensive tempo shooter
+    // before its actual carry. That supporting attacker must not make the
+    // selector believe the designated main card has already been chosen.
+    const bool alreadyHasMainDamage = useTemplate && plannedMainAvailable
+        ? HasBuiltinAIPlantSeed(screen, plannedMain)
+        : hasSelectedCarry;
+    const std::size_t planSize = GetBuiltinAIPlanSize(screen);
+    const std::size_t selectedCount = static_cast<std::size_t>(std::max(0, screen->mSeedsInBank));
+    const std::size_t slotsRemaining = selectedCount < planSize ? planSize - selectedCount : 0;
+    // The carry is hidden until the final actual packet: sixth in a six-slot
+    // match and seventh in a seven-slot match. A banned template carry uses
+    // the normal replacement path immediately instead of stalling a deck.
+    const bool deferTemplateMain = useTemplate && plannedMainAvailable && slotsRemaining > 1;
+    const bool deferFallbackMain = !useTemplate && slotsRemaining > 1;
+    const bool deferMainDamage = !alreadyHasMainDamage && (deferTemplateMain || deferFallbackMain);
     const auto IsMainDamageCandidate = [&](SeedType seedType) {
         if (plannedMain != SeedType::SEED_NONE && plannedMainAvailable) {
             return seedType == plannedMain;
@@ -1019,7 +1044,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     for (const SeedType seedType : kBuiltinAIPlantMainFallbacks) {
         hasAvailableMainDamage = hasAvailableMainDamage || IsAvailableMain(seedType);
     }
-    const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage;
+    const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage && !deferMainDamage;
     const auto IsPlannedTemplateSecondaryOutput = [&](SeedType seedType) {
         if (!useTemplate || !IsBuiltinAIPlantCarrySeed(seedType)) {
             return false;
@@ -1030,6 +1055,13 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         });
     };
     auto IsCompatible = [&](SeedType seedType) {
+        if (deferMainDamage && IsBuiltinAIPlantCarrySeed(seedType)) {
+            // A recorded template may explicitly include a low-cost secondary
+            // output before the real carry. Generic decks remain one-carry.
+            if (!useTemplate || seedType == plannedMain || !IsPlannedTemplateSecondaryOutput(seedType)) {
+                return false;
+            }
+        }
         return IsBuiltinAICandidate(screen, seedType) && IsBuiltinAIPlantSupportCandidate(screen, seedType)
             // A replay template is allowed to preserve its recorded
             // secondary output, but only when that exact card belongs to its
@@ -1039,11 +1071,30 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
             && (!mustPickMainDamage || IsMainDamageCandidate(seedType));
     };
 
+    const auto IsPreferredCompatible = [&](SeedType seedType) {
+        if (!IsCompatible(seedType)) {
+            return false;
+        }
+        if (seedType != SeedType::SEED_ICEBERG_LETTUCE) {
+            return true;
+        }
+        static constexpr SeedType kHigherPriorityAnswers[] = {
+            SeedType::SEED_POTATOMINE,
+            SeedType::SEED_SQUASH,
+            SeedType::SEED_CHERRYBOMB,
+            SeedType::SEED_JALAPENO,
+            SeedType::SEED_CHILLY_PEPPER,
+        };
+        return std::none_of(std::begin(kHigherPriorityAnswers), std::end(kHigherPriorityAnswers), [&](SeedType answer) {
+            return IsCompatible(answer);
+        });
+    };
+
     if (priorityCount > 0) {
         const std::size_t firstPriority = static_cast<std::size_t>(Sexy::Rand(static_cast<int>(priorityCount)));
         for (std::size_t offset = 0; offset < priorityCount; ++offset) {
             const SeedType seedType = prioritySeeds[(firstPriority + offset) % priorityCount];
-            if (IsCompatible(seedType)) {
+            if (IsPreferredCompatible(seedType)) {
                 return seedType;
             }
         }
@@ -1056,7 +1107,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         const std::size_t firstFallback = useTemplate ? 0 : static_cast<std::size_t>(Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantMainFallbacks))));
         for (std::size_t offset = 0; offset < std::size(kBuiltinAIPlantMainFallbacks); ++offset) {
             const SeedType seedType = kBuiltinAIPlantMainFallbacks[(firstFallback + offset) % std::size(kBuiltinAIPlantMainFallbacks)];
-            if (IsCompatible(seedType)) {
+            if (IsPreferredCompatible(seedType)) {
                 return seedType;
             }
         }
@@ -1071,7 +1122,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
                 && !HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE)) {
                 continue;
             }
-            if (IsCompatible(seedType)) {
+            if (IsPreferredCompatible(seedType)) {
                 return seedType;
             }
         }
@@ -1085,7 +1136,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     for (int offset = 0; offset < storageCount; ++offset) {
         const int seedIndex = (firstSeedIndex + offset) % storageCount;
         const SeedType seedType = screen->GetPlantSeedType(seedIndex);
-        if (IsCompatible(seedType)) {
+        if (IsPreferredCompatible(seedType)) {
             return seedType;
         }
     }
