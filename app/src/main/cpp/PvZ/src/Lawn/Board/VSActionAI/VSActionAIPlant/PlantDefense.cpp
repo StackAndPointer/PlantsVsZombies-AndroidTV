@@ -224,7 +224,7 @@ std::optional<VSAction> PlantAIPlanning::TryFallbackPlant(const VSGameState &sta
         if (seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_SUNSHROOM || seed == SeedType::SEED_IMP_PEAR
             || seed == SeedType::SEED_INSTANT_COFFEE || seed == SeedType::SEED_PUMPKINSHELL || seed == SeedType::SEED_ICEBERG_LETTUCE
             || seed == SeedType::SEED_TORCHWOOD || seed == SeedType::SEED_GARLIC || seed == SeedType::SEED_HYPNOSHROOM
-            || seed == SeedType::SEED_POTATOMINE) {
+            || seed == SeedType::SEED_POTATOMINE || seed == SeedType::SEED_SWEET_POTATO) {
             continue;
         }
         const bool emergencySeed = seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO

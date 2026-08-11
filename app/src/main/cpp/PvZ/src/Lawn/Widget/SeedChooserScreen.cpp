@@ -601,11 +601,12 @@ bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
     if (!screen->mIsZombieChooser && Plant::IsUpgrade(seedType)) {
         return false;
     }
-    // Gravebuster is intentionally not part of the built-in plant AI deck:
-    // it is too narrow in this mode and causes the chooser to select a weak
-    // single-purpose card. It remains a valid Ban target so Ban decisions can
-    // still remove it from the opponent's candidate pool.
-    if (!screen->mBanningPhase && !screen->mIsZombieChooser && seedType == SeedType::SEED_GRAVEBUSTER) {
+    // Gravebuster and Sweet Potato are intentionally not part of the built-in
+    // plant AI deck. Both are narrow tactical cards, but there is no replay-
+    // backed Sweet Potato routing plan yet, so generic selection only turns
+    // it into weak filler. They remain valid Ban targets.
+    if (!screen->mBanningPhase && !screen->mIsZombieChooser
+        && (seedType == SeedType::SEED_GRAVEBUSTER || seedType == SeedType::SEED_SWEET_POTATO)) {
         return false;
     }
     if (!screen->mBanningPhase && !screen->mIsZombieChooser

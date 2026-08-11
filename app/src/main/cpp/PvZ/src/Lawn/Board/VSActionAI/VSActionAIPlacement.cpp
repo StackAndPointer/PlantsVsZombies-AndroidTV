@@ -292,7 +292,7 @@ VSGridPosition FindWallnutCell(const VSGameState &state, int row, int firstColum
 }
 
 VSGridPosition FindSpikeweedCell(const VSGameState &state, int row) {
-    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
+    if (row < 0 || row >= state.rows || IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
         return {};
     }
 
@@ -326,7 +326,10 @@ VSGridPosition FindSpikeweedCell(const VSGameState &state, int row) {
         // because the Zomboni's ice trail made the correct front tile fail.
         for (const int offset : {-1, -2}) {
             const int column = zamboniColumn + offset;
-            if (column <= barrierColumn || column < 0) {
+            // Spikeweed is a front-line control card. Once the Zomboni has
+            // crossed beyond the two front tiles, do not chase it back into
+            // the plant formation; leave that response to instant counters.
+            if (column <= barrierColumn || column < 4) {
                 continue;
             }
             const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
@@ -341,20 +344,20 @@ VSGridPosition FindSpikeweedCell(const VSGameState &state, int row) {
         return {};
     }
 
-    if (frontBarrier == nullptr || frontBarrier->position.col >= 5) {
-        return {};
-    }
-    // For a normal push, place exactly one tile on the zombie-facing side
-    // of the barrier. A more distant tile is not a substitute: it can be
-    // bypassed or leave a gap immediately in front of the defensive line.
-    const VSGridPosition target{static_cast<std::int8_t>(frontBarrier->position.col + 1), static_cast<std::int8_t>(row)};
-    const float cellCenterX = PlantCellCenterX(target);
-    const bool willBeCrossed = std::any_of(state.zombies.begin(), state.zombies.end(), [row, cellCenterX](const VSZombieState &zombie) {
-        return !zombie.dead && !zombie.mindControlled && zombie.row == row && zombie.positionX >= cellCenterX - 20.0f;
-    });
-    if (willBeCrossed && IsPlantableVSTile(state, target) && !HasPlantAt(state, target) && !HasGridItemAt(state, target)
-        && IsPlantPlacementSafe(state, SeedType::SEED_SPIKEWEED, target)) {
-        return target;
+    // Do not derive the target from a rear Wall-nut. In VS that placed
+    // Spikeweed in column 3 whenever the nut was in column 2. Its useful
+    // position is at the redline, so only consider columns 5 and 4. If both
+    // are unavailable, wait for the next legal front-line opportunity.
+    for (int column = 5; column >= 4; --column) {
+        const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+        const float cellCenterX = PlantCellCenterX(target);
+        const bool willBeCrossed = std::any_of(state.zombies.begin(), state.zombies.end(), [row, cellCenterX](const VSZombieState &zombie) {
+            return !zombie.dead && !zombie.mindControlled && zombie.row == row && zombie.positionX >= cellCenterX - 20.0f;
+        });
+        if (willBeCrossed && IsPlantableVSTile(state, target) && !HasPlantAt(state, target) && !HasGridItemAt(state, target)
+            && IsPlantPlacementSafe(state, SeedType::SEED_SPIKEWEED, target)) {
+            return target;
+        }
     }
     return {};
 }
