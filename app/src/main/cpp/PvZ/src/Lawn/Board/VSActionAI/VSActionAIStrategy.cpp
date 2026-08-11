@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace vsai::detail {
@@ -25,17 +26,21 @@ struct StrategyRule {
     VSSide side = VSSide::Plants;
     std::uint16_t seed = 0;
     std::uint32_t deckSignature = 0;
+    std::uint16_t opponentArchetype = 0;
     int phase = 0;
     std::array<int, 4> buckets = {-1, -1, -1, -1};
     int bonus = 0;
+    int samples = 0;
 };
 
 constexpr std::array<unsigned char, 8> kStrategyDatabaseMagic = {'P', 'V', 'Z', 'V', 'S', 'D', 'B', '\0'};
-constexpr std::uint16_t kStrategyDatabaseVersion = 2;
+constexpr std::uint16_t kStrategyDatabaseVersion = 3;
+constexpr std::uint16_t kPreviousStrategyDatabaseVersion = 2;
 constexpr std::uint16_t kLegacyStrategyDatabaseVersion = 1;
 constexpr std::size_t kStrategyDatabaseHeaderSize = 12;
 constexpr std::size_t kLegacyStrategyDatabaseRuleSize = 12;
-constexpr std::size_t kStrategyDatabaseRuleSize = 16;
+constexpr std::size_t kPreviousStrategyDatabaseRuleSize = 16;
+constexpr std::size_t kStrategyDatabaseRuleSize = 18;
 
 std::uint16_t ReadStrategyU16(const std::vector<unsigned char> &data, std::size_t offset) {
     return static_cast<std::uint16_t>(data[offset]) | (static_cast<std::uint16_t>(data[offset + 1]) << 8);
@@ -79,6 +84,155 @@ std::uint32_t DeckSignature(const VSGameState &state, VSSide side) {
     return value * 16777619U;
 }
 
+// These bits are shared with parse_replay.py. They describe the tactical
+// identity that survives a Ban replacement, unlike a full deck hash.
+constexpr std::uint16_t kArchetypeDirectFire = 1U << 0;
+constexpr std::uint16_t kArchetypeLobbedFire = 1U << 1;
+constexpr std::uint16_t kArchetypeMushroomControl = 1U << 2;
+constexpr std::uint16_t kArchetypeCloseControl = 1U << 3;
+constexpr std::uint16_t kArchetypeAreaCounter = 1U << 4;
+constexpr std::uint16_t kArchetypeMetalCounter = 1U << 5;
+constexpr std::uint16_t kArchetypeBarrier = 1U << 6;
+constexpr std::uint16_t kArchetypeSpike = 1U << 7;
+constexpr std::uint16_t kArchetypeLanePressure = 1U << 8;
+constexpr std::uint16_t kArchetypeFastPressure = 1U << 0;
+constexpr std::uint16_t kArchetypeMetalScreen = 1U << 1;
+constexpr std::uint16_t kArchetypeVehicle = 1U << 2;
+constexpr std::uint16_t kArchetypeEconomy = 1U << 3;
+constexpr std::uint16_t kArchetypeRangedSiege = 1U << 4;
+constexpr std::uint16_t kArchetypeRaid = 1U << 5;
+constexpr std::uint16_t kArchetypeJump = 1U << 6;
+constexpr std::uint16_t kArchetypeHeavy = 1U << 7;
+constexpr std::uint16_t kArchetypeSwarm = 1U << 8;
+
+std::uint16_t DeckArchetype(const VSGameState &state, VSSide side) {
+    const std::size_t sideIndex = side == VSSide::Plants ? 0 : 1;
+    std::uint16_t archetype = 0;
+    for (const VSCardState &card : state.seedBanks[sideIndex]) {
+        if (!card.active || card.matchRestricted) {
+            continue;
+        }
+        const SeedType seed = static_cast<SeedType>(card.seedType);
+        if (side == VSSide::Plants) {
+            if (seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM) {
+                archetype |= kArchetypeMushroomControl;
+            }
+            switch (seed) {
+                case SeedType::SEED_PEASHOOTER:
+                case SeedType::SEED_SNOWPEA:
+                case SeedType::SEED_REPEATER:
+                case SeedType::SEED_THREEPEATER:
+                case SeedType::SEED_SPLITPEA:
+                case SeedType::SEED_CACTUS:
+                case SeedType::SEED_SCAREDYSHROOM:
+                    archetype |= kArchetypeDirectFire;
+                    break;
+                case SeedType::SEED_CABBAGEPULT:
+                case SeedType::SEED_KERNELPULT:
+                case SeedType::SEED_MELONPULT:
+                case SeedType::SEED_SPORESHROOM:
+                    archetype |= kArchetypeLobbedFire;
+                    break;
+                case SeedType::SEED_PUFFSHROOM:
+                case SeedType::SEED_FUMESHROOM:
+                case SeedType::SEED_HYPNOSHROOM:
+                    archetype |= kArchetypeMushroomControl;
+                    break;
+                case SeedType::SEED_BONK_CHOY:
+                case SeedType::SEED_CHOMPER:
+                case SeedType::SEED_CELERY_STALKER:
+                    archetype |= kArchetypeCloseControl;
+                    break;
+                case SeedType::SEED_SQUASH:
+                case SeedType::SEED_CHERRYBOMB:
+                case SeedType::SEED_JALAPENO:
+                case SeedType::SEED_CHILLY_PEPPER:
+                case SeedType::SEED_ICESHROOM:
+                case SeedType::SEED_DOOMSHROOM:
+                    archetype |= kArchetypeAreaCounter;
+                    break;
+                case SeedType::SEED_MAGNETSHROOM:
+                    archetype |= kArchetypeMetalCounter;
+                    break;
+                case SeedType::SEED_WALLNUT:
+                case SeedType::SEED_TALLNUT:
+                case SeedType::SEED_PUMPKINSHELL:
+                    archetype |= kArchetypeBarrier;
+                    break;
+                case SeedType::SEED_SPIKEWEED:
+                case SeedType::SEED_SPIKEROCK:
+                    archetype |= kArchetypeSpike;
+                    break;
+                case SeedType::SEED_BLOOMERANG:
+                case SeedType::SEED_STARFRUIT:
+                case SeedType::SEED_GARLIC:
+                    archetype |= kArchetypeLanePressure;
+                    break;
+                default:
+                    break;
+            }
+            continue;
+        }
+
+        switch (seed) {
+            case SeedType::SEED_ZOMBIE_NORMAL:
+            case SeedType::SEED_ZOMBIE_DOGWALKER:
+            case SeedType::SEED_ZOMBIE_IMP:
+            case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
+                archetype |= kArchetypeFastPressure;
+                break;
+            case SeedType::SEED_ZOMBIE_NEWSPAPER:
+            case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
+            case SeedType::SEED_ZOMBIE_TRASHCAN:
+                archetype |= kArchetypeMetalScreen;
+                break;
+            case SeedType::SEED_ZOMBIE_BOBSLED:
+            case SeedType::SEED_ZOMBONI:
+                archetype |= kArchetypeVehicle;
+                break;
+            case SeedType::SEED_ZOMBIE_GRAVESTONE:
+            case SeedType::SEED_ZOMBIE_MOUND:
+                archetype |= kArchetypeEconomy;
+                break;
+            case SeedType::SEED_ZOMBIE_PEA_HEAD:
+            case SeedType::SEED_ZOMBIE_CATAPULT:
+                archetype |= kArchetypeRangedSiege;
+                break;
+            case SeedType::SEED_ZOMBIE_BUNGEE:
+            case SeedType::SEED_ZOMBIE_DIGGER:
+                archetype |= kArchetypeRaid;
+                break;
+            case SeedType::SEED_ZOMBIE_LADDER:
+            case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
+                archetype |= kArchetypeJump;
+                break;
+            case SeedType::SEED_ZOMBIE_FOOTBALL:
+            case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
+            case SeedType::SEED_ZOMBIE_GARGANTUAR:
+            case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
+                archetype |= kArchetypeHeavy;
+                break;
+            case SeedType::SEED_ZOMBIE_FLAG:
+            case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
+            case SeedType::SEED_ZOMBIE_SQUASH_HEAD:
+                archetype |= kArchetypeSwarm;
+                break;
+            default:
+                break;
+        }
+    }
+    return archetype;
+}
+
+int ArchetypeSpecificity(std::uint16_t archetype) {
+    int bits = 0;
+    while (archetype != 0) {
+        bits += archetype & 1U;
+        archetype >>= 1U;
+    }
+    return bits;
+}
+
 class StrategyDatabase {
     std::vector<StrategyRule> mRules;
     bool mLoaded = false;
@@ -100,11 +254,13 @@ class StrategyDatabase {
         }
         const std::uint16_t version = ReadStrategyU16(data, 8);
         const bool legacyDatabase = version == kLegacyStrategyDatabaseVersion;
-        if (!legacyDatabase && version != kStrategyDatabaseVersion) {
+        const bool previousDatabase = version == kPreviousStrategyDatabaseVersion;
+        if (!legacyDatabase && !previousDatabase && version != kStrategyDatabaseVersion) {
             return;
         }
         const std::size_t ruleCount = ReadStrategyU16(data, 10);
-        const std::size_t ruleSize = legacyDatabase ? kLegacyStrategyDatabaseRuleSize : kStrategyDatabaseRuleSize;
+        const std::size_t ruleSize = legacyDatabase ? kLegacyStrategyDatabaseRuleSize
+            : (previousDatabase ? kPreviousStrategyDatabaseRuleSize : kStrategyDatabaseRuleSize);
         if (ruleCount > (data.size() - kStrategyDatabaseHeaderSize) / ruleSize
             || kStrategyDatabaseHeaderSize + ruleCount * ruleSize != data.size()) {
             return;
@@ -113,8 +269,8 @@ class StrategyDatabase {
         for (std::size_t index = 0; index < ruleCount; ++index) {
             const std::size_t offset = kStrategyDatabaseHeaderSize + index * ruleSize;
             const unsigned char sideCode = data[offset];
-            const int phase = data[offset + (legacyDatabase ? 3 : 7)];
-            const int bonus = data[offset + (legacyDatabase ? 8 : 12)];
+            const int phase = data[offset + (legacyDatabase ? 3 : (previousDatabase ? 7 : 9))];
+            const int bonus = data[offset + (legacyDatabase ? 8 : (previousDatabase ? 12 : 14))];
             if (sideCode > 1 || phase < 0 || phase > 2 || bonus <= 0 || bonus > 100) {
                 continue;
             }
@@ -123,10 +279,11 @@ class StrategyDatabase {
             rule.side = sideCode == 0 ? VSSide::Plants : VSSide::Zombies;
             rule.seed = ReadStrategyU16(data, offset + 1);
             rule.deckSignature = legacyDatabase ? 0 : ReadStrategyU32(data, offset + 3);
+            rule.opponentArchetype = legacyDatabase || previousDatabase ? 0 : ReadStrategyU16(data, offset + 7);
             rule.phase = phase;
             bool validRule = true;
             for (std::size_t bucketIndex = 0; bucketIndex < rule.buckets.size(); ++bucketIndex) {
-                const std::size_t bucketOffset = legacyDatabase ? 4 : 8;
+                const std::size_t bucketOffset = legacyDatabase ? 4 : (previousDatabase ? 8 : 10);
                 const int bucket = static_cast<int>(static_cast<std::int8_t>(data[offset + bucketOffset + bucketIndex]));
                 if (bucket < -1 || bucket > 3) {
                     validRule = false;
@@ -138,6 +295,8 @@ class StrategyDatabase {
                 continue;
             }
             rule.bonus = bonus;
+            const std::size_t samplesOffset = legacyDatabase ? 10 : (previousDatabase ? 14 : 16);
+            rule.samples = ReadStrategyU16(data, offset + samplesOffset);
             mRules.push_back(rule);
         }
     }
@@ -156,6 +315,7 @@ public:
         const int totalLiveUnits = CountLivePlants(state) + CountActiveZombies(state);
         const int phase = ownEconomy < 3 && totalLiveUnits < 11 ? 0 : totalLiveUnits < 25 ? 1 : 2;
         const std::uint32_t deckSignature = DeckSignature(state, side);
+        const std::uint16_t opponentArchetype = DeckArchetype(state, side == VSSide::Plants ? VSSide::Zombies : VSSide::Plants);
         const std::array<int, 4> buckets = {
             StrategyBucket(ownEconomy),
             StrategyBucket(opponentUnits),
@@ -163,10 +323,13 @@ public:
             StrategyBucket(opponentLaneUnits),
         };
 
-        int bestBonus = 0;
+        int baselineBonus = 0;
+        int matchupBonus = 0;
+        int matchupSamples = 0;
         for (const StrategyRule &rule : mRules) {
             if (rule.side != side || rule.seed != static_cast<std::uint16_t>(seed) || rule.phase != phase
-                || (rule.deckSignature != 0 && rule.deckSignature != deckSignature)) {
+                || (rule.deckSignature != 0 && rule.deckSignature != deckSignature)
+                || (rule.opponentArchetype != 0 && (opponentArchetype & rule.opponentArchetype) != rule.opponentArchetype)) {
                 continue;
             }
             bool matches = true;
@@ -174,10 +337,34 @@ public:
                 matches = matches && (rule.buckets[index] < 0 || rule.buckets[index] == buckets[index]);
             }
             if (matches) {
-                bestBonus = std::max(bestBonus, rule.bonus);
+                // An opponent mask is a required tactical subset rather than
+                // an exact six-card hash. This preserves replay knowledge
+                // when a Ban swaps one answer card but the opposing rush,
+                // pult, vehicle or heavy-game plan remains the same.
+                const int matchupSpecificity = ArchetypeSpecificity(rule.opponentArchetype);
+                const int ruleBonus = std::min(100, rule.bonus + matchupSpecificity * 2);
+                if (rule.opponentArchetype == 0) {
+                    baselineBonus = std::max(baselineBonus, ruleBonus);
+                } else if (ruleBonus > matchupBonus || (ruleBonus == matchupBonus && rule.samples > matchupSamples)) {
+                    matchupBonus = ruleBonus;
+                    matchupSamples = rule.samples;
+                }
             }
         }
-        return bestBonus;
+        if (matchupBonus == 0 || baselineBonus == 0) {
+            return std::max(baselineBonus, matchupBonus);
+        }
+
+        // The generic template remains the primary replay prior. A matched
+        // enemy archetype adds a bounded, sample-weighted adjustment instead
+        // of competing through max(), which previously discarded almost all
+        // one- and two-feature matchup rules behind common generic actions.
+        // Four observations are enough to reach the cap; this preserves a
+        // real learned distinction without allowing replay data to bypass
+        // threat, legality, or placement checks in the decision layers.
+        const int confidence = std::clamp(matchupSamples, 1, 4);
+        const int matchupAdjustment = std::max(2, matchupBonus * confidence / 12);
+        return std::min(100, baselineBonus + matchupAdjustment);
     }
 };
 
