@@ -43,10 +43,10 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int graveScreenDeficit = ZombieGraveScreenDeficit(state, graveDefenseRow);
     const bool hasGraveGuard = HasZombieGraveGuardInRow(state, graveDefenseRow);
     const bool proactiveGraveScreen = NeedsProactiveGraveScreen(state, graveDefenseRow);
-    const bool graveDefenseUrgent = graveDefenseScore >= 80 || graveStraightThreat >= 80
-        || graveLobbedThreat >= 95 || graveScreenDeficit >= 80 || proactiveGraveScreen;
-    const bool graveDefenseReinforcement = graveDefenseUrgent && (!hasGraveGuard || graveScreenDeficit >= 80);
-    if (graveLobbedThreat >= 95 && graveStraightThreat < 95) {
+    const bool graveDefenseUrgent = graveDefenseScore >= 50 || graveStraightThreat >= 55
+        || graveLobbedThreat >= 70 || graveScreenDeficit >= 55 || proactiveGraveScreen;
+    const bool graveDefenseReinforcement = graveDefenseUrgent && (!hasGraveGuard || graveScreenDeficit >= 55);
+    if (graveLobbedThreat >= 70 && graveStraightThreat < 70) {
         if (std::optional<VSAction> action = ZombieAIPlanning::TryCounterLobbedGravePressure(state, graveDefenseRow)) {
             return action;
         }
@@ -217,10 +217,17 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             const bool isEconomyAction = ZombieAIPlanning::IsEconomySeed(seed);
             const bool isTargetedAction = ZombieAIPlanning::IsTargetedSeed(card.seedType);
             const bool isProtectedGuard = IsZombieGraveGuardSeed(seed) && graveDefenseUrgent;
+            const int zombiesInRow = CountZombiesInRow(state, row);
+            const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
+                && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row);
             // A mowerless lane with working firepower has already paid for
             // its plant-side conversion. Avoid re-opening it with fresh
             // bodies or a grave screen; attack an intact route instead.
-            if (IsMowerlessStrongPlantLane(state, row) && !isEconomyAction && !isTargetedAction && !isProtectedGuard) {
+            if (mowerGone && zombiesInRow == 0 && !isTargetedAction) {
+                continue;
+            }
+            if (IsMowerlessStrongPlantLane(state, row) && !(mowerGone && zombiesInRow > 0)
+                && !isEconomyAction && !isTargetedAction && !isProtectedGuard) {
                 continue;
             }
 
@@ -238,7 +245,6 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 || (preservePressureDuringRepair && !forceOpeningPressure && isEconomyAction)) {
                 continue;
             }
-            const int zombiesInRow = CountZombiesInRow(state, row);
             const bool isLaneAttack = !isEconomyAction && !isTargetedAction && !isProtectedGuard;
             if (isLaneAttack && !IsHeavyZombieSeed(seed)) {
                 // A row remains on cooldown for a few decisions after a
@@ -264,7 +270,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 score += zombiesInRow == 0 ? 210 : -280;
             }
             if (graveDefenseUrgent && row == graveDefenseRow) {
-                score += 140;
+                score += isProtectedGuard ? 410 : 120;
             }
             if (preserveSurvivingFront && row == survivingFrontRow) {
                 const SeedType seed = static_cast<SeedType>(card.seedType);
@@ -285,8 +291,6 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // leaving every grave route unprotected.
                 score += card.cost <= std::max(50, heavyZombieReserve / 4) ? -45 : -190;
             }
-            const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
-                && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row);
             const bool pursueBrokenMowerRow = mowerGone
                 && CountPlantsInRow(state, row) > 0 && zombiesInRow > 0;
             if (isLaneAttack && !IsHeavyZombieSeed(seed) && zombiesInRow > 0 && unpressuredEconomyRows > 0
@@ -303,7 +307,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // A cleared mower lane is a live conversion route. Keep
                 // pressure there while the independent grave-defense path
                 // continues to protect the zombie economy.
-                score += 230;
+                score += 420;
             }
             if (bestCard == nullptr || score > bestScore) {
                 bestCard = &card;

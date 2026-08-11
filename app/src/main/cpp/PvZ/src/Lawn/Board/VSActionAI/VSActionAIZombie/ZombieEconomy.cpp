@@ -46,7 +46,8 @@ int ZombieAIPlanning::GraveGuardPriority(SeedType seed) {
 }
 
 std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &state, int row) {
-    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row) || IsMowerlessStrongPlantLane(state, row)) {
+    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)
+        || (IsMowerlessStrongPlantLane(state, row) && CountZombiesInRow(state, row) == 0)) {
         return std::nullopt;
     }
     const int protectableThreat = ProtectableGraveThreatScore(state, row);
@@ -54,8 +55,8 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
     const int lobbedThreat = LobbedProjectileThreatScore(state, row);
     const int screenDeficit = ZombieGraveScreenDeficit(state, row);
     const bool proactiveScreen = NeedsProactiveGraveScreen(state, row);
-    if (row < 0 || row >= state.rows || (HasZombieGraveGuardInRow(state, row) && screenDeficit < 80)
-        || (!proactiveScreen && protectableThreat < 80 && straightThreat < 80 && lobbedThreat < 95 && screenDeficit < 80)) {
+    if (row < 0 || row >= state.rows || (HasZombieGraveGuardInRow(state, row) && screenDeficit < 55)
+        || (!proactiveScreen && protectableThreat < 50 && straightThreat < 55 && lobbedThreat < 70 && screenDeficit < 55)) {
         return std::nullopt;
     }
 
@@ -118,7 +119,7 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
 std::optional<VSAction> ZombieAIPlanning::TryCounterLobbedGravePressure(const VSGameState &state, int row) {
     const VSCardState *catapult = FindReadyCard(state, SeedType::SEED_ZOMBIE_CATAPULT);
     if (catapult == nullptr || CountZombieEconomy(state) < state.rows || HasMindControlledZombieInRow(state, row)
-        || LobbedProjectileThreatScore(state, row) < 95) {
+        || LobbedProjectileThreatScore(state, row) < 70) {
         return std::nullopt;
     }
 

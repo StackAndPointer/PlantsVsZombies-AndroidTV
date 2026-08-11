@@ -1000,7 +1000,7 @@ bool NeedsProactiveGraveScreen(const VSGameState &state, int row) {
     // Do not wait for the first tombstone to be half dead before assigning a
     // Trashcan, Door, Pail, or head as the screen.
     const int directThreat = StraightProjectileThreatScore(state, row);
-    return economyAssets > 0 && directThreat >= (economyAssets >= 2 ? 80 : 110);
+    return economyAssets > 0 && directThreat >= (economyAssets >= 2 ? 55 : 75);
 }
 
 int ZombieGraveScreenDeficit(const VSGameState &state, int row) {
@@ -1137,7 +1137,17 @@ int MostThreatenedEconomyRow(const VSGameState &state) {
     int bestRow = 0;
     int bestScore = std::numeric_limits<int>::min();
     for (int row = 0; row < state.rows; ++row) {
-        const int score = GraveThreatScore(state, row);
+        // Pick the economic row which can still be screened, not merely the
+        // one with the largest amount of historical damage.  Direct shooters
+        // and pults must both pull a guard toward their current firing lane.
+        const int protectableThreat = ProtectableGraveThreatScore(state, row);
+        const int straightThreat = StraightProjectileThreatScore(state, row);
+        const int lobbedThreat = LobbedProjectileThreatScore(state, row);
+        const int screenDeficit = ZombieGraveScreenDeficit(state, row);
+        int score = protectableThreat * 2 + straightThreat + lobbedThreat + screenDeficit;
+        if (NeedsProactiveGraveScreen(state, row)) {
+            score += 160;
+        }
         if (score > bestScore) {
             bestScore = score;
             bestRow = row;
@@ -1226,20 +1236,20 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
     score += firepower.deficit * 5;
     score += !firepower.canHold && firepower.nearHealth > 0 ? 80 : 0;
 
-    if (row < static_cast<int>(state.mowerAvailable.size()) && !state.mowerAvailable[static_cast<std::size_t>(row)]
-               && assessment.plantCount > 0) {
+    const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
+        && !state.mowerAvailable[static_cast<std::size_t>(row)] && assessment.plantCount > 0;
+    if (mowerGone) {
         // A mowerless lane is a conversion route.  Do not abandon the front
-        // which paid to remove its mower; retain a strong follow-up bias while
-        // the separate economy scorer continues to guard rear graves.
-        score += zombieCount > 0 ? 290 : 165;
+        // which paid to remove its mower, but never restart it after that
+        // front has died. The next body belongs on a fresh economy lane.
+        score += zombieCount > 0 ? 500 : -420;
     }
 
     // Spread the opening across lanes. A single zombie is useful as a probe;
     // additional zombies in that lane receive a progressively larger penalty.
-    const bool pursuingMowerlessLane = row < static_cast<int>(state.mowerAvailable.size())
-        && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row) && assessment.plantCount > 0;
+    const bool pursuingMowerlessLane = mowerGone && !IsMowerInMotion(state, row) && zombieCount > 0;
     if (zombieCount == 0) {
-        score += 150;
+        score += mowerGone ? -240 : 150;
     } else if (zombieCount == 1) {
         score += pursuingMowerlessLane ? 60 : -115;
     } else {
