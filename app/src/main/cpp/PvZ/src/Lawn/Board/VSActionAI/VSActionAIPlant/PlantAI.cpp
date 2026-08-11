@@ -394,6 +394,7 @@ PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState 
             // cells. They never make a weak Ash target pass the separate
             // health/count threshold below.
             candidate.score += StrategyBonus(state, VSSide::Plants, seedType, row);
+            candidate.score += ZombieDeckCounterBonus(state, seedType, row);
             if (candidate.hitCount == 0) {
                 continue;
             }

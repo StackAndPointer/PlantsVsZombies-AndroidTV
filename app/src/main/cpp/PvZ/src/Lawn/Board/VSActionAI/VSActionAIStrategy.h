@@ -4,12 +4,34 @@
 #include "VSActionAIPlacement.h"
 
 #include <array>
+#include <cstdint>
 #include <memory>
 
 namespace vsai::detail {
 
 int StrategyBucket(int value);
 int StrategyBonus(const VSGameState &state, VSSide side, SeedType seed, int targetRow);
+
+// These masks are the stable tactical features used by the replay extractor.
+// They intentionally describe counterable plans rather than exact six-card
+// deck hashes, so a Ban replacement still selects the correct response.
+constexpr std::uint16_t kZombieDeckFastPressure = 1U << 0;
+constexpr std::uint16_t kZombieDeckMetalScreen = 1U << 1;
+constexpr std::uint16_t kZombieDeckVehicle = 1U << 2;
+constexpr std::uint16_t kZombieDeckEconomy = 1U << 3;
+constexpr std::uint16_t kZombieDeckRangedSiege = 1U << 4;
+constexpr std::uint16_t kZombieDeckRaid = 1U << 5;
+constexpr std::uint16_t kZombieDeckJump = 1U << 6;
+constexpr std::uint16_t kZombieDeckHeavy = 1U << 7;
+constexpr std::uint16_t kZombieDeckSwarm = 1U << 8;
+
+std::uint16_t DeckArchetype(const VSGameState &state, VSSide side);
+bool HasZombieDeckArchetype(const VSGameState &state, std::uint16_t mask);
+
+// Bounded, rules-based response prior.  Unlike StrategyBonus this is not a
+// replay action frequency: it encodes the answer that remains valid when a
+// card is Banned or the live board has not exposed a unit yet.
+int ZombieDeckCounterBonus(const VSGameState &state, SeedType seed, int targetRow);
 bool IsAreaCounterSeed(SeedType seed);
 int ReadyPlantAreaCounterCount(const VSGameState &state);
 int PlantAreaCounterExposure(const VSGameState &state, int row);

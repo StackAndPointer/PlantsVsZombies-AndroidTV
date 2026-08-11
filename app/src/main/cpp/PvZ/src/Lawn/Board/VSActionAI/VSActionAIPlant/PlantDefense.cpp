@@ -39,7 +39,8 @@ std::optional<VSAction> PlantAIPlanning::TryPumpkinShell(const VSGameState &stat
             continue;
         }
         const int score = PlantValueScore(plant) + (IsPlantCombatSeed(plant.seedType) ? 170 : 0)
-            + static_cast<int>(plant.position.col) * 95;
+            + static_cast<int>(plant.position.col) * 95
+            + ZombieDeckCounterBonus(state, SeedType::SEED_PUMPKINSHELL, row);
         if (bestPlant == nullptr || score > bestScore) {
             bestPlant = &plant;
             bestScore = score;
@@ -144,6 +145,7 @@ std::optional<VSAction> PlantAIPlanning::TryCactusSpikeweedPressure(const VSGame
         int score = firepower.deficit * 10 + PlantEconomyValueInRow(state, row) * 2;
         score += HasPlantTypeInRow(state, SeedType::SEED_CACTUS, row) ? 280 : 0;
         score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_SPIKEWEED, row);
+        score += ZombieDeckCounterBonus(state, SeedType::SEED_SPIKEWEED, row);
         score += row == preferredRow ? 25 : 0;
         if (bestRow < 0 || score > bestScore) {
             bestRow = row;
@@ -312,6 +314,7 @@ std::optional<VSAction> PlantAIPlanning::TryFallbackPlant(const VSGameState &sta
             // above. Replay data can therefore rank two legal fallback
             // moves, but can never turn an invalid card into a command.
             int score = StrategyBonus(state, VSSide::Plants, seed, target.row) * 3 - card.cost / 4;
+            score += ZombieDeckCounterBonus(state, seed, target.row);
             score += IsSustainedOutputSeed(seed) ? 95 : 0;
             score += IsPlantCombatSeed(static_cast<std::uint16_t>(seed)) ? 30 : 0;
             score += target.row == buildRow ? 15 : 0;

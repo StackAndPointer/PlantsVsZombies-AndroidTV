@@ -232,6 +232,10 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
             // another safe Sunflower after the opening has stabilized.
             score += SeedEconomyPressureOpportunity(state, seed, targetRow) * 4;
             score += StrategyBonus(state, VSSide::Plants, seed, targetRow);
+            // Replay priors identify the template; this bounded matchup
+            // prior changes which legal carry is best against the live
+            // zombie deck (metal screens, vehicles, ranged siege, etc.).
+            score += ZombieDeckCounterBonus(state, seed, targetRow);
             // Local danger is handled by the counter branch. Durable
             // output belongs on a safe route where it can threaten the
             // grave economy instead of becoming a free blocker target.

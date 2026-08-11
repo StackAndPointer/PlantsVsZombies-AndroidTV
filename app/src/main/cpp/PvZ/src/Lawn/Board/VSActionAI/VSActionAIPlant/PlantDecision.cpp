@@ -35,10 +35,22 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     }
 
     const PlantLaneAssessment danger = MostThreatenedPlantLane(state);
+    const std::uint16_t zombieDeckArchetype = DeckArchetype(state, VSSide::Zombies);
+    const bool fastZombieDeck = (zombieDeckArchetype & kZombieDeckFastPressure) != 0;
+    const bool metalZombieDeck = (zombieDeckArchetype & kZombieDeckMetalScreen) != 0;
+    const bool vehicleZombieDeck = (zombieDeckArchetype & kZombieDeckVehicle) != 0;
+    const bool economyZombieDeck = (zombieDeckArchetype & kZombieDeckEconomy) != 0;
+    const bool rangedZombieDeck = (zombieDeckArchetype & kZombieDeckRangedSiege) != 0;
+    const bool heavyZombieDeck = (zombieDeckArchetype & kZombieDeckHeavy) != 0;
+    const bool swarmZombieDeck = (zombieDeckArchetype & kZombieDeckSwarm) != 0;
+    const bool deckNeedsEarlyFirepower = fastZombieDeck || vehicleZombieDeck || rangedZombieDeck || heavyZombieDeck || swarmZombieDeck;
     // Five Sunflowers already fund the low-cost pressure seen in VS. Do not
     // hold a healthy board at seven merely because more income slots exist.
-    const int openingIncomeTarget = state.rows >= 6 ? 5 : 4;
-    const int minimumIncomeBeforeOutput = state.rows >= 6 ? 4 : 3;
+    const int baseOpeningIncomeTarget = state.rows >= 6 ? 5 : 4;
+    const int openingIncomeTarget = deckNeedsEarlyFirepower
+        ? std::max(3, baseOpeningIncomeTarget - 1)
+        : baseOpeningIncomeTarget;
+    const int minimumIncomeBeforeOutput = deckNeedsEarlyFirepower ? 3 : (state.rows >= 6 ? 4 : 3);
     const int incomePlantCount = CountPlantIncome(state);
     const int sustainedOutputCount = CountSustainedOutputPlants(state);
     const bool hasIncomeSeed = PlantAIPlanning::HasIncomeSeed(state);
@@ -124,10 +136,11 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         || (contestedZombieRows >= 2 && damageBeforeZombieContact < incomingZombieHealth));
     const bool immediateCounterThreat = squashThreat || impPearThreat || mowerlessThirdColumnEmergency;
     const bool mustHoldCounterReserve = areaCounterReserve > 0 && state.plantSun >= areaCounterReserve
-        && HasReadyZombieBreakthroughCard(state);
+        && (HasReadyZombieBreakthroughCard(state) || ((heavyZombieDeck || swarmZombieDeck) && hasActiveZombie));
     const int protectedSun = mustHoldCounterReserve ? areaCounterReserve : 0;
     const int zombieEconomyStrikeRow = MostVulnerableZombieEconomyRow(state);
-    const bool canStrikeZombieEconomy = (state.isSuddenDeath || incomePlantCount >= minimumIncomeBeforeOutput) && hasEconomyPressurePlan
+    const int economyStrikeIncomeFloor = economyZombieDeck ? std::max(2, minimumIncomeBeforeOutput - 1) : minimumIncomeBeforeOutput;
+    const bool canStrikeZombieEconomy = (state.isSuddenDeath || incomePlantCount >= economyStrikeIncomeFloor) && hasEconomyPressurePlan
         && CountZombieEconomy(state) > 0 && danger.danger < 150 && !immediateCounterThreat;
     const bool hasSporeCarry = std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [](const VSCardState &card) {
         return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(SeedType::SEED_SPORESHROOM);
@@ -145,6 +158,12 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     if (!state.isSuddenDeath && state.plantSun >= 125) {
         const int reserveOutputTarget = state.rows + (state.plantSun >= 350 ? 2 : 1);
         desiredOutputCount = std::max(desiredOutputCount, std::min(maximumOutputCount, reserveOutputTarget));
+    }
+    if (!state.isSuddenDeath && deckNeedsEarlyFirepower && incomePlantCount >= minimumIncomeBeforeOutput) {
+        // A fast/vehicle/ranged/giant deck gets a firing layer one producer
+        // earlier than the neutral replay prior. This is the main matchup
+        // distinction that the old template-only policy was missing.
+        desiredOutputCount = std::max(desiredOutputCount, std::min(maximumOutputCount, state.rows));
     }
     if (!state.isSuddenDeath && hasSporeCarry) {
         // The Spore/Puff/Coffee replay wins by adding layers of the same
@@ -164,8 +183,10 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const bool readySustainedOutput = PlantAIPlanning::HasReadySustainedOutputCard(state, protectedSun);
     // A replay-style grave pressure opening still has to stop the first
     // live route. Do not turn a firepower deficit into an economy strike.
-    const bool openingNeedsFirepower = hasActiveZombie && (counterFirepower.deficit > 0 || !counterFirepower.canHold
-        || (counterClosest != nullptr && counterClosest->positionX < 720.0f && counterCombatPlants == 0));
+    const bool deckOpeningPressure = deckNeedsEarlyFirepower && !hasActiveZombie
+        && incomePlantCount >= minimumIncomeBeforeOutput && state.plantSun >= 100;
+    const bool openingNeedsFirepower = deckOpeningPressure || (hasActiveZombie && (counterFirepower.deficit > 0 || !counterFirepower.canHold
+        || (counterClosest != nullptr && counterClosest->positionX < 720.0f && counterCombatPlants == 0)));
     // Five Sunflowers are a compact opening base, not a permanent command to
     // stop farming.  Once the match is in its grave-economy phase, however,
     // every contested lane must be able to remove its incoming health before
@@ -225,6 +246,14 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryPotatoMine(state, firepowerRow, protectedSun)) {
             return action;
         }
+        if (metalZombieDeck) {
+            // Magnet is a matchup answer, not a late template ornament. Once
+            // an actual metal screen enters a lane, resolve it before adding
+            // another direct-fire plant that the screen hard-counters.
+            if (std::optional<VSAction> action = PlantAIPlanning::TryMagnetShroom(state, firepowerRow, protectedSun)) {
+                return action;
+            }
+        }
         if (std::optional<VSAction> action = PlantAIPlanning::TrySnowpeaBonkPressure(state, firepowerRow, protectedSun)) {
             return action;
         }
@@ -251,6 +280,11 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     if (hasActiveZombie) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryIcebergLettuce(state, counterRow, protectedSun, mowerlessThirdColumnEmergency)) {
             return action;
+        }
+        if (rangedZombieDeck) {
+            if (std::optional<VSAction> action = PlantAIPlanning::TryPumpkinShell(state, counterRow, protectedSun)) {
+                return action;
+            }
         }
         // Iceberg Lettuce is deliberately played at the zombie's feet.
         // Once it has bought that time, a Wall-nut is the next defensive
@@ -293,6 +327,11 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         return action;
     }
     if (!immediateCounterThreat && !openingNeedsFirepower && CountZombieEconomy(state) > 0) {
+        if (economyZombieDeck) {
+            if (std::optional<VSAction> action = PlantAIPlanning::TryGraveBuster(state, protectedSun)) {
+                return action;
+            }
+        }
         if (std::optional<VSAction> action = PlantAIPlanning::TryMelonScaredySupport(state, zombieEconomyStrikeRow, protectedSun)) {
             return action;
         }

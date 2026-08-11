@@ -233,6 +233,159 @@ int ArchetypeSpecificity(std::uint16_t archetype) {
     return bits;
 }
 
+bool HasZombieDeckArchetype(const VSGameState &state, std::uint16_t mask) {
+    return mask != 0 && (DeckArchetype(state, VSSide::Zombies) & mask) == mask;
+}
+
+int ZombieDeckCounterBonus(const VSGameState &state, SeedType seed, int targetRow) {
+    const std::uint16_t archetype = DeckArchetype(state, VSSide::Zombies);
+    if (archetype == 0) {
+        return 0;
+    }
+
+    const auto has = [archetype](std::uint16_t mask) {
+        return (archetype & mask) != 0;
+    };
+    const auto isLobbed = [](SeedType candidate) {
+        switch (candidate) {
+            case SeedType::SEED_CABBAGEPULT:
+            case SeedType::SEED_KERNELPULT:
+            case SeedType::SEED_MELONPULT:
+            case SeedType::SEED_WINTERMELON:
+            case SeedType::SEED_COBCANNON:
+            case SeedType::SEED_SPORESHROOM:
+                return true;
+            default:
+                return false;
+        }
+    };
+    const auto seedInRow = [&state, targetRow](ZombieType zombieType) {
+        return targetRow >= 0 && targetRow < state.rows && HasZombieTypeInRow(state, targetRow, zombieType);
+    };
+    int bonus = 0;
+
+    // Fast-pressure recordings spend cheap walkers before the plant side has
+    // a complete firing line. Mines, slow/control and low-cost front answers
+    // must beat a second producer in this matchup.
+    if (has(kZombieDeckFastPressure)) {
+        if (seed == SeedType::SEED_POTATOMINE) {
+            bonus += 150;
+        } else if (seed == SeedType::SEED_ICEBERG_LETTUCE || seed == SeedType::SEED_SNOWPEA) {
+            bonus += 100;
+        } else if (seed == SeedType::SEED_PUFFSHROOM || seed == SeedType::SEED_FUMESHROOM
+            || seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER) {
+            bonus += 80;
+        } else if (seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_SUNSHROOM) {
+            bonus -= 75;
+        }
+    }
+
+    // Door/Trashcan/Football screens are exactly the matchup where direct
+    // peas lose tempo. Magnet and lobbed fire convert the same sun into a
+    // useful answer instead of feeding a protected zombie.
+    if (has(kZombieDeckMetalScreen)) {
+        if (seed == SeedType::SEED_MAGNETSHROOM) {
+            bonus += 260;
+        } else if (isLobbed(seed)) {
+            bonus += 105;
+        } else if (seed == SeedType::SEED_PEASHOOTER || seed == SeedType::SEED_REPEATER
+            || seed == SeedType::SEED_THREEPEATER || seed == SeedType::SEED_SNOWPEA) {
+            bonus -= 55;
+        }
+    }
+
+    // A vehicle plan is answered by a front trigger. Do not wait for a
+    // Zomboni to reach the row before valuing Spikeweed/Potato Mine.
+    if (has(kZombieDeckVehicle)) {
+        if (seed == SeedType::SEED_SPIKEWEED || seed == SeedType::SEED_SPIKEROCK) {
+            bonus += 250;
+        } else if (seed == SeedType::SEED_POTATOMINE) {
+            bonus += 135;
+        } else if (seed == SeedType::SEED_JALAPENO || seed == SeedType::SEED_CHILLY_PEPPER
+            || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_SQUASH) {
+            bonus += 75;
+        }
+    }
+
+    // Pea-head/Catapult pressure attacks economy from range. A front shell
+    // protects an already-funded lane while a lobbed carry can retaliate;
+    // pure direct fire is deliberately not rewarded into the screen.
+    if (has(kZombieDeckRangedSiege)) {
+        if (seed == SeedType::SEED_PUMPKINSHELL || seed == SeedType::SEED_WALLNUT
+            || seed == SeedType::SEED_TALLNUT) {
+            bonus += 150;
+        } else if (isLobbed(seed) || seed == SeedType::SEED_GARLIC) {
+            bonus += 90;
+        }
+    }
+
+    // Bungee/Digger plans punish a single exposed high-value plant. Prefer
+    // compact, protected formations and leave disposable pads available.
+    if (has(kZombieDeckRaid)) {
+        if (seed == SeedType::SEED_PUMPKINSHELL || seed == SeedType::SEED_UMBRELLA) {
+            bonus += 120;
+        } else if (seed == SeedType::SEED_SUNSHROOM) {
+            bonus += 35;
+        }
+    }
+
+    if (has(kZombieDeckJump)) {
+        if (seed == SeedType::SEED_SPIKEWEED || seed == SeedType::SEED_SPIKEROCK
+            || seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB) {
+            bonus += 100;
+        } else if (seed == SeedType::SEED_WALLNUT || seed == SeedType::SEED_TALLNUT) {
+            bonus -= 35;
+        }
+    }
+
+    // Giant finishers require a real Ash/convert reserve; spending the last
+    // sun on income while a breakthrough is affordable is a losing exchange.
+    if (has(kZombieDeckHeavy)) {
+        if (IsAreaCounterSeed(seed) || seed == SeedType::SEED_HYPNOSHROOM) {
+            bonus += 180;
+        } else if (seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_SUNSHROOM) {
+            bonus -= 95;
+        }
+    }
+
+    if (has(kZombieDeckSwarm)) {
+        if (IsAreaCounterSeed(seed) || seed == SeedType::SEED_FUMESHROOM
+            || seed == SeedType::SEED_BLOOMERANG || seed == SeedType::SEED_MELONPULT
+            || seed == SeedType::SEED_SPORESHROOM) {
+            bonus += 170;
+        } else if (seed == SeedType::SEED_SNOWPEA) {
+            bonus += 45;
+        }
+    }
+
+    // Grave-economy decks are not a reason to tunnel on defense forever:
+    // once a live lane reaches the mound, removal/output has the highest
+    // value because each shot also destroys future Brain income.
+    if (has(kZombieDeckEconomy)) {
+        if (seed == SeedType::SEED_GRAVEBUSTER) {
+            bonus += 280;
+        } else if (IsSustainedOutputSeed(seed) || seed == SeedType::SEED_SPIKEWEED) {
+            bonus += 90;
+        } else if (seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_SUNSHROOM) {
+            bonus -= 70;
+        }
+    }
+
+    // Live evidence on the chosen row tightens the generic prior without
+    // allowing a deck label alone to place an illegal or suicidal card.
+    if (seedInRow(ZombieType::ZOMBIE_ZAMBONI) && (seed == SeedType::SEED_SPIKEWEED || seed == SeedType::SEED_POTATOMINE)) {
+        bonus += 150;
+    }
+    if ((seedInRow(ZombieType::ZOMBIE_PEA_HEAD) || seedInRow(ZombieType::ZOMBIE_CATAPULT))
+        && (seed == SeedType::SEED_PUMPKINSHELL || isLobbed(seed))) {
+        bonus += 110;
+    }
+    if (seedInRow(ZombieType::ZOMBIE_TRASHCAN) || seedInRow(ZombieType::ZOMBIE_DOOR)) {
+        bonus += seed == SeedType::SEED_MAGNETSHROOM ? 130 : (isLobbed(seed) ? 55 : 0);
+    }
+    return std::clamp(bonus, -120, 320);
+}
+
 class StrategyDatabase {
     std::vector<StrategyRule> mRules;
     bool mLoaded = false;

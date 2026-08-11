@@ -83,6 +83,7 @@ std::optional<VSAction> PlantAIPlanning::TryPotatoMine(const VSGameState &state,
             score -= (lead - requiredLead) / 3;
             score += row == preferredRow ? 35 : 0;
             score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_POTATOMINE, row);
+            score += ZombieDeckCounterBonus(state, SeedType::SEED_POTATOMINE, row);
             if (bestTarget.col < 0 || score > bestScore) {
                 bestTarget = target;
                 bestScore = score;
@@ -327,6 +328,7 @@ std::optional<VSAction> PlantAIPlanning::TryMagnetShroom(const VSGameState &stat
         score += closestX < 620.0f ? 120 : 0;
         score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_MAGNETSHROOM, row);
         score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE, row) / 3;
+        score += ZombieDeckCounterBonus(state, SeedType::SEED_MAGNETSHROOM, row);
         score += row == preferredRow ? 35 : 0;
         if (bestTarget.col < 0 || score > bestScore) {
             bestTarget = target;
