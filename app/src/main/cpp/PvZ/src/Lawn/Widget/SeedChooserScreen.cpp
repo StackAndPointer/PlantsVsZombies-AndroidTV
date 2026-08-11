@@ -465,6 +465,8 @@ struct BuiltinAIDeckPlans {
     LawnApp *app = nullptr;
     int plantProfile = -1;
     int zombieProfile = -1;
+    bool usePlantTemplate = true;
+    bool useZombieTemplate = true;
 };
 
 BuiltinAIDeckPlans gBuiltinAIDeckPlans;
@@ -504,6 +506,12 @@ void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
     gBuiltinAIDeckPlans.app = screen->mApp;
     gBuiltinAIDeckPlans.plantProfile = PickBuiltinAIPlantProfile();
     gBuiltinAIDeckPlans.zombieProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIZombieDecks)));
+    // Replay templates are the default human-like opening. Keep a smaller
+    // constrained-random path so local AI matches do not repeat a recorded
+    // line every game; both paths still pass through the same legality and
+    // matchup filters below.
+    gBuiltinAIDeckPlans.usePlantTemplate = Sexy::Rand(100) < 80;
+    gBuiltinAIDeckPlans.useZombieTemplate = Sexy::Rand(100) < 80;
     // A new chooser is a new match plan. Avoid repeating the same archetype
     // when the engine's deterministic RNG starts consecutive local matches
     // from the same seed.
@@ -520,6 +528,12 @@ void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
     }
     gLastBuiltinAIPlantProfile = gBuiltinAIDeckPlans.plantProfile;
     gLastBuiltinAIZombieProfile = gBuiltinAIDeckPlans.zombieProfile;
+}
+
+bool UsesBuiltinAITemplate(SeedChooserScreen *screen) {
+    EnsureBuiltinAIDeckPlans(screen);
+    return screen != nullptr && (screen->mIsZombieChooser ? gBuiltinAIDeckPlans.useZombieTemplate
+                                                            : gBuiltinAIDeckPlans.usePlantTemplate);
 }
 
 const SeedType *GetBuiltinAIDeckPriority(SeedChooserScreen *screen) {
@@ -668,8 +682,6 @@ bool IsBuiltinAIPlantMajorCarrySeed(SeedType seedType) {
             return false;
     }
 }
-
-bool IsBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen, SeedType seedType);
 
 bool HasBuiltinAIPlantSeed(SeedChooserScreen *screen, SeedType seedType) {
     if (screen == nullptr || screen->mIsZombieChooser || seedType == SeedType::SEED_NONE) {
@@ -834,7 +846,7 @@ bool HasBuiltinAIOpponentLobbedPressure(SeedChooserScreen *screen) {
     // The two local selectors can fill in either order. When the plant AI
     // has not yet clicked its main card, inspect its already-chosen replay
     // template so the zombie picker cannot race ahead into a dead Door plan.
-    if (VSSetupAddonWidget::msPlantAIMode) {
+    if (VSSetupAddonWidget::msPlantAIMode && UsesBuiltinAITemplate(plantScreen)) {
         const SeedType *plannedDeck = GetBuiltinAIDeckPriority(plantScreen);
         for (std::size_t index = 0; index < GetBuiltinAIPlanSize(plantScreen); ++index) {
             if (IsPultCarry(plannedDeck[index])) {
@@ -895,7 +907,7 @@ bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen) {
     const int storageCount = screen->GetSeedStorageCount();
     for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
         if (screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
-            && IsBuiltinAIPlantMainDamageSeed(screen, screen->GetPlantSeedType(seedIndex))) {
+            && IsBuiltinAIPlantCarrySeed(screen->GetPlantSeedType(seedIndex))) {
             return true;
         }
     }
@@ -927,23 +939,6 @@ SeedType PlannedBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen) {
         }
     }
     return SeedType::SEED_NONE;
-}
-
-bool IsBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen, SeedType seedType) {
-    const SeedType plannedMain = PlannedBuiltinAIPlantMainDamageSeed(screen);
-    if (plannedMain == SeedType::SEED_NONE) {
-        return IsBuiltinAIPlantCarrySeed(seedType);
-    }
-
-    const int plannedIndex = screen->GetSeedPacketIndex(plannedMain);
-    const bool plannedInBank = plannedIndex >= 0 && plannedIndex < screen->GetSeedStorageCount()
-        && screen->GetChosenSeed(plannedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK;
-    // While the template's carry can still be selected, it is the only main
-    // damage card. If a Ban removes it, fall back to the normal carry pool.
-    if (plannedInBank || IsBuiltinAICandidate(screen, plannedMain)) {
-        return seedType == plannedMain;
-    }
-    return IsBuiltinAIPlantCarrySeed(seedType);
 }
 
 static constexpr SeedType kBuiltinAIPlantMainFallbacks[] = {
@@ -986,7 +981,8 @@ SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prior
     return SeedType::SEED_NONE;
 }
 
-SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
+SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount,
+    bool useTemplate) {
     bool hasUnpairedDaytimeMushroom = false;
     if (IsBuiltinAIDaytimeChooser(screen)) {
         const int storageCount = screen->GetSeedStorageCount();
@@ -1008,6 +1004,17 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     }
     const bool alreadyHasMainDamage = HasBuiltinAIPlantMainDamage(screen);
     const bool alreadyHasMajorCarry = HasBuiltinAIPlantMajorCarry(screen);
+    const SeedType plannedMain = useTemplate ? PlannedBuiltinAIPlantMainDamageSeed(screen) : SeedType::SEED_NONE;
+    const int plannedIndex = plannedMain == SeedType::SEED_NONE ? -1 : screen->GetSeedPacketIndex(plannedMain);
+    const bool plannedMainAvailable = plannedIndex >= 0 && plannedIndex < screen->GetSeedStorageCount()
+        && (screen->GetChosenSeed(plannedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
+            || IsBuiltinAICandidate(screen, plannedMain));
+    const auto IsMainDamageCandidate = [&](SeedType seedType) {
+        if (plannedMain != SeedType::SEED_NONE && plannedMainAvailable) {
+            return seedType == plannedMain;
+        }
+        return IsBuiltinAIPlantCarrySeed(seedType);
+    };
     // Blover is a mandatory matchup answer, but it must not displace the
     // plant deck's only carry during a six-card selection. The main-card
     // gate below always chooses that carry first; every later slot can then
@@ -1018,7 +1025,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         return SeedType::SEED_BLOVER;
     }
     const auto IsAvailableMain = [&](SeedType seedType) {
-        return IsBuiltinAIPlantMainDamageSeed(screen, seedType) && IsBuiltinAICandidate(screen, seedType)
+        return IsMainDamageCandidate(seedType) && IsBuiltinAICandidate(screen, seedType)
             && IsBuiltinAIPlantSupportCandidate(screen, seedType);
     };
     bool hasAvailableMainDamage = false;
@@ -1036,8 +1043,8 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
             // its card order. This prevents Starfruit/Threepeater and other
             // synthetic mixed-carry decks from entering a real VS match.
             && (!alreadyHasMajorCarry || !IsBuiltinAIPlantMajorCarrySeed(seedType))
-            && (!alreadyHasMainDamage || !IsBuiltinAIPlantMainDamageSeed(screen, seedType))
-            && (!mustPickMainDamage || IsBuiltinAIPlantMainDamageSeed(screen, seedType));
+            && (!alreadyHasMainDamage || !IsMainDamageCandidate(seedType))
+            && (!mustPickMainDamage || IsMainDamageCandidate(seedType));
     };
 
     if (priorityCount > 0) {
@@ -1054,7 +1061,9 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     // support cards.  This is what keeps Ban substitutions playable instead
     // of producing a melee-only deck.
     if (!alreadyHasMainDamage) {
-        for (const SeedType seedType : kBuiltinAIPlantMainFallbacks) {
+        const std::size_t firstFallback = useTemplate ? 0 : static_cast<std::size_t>(Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantMainFallbacks))));
+        for (std::size_t offset = 0; offset < std::size(kBuiltinAIPlantMainFallbacks); ++offset) {
+            const SeedType seedType = kBuiltinAIPlantMainFallbacks[(firstFallback + offset) % std::size(kBuiltinAIPlantMainFallbacks)];
             if (IsCompatible(seedType)) {
                 return seedType;
             }
@@ -1074,6 +1083,56 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         }
     }
     return SeedType::SEED_NONE;
+}
+
+SeedType PlantTemplateMainSeed(SeedChooserScreen *screen, int profile) {
+    if (screen == nullptr || profile < 0 || profile >= static_cast<int>(std::size(kBuiltinAIPlantDecks))) {
+        return SeedType::SEED_NONE;
+    }
+    const SeedType *deck = screen->mBoard != nullptr && screen->mBoard->StageIsNight()
+        ? kBuiltinAINightPlantDecks[profile]
+        : kBuiltinAIPlantDecks[profile];
+    for (std::size_t index = 0; index < GetBuiltinAIPlanSize(screen); ++index) {
+        if (IsBuiltinAIPlantCarrySeed(deck[index])) {
+            return deck[index];
+        }
+    }
+    return SeedType::SEED_NONE;
+}
+
+bool IsBuiltinAIPlantSeedBanned(const SeedChooserScreen *screen, SeedType seedType) {
+    const int index = static_cast<int>(seedType);
+    return screen != nullptr && index >= 0 && index < NUM_SEEDS_IN_CHOOSER_EXTENDED
+        && screen->mBannedSeed[index].mSeedState == BannedSeedState::SEED_BANNED;
+}
+
+void ReplaceBuiltinAIPlantTemplateAfterOpeningBan(SeedChooserScreen *screen) {
+    if (screen == nullptr || screen->mIsZombieChooser || screen->mSeedsInBank != 0 || !UsesBuiltinAITemplate(screen)) {
+        return;
+    }
+
+    const int currentProfile = gBuiltinAIDeckPlans.plantProfile;
+    const SeedType bannedMain = PlantTemplateMainSeed(screen, currentProfile);
+    if (!IsBuiltinAIPlantSeedBanned(screen, bannedMain)) {
+        return;
+    }
+
+    const int firstProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantDecks)));
+    for (int offset = 0; offset < static_cast<int>(std::size(kBuiltinAIPlantDecks)); ++offset) {
+        const int candidateProfile = (firstProfile + offset) % static_cast<int>(std::size(kBuiltinAIPlantDecks));
+        const SeedType candidateMain = PlantTemplateMainSeed(screen, candidateProfile);
+        if (candidateProfile == currentProfile || candidateMain == SeedType::SEED_NONE || candidateMain == bannedMain
+            || IsBuiltinAIPlantSeedBanned(screen, candidateMain) || !IsBuiltinAICandidate(screen, candidateMain)) {
+            continue;
+        }
+        gBuiltinAIDeckPlans.plantProfile = candidateProfile;
+        gLastBuiltinAIPlantProfile = candidateProfile;
+        return;
+    }
+
+    // If every template main has been removed by global/first-round bans,
+    // retain the existing constrained fallback picker for the whole deck.
+    gBuiltinAIDeckPlans.usePlantTemplate = false;
 }
 
 SeedType FindBuiltinAIBanCandidate(SeedChooserScreen *screen, const SeedType *fallbackSeeds, std::size_t fallbackCount) {
@@ -1659,14 +1718,15 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
     if (mBanningPhase) {
         prioritySeeds = mIsZombieChooser ? kPlantBanPriority : kZombieBanPriority;
         priorityCount = mIsZombieChooser ? std::size(kPlantBanPriority) : std::size(kZombieBanPriority);
-    } else {
+    } else if (UsesBuiltinAITemplate(this)) {
         prioritySeeds = GetBuiltinAIDeckPriority(this);
         priorityCount = GetBuiltinAIPlanSize(this);
     }
 
     const SeedType selectedSeedType = mBanningPhase ? FindBuiltinAIBanCandidate(this, prioritySeeds, priorityCount)
                                                     : (mIsZombieChooser ? FindBuiltinAICandidate(this, prioritySeeds, priorityCount)
-                                                                        : FindBuiltinAIPlantDeckCandidate(this, prioritySeeds, priorityCount));
+                                                                        : FindBuiltinAIPlantDeckCandidate(this, prioritySeeds, priorityCount,
+                                                                              UsesBuiltinAITemplate(this)));
     if (selectedSeedType == SeedType::SEED_NONE) {
         return;
     }
@@ -2311,6 +2371,12 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
                 mBannedSeed[aSeedBanned].mSeedState = BannedSeedState::SEED_BANNED; // 将被选卡设为禁用状态
 
                 mSeedsInBanned++; // 已禁用卡片数量 + 1
+                // The opening Ban happens before any plant card is locked
+                // in. Replace a template whose only carry was just removed;
+                // later Ban losses retain the existing role-based fallback.
+                if (!mIsZombieChooser && mSeedsInBank == 0 && mSeedsInBanned == 1) {
+                    ReplaceBuiltinAIPlantTemplateAfterOpeningBan(this);
+                }
                 bool banRoundFinished = false;
                 SeedChooserScreen *plantChooser = mApp->mSeedChooserScreen;
                 SeedChooserScreen *zombieChooser = mApp->mZombieChooserScreen;
