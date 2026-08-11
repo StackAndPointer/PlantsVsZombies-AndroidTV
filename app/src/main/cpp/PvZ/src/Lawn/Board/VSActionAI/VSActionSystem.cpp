@@ -510,6 +510,7 @@ VSGameState BuildGameState(Board *board) {
     state.rows = board->StageHas6Rows() ? 6 : 5;
     state.plantSun = board->mSunMoney1;
     state.zombieBrains = board->mDeathMoney;
+    state.liveZombieTargetCount = board->GetMPTargetCount();
     state.isNight = board->StageIsNight();
     state.isSuddenDeath = board->mChallenge != nullptr && board->mChallenge->IsMPSuddenDeath();
     state.resourceProductionDisabled = state.isSuddenDeath && Challenge::gVSSuddenDeathMode <= 1;
@@ -601,7 +602,9 @@ VSGameState BuildGameState(Board *board) {
             .id = board->mGridItems.DataArrayGetID(gridItem),
             .gridItemType = static_cast<std::uint16_t>(gridItem->mGridItemType),
             .position = {static_cast<std::int8_t>(gridItem->mGridX), static_cast<std::int8_t>(gridItem->mGridY)},
-            .health = gridItem->mVSGraveStoneHealth,
+            .health = gridItem->mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE
+                ? gridItem->mVSTargetZombieHealth
+                : gridItem->mVSGraveStoneHealth,
             .level = gridItem->mMoundLevel,
             .dead = gridItem->mDead,
         });

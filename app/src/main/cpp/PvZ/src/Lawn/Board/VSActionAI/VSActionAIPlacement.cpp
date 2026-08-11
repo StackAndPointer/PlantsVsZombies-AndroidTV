@@ -398,7 +398,7 @@ bool CanInvestZombieEconomyInRow(const VSGameState &state, int row) {
             continue;
         }
         hasTargetMarker = true;
-        if (!item.dead && item.position.row == row) {
+        if (!item.dead && item.health > 0 && item.position.row == row) {
             return true;
         }
     }

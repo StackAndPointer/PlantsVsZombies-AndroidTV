@@ -1136,7 +1136,7 @@ int MostVulnerableZombieEconomyRow(const VSGameState &state) {
 int MostThreatenedEconomyRow(const VSGameState &state) {
     const auto IsLiveZombieTargetRow = [&state](int row) {
         return std::any_of(state.gridItems.begin(), state.gridItems.end(), [row](const VSGridItemState &item) {
-            return !item.dead && item.position.row == row
+            return !item.dead && item.health > 0 && item.position.row == row
                 && item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE);
         });
     };

@@ -36,18 +36,26 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     }
     const int economyTarget = state.isSuddenDeath ? economyCount : state.rows * 3;
     const int economyDeficit = std::max(0, economyTarget - economyCount);
-    int zombieTargetCount = 0;
-    int liveZombieTargetCount = 0;
+    int targetMarkersOnBoard = 0;
+    int zeroHealthTargetMarkers = 0;
     for (const VSGridItemState &item : state.gridItems) {
         if (item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)) {
             continue;
         }
-        ++zombieTargetCount;
-        liveZombieTargetCount += item.dead ? 0 : 1;
+        ++targetMarkersOnBoard;
+        // A target which has reached zero health remains on the board for a
+        // death animation. A mDead item has already been removed from the
+        // board-owned live count, so do not count it a second time here.
+        zeroHealthTargetMarkers += !item.dead && item.health <= 0 ? 1 : 0;
     }
     // A third destroyed target loses VS outright. Once two are gone, the
     // remaining live target lanes take priority over normal economy tempo.
-    const bool targetDefenseEmergency = zombieTargetCount > 0 && zombieTargetCount - liveZombieTargetCount >= 2;
+    // A target stays in a zero-health death animation before GridItemDie, so
+    // combine that immediate signal with Board's count after old markers have
+    // already been released from the grid-item array.
+    const int historicalTargetLosses = std::max(0, state.rows - state.liveZombieTargetCount);
+    const bool targetDefenseEmergency = targetMarkersOnBoard > 0
+        && historicalTargetLosses + zeroHealthTargetMarkers >= 2;
     const int graveDefenseRow = MostThreatenedEconomyRow(state);
     const int graveDefenseScore = ProtectableGraveThreatScore(state, graveDefenseRow);
     const int graveStraightThreat = StraightProjectileThreatScore(state, graveDefenseRow);

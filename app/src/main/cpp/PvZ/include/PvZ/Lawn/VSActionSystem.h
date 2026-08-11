@@ -146,6 +146,9 @@ struct VSGameState {
     int rows = 5;
     int plantSun = 0;
     int zombieBrains = 0;
+    // Board-owned count of currently surviving zombie targets. It remains
+    // valid after the death animation removes an old target grid item.
+    int liveZombieTargetCount = 0;
     bool isNight = false;
     bool isSuddenDeath = false;
     bool resourceProductionDisabled = false;
