@@ -475,6 +475,7 @@ struct BuiltinAIDeckPlans {
     LawnApp *app = nullptr;
     int plantProfile = -1;
     int zombieProfile = -1;
+    int plantMainPickSlot = -1;
     bool usePlantTemplate = true;
     bool useZombieTemplate = true;
 };
@@ -544,6 +545,19 @@ bool UsesBuiltinAITemplate(SeedChooserScreen *screen) {
     EnsureBuiltinAIDeckPlans(screen);
     return screen != nullptr && (screen->mIsZombieChooser ? gBuiltinAIDeckPlans.useZombieTemplate
                                                             : gBuiltinAIDeckPlans.usePlantTemplate);
+}
+
+int BuiltinAIPlantMainPickSlot(SeedChooserScreen *screen) {
+    if (screen == nullptr) {
+        return kBuiltinAIBaseDeckSize;
+    }
+    if (gBuiltinAIDeckPlans.plantMainPickSlot < 0) {
+        const int planSize = static_cast<int>(GetBuiltinAIPlanSize(screen));
+        const int earliestSlot = std::min(3, planSize);
+        gBuiltinAIDeckPlans.plantMainPickSlot = earliestSlot
+            + Sexy::Rand(std::max(1, planSize - earliestSlot + 1));
+    }
+    return gBuiltinAIDeckPlans.plantMainPickSlot;
 }
 
 const SeedType *GetBuiltinAIDeckPriority(SeedChooserScreen *screen) {
@@ -1023,23 +1037,19 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     const std::size_t planSize = GetBuiltinAIPlanSize(screen);
     const std::size_t selectedCount = static_cast<std::size_t>(std::max(0, screen->mSeedsInBank));
     const std::size_t slotsRemaining = selectedCount < planSize ? planSize - selectedCount : 0;
-    // The carry is hidden until the final actual packet: sixth in a six-slot
-    // match and seventh in a seven-slot match. A banned template carry uses
-    // the normal replacement path immediately instead of stalling a deck.
+    // Pick one persistent target slot per match. The main carry is still
+    // protected from the opening two picks, but it can appear at any later
+    // slot rather than being predictably forced into the final packet.
+    const int mainPickSlot = BuiltinAIPlantMainPickSlot(screen);
     const bool plannedMainNeedsCoffee = IsBuiltinAIDaytimeChooser(screen)
         && IsBuiltinAICoffeeDependentPlant(plannedMain)
         && !HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE);
-    // A daytime mushroom carry must be picked with two slots remaining: the
-    // next one is reserved for Coffee. Every ordinary carry remains hidden
-    // until the final actual packet.
-    const bool deferTemplateMain = useTemplate && plannedMainAvailable
-        && slotsRemaining > (plannedMainNeedsCoffee ? 2U : 1U);
-    const bool deferFallbackMain = !useTemplate && slotsRemaining > 1
-        // The generic picker needs the same dependency escape hatch when a
-        // Ban leaves a coffee-dependent fallback as the only legal carry.
-        && !(IsBuiltinAIDaytimeChooser(screen) && !HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE)
-            && slotsRemaining == 2);
-    const bool deferMainDamage = !alreadyHasMainDamage && (deferTemplateMain || deferFallbackMain);
+    // A daytime mushroom carry may use the random target slot, but Coffee
+    // must remain selectable immediately after it when the dependency is
+    // still missing. This preserves both six- and seven-slot legality.
+    const bool beforeRandomMainSlot = static_cast<int>(selectedCount) + 1 < mainPickSlot;
+    const bool coffeeEscape = plannedMainNeedsCoffee && slotsRemaining <= 2U;
+    const bool deferMainDamage = !alreadyHasMainDamage && beforeRandomMainSlot && !coffeeEscape;
     const auto IsMainDamageCandidate = [&](SeedType seedType) {
         if (plannedMain != SeedType::SEED_NONE && plannedMainAvailable) {
             return seedType == plannedMain;
@@ -1207,6 +1217,7 @@ void ReplaceBuiltinAIPlantTemplateAfterOpeningBan(SeedChooserScreen *screen) {
         }
         gBuiltinAIDeckPlans.plantProfile = candidateProfile;
         gLastBuiltinAIPlantProfile = candidateProfile;
+        gBuiltinAIDeckPlans.plantMainPickSlot = -1;
         return;
     }
 
