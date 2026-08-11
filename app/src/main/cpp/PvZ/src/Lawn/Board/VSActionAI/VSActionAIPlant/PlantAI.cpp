@@ -138,10 +138,15 @@ std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState 
         }
 
         // Garlic and an awake Hypno-shroom deliberately stop this zombie's
-        // burn trigger in Zombie::UpdateZombieJalapenoHead. Keep that safe
-        // blocker in place rather than creating an opening behind it.
+        // burn trigger in Zombie::UpdateZombieJalapenoHead. Ash plants are
+        // one-shot counters that must remain available. Keep all of them in
+        // place rather than creating an opening behind the Jalapeno Head.
         const SeedType candidateSeed = static_cast<SeedType>(candidate->seedType);
-        if (candidateSeed == SeedType::SEED_GARLIC || (candidateSeed == SeedType::SEED_HYPNOSHROOM && !candidate->asleep)) {
+        const bool isAshPlant = candidateSeed == SeedType::SEED_POTATOMINE || candidateSeed == SeedType::SEED_SQUASH
+            || candidateSeed == SeedType::SEED_CHERRYBOMB || candidateSeed == SeedType::SEED_JALAPENO
+            || candidateSeed == SeedType::SEED_CHILLY_PEPPER || candidateSeed == SeedType::SEED_DOOMSHROOM
+            || candidateSeed == SeedType::SEED_ICESHROOM;
+        if (candidateSeed == SeedType::SEED_GARLIC || (candidateSeed == SeedType::SEED_HYPNOSHROOM && !candidate->asleep) || isAshPlant) {
             continue;
         }
 
