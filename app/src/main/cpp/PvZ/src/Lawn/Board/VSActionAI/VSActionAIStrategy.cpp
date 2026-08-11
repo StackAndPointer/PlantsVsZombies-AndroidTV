@@ -223,7 +223,7 @@ int PlantAreaCounterExposure(const VSGameState &state, int row) {
 
 bool IsAreaCounterSeed(SeedType seed) {
     return seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO
-        || seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM;
+        || seed == SeedType::SEED_CHILLY_PEPPER || seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM;
 }
 
 bool IsZombieBreakthroughSeed(SeedType seed) {

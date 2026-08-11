@@ -80,6 +80,9 @@ std::optional<VSAction> PlantAIPlanning::TryRecycleIncomeForOutput(const VSGameS
     int bestScore = std::numeric_limits<int>::min();
     for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
         const int row = (preferredRow + rowOffset) % state.rows;
+        if (!HasLiveZombieTargetInRow(state, row)) {
+            continue;
+        }
         const bool hasReadyLobbedOutput = std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [&](const VSCardState &card) {
             if (!IsReadyCard(card, state.plantSun) || !IsLobbedOutputSeed(static_cast<SeedType>(card.seedType))) {
                 return false;

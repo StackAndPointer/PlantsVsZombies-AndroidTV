@@ -129,6 +129,12 @@ bool IsPlantPlacementSafe(const VSGameState &state, SeedType seed, VSGridPositio
     if (!IsPlantableVSTile(state, position)) {
         return false;
     }
+    // A dead zombie target makes this route unwinnable for the zombie side.
+    // Keep it available for Sunflowers, but never consume its empty cells
+    // with a continuous attacker that can no longer pressure an economy.
+    if (IsSustainedOutputSeed(seed) && !HasLiveZombieTargetInRow(state, position.row)) {
+        return false;
+    }
     // Instant counters and support/defensive overlays intentionally target an
     // occupied or threatened cell. Their callers have separate target rules.
     const bool isIncomePlant = seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_TWINSUNFLOWER

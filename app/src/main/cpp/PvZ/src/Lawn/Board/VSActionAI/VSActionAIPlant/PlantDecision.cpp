@@ -203,6 +203,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_JALAPENO, protectedSun)) {
             return action;
         }
+        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_CHILLY_PEPPER, protectedSun)) {
+            return action;
+        }
         if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_SQUASH, protectedSun)) {
             return action;
         }

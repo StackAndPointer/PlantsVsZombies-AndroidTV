@@ -185,6 +185,7 @@ bool PlantAIPlanning::IsInstantCounterSeed(SeedType seedType) {
         case SeedType::SEED_SQUASH:
         case SeedType::SEED_CHERRYBOMB:
         case SeedType::SEED_JALAPENO:
+        case SeedType::SEED_CHILLY_PEPPER:
         case SeedType::SEED_ICESHROOM:
         case SeedType::SEED_DOOMSHROOM:
         case SeedType::SEED_HYPNOSHROOM:
@@ -355,7 +356,8 @@ PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState 
                     continue;
                 }
                 const int zombieColumn = PlantAIPlanning::ZombieColumn(zombie);
-                const bool hitsWholeRow = seedType == SeedType::SEED_JALAPENO && zombie.row == row;
+                const bool hitsWholeRow = (seedType == SeedType::SEED_JALAPENO || seedType == SeedType::SEED_CHILLY_PEPPER)
+                    && zombie.row == row;
                 const bool hitsArea = std::abs(static_cast<int>(zombie.row) - row) <= rowRadius
                     && std::abs(zombieColumn - column) <= columnRadius;
                 if (!hitsWholeRow && !hitsArea) {
@@ -426,6 +428,7 @@ bool PlantAIPlanning::IsAshTargetWorthPlaying(const VSGameState &state, SeedType
         case SeedType::SEED_CHERRYBOMB:
             return target.hitCount >= (panic ? 1 : 2) && target.totalHealth >= (panic ? 320 : 500);
         case SeedType::SEED_JALAPENO:
+        case SeedType::SEED_CHILLY_PEPPER:
             return target.hitCount >= (panic ? 1 : 3) && target.totalHealth >= (panic ? 360 : 650);
         case SeedType::SEED_DOOMSHROOM:
             return target.hitCount >= (panic ? 2 : 4) && target.totalHealth >= (panic ? 600 : 1100);

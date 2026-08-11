@@ -211,7 +211,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             && !state.mowerAvailable[static_cast<std::size_t>(row)];
         if (!IsMowerInMotion(state, row) && !IsMowerAboutToTrigger(state, row)
             && (!IsMowerlessStrongPlantLane(state, row) || mowerGone || allMowersSpent)
-            && CountZombiesInRow(state, row) == 0 && EconomyPlantsInRow(state, row) > 0) {
+            && HasLiveZombieTargetInRow(state, row) && CountZombiesInRow(state, row) == 0 && EconomyPlantsInRow(state, row) > 0) {
             ++unpressuredEconomyRows;
         }
     }
@@ -260,6 +260,17 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 continue;
             }
 
+            const bool isLaneAttack = !isEconomyAction && !isTargetedAction && !isProtectedGuard;
+            // When the plant's broad answer is ready, a third ordinary body
+            // in one row is precisely the stack it is waiting to erase.
+            // Spread to a live, unpressured economy row first; once those
+            // routes are all occupied, the existing score penalties still
+            // permit a deliberate late-game commitment.
+            if (plantHasReadyAsh && isLaneAttack && !IsHeavyZombieSeed(seed)
+                && zombiesInRow >= 2 && unpressuredEconomyRows > 0) {
+                continue;
+            }
+
             int score = ZombieAIPlanning::CardScore(card, state, row, economyCount, effectiveCost);
             if (seed == SeedType::SEED_ZOMBIE_MOUND) {
                 // The target already passed the per-mound affordability
@@ -274,7 +285,6 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 || (preservePressureDuringRepair && !forceOpeningPressure && isEconomyAction)) {
                 continue;
             }
-            const bool isLaneAttack = !isEconomyAction && !isTargetedAction && !isProtectedGuard;
             if (isLaneAttack && !IsHeavyZombieSeed(seed)) {
                 // A row remains on cooldown for a few decisions after a
                 // probe. This prevents alternating two lanes forever
