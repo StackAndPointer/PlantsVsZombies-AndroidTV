@@ -153,6 +153,11 @@ int BuiltinAIBanBaseThreat(bool targetsZombies, SeedType seed) {
                 // Cheap normals establish the replay's multi-lane probes and
                 // make every later grave investment safer than their cost.
                 return 430;
+            case SeedType::SEED_ZOMBIE_DOGWALKER:
+                // Dogwalker converts an otherwise contained front into a
+                // fast lane loss, so plant-side Ban treats it as an almost
+                // mandatory answer rather than a routine cheap probe.
+                return 545;
             case SeedType::SEED_ZOMBONI:
             case SeedType::SEED_ZOMBIE_BOBSLED:
             case SeedType::SEED_ZOMBIE_PEA_HEAD:
@@ -329,7 +334,6 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_ICEBERG_LETTUCE, SEED_WALLNUT},
     {SEED_SUNFLOWER, SEED_FUMESHROOM, SEED_DOOMSHROOM, SEED_INSTANT_COFFEE, SEED_CHILLY_PEPPER, SEED_WALLNUT},
     {SEED_SUNFLOWER, SEED_SNOWPEA, SEED_BONK_CHOY, SEED_SQUASH, SEED_WALLNUT, SEED_CHILLY_PEPPER},
-    {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_CABBAGEPULT, SEED_TORCHWOOD, SEED_ICEBERG_LETTUCE, SEED_PUMPKINSHELL},
     {SEED_SUNFLOWER, SEED_STARFRUIT, SEED_CHOMPER, SEED_CHERRYBOMB, SEED_WALLNUT, SEED_POTATOMINE},
     {SEED_SUNFLOWER, SEED_BLOOMERANG, SEED_DOOMSHROOM, SEED_HYPNOSHROOM, SEED_INSTANT_COFFEE, SEED_CHERRYBOMB, SEED_WALLNUT},
     {SEED_SUNFLOWER, SEED_SPORESHROOM, SEED_PUMPKINSHELL, SEED_SQUASH, SEED_INSTANT_COFFEE, SEED_CHERRYBOMB},
@@ -383,7 +387,6 @@ static constexpr SeedType kBuiltinAINightPlantDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_SUNSHROOM, SEED_PEASHOOTER, SEED_PUFFSHROOM, SEED_ICEBERG_LETTUCE, SEED_POTATOMINE, SEED_WALLNUT},
     {SEED_SUNSHROOM, SEED_FUMESHROOM, SEED_DOOMSHROOM, SEED_CHILLY_PEPPER, SEED_POTATOMINE, SEED_WALLNUT},
     {SEED_SUNSHROOM, SEED_SNOWPEA, SEED_BONK_CHOY, SEED_SQUASH, SEED_WALLNUT, SEED_CHILLY_PEPPER},
-    {SEED_SUNSHROOM, SEED_PEASHOOTER, SEED_CABBAGEPULT, SEED_TORCHWOOD, SEED_ICEBERG_LETTUCE, SEED_PUMPKINSHELL},
     {SEED_SUNSHROOM, SEED_STARFRUIT, SEED_CHOMPER, SEED_CHERRYBOMB, SEED_WALLNUT, SEED_POTATOMINE},
     {SEED_SUNSHROOM, SEED_BLOOMERANG, SEED_DOOMSHROOM, SEED_HYPNOSHROOM, SEED_CHERRYBOMB, SEED_POTATOMINE, SEED_WALLNUT},
     {SEED_SUNSHROOM, SEED_SPORESHROOM, SEED_PUMPKINSHELL, SEED_SQUASH, SEED_CHERRYBOMB, SEED_POTATOMINE},
@@ -472,7 +475,7 @@ int PickBuiltinAIPlantProfile() {
     // The strongest replay-compatible templates use a tier-one carry and
     // the Potato/Squash/Cherry answer package. Lower-tier carries still
     // occur, but do not drown out those reliable opening plans.
-    static constexpr int kPlantProfileWeights[] = {5, 5, 4, 3, 3, 2, 2, 2, 1, 2, 3, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 1};
+    static constexpr int kPlantProfileWeights[] = {5, 5, 4, 3, 3, 2, 2, 2, 1, 2, 3, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 1};
     static_assert(std::size(kPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
 
     int totalWeight = 0;
@@ -643,6 +646,27 @@ bool IsBuiltinAIPlantCarrySeed(SeedType seedType) {
         default:
             return false;
         }
+}
+
+bool IsBuiltinAIPlantMajorCarrySeed(SeedType seedType) {
+    switch (seedType) {
+        case SeedType::SEED_PEASHOOTER:
+        case SeedType::SEED_REPEATER:
+        case SeedType::SEED_THREEPEATER:
+        case SeedType::SEED_SPLITPEA:
+        case SeedType::SEED_CACTUS:
+        case SeedType::SEED_CABBAGEPULT:
+        case SeedType::SEED_KERNELPULT:
+        case SeedType::SEED_MELONPULT:
+        case SeedType::SEED_WINTERMELON:
+        case SeedType::SEED_BLOOMERANG:
+        case SeedType::SEED_STARFRUIT:
+        case SeedType::SEED_FUMESHROOM:
+        case SeedType::SEED_SPORESHROOM:
+            return true;
+        default:
+            return false;
+    }
 }
 
 bool IsBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen, SeedType seedType);
@@ -878,6 +902,20 @@ bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen) {
     return false;
 }
 
+bool HasBuiltinAIPlantMajorCarry(SeedChooserScreen *screen) {
+    if (screen == nullptr || screen->mIsZombieChooser) {
+        return false;
+    }
+    const int storageCount = screen->GetSeedStorageCount();
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        if (screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
+            && IsBuiltinAIPlantMajorCarrySeed(screen->GetPlantSeedType(seedIndex))) {
+            return true;
+        }
+    }
+    return false;
+}
+
 SeedType PlannedBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen) {
     if (screen == nullptr || screen->mIsZombieChooser) {
         return SeedType::SEED_NONE;
@@ -906,25 +944,6 @@ bool IsBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen, SeedType seedType
         return seedType == plannedMain;
     }
     return IsBuiltinAIPlantCarrySeed(seedType);
-}
-
-bool IsBuiltinAIPlantSecondaryPult(SeedChooserScreen *screen, SeedType seedType) {
-    if (screen == nullptr || screen->mIsZombieChooser || seedType != SeedType::SEED_CABBAGEPULT) {
-        return false;
-    }
-    const SeedType *deck = GetBuiltinAIDeckPriority(screen);
-    bool hasPeaMain = false;
-    bool hasCabbage = false;
-    bool hasTorchwood = false;
-    for (std::size_t index = 0; index < GetBuiltinAIPlanSize(screen); ++index) {
-        hasPeaMain = hasPeaMain || deck[index] == SeedType::SEED_PEASHOOTER;
-        hasCabbage = hasCabbage || deck[index] == SeedType::SEED_CABBAGEPULT;
-        hasTorchwood = hasTorchwood || deck[index] == SeedType::SEED_TORCHWOOD;
-    }
-    // One replay template uses Peashooter as the durable carry and a small
-    // Cabbagepult layer behind Torchwood. Permit only this explicit package;
-    // Repeater/Pea or other carry pairs remain illegal in the chooser.
-    return hasPeaMain && hasCabbage && hasTorchwood;
 }
 
 static constexpr SeedType kBuiltinAIPlantMainFallbacks[] = {
@@ -988,6 +1007,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         }
     }
     const bool alreadyHasMainDamage = HasBuiltinAIPlantMainDamage(screen);
+    const bool alreadyHasMajorCarry = HasBuiltinAIPlantMajorCarry(screen);
     // Blover is a mandatory matchup answer, but it must not displace the
     // plant deck's only carry during a six-card selection. The main-card
     // gate below always chooses that carry first; every later slot can then
@@ -1010,9 +1030,13 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     }
     const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage;
     auto IsCompatible = [&](SeedType seedType) {
-        const bool secondaryPult = IsBuiltinAIPlantSecondaryPult(screen, seedType);
         return IsBuiltinAICandidate(screen, seedType) && IsBuiltinAIPlantSupportCandidate(screen, seedType)
-            && (!alreadyHasMainDamage || !IsBuiltinAIPlantMainDamageSeed(screen, seedType) || secondaryPult)
+            // A plan may carry a low-cost utility gun, but it cannot select
+            // two durable main damage families after Ban fallback changes
+            // its card order. This prevents Starfruit/Threepeater and other
+            // synthetic mixed-carry decks from entering a real VS match.
+            && (!alreadyHasMajorCarry || !IsBuiltinAIPlantMajorCarrySeed(seedType))
+            && (!alreadyHasMainDamage || !IsBuiltinAIPlantMainDamageSeed(screen, seedType))
             && (!mustPickMainDamage || IsBuiltinAIPlantMainDamageSeed(screen, seedType));
     };
 
