@@ -56,7 +56,27 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int historicalTargetLosses = std::max(0, state.rows - state.liveZombieTargetCount);
     const bool targetDefenseEmergency = targetMarkersOnBoard > 0
         && historicalTargetLosses + zeroHealthTargetMarkers >= 2;
-    const int graveDefenseRow = MostThreatenedEconomyRow(state);
+    int criticalTargetRow = -1;
+    if (targetDefenseEmergency) {
+        int finalTargetThreat = std::numeric_limits<int>::min();
+        for (const VSGridItemState &item : state.gridItems) {
+            if (item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)
+                || item.dead || item.health <= 0 || item.position.row < 0 || item.position.row >= state.rows) {
+                continue;
+            }
+            const int row = item.position.row;
+            const int threat = ProtectableGraveThreatScore(state, row) * 3
+                + ZombieGraveScreenDeficit(state, row) * 2 + ZombieFrontlineValueInRow(state, row);
+            if (criticalTargetRow < 0 || threat > finalTargetThreat) {
+                criticalTargetRow = row;
+                finalTargetThreat = threat;
+            }
+        }
+    }
+    // After two targets fall, losing any further live target ends the match.
+    // Defend the most threatened remaining target route before ordinary
+    // economy tempo, without treating the other live target routes as lost.
+    const int graveDefenseRow = criticalTargetRow >= 0 ? criticalTargetRow : MostThreatenedEconomyRow(state);
     const int graveDefenseScore = ProtectableGraveThreatScore(state, graveDefenseRow);
     const int graveStraightThreat = StraightProjectileThreatScore(state, graveDefenseRow);
     const int graveLobbedThreat = LobbedProjectileThreatScore(state, graveDefenseRow);
@@ -128,9 +148,10 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         && activePressureRows < desiredOpeningRows && hasReadyFrontlineProbe && mLastPressureEconomyCount < economyCount);
     const bool preservePressureDuringRepair = economyCount >= minimumOpeningEconomy && economyDeficit <= 2
         && activePressureRows > 0 && hasReadyFrontlineProbe;
-    const int survivingFrontRow = MostValuableZombieFrontRow(state);
+    const int survivingFrontRow = criticalTargetRow >= 0 ? criticalTargetRow : MostValuableZombieFrontRow(state);
     const int survivingFrontValue = ZombieFrontlineValueInRow(state, survivingFrontRow);
-    const bool preserveSurvivingFront = economyCount >= state.rows && activePressureRows == 1 && survivingFrontValue >= 90;
+    const bool preserveSurvivingFront = criticalTargetRow >= 0
+        || (economyCount >= state.rows && activePressureRows == 1 && survivingFrontValue >= 90);
     const bool survivingFrontGuarded = HasZombieGraveGuardInRow(state, survivingFrontRow);
     const int economicRow = economyCount < state.rows * 2 ? ZombieAIPlanning::LeastCommittedZombieRow(state) : LeastThreatenedEconomyRow(state);
     const bool restorationCanProceed = !graveDefenseReinforcement || hasGraveGuard;
@@ -249,6 +270,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             const int zombiesInRow = CountZombiesInRow(state, row);
             const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
                 && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row);
+            const bool pursueBrokenMowerRow = mowerGone
+                && CountPlantsInRow(state, row) > 0 && HasLiveZombieTargetInRow(state, row);
             // A destroyed zombie target cannot be recovered by spending more
             // bodies in its row. The normal marker-less VS boards retain all
             // rows through HasLiveZombieTargetInRow's compatibility path.
@@ -288,8 +311,11 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             if (isLaneAttack && !IsHeavyZombieSeed(seed)) {
                 // A row remains on cooldown for a few decisions after a
                 // probe. This prevents alternating two lanes forever
-                // while another Sunflower route remains untouched.
-                score -= static_cast<int>(mLaneAttackCooldown[static_cast<std::size_t>(row)]) * 155;
+                // while another Sunflower route remains untouched. A spent
+                // mower is different: that live target lane is a conversion
+                // route, so only a small cooldown applies.
+                score -= static_cast<int>(mLaneAttackCooldown[static_cast<std::size_t>(row)])
+                    * (pursueBrokenMowerRow ? 35 : 155);
             }
             if (plantHasReadyAsh && zombiesInRow > 0 && !isEconomyAction && !isTargetedAction && !isProtectedGuard) {
                 // One ready Cherry/Squash/Jalapeno/Doomshroom is a reason
@@ -317,10 +343,10 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                     // After two attack lanes have been cleared, keep the
                     // remaining valuable front alive before restarting
                     // economic expansion on an empty route.
-                    score += 320;
+                    score += criticalTargetRow >= 0 ? 560 : 320;
                 } else if (!IsHeavyZombieSeed(seed) && seed != SeedType::SEED_ZOMBIE_GRAVESTONE
                            && seed != SeedType::SEED_ZOMBIE_MOUND) {
-                    score += 75;
+                    score += criticalTargetRow >= 0 ? 110 : 75;
                 }
             }
             if (saveForHeavy && !IsHeavyZombieSeed(static_cast<SeedType>(card.seedType))) {
@@ -330,8 +356,6 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // leaving every grave route unprotected.
                 score += card.cost <= std::max(50, heavyZombieReserve / 4) ? -45 : -190;
             }
-            const bool pursueBrokenMowerRow = mowerGone
-                && CountPlantsInRow(state, row) > 0 && HasLiveZombieTargetInRow(state, row);
             if (isLaneAttack && !IsHeavyZombieSeed(seed) && zombiesInRow > 0 && unpressuredEconomyRows > 0
                 && !pursueBrokenMowerRow) {
                 score -= (zombiesInRow == 1 ? 250 : 460) * std::min(2, unpressuredEconomyRows);
@@ -346,7 +370,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // A cleared mower lane is a live conversion route. Keep
                 // pressure there while the independent grave-defense path
                 // continues to protect the zombie economy.
-                score += 420;
+                score += 680;
             }
             if (bestCard == nullptr || score > bestScore) {
                 bestCard = &card;

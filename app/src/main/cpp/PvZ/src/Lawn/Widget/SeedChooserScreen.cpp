@@ -319,9 +319,10 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_SUNFLOWER, SEED_STARFRUIT, SEED_GARLIC, SEED_WALLNUT, SEED_CHERRYBOMB, SEED_POTATOMINE},
     {SEED_SUNFLOWER, SEED_REPEATER, SEED_WALLNUT, SEED_IMP_PEAR, SEED_SQUASH, SEED_SUNSHROOM},
     {SEED_SUNFLOWER, SEED_KERNELPULT, SEED_CELERY_STALKER, SEED_POTATOMINE, SEED_WALLNUT, SEED_CHERRYBOMB, SEED_JALAPENO},
-    // Scaredy-shroom is a rear supplementary gun in this Melon-pult carry
-    // plan, matching the recording rather than splitting the deck's main C.
-    {SEED_SUNFLOWER, SEED_MELONPULT, SEED_SCAREDYSHROOM, SEED_POTATOMINE, SEED_WALLNUT, SEED_CHERRYBOMB, SEED_JALAPENO},
+    // Keep this seven-slot Melon-pult plan to one daytime carry. Scaredy-
+    // shroom would require Coffee and previously let a forced final carry
+    // consume the only slot where that dependency could be selected.
+    {SEED_SUNFLOWER, SEED_MELONPULT, SEED_POTATOMINE, SEED_SQUASH, SEED_WALLNUT, SEED_CHERRYBOMB, SEED_JALAPENO},
     {SEED_SUNFLOWER, SEED_SCAREDYSHROOM, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_DOOMSHROOM, SEED_SPIKEWEED},
     {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_SUNSHROOM, SEED_ICEBERG_LETTUCE},
     {SEED_SUNFLOWER, SEED_CACTUS, SEED_SPIKEWEED, SEED_POTATOMINE, SEED_WALLNUT, SEED_SQUASH},
@@ -759,9 +760,19 @@ bool IsBuiltinAIDaytimeChooser(const SeedChooserScreen *screen) {
     return screen != nullptr && screen->mBoard != nullptr && !screen->mBoard->StageIsNight();
 }
 
-bool HasAvailableBuiltinAICoffee(SeedChooserScreen *screen) {
-    return HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE)
-        || IsBuiltinAICandidate(screen, SeedType::SEED_INSTANT_COFFEE);
+bool CanReserveBuiltinAICoffee(SeedChooserScreen *screen) {
+    if (screen == nullptr || !IsBuiltinAIDaytimeChooser(screen)
+        || HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE)) {
+        return true;
+    }
+
+    const std::size_t planSize = GetBuiltinAIPlanSize(screen);
+    const std::size_t selectedCount = static_cast<std::size_t>(std::max(0, screen->mSeedsInBank));
+    // A coffee-dependent card occupies this choice. Do not select it unless
+    // one further real packet remains for Coffee in both six- and seven-slot
+    // games. Candidate legality also covers Bans and map restrictions.
+    return selectedCount < planSize && planSize - selectedCount > 1
+        && IsBuiltinAICandidate(screen, SeedType::SEED_INSTANT_COFFEE);
 }
 
 bool IsBuiltinAIMagnetTargetZombieSeed(SeedType seedType) {
@@ -874,7 +885,7 @@ bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedTy
     if (IsBuiltinAIDaytimeChooser(screen) && IsBuiltinAICoffeeDependentPlant(seedType)) {
         // Never let a six- or seven-slot fallback split a daytime mushroom
         // from Coffee. This is a deck legality gate, not a scoring preference.
-        if (!HasAvailableBuiltinAICoffee(screen)) {
+        if (!CanReserveBuiltinAICoffee(screen)) {
             return false;
         }
     }
@@ -882,7 +893,7 @@ bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedTy
     if (seedType == SeedType::SEED_MAGNETSHROOM) {
         // Magnet-shroom needs Coffee in daytime and is too narrow when the
         // opponent brings few removable metal targets.
-        return (!IsBuiltinAIDaytimeChooser(screen) || HasAvailableBuiltinAICoffee(screen)) && HasBuiltinAIOpponentMetalTargets(screen);
+        return (!IsBuiltinAIDaytimeChooser(screen) || CanReserveBuiltinAICoffee(screen)) && HasBuiltinAIOpponentMetalTargets(screen);
     }
 
     if (seedType == SeedType::SEED_ICEBERG_LETTUCE) {
@@ -1002,7 +1013,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     const int plannedIndex = plannedMain == SeedType::SEED_NONE ? -1 : screen->GetSeedPacketIndex(plannedMain);
     const bool plannedMainAvailable = plannedIndex >= 0 && plannedIndex < screen->GetSeedStorageCount()
         && (screen->GetChosenSeed(plannedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
-            || IsBuiltinAICandidate(screen, plannedMain));
+            || (IsBuiltinAICandidate(screen, plannedMain) && IsBuiltinAIPlantSupportCandidate(screen, plannedMain)));
     // A recorded plan can intentionally add one inexpensive tempo shooter
     // before its actual carry. That supporting attacker must not make the
     // selector believe the designated main card has already been chosen.
@@ -1015,8 +1026,19 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     // The carry is hidden until the final actual packet: sixth in a six-slot
     // match and seventh in a seven-slot match. A banned template carry uses
     // the normal replacement path immediately instead of stalling a deck.
-    const bool deferTemplateMain = useTemplate && plannedMainAvailable && slotsRemaining > 1;
-    const bool deferFallbackMain = !useTemplate && slotsRemaining > 1;
+    const bool plannedMainNeedsCoffee = IsBuiltinAIDaytimeChooser(screen)
+        && IsBuiltinAICoffeeDependentPlant(plannedMain)
+        && !HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE);
+    // A daytime mushroom carry must be picked with two slots remaining: the
+    // next one is reserved for Coffee. Every ordinary carry remains hidden
+    // until the final actual packet.
+    const bool deferTemplateMain = useTemplate && plannedMainAvailable
+        && slotsRemaining > (plannedMainNeedsCoffee ? 2U : 1U);
+    const bool deferFallbackMain = !useTemplate && slotsRemaining > 1
+        // The generic picker needs the same dependency escape hatch when a
+        // Ban leaves a coffee-dependent fallback as the only legal carry.
+        && !(IsBuiltinAIDaytimeChooser(screen) && !HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE)
+            && slotsRemaining == 2);
     const bool deferMainDamage = !alreadyHasMainDamage && (deferTemplateMain || deferFallbackMain);
     const auto IsMainDamageCandidate = [&](SeedType seedType) {
         if (plannedMain != SeedType::SEED_NONE && plannedMainAvailable) {
@@ -1751,6 +1773,7 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
     }
 
     static constexpr SeedType kPlantBanPriority[] = {
+        SeedType::SEED_ZOMBIE_DOGWALKER,
         SeedType::SEED_ZOMBIE_NORMAL,
         SeedType::SEED_ZOMBIE_DANCER,
         SeedType::SEED_ZOMBIE_PEA_HEAD,
@@ -1789,10 +1812,26 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
         priorityCount = GetBuiltinAIPlanSize(this);
     }
 
-    const SeedType selectedSeedType = mBanningPhase ? FindBuiltinAIBanCandidate(this, prioritySeeds, priorityCount)
-                                                    : (mIsZombieChooser ? FindBuiltinAICandidate(this, prioritySeeds, priorityCount)
-                                                                        : FindBuiltinAIPlantDeckCandidate(this, prioritySeeds, priorityCount,
-                                                                              UsesBuiltinAITemplate(this)));
+    SeedType selectedSeedType = mBanningPhase ? FindBuiltinAIBanCandidate(this, prioritySeeds, priorityCount)
+                                              : (mIsZombieChooser ? FindBuiltinAICandidate(this, prioritySeeds, priorityCount)
+                                                                  : FindBuiltinAIPlantDeckCandidate(this, prioritySeeds, priorityCount,
+                                                                        UsesBuiltinAITemplate(this)));
+    if (!mBanningPhase && mIsZombieChooser) {
+        constexpr SeedType kDogwalker = SeedType::SEED_ZOMBIE_DOGWALKER;
+        const int dogwalkerIndex = GetSeedPacketIndex(kDogwalker);
+        const bool dogwalkerAlreadyChosen = dogwalkerIndex >= 0 && dogwalkerIndex < GetSeedStorageCount()
+            && GetChosenSeed(dogwalkerIndex).mSeedState == ChosenSeedState::SEED_IN_BANK;
+        SeedChooserScreen *plantChooser = mApp->mSeedChooserScreen;
+        const int bannedIndex = static_cast<int>(kDogwalker);
+        const bool dogwalkerBannedByPlant = plantChooser != nullptr && bannedIndex >= 0
+            && bannedIndex < NUM_SEEDS_IN_CHOOSER_EXTENDED
+            && plantChooser->mBannedSeed[bannedIndex].mSeedState == BannedSeedState::SEED_BANNED;
+        // Plant-side Ban is the only intended way to deny Dogwalker. Do not
+        // let a replay template or its randomized order omit this card.
+        if (!dogwalkerAlreadyChosen && !dogwalkerBannedByPlant && IsBuiltinAICandidate(this, kDogwalker)) {
+            selectedSeedType = kDogwalker;
+        }
+    }
     if (selectedSeedType == SeedType::SEED_NONE) {
         return;
     }
