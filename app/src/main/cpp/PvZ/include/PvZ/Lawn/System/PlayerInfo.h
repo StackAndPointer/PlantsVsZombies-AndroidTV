@@ -109,7 +109,8 @@ public:
     bool mRenamed;
     bool mVSPlantAIMode;
     bool mVSZombieAIMode;
-    bool mUnused675[68];
+    bool mVSAIEnhancementMode;
+    bool mUnused675[67];
     bool mHapticFeedbackEnabled;
     bool mZombatarEnabled;
     unsigned char mZombatarHat;

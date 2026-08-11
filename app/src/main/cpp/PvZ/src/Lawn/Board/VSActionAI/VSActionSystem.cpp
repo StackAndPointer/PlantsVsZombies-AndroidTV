@@ -500,6 +500,10 @@ bool IsSideEnabled(VSSide side) {
     return false;
 }
 
+bool HasEnhancedEconomy(Board *board, VSSide side) {
+    return IsLocalVSMatch(board) && !gIsReplayMode && VSSetupAddonWidget::msAIEnhancementMode && IsSideEnabled(side);
+}
+
 VSGameState BuildGameState(Board *board) {
     VSGameState state{};
     if (board == nullptr) {

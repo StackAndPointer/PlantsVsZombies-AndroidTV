@@ -673,6 +673,9 @@ void Board::AddSunMoney(int theAmount, int thePlayerIndex) {
             mSunMoney2 = 9990;
         }
     } else {
+        if (theAmount > 0 && vsai::HasEnhancedEconomy(this, vsai::VSSide::Plants)) {
+            theAmount = theAmount * 6 / 5;
+        }
         old_Board_AddSunMoney(this, theAmount, thePlayerIndex);
     }
 }
@@ -682,6 +685,9 @@ void Board::AddDeathMoney(int theAmount) {
     if (infiniteSun && !IsOnlineServerModeActive() && !gIsReplayMode) {
         mDeathMoney = 9990;
     } else {
+        if (theAmount > 0 && vsai::HasEnhancedEconomy(this, vsai::VSSide::Zombies)) {
+            theAmount = theAmount * 6 / 5;
+        }
         old_Board_AddDeathMoney(this, theAmount);
     }
 }
