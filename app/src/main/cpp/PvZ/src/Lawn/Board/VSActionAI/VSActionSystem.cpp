@@ -524,7 +524,7 @@ VSGameState BuildGameState(Board *board) {
         }
     }
 
-    for (LawnMower *mower = nullptr; board->mLawnMowers.IterateNext(mower);) {
+    for (LawnMower *mower = nullptr; board->IterateLawnMowers(mower);) {
         if (mower == nullptr || mower->mDead || mower->mRow < 0 || mower->mRow >= static_cast<int>(state.mowerAvailable.size())) {
             continue;
         }
@@ -597,7 +597,7 @@ VSGameState BuildGameState(Board *board) {
         });
     }
 
-    for (GridItem *gridItem = nullptr; board->mGridItems.IterateNext(gridItem);) {
+    for (GridItem *gridItem = nullptr; board->IterateGridItems(gridItem);) {
         state.gridItems.push_back({
             .id = board->mGridItems.DataArrayGetID(gridItem),
             .gridItemType = static_cast<std::uint16_t>(gridItem->mGridItemType),

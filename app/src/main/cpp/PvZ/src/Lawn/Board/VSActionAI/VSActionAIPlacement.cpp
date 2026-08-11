@@ -201,6 +201,26 @@ VSGridPosition FindSafeIncomeCell(const VSGameState &state, int preferredRow) {
     if (phase == 2) {
         columnOrder = {2, 1, 0};
     }
+
+    // Once the zombie-side target has fallen, this lane cannot receive any
+    // more meaningful zombie or grave investment. Reuse an empty safe tile
+    // there before spending on a contested lane; the target survives in the
+    // GridItem array through its death animation, so health zero is enough.
+    for (const int columnIndex : columnOrder) {
+        const int column = IncomeColumnFor(state, columnIndex);
+        for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
+            const int row = (preferredRow + rowOffset) % state.rows;
+            if (!HasDestroyedZombieTargetInRow(state, row)) {
+                continue;
+            }
+            const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+            if (IsPlantableVSTile(state, position) && !HasPlantAt(state, position) && !HasGridItemAt(state, position)
+                && IsPlantPlacementSafe(state, SeedType::SEED_SUNFLOWER, position)) {
+                return position;
+            }
+        }
+    }
+
     for (const int columnIndex : columnOrder) {
         const int column = IncomeColumnFor(state, columnIndex);
         int bestRow = -1;

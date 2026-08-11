@@ -237,12 +237,28 @@ bool HasLiveZombieTargetInRow(const VSGameState &state, int row) {
     return !hasTargetMarkers;
 }
 
+bool HasDestroyedZombieTargetInRow(const VSGameState &state, int row) {
+    return std::any_of(state.gridItems.begin(), state.gridItems.end(), [row](const VSGridItemState &item) {
+        return item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)
+            && item.position.row == row && (item.dead || item.health <= 0);
+    });
+}
+
 bool AllMowersSpent(const VSGameState &state) {
-    if (state.rows <= 0 || state.mowerAvailable.size() < static_cast<std::size_t>(state.rows)) {
+    if (state.rows <= 0 || state.mowerAvailable.size() < static_cast<std::size_t>(state.rows)
+        || state.mowerInMotion.size() < static_cast<std::size_t>(state.rows)) {
         return false;
     }
-    return std::all_of(state.mowerAvailable.begin(), state.mowerAvailable.begin() + state.rows,
-        [](bool available) { return !available; });
+    for (int row = 0; row < state.rows; ++row) {
+        const std::size_t index = static_cast<std::size_t>(row);
+        // MOWER_TRIGGERED clears the entire lane but is not a spent mower
+        // yet. Treating it as spent lets the zombie planner invest in a row
+        // which is about to erase every current attacker.
+        if (state.mowerAvailable[index] || state.mowerInMotion[index]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 bool IsMowerlessThirdColumnEmergency(const VSGameState &state, int row) {

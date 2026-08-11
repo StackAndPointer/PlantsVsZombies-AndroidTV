@@ -36,6 +36,9 @@ bool IsMowerlessThirdColumnEmergency(const VSGameState &state, int row);
 // longer contribute to a zombie victory. Boards without target markers keep
 // every row eligible for compatibility with the original VS variants.
 bool HasLiveZombieTargetInRow(const VSGameState &state, int row);
+// A target stays in the GridItem array briefly while its death animation
+// plays. Zero health is already a permanent breakthrough for this row.
+bool HasDestroyedZombieTargetInRow(const VSGameState &state, int row);
 // Returns true only after every tracked plant mower has been spent. A single
 // lost mower still deserves the normal conversion caution; the all-lost
 // state is a different phase where zombie pressure must not stall.
