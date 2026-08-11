@@ -84,7 +84,10 @@ std::optional<VSAction> PlantAIPlanning::TryScaredyMelonSupport(const VSGameStat
             continue;
         }
 
-        const VSGridPosition target = FindPlantCellInExactRow(state, row, 0, 1);
+        // Scaredy-shroom is a rear firing layer. Do not let this template
+        // consume column one after the back cell fills: waiting is better
+        // than turning its low health into a forward disposable plant.
+        const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_SCAREDYSHROOM, row);
         if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_SCAREDYSHROOM, target)) {
             continue;
         }
