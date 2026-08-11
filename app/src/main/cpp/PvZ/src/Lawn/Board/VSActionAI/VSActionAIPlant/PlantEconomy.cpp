@@ -71,7 +71,8 @@ std::optional<VSAction> PlantAIPlanning::TryRecycleIncomeForOutput(const VSGameS
     // Replays keep a compact income base, then replace only its exposed
     // front flower when it prevents a real firing line from being built.
     // Do not trade economy during the opening or merely to make space.
-    if (state.isSuddenDeath || CountPlantIncome(state) < std::max(5, state.rows) || !HasReadySustainedOutputCard(state, protectedSun)) {
+    const int compactIncomeBase = state.rows >= 6 ? 5 : 4;
+    if (state.isSuddenDeath || CountPlantIncome(state) < compactIncomeBase || !HasReadySustainedOutputCard(state, protectedSun)) {
         return std::nullopt;
     }
 

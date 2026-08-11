@@ -110,6 +110,10 @@ struct VSZombieState {
     int shieldHealth = 0;
     bool eating = false;
     bool mindControlled = false;
+    // The exact plant currently intersecting a Jalapeno Head's chew rect.
+    // It lets the detached plant AI evacuate that plant before the row burn
+    // is armed, without approximating engine collision geometry.
+    std::uint32_t jalapenoContactPlantId = 0;
     // A Bungee may only be damaged after it has reached its target tile.
     // Other zombie types leave this false.
     bool bungeeAtTarget = false;

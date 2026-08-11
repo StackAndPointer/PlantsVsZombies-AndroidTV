@@ -573,6 +573,9 @@ VSGameState BuildGameState(Board *board) {
     }
 
     for (Zombie *zombie = nullptr; board->mZombies.IterateNext(zombie);) {
+        Plant *jalapenoContactPlant = zombie->mZombieType == ZombieType::ZOMBIE_JALAPENO_HEAD
+            ? zombie->FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)
+            : nullptr;
         state.zombies.push_back({
             .id = board->mZombies.DataArrayGetID(zombie),
             .zombieType = static_cast<std::uint16_t>(zombie->mZombieType),
@@ -584,6 +587,8 @@ VSGameState BuildGameState(Board *board) {
             .shieldHealth = zombie->mShieldHealth,
             .eating = zombie->mIsEating,
             .mindControlled = zombie->mMindControlled,
+            .jalapenoContactPlantId = jalapenoContactPlant == nullptr ? 0U
+                                                                       : board->mPlants.DataArrayGetID(jalapenoContactPlant),
             .bungeeAtTarget = zombie->mZombieType == ZombieType::ZOMBIE_BUNGEE
                 && (zombie->mZombiePhase == ZombiePhase::PHASE_BUNGEE_AT_BOTTOM
                     || zombie->mZombiePhase == ZombiePhase::PHASE_BUNGEE_GRABBING),

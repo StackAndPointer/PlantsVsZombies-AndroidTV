@@ -29,6 +29,7 @@ protected:
     static int LargestSquashTargetStackInRow(const VSGameState &state, int row);
     const VSCardState *FindReadyCard(const VSGameState &state, SeedType seedType) const;
     std::optional<VSAction> TryBlover(const VSGameState &state, int preferredRow);
+    std::optional<VSAction> TryEvadeJalapenoHead(const VSGameState &state);
     int EffectivePlantPlayCost(const VSGameState &state, const VSCardState &card) const;
     static bool IsInstantCounterSeed(SeedType seedType);
     std::optional<VSAction> TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,

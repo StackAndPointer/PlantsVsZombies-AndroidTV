@@ -10,6 +10,11 @@ namespace vsai::detail {
 
 std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     AdvanceBlockedSlots();
+    // A Jalapeno Head turns its first chew collision into a whole-row burn.
+    // Moving the contacted front plant has to outrank resource collection.
+    if (std::optional<VSAction> action = PlantAIPlanning::TryEvadeJalapenoHead(state)) {
+        return action;
+    }
     for (const VSResourceState &resource : state.resources) {
         if (resource.side == VSSide::Plants && !resource.dead && !resource.beingCollected) {
             return VSAction{.side = VSSide::Plants, .kind = VSActionKind::CollectResource, .objectId = resource.id, .sequence = ++mSequence};

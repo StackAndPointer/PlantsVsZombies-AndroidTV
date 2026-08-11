@@ -109,6 +109,61 @@ std::optional<VSAction> PlantAIPlanning::TryBlover(const VSGameState &state, int
                                             : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, target, state.boardTick));
 }
 
+std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState &state) {
+    constexpr float kPreContactDistance = 90.0f;
+    const VSPlantState *bestPlant = nullptr;
+    int bestScore = std::numeric_limits<int>::min();
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.mindControlled || zombie.row < 0 || zombie.row >= state.rows
+            || zombie.zombieType != static_cast<std::uint16_t>(ZombieType::ZOMBIE_JALAPENO_HEAD)) {
+            continue;
+        }
+
+        const VSPlantState *frontPlant = nullptr;
+        const VSPlantState *contactPlant = nullptr;
+        for (const VSPlantState &plant : state.plants) {
+            if (IsDeadOrOutside(plant) || plant.position.row != zombie.row) {
+                continue;
+            }
+            if (plant.id == zombie.jalapenoContactPlantId) {
+                contactPlant = &plant;
+            }
+            if (frontPlant == nullptr || plant.position.col > frontPlant->position.col) {
+                frontPlant = &plant;
+            }
+        }
+        const VSPlantState *candidate = contactPlant != nullptr ? contactPlant : frontPlant;
+        if (candidate == nullptr) {
+            continue;
+        }
+
+        // Garlic and an awake Hypno-shroom deliberately stop this zombie's
+        // burn trigger in Zombie::UpdateZombieJalapenoHead. Keep that safe
+        // blocker in place rather than creating an opening behind it.
+        const SeedType candidateSeed = static_cast<SeedType>(candidate->seedType);
+        if (candidateSeed == SeedType::SEED_GARLIC || (candidateSeed == SeedType::SEED_HYPNOSHROOM && !candidate->asleep)) {
+            continue;
+        }
+
+        const bool hasExactContact = contactPlant != nullptr;
+        const float frontPlantX = static_cast<float>(LAWN_XMIN + static_cast<int>(candidate->position.col) * 80 + 40);
+        if (!hasExactContact && zombie.positionX - frontPlantX > kPreContactDistance) {
+            continue;
+        }
+
+        // Exact collision uses FindPlantTarget(ATTACKTYPE_CHEW), which fires
+        // at 20 pixels of attack-rect overlap. The short 90-pixel runway is
+        // only a pre-contact buffer for the asynchronous AI turn.
+        const int score = (hasExactContact ? 1000 : 0) + PlantValueScore(*candidate)
+            + static_cast<int>(candidate->position.col) * 10;
+        if (bestPlant == nullptr || score > bestScore) {
+            bestPlant = candidate;
+            bestScore = score;
+        }
+    }
+    return bestPlant == nullptr ? std::nullopt : std::optional<VSAction>(MakeShovelAction(bestPlant->position, state.boardTick));
+}
+
 int PlantAIPlanning::EffectivePlantPlayCost(const VSGameState &state, const VSCardState &card) const {
     const SeedType seed = static_cast<SeedType>(card.seedType);
     if (state.isNight || !IsDaytimeCoffeeMushroom(seed)) {
