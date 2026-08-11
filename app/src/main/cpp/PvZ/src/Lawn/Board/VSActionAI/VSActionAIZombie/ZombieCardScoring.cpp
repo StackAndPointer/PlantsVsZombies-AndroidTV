@@ -130,6 +130,9 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const bool sledDogHeavyTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED)
         && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER) && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
         && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_FOOTBALL);
+    const bool dogSledPeaTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED) && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD) && HasZombieCard(SeedType::SEED_ZOMBIE_IMP);
     // These winning replay decks were previously represented only by
     // generic card scores. Keep their observed release order explicit while
     // leaving target, grave-screen and anti-Ash constraints in charge.
@@ -207,6 +210,15 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += moundTallnutSledTemplate && economyCount >= state.rows && hasWallnut
                 ? (zombieCount == 0 ? 115 : -160)
                 : 0;
+            // Dog/Sled/Pea gains tempo by making several cheap lanes answer
+            // first. Sled is the later independent route, never the first
+            // body delivered into an available Ash counter.
+            if (dogSledPeaTemplate) {
+                score += economyCount >= state.rows && peaHeadCount >= 2
+                    && CountActiveZombieRows(state) >= 2 && areaCounterExposure < 135
+                    ? (zombieCount == 0 ? 170 : -230)
+                    : -120;
+            }
             // Pea Head/Zomblob uses the sled as a later independent lane
             // opener, once its rear firing pressure has forced responses.
             score += peaHeadZomblobGiantTemplate && economyCount >= state.rows
@@ -406,6 +418,8 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 && zombieCount == 0 ? 150 : 0;
             score += peaHeadFlagBungeeTemplate && economyCount >= 2 && economyCount <= state.rows + 3
                 && peaHeadCount < std::min(3, state.rows) && zombieCount == 0 ? 185 : 0;
+            score += dogSledPeaTemplate && economyCount >= 3 && economyCount <= state.rows + 2
+                && peaHeadCount < std::min(3, state.rows) && zombieCount == 0 ? 185 : 0;
             break;
         case SeedType::SEED_ZOMBIE_NEWSPAPER:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -517,6 +531,11 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += seed == SeedType::SEED_ZOMBIE_IMP && impPailSledFootballTemplate && replayOpeningSpread
                 ? (zombieCount == 0 ? 180 : -180)
                 : 0;
+            score += seed == SeedType::SEED_ZOMBIE_IMP && dogSledPeaTemplate
+                    && economyCount >= 3 && economyCount <= state.rows + 1
+                    && CountActiveZombieRows(state) < std::min(3, state.rows)
+                ? (zombieCount == 0 ? 155 : -165)
+                : 0;
             // Digger is a rear-economic strike, never an opening body.
             // Require a developed producer/carry row before spending it.
             score += seed == SeedType::SEED_ZOMBIE_DIGGER && newspaperDiggerGigaTemplate
@@ -567,6 +586,11 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += normalNewsImpSundayTemplate && economyCount >= 3 && economyCount <= state.rows + 2
                     && CountActiveZombieRows(state) < std::min(3, state.rows)
                 ? (zombieCount == 0 ? 145 : -185)
+                : 0;
+            score += seed == SeedType::SEED_ZOMBIE_DOGWALKER && dogSledPeaTemplate
+                    && economyCount >= 2 && economyCount <= state.rows + 2
+                    && CountActiveZombieRows(state) < std::min(3, state.rows)
+                ? (zombieCount == 0 ? 175 : -200)
                 : 0;
             score += seed == SeedType::SEED_ZOMBIE_FLAG && peaHeadFlagBungeeTemplate
                 ? (peaHeadFlagRelease ? (zombieCount == 0 ? 235 : 80) : -430)

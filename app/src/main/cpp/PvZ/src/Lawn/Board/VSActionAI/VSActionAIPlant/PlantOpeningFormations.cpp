@@ -346,6 +346,103 @@ std::optional<VSAction> PlantAIPlanning::TryPeaPuffTempoOpening(const VSGameStat
                               : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *pea, bestTarget, state.boardTick));
 }
 
+std::optional<VSAction> PlantAIPlanning::TryPeaCeleryAshTempo(const VSGameState &state, int preferredRow, int protectedSun) {
+    const auto HasActiveSeed = [&state](SeedType seed) {
+        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [seed](const VSCardState &card) {
+            return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(seed);
+        });
+    };
+
+    // The Peashooter-versus-Dog recording establishes a compact rear pea
+    // line after three producers. Celery is a close-range relief card; the
+    // three Ash cards remain available to the normal counter planner.
+    const bool peaCeleryAshTemplate = HasActiveSeed(SeedType::SEED_PEASHOOTER)
+        && HasActiveSeed(SeedType::SEED_CELERY_STALKER) && HasActiveSeed(SeedType::SEED_SQUASH)
+        && HasActiveSeed(SeedType::SEED_CHERRYBOMB) && HasActiveSeed(SeedType::SEED_CHILLY_PEPPER);
+    if (!peaCeleryAshTemplate || state.isSuddenDeath || CountPlantIncome(state) < 3 || CountZombieEconomy(state) == 0) {
+        return std::nullopt;
+    }
+
+    const auto IsAffordable = [&](const VSCardState *card) {
+        if (card == nullptr) {
+            return false;
+        }
+        const int cost = PlantAIPlanning::EffectivePlantPlayCost(state, *card);
+        return cost != std::numeric_limits<int>::max() && state.plantSun - cost >= protectedSun;
+    };
+
+    const VSCardState *pea = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_PEASHOOTER);
+    if (IsAffordable(pea)) {
+        VSGridPosition bestTarget{};
+        int bestScore = std::numeric_limits<int>::min();
+        for (int offset = 0; offset < state.rows; ++offset) {
+            const int row = (preferredRow + offset) % state.rows;
+            const VSZombieState *closest = FindClosestZombie(state, row);
+            if (HasPlantTypeInRow(state, SeedType::SEED_PEASHOOTER, row)
+                || PlantAIPlanning::ShouldYieldLaneToMower(state, row)
+                || IsRangedOutputTradeUnfavorable(state, row)) {
+                continue;
+            }
+
+            const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_PEASHOOTER, row);
+            if (target.col < 0 || target.row < 0 || target.col > 2
+                || !IsPlantPlacementSafe(state, SeedType::SEED_PEASHOOTER, target)) {
+                continue;
+            }
+
+            const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+            int score = SeedEconomyPressureOpportunity(state, SeedType::SEED_PEASHOOTER, row) * 9;
+            score += PlantEconomyValueInRow(state, row) * 2 + firepower.deficit * 12;
+            score += closest == nullptr ? 85 : (closest->positionX > 660.0f ? 55 : -135);
+            score += row == preferredRow ? 35 : 0;
+            score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_PEASHOOTER, row);
+            if (bestTarget.col < 0 || score > bestScore) {
+                bestTarget = target;
+                bestScore = score;
+            }
+        }
+        if (bestTarget.col >= 0) {
+            return MakePlayAction(VSSide::Plants, *pea, bestTarget, state.boardTick);
+        }
+    }
+
+    const VSCardState *celery = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_CELERY_STALKER);
+    if (!IsAffordable(celery) || CountPlantType(state, SeedType::SEED_PEASHOOTER) == 0) {
+        return std::nullopt;
+    }
+
+    VSGridPosition bestTarget{};
+    int bestScore = std::numeric_limits<int>::min();
+    for (int offset = 0; offset < state.rows; ++offset) {
+        const int row = (preferredRow + offset) % state.rows;
+        const VSZombieState *closest = FindClosestZombie(state, row);
+        if (closest == nullptr || closest->mindControlled || closest->eating || closest->positionX > 650.0f
+            || HasPlantTypeInRow(state, SeedType::SEED_CELERY_STALKER, row)
+            || PlantAIPlanning::ShouldYieldLaneToMower(state, row)) {
+            continue;
+        }
+
+        const VSGridPosition target = FindPlantCellInExactRow(state, row, 4, 5);
+        if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_CELERY_STALKER, target)) {
+            continue;
+        }
+
+        const PlantLaneAssessment lane = AssessPlantLane(state, row);
+        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+        int score = lane.danger * 2 + firepower.deficit * 15 + PlantEconomyValueInRow(state, row);
+        score += !firepower.canHold ? 120 : 0;
+        score += HasPlantTypeInRow(state, SeedType::SEED_PEASHOOTER, row) ? 125 : 0;
+        score += row == preferredRow ? 25 : 0;
+        score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER, row);
+        if (bestTarget.col < 0 || score > bestScore) {
+            bestTarget = target;
+            bestScore = score;
+        }
+    }
+    return bestTarget.col < 0 ? std::nullopt
+                              : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *celery, bestTarget, state.boardTick));
+}
+
 std::optional<VSAction> PlantAIPlanning::TrySporePuffTempoPressure(const VSGameState &state, int preferredRow, int protectedSun) {
     const auto HasActiveSeed = [&state](SeedType seed) {
         return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [seed](const VSCardState &card) {

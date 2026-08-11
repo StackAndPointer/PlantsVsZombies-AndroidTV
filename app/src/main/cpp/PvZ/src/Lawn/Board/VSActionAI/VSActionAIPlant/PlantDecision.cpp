@@ -299,6 +299,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryPeaPuffTempoOpening(state, zombieEconomyStrikeRow, protectedSun)) {
             return action;
         }
+        if (std::optional<VSAction> action = PlantAIPlanning::TryPeaCeleryAshTempo(state, zombieEconomyStrikeRow, protectedSun)) {
+            return action;
+        }
         if (std::optional<VSAction> action = PlantAIPlanning::TrySporePuffTempoPressure(state, zombieEconomyStrikeRow, protectedSun)) {
             return action;
         }

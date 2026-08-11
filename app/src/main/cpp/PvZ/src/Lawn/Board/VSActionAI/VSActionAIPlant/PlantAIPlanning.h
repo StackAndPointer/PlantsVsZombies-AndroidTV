@@ -75,6 +75,7 @@ protected:
     std::optional<VSAction> TryThreepeaterPuffFormation(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TrySnowpeaPuffMagnetPressure(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryPeaPuffTempoOpening(const VSGameState &state, int preferredRow, int protectedSun);
+    std::optional<VSAction> TryPeaCeleryAshTempo(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TrySporePuffTempoPressure(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryPeaCabbageTorchTempo(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TrySnowpeaBonkFormation(const VSGameState &state, int preferredRow, int protectedSun);
