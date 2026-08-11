@@ -46,6 +46,7 @@ int ZombieAIPlanning::BungeeTargetScore(const VSGameState &state, const VSPlantS
         case SeedType::SEED_SQUASH:
         case SeedType::SEED_CHERRYBOMB:
         case SeedType::SEED_JALAPENO:
+        case SeedType::SEED_CHILLY_PEPPER:
         case SeedType::SEED_ICESHROOM:
         case SeedType::SEED_DOOMSHROOM:
         case SeedType::SEED_ICEBERG_LETTUCE:

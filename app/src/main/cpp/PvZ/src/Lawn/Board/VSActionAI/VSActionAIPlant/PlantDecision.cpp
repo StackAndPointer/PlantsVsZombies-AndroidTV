@@ -546,6 +546,15 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         && !outputTempoHasPriority && mayExpandIncomePastOpening) {
         return PlantAIPlanning::TryIncomePlant(state, buildRow, protectedSun);
     }
+    // The safety-aware output helper is also the final escape hatch for a
+    // rich, contested board. It refuses unsafe cells and preserves any
+    // counter reserve, but it must get one last chance before this turn
+    // becomes an unexplained no-op.
+    if (hasActiveZombie && state.plantSun - protectedSun >= 125) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun, true, false, true)) {
+            return action;
+        }
+    }
     return PlantAIPlanning::TryFallbackPlant(state, danger, buildRow);
 }
 
