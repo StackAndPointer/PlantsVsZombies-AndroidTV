@@ -197,7 +197,8 @@ bool PlantAIPlanning::IsInstantCounterSeed(SeedType seedType) {
 std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,
     bool requireExactRow) {
     const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seedType);
-    if (card == nullptr) {
+    const int totalCost = card == nullptr ? std::numeric_limits<int>::max() : PlantAIPlanning::EffectivePlantPlayCost(state, *card);
+    if (card == nullptr || totalCost == std::numeric_limits<int>::max() || state.plantSun < totalCost) {
         return std::nullopt;
     }
     const VSGridPosition target = seedType == SeedType::SEED_WALLNUT || seedType == SeedType::SEED_TALLNUT
@@ -301,13 +302,11 @@ bool PlantAIPlanning::IsHypnoshroomTarget(const VSZombieState &zombie) {
 }
 
 int PlantAIPlanning::PotatoMineArmingLead(const VSZombieState &zombie) {
-    // Potato Mine needs roughly fifteen seconds to arm. Fast units need
-    // a much longer runway than a normal walker; without it, a mine is
-    // only a 25-sun offering placed under the zombie's feet.
-    if (IsFastZombie(zombie.zombieType)) {
-        return 620;
-    }
-    return IsHeavyZombie(zombie.zombieType) ? 440 : 350;
+    // Three cells provide enough runway for normal and heavy walkers. Fast
+    // units get only one extra cell rather than pushing a Mine into the rear
+    // formation, where it no longer protects the threatened firing lane.
+    constexpr int kThreeCells = 3 * 80;
+    return IsFastZombie(zombie.zombieType) ? kThreeCells + 80 : kThreeCells;
 }
 
 bool PlantAIPlanning::IsSquashTargetZombie(const VSZombieState &zombie) {
@@ -329,6 +328,19 @@ PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState 
             const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
             if (!IsPlantableVSTile(state, target) || HasPlantAt(state, target) || HasGridItemAt(state, target)) {
                 continue;
+            }
+            if (!state.isNight && (seedType == SeedType::SEED_ICESHROOM || seedType == SeedType::SEED_DOOMSHROOM)) {
+                const int zombiesOnPlantCell = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(),
+                    [&target](const VSZombieState &zombie) {
+                        return !zombie.dead && !zombie.mindControlled && zombie.row == target.row
+                            && PlantAIPlanning::ZombieColumn(zombie) == target.col;
+                    }));
+                // Daytime burst mushrooms need a second click for Coffee.
+                // Do not plant into a double chew stack that will consume the
+                // sleeping mushroom before that follow-up action can happen.
+                if (zombiesOnPlantCell >= 2) {
+                    continue;
+                }
             }
 
             AshTarget candidate;

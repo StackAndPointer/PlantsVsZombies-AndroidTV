@@ -167,6 +167,12 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
         if (totalCost == std::numeric_limits<int>::max() || state.plantSun - totalCost < protectedSun) {
             continue;
         }
+        // Scaredy-shroom is a rear pressure layer, not an opening substitute
+        // for the first economy band. Build four producers before its first
+        // Coffee-backed deployment.
+        if (seed == SeedType::SEED_SCAREDYSHROOM && CountPlantIncome(state) < 4) {
+            continue;
+        }
         const bool lowCostCombat = allowLowCostCombat && card.cost <= 100
             && (seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER || seed == SeedType::SEED_CHOMPER);
         if (!IsSustainedOutputSeed(seed) && !lowCostCombat) {

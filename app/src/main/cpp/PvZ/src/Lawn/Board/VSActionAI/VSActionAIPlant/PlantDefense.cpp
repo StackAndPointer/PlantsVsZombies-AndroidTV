@@ -230,6 +230,10 @@ std::optional<VSAction> PlantAIPlanning::TryFallbackPlant(const VSGameState &sta
         }
         const bool emergencySeed = seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO
             || seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM;
+        const int totalCost = PlantAIPlanning::EffectivePlantPlayCost(state, card);
+        if (totalCost == std::numeric_limits<int>::max() || state.plantSun < totalCost) {
+            continue;
+        }
         if (emergencySeed && (!hasActiveZombie || danger.danger < 150)) {
             continue;
         }
@@ -293,6 +297,16 @@ std::optional<VSAction> PlantAIPlanning::TryFallbackPlant(const VSGameState &sta
                                                                 : FindPlantCellInColumns(state, row, firstColumn, lastColumn)));
         if (target.col >= 0 && target.row >= 0
             && (!IsPlantCombatSeed(static_cast<std::uint16_t>(seed)) || IsPlantPlacementSafe(state, seed, target))) {
+            if (!state.isNight && (seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM)) {
+                const int zombiesOnPlantCell = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(),
+                    [&target](const VSZombieState &zombie) {
+                        return !zombie.dead && !zombie.mindControlled && zombie.row == target.row
+                            && PlantAIPlanning::ZombieColumn(zombie) == target.col;
+                    }));
+                if (zombiesOnPlantCell >= 2) {
+                    continue;
+                }
+            }
             // This is intentionally the final stage after all placement,
             // cost, cooldown, mower, ice-trail and close-zombie filters
             // above. Replay data can therefore rank two legal fallback

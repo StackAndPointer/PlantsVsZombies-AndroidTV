@@ -207,8 +207,10 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const bool allMowersSpent = AllMowersSpent(state);
     int unpressuredEconomyRows = 0;
     for (int row = 0; row < state.rows; ++row) {
+        const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
+            && !state.mowerAvailable[static_cast<std::size_t>(row)];
         if (!IsMowerInMotion(state, row) && !IsMowerAboutToTrigger(state, row)
-            && (!IsMowerlessStrongPlantLane(state, row) || allMowersSpent)
+            && (!IsMowerlessStrongPlantLane(state, row) || mowerGone || allMowersSpent)
             && CountZombiesInRow(state, row) == 0 && EconomyPlantsInRow(state, row) > 0) {
             ++unpressuredEconomyRows;
         }
@@ -247,15 +249,13 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             const int zombiesInRow = CountZombiesInRow(state, row);
             const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
                 && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row);
-            // A mowerless lane with working firepower has already paid for
-            // its plant-side conversion. Avoid re-opening it with fresh
-            // bodies or a grave screen; attack an intact route instead. If
-            // all mowers are gone, this restriction would deadlock the whole
-            // board, so surviving target lanes become valid again.
-            if (mowerGone && zombiesInRow == 0 && !isTargetedAction && !allMowersSpent) {
+            // A destroyed zombie target cannot be recovered by spending more
+            // bodies in its row. The normal marker-less VS boards retain all
+            // rows through HasLiveZombieTargetInRow's compatibility path.
+            if (!isEconomyAction && !HasLiveZombieTargetInRow(state, row)) {
                 continue;
             }
-            if (IsMowerlessStrongPlantLane(state, row) && !allMowersSpent && !(mowerGone && zombiesInRow > 0)
+            if (IsMowerlessStrongPlantLane(state, row) && !(mowerGone && HasLiveZombieTargetInRow(state, row))
                 && !isEconomyAction && !isTargetedAction && !isProtectedGuard) {
                 continue;
             }
@@ -321,7 +321,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 score += card.cost <= std::max(50, heavyZombieReserve / 4) ? -45 : -190;
             }
             const bool pursueBrokenMowerRow = mowerGone
-                && CountPlantsInRow(state, row) > 0 && (zombiesInRow > 0 || allMowersSpent);
+                && CountPlantsInRow(state, row) > 0 && HasLiveZombieTargetInRow(state, row);
             if (isLaneAttack && !IsHeavyZombieSeed(seed) && zombiesInRow > 0 && unpressuredEconomyRows > 0
                 && !pursueBrokenMowerRow) {
                 score -= (zombiesInRow == 1 ? 250 : 460) * std::min(2, unpressuredEconomyRows);

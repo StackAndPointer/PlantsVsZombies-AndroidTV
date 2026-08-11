@@ -223,6 +223,20 @@ int LargestCherryBombClusterInRow(const VSGameState &state, int row) {
 
 int ZombieThreatWeight(std::uint16_t zombieType);
 
+bool HasLiveZombieTargetInRow(const VSGameState &state, int row) {
+    bool hasTargetMarkers = false;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)) {
+            continue;
+        }
+        hasTargetMarkers = true;
+        if (!item.dead && item.health > 0 && item.position.row == row) {
+            return true;
+        }
+    }
+    return !hasTargetMarkers;
+}
+
 bool AllMowersSpent(const VSGameState &state) {
     if (state.rows <= 0 || state.mowerAvailable.size() < static_cast<std::size_t>(state.rows)) {
         return false;
@@ -1249,6 +1263,9 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
         // row a guaranteed whole-lane clear, not an attack opportunity.
         return std::numeric_limits<int>::min() / 4;
     }
+    if (!HasLiveZombieTargetInRow(state, row)) {
+        return std::numeric_limits<int>::min() / 4;
+    }
     const PlantLaneAssessment assessment = AssessPlantLane(state, row);
     const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
     const int zombieCount = CountZombiesInRow(state, row);
@@ -1274,18 +1291,19 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
         && !state.mowerAvailable[static_cast<std::size_t>(row)] && assessment.plantCount > 0;
     const bool allMowersSpent = AllMowersSpent(state);
     if (mowerGone) {
-        // A single mowerless lane is still a conversion route that should not
-        // be fed into a strong firing line. Once every mower is spent, that
-        // safety valve no longer exists anywhere: a live plant lane is the
-        // decisive breakthrough route even when its current zombie count is 0.
-        score += allMowersSpent ? (zombieCount > 0 ? 760 : 420) : (zombieCount > 0 ? 500 : -420);
+        // A spent mower means this route can now win by reaching the house.
+        // Reopen it even after the mower cleared the first probe; otherwise
+        // the AI keeps spending attacks merely to trigger every remaining
+        // mower instead of converting the first opening into a victory.
+        score += zombieCount > 0 ? 760 : 650;
+        score += allMowersSpent ? 120 : 0;
     }
 
     // Spread the opening across lanes. A single zombie is useful as a probe;
     // additional zombies in that lane receive a progressively larger penalty.
-    const bool pursuingMowerlessLane = mowerGone && !IsMowerInMotion(state, row) && zombieCount > 0;
+    const bool pursuingMowerlessLane = mowerGone && !IsMowerInMotion(state, row);
     if (zombieCount == 0) {
-        score += mowerGone ? (allMowersSpent ? 300 : -240) : 150;
+        score += mowerGone ? 320 : 150;
     } else if (zombieCount == 1) {
         score += pursuingMowerlessLane ? 60 : -115;
     } else {

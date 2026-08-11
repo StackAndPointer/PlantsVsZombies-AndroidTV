@@ -32,6 +32,10 @@ int LargestZombieStackInRow(const VSGameState &state, int row);
 int LargestCherryBombClusterInRow(const VSGameState &state, int row);
 int ZombieThreatWeight(std::uint16_t zombieType);
 bool IsMowerlessThirdColumnEmergency(const VSGameState &state, int row);
+// On standard VS boards, a destroyed target marks a route which can no
+// longer contribute to a zombie victory. Boards without target markers keep
+// every row eligible for compatibility with the original VS variants.
+bool HasLiveZombieTargetInRow(const VSGameState &state, int row);
 // Returns true only after every tracked plant mower has been spent. A single
 // lost mower still deserves the normal conversion caution; the all-lost
 // state is a different phase where zombie pressure must not stall.

@@ -347,9 +347,8 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_SUNFLOWER, SEED_POTATOMINE, SEED_PUFFSHROOM, SEED_SNOWPEA, SEED_INSTANT_COFFEE, SEED_ICEBERG_LETTUCE},
     {SEED_SUNFLOWER, SEED_SPORESHROOM, SEED_PUFFSHROOM, SEED_SCAREDYSHROOM, SEED_INSTANT_COFFEE, SEED_DOOMSHROOM},
     // Pure Melon-pult timing: Mine and Wall-nut secure the first firing
-    // window, while Chilly and Torchwood remain responses rather than a
-    // second damage carry.
-    {SEED_SUNFLOWER, SEED_MELONPULT, SEED_POTATOMINE, SEED_WALLNUT, SEED_CHILLY_PEPPER, SEED_TORCHWOOD},
+    // window, while Squash and Chilly cover the heavy and lane-wide breaks.
+    {SEED_SUNFLOWER, SEED_MELONPULT, SEED_POTATOMINE, SEED_WALLNUT, SEED_CHILLY_PEPPER, SEED_SQUASH},
     // Exact replay profiles retained separately from the nearby generic
     // Repeater and Starfruit plans. Sun-shroom is daytime padding here,
     // while the durable carry remains the sole main damage card.
@@ -396,7 +395,7 @@ static constexpr SeedType kBuiltinAINightPlantDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_SUNSHROOM, SEED_REPEATER, SEED_CELERY_STALKER, SEED_JALAPENO, SEED_WALLNUT, SEED_POTATOMINE},
     {SEED_SUNSHROOM, SEED_POTATOMINE, SEED_PUFFSHROOM, SEED_SNOWPEA, SEED_ICEBERG_LETTUCE, SEED_WALLNUT},
     {SEED_SUNSHROOM, SEED_SPORESHROOM, SEED_PUFFSHROOM, SEED_SCAREDYSHROOM, SEED_DOOMSHROOM, SEED_WALLNUT},
-    {SEED_SUNSHROOM, SEED_MELONPULT, SEED_POTATOMINE, SEED_WALLNUT, SEED_CHILLY_PEPPER, SEED_TORCHWOOD},
+    {SEED_SUNSHROOM, SEED_MELONPULT, SEED_POTATOMINE, SEED_WALLNUT, SEED_CHILLY_PEPPER, SEED_SQUASH},
     {SEED_SUNSHROOM, SEED_REPEATER, SEED_WALLNUT, SEED_SQUASH, SEED_CHILLY_PEPPER, SEED_POTATOMINE},
     {SEED_SUNSHROOM, SEED_STARFRUIT, SEED_PUFFSHROOM, SEED_WALLNUT, SEED_CHERRYBOMB, SEED_POTATOMINE},
 };
@@ -847,8 +846,14 @@ bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedTy
 
     if (seedType == SeedType::SEED_TORCHWOOD) {
         // Torchwood amplifies peas, not pults or starfruit. Require the pea
-        // main card to be in the bank before allowing the support card.
-        return HasBuiltinAIPlantPeaMain(screen);
+        // main card to be in the bank before allowing the support card. A
+        // Snow Pea loses its slow when sent through Torchwood, so that pair
+        // is a deck-level conflict rather than a valid pea support package.
+        return HasBuiltinAIPlantPeaMain(screen) && !HasBuiltinAIPlantSeed(screen, SeedType::SEED_SNOWPEA);
+    }
+
+    if (seedType == SeedType::SEED_SNOWPEA && HasBuiltinAIPlantSeed(screen, SeedType::SEED_TORCHWOOD)) {
+        return false;
     }
 
     if (seedType == SeedType::SEED_INSTANT_COFFEE) {
@@ -1015,13 +1020,22 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         hasAvailableMainDamage = hasAvailableMainDamage || IsAvailableMain(seedType);
     }
     const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage;
+    const auto IsPlannedTemplateSecondaryOutput = [&](SeedType seedType) {
+        if (!useTemplate || !IsBuiltinAIPlantCarrySeed(seedType)) {
+            return false;
+        }
+        const SeedType *plannedDeck = GetBuiltinAIDeckPriority(screen);
+        return std::any_of(plannedDeck, plannedDeck + GetBuiltinAIPlanSize(screen), [seedType](SeedType plannedSeed) {
+            return plannedSeed == seedType;
+        });
+    };
     auto IsCompatible = [&](SeedType seedType) {
         return IsBuiltinAICandidate(screen, seedType) && IsBuiltinAIPlantSupportCandidate(screen, seedType)
             // A replay template is allowed to preserve its recorded
-            // secondary output (Snow Pea is a later output card in several
-            // recordings). Generic fallback remains single-carry so a Ban
+            // secondary output, but only when that exact card belongs to its
+            // template. Generic fallback remains single-carry so a Ban
             // substitution cannot accidentally create two unrelated mains.
-            && (!alreadyHasMainDamage || useTemplate || !IsBuiltinAIPlantCarrySeed(seedType))
+            && (!alreadyHasMainDamage || !IsBuiltinAIPlantCarrySeed(seedType) || IsPlannedTemplateSecondaryOutput(seedType))
             && (!mustPickMainDamage || IsMainDamageCandidate(seedType));
     };
 

@@ -10,7 +10,7 @@ namespace vsai::detail {
 std::optional<VSAction> PlantAIPlanning::TryMelonScaredySupport(const VSGameState &state, int preferredRow, int protectedSun) {
     const VSCardState *melon = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_MELONPULT);
     const VSCardState *scaredy = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SCAREDYSHROOM);
-    if (melon == nullptr || scaredy == nullptr || CountPlantIncome(state) < 2
+    if (melon == nullptr || scaredy == nullptr || CountPlantIncome(state) < 4
         || CountPlantType(state, SeedType::SEED_SCAREDYSHROOM) >= 1) {
         return std::nullopt;
     }
@@ -20,8 +20,8 @@ std::optional<VSAction> PlantAIPlanning::TryMelonScaredySupport(const VSGameStat
         return std::nullopt;
     }
 
-    // In the Melon/Scaredy recording, two Sunflowers are followed by one
-    // cheap long-range Scaredy-shroom, then the player saves for the first
+    // In the Melon/Scaredy recording, a compact four-Sunflower opening is
+    // followed by one cheap long-range Scaredy-shroom, then the player saves for the first
     // Melon-pult. A second early Scaredy delays that breakpoint and turns a
     // Melon carry into a low-damage mushroom line; the post-Melon support
     // branch grows any later layer one row at a time.
@@ -60,8 +60,9 @@ std::optional<VSAction> PlantAIPlanning::TryMelonScaredySupport(const VSGameStat
 
 std::optional<VSAction> PlantAIPlanning::TryScaredyMelonSupport(const VSGameState &state, int preferredRow, int protectedSun) {
     const VSCardState *scaredy = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SCAREDYSHROOM);
+    const int scaredyCost = scaredy == nullptr ? std::numeric_limits<int>::max() : PlantAIPlanning::EffectivePlantPlayCost(state, *scaredy);
     if (scaredy == nullptr || CountPlantType(state, SeedType::SEED_MELONPULT) == 0
-        || state.plantSun - scaredy->cost < protectedSun || CountPlantIncome(state) < 4) {
+        || scaredyCost == std::numeric_limits<int>::max() || state.plantSun - scaredyCost < protectedSun || CountPlantIncome(state) < 4) {
         return std::nullopt;
     }
 
@@ -120,7 +121,7 @@ std::optional<VSAction> PlantAIPlanning::TryScaredyPuffDoomPressure(const VSGame
     // real multi-zombie break, not an excuse to omit the firing core.
     if (!HasActiveSeed(SeedType::SEED_SCAREDYSHROOM) || !HasActiveSeed(SeedType::SEED_PUFFSHROOM)
         || !HasActiveSeed(SeedType::SEED_DOOMSHROOM) || HasActiveSeed(SeedType::SEED_MELONPULT)
-        || CountPlantIncome(state) < 3) {
+        || CountPlantIncome(state) < 4) {
         return std::nullopt;
     }
 
@@ -379,6 +380,9 @@ std::optional<VSAction> PlantAIPlanning::TryWakeableMushroomOutput(const VSGameS
     for (const SeedType seed : {SeedType::SEED_PUFFSHROOM, SeedType::SEED_SCAREDYSHROOM, SeedType::SEED_FUMESHROOM}) {
         const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seed);
         if (card == nullptr || (!state.isNight && coffee == nullptr)) {
+            continue;
+        }
+        if (seed == SeedType::SEED_SCAREDYSHROOM && CountPlantIncome(state) < 4) {
             continue;
         }
         const int totalCost = card->cost + (coffee == nullptr ? 0 : coffee->cost);
