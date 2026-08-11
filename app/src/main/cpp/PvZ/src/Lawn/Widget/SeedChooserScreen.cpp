@@ -1150,9 +1150,17 @@ SeedType FindBuiltinAIBanCandidate(SeedChooserScreen *screen, const SeedType *fa
 
     SeedType bestSeed = SeedType::SEED_NONE;
     int bestScore = std::numeric_limits<int>::min();
+    // After the plant player has committed a carry, denying another carry
+    // does not weaken the chosen deck. Spend later zombie-side Bans on its
+    // answer package instead of removing a card the opponent cannot use.
+    const bool preserveUnusedPlantCarries = screen->mBanningPhase && !screen->mIsZombieChooser
+        && HasBuiltinAIPlantMainDamage(screen);
     for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
         const SeedType seedType = screen->mIsZombieChooser ? screen->GetZombieSeedType(seedIndex) : screen->GetPlantSeedType(seedIndex);
         if (!IsBuiltinAICandidate(screen, seedType)) {
+            continue;
+        }
+        if (preserveUnusedPlantCarries && IsBuiltinAIPlantCarrySeed(seedType)) {
             continue;
         }
 
@@ -2378,10 +2386,10 @@ void SeedChooserScreen::ClickedSeedInChooser_Orgin(ChosenSeed &theChosenSeed, in
                 mBannedSeed[aSeedBanned].mSeedState = BannedSeedState::SEED_BANNED; // 将被选卡设为禁用状态
 
                 mSeedsInBanned++; // 已禁用卡片数量 + 1
-                // The opening Ban happens before any plant card is locked
-                // in. Replace a template whose only carry was just removed;
-                // later Ban losses retain the existing role-based fallback.
-                if (!mIsZombieChooser && mSeedsInBank == 0 && mSeedsInBanned == 1) {
+                // Before the plant player locks any card, every Ban can still
+                // remove the current template carry. Later Ban losses retain
+                // the existing role-based fallback rather than rerolling.
+                if (!mIsZombieChooser && mSeedsInBank == 0) {
                     ReplaceBuiltinAIPlantTemplateAfterOpeningBan(this);
                 }
                 bool banRoundFinished = false;
