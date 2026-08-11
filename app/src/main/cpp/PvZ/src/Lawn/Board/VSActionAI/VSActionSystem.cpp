@@ -18,6 +18,7 @@
 #include "PvZ/Lawn/Board/Coin.h"
 #include "PvZ/Lawn/Board/CursorObject.h"
 #include "PvZ/Lawn/Board/GridItem.h"
+#include "PvZ/Lawn/Board/LawnMower.h"
 #include "PvZ/Lawn/Board/Plant.h"
 #include "PvZ/Lawn/Board/SeedBank.h"
 #include "PvZ/Lawn/Board/SeedPacket.h"
@@ -515,6 +516,22 @@ VSGameState BuildGameState(Board *board) {
     state.playing = IsMatchPlaying(board);
     state.paused = board->mPaused || requestPause;
 
+    for (int row = 0; row < state.rows; ++row) {
+        for (int column = 0; column < 6; ++column) {
+            state.basePlantableCells[static_cast<std::size_t>(row)][static_cast<std::size_t>(column)]
+                = board->CanPlantAt(column, row, SeedType::SEED_PEASHOOTER) == PlantingReason::PLANTING_OK;
+        }
+    }
+
+    for (LawnMower *mower = nullptr; board->mLawnMowers.IterateNext(mower);) {
+        if (mower == nullptr || mower->mDead || mower->mRow < 0 || mower->mRow >= static_cast<int>(state.mowerAvailable.size())) {
+            continue;
+        }
+        const std::size_t row = static_cast<std::size_t>(mower->mRow);
+        state.mowerAvailable[row] = mower->mMowerState == LawnMowerState::MOWER_READY;
+        state.mowerInMotion[row] = mower->mMowerState == LawnMowerState::MOWER_TRIGGERED;
+    }
+
     for (SeedBank *seedBank : board->mSeedBank) {
         if (seedBank == nullptr) {
             continue;
@@ -566,6 +583,10 @@ VSGameState BuildGameState(Board *board) {
             .bodyMaxHealth = zombie->mBodyMaxHealth,
             .shieldHealth = zombie->mShieldHealth,
             .eating = zombie->mIsEating,
+            .mindControlled = zombie->mMindControlled,
+            .bungeeAtTarget = zombie->mZombieType == ZombieType::ZOMBIE_BUNGEE
+                && (zombie->mZombiePhase == ZombiePhase::PHASE_BUNGEE_AT_BOTTOM
+                    || zombie->mZombiePhase == ZombiePhase::PHASE_BUNGEE_GRABBING),
             .dead = zombie->mDead,
         });
     }

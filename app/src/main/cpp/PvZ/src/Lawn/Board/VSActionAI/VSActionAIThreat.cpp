@@ -9,9 +9,12 @@
  * option) any later version.
  */
 
-#include "VSActionAIInternal.h"
+#include "VSActionAIThreat.h"
+
+#include "VSActionAIStrategy.h"
 
 #include "PvZ/Lawn/Board/Plant.h"
+#include "PvZ/Lawn/Common/GameConstants.h"
 
 #include <algorithm>
 #include <cmath>
@@ -151,6 +154,31 @@ bool HasZombieTypeInRow(const VSGameState &state, int row, ZombieType zombieType
     });
 }
 
+bool HasMindControlledZombieInRow(const VSGameState &state, int row) {
+    return std::any_of(state.zombies.begin(), state.zombies.end(), [row](const VSZombieState &zombie) {
+        return !zombie.dead && zombie.row == row && zombie.mindControlled;
+    });
+}
+
+bool IsMowerInMotion(const VSGameState &state, int row) {
+    return row >= 0 && row < state.rows && row < static_cast<int>(state.mowerInMotion.size())
+        && state.mowerInMotion[static_cast<std::size_t>(row)];
+}
+
+bool IsMowerAboutToTrigger(const VSGameState &state, int row) {
+    if (row < 0 || row >= state.rows || row >= static_cast<int>(state.mowerAvailable.size())
+        || !state.mowerAvailable[static_cast<std::size_t>(row)]) {
+        return false;
+    }
+
+    // Do not feed a fresh zombie into a lane once an invader has entered the
+    // first plant column. The ready mower will clear the whole lane shortly.
+    constexpr float kMowerTriggerApproachX = static_cast<float>(LAWN_XMIN + 80);
+    return std::any_of(state.zombies.begin(), state.zombies.end(), [row](const VSZombieState &zombie) {
+        return !zombie.dead && !zombie.mindControlled && zombie.row == row && zombie.positionX <= kMowerTriggerApproachX;
+    });
+}
+
 int LargestZombieStackInRow(const VSGameState &state, int row) {
     constexpr float kGridCellWidth = 80.0f;
     int largestStack = 0;
@@ -195,6 +223,34 @@ int LargestCherryBombClusterInRow(const VSGameState &state, int row) {
 
 int ZombieThreatWeight(std::uint16_t zombieType);
 
+bool IsMowerlessThirdColumnEmergency(const VSGameState &state, int row) {
+    if (row < 0 || row >= state.rows || row >= static_cast<int>(state.mowerAvailable.size())
+        || state.mowerAvailable[static_cast<std::size_t>(row)] || IsMowerInMotion(state, row)) {
+        return false;
+    }
+
+    // Plant columns are zero based.  Once a zombie crosses the right edge of
+    // column two, it has reached the third plant column with no mower left.
+    constexpr float kThirdColumnBoundary = static_cast<float>(LAWN_XMIN + 3 * 80);
+    return std::any_of(state.zombies.begin(), state.zombies.end(), [row](const VSZombieState &zombie) {
+        return !zombie.dead && zombie.row == row && zombie.positionX < kThirdColumnBoundary;
+    });
+}
+
+bool IsMowerlessStrongPlantLane(const VSGameState &state, int row) {
+    if (row < 0 || row >= state.rows || row >= static_cast<int>(state.mowerAvailable.size())
+        || state.mowerAvailable[static_cast<std::size_t>(row)] || IsMowerInMotion(state, row) || CountPlantsInRow(state, row) == 0) {
+        return false;
+    }
+
+    const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+    // An empty mowerless lane is already a poor place to spend a grave. If
+    // attackers are present, only suppress the lane when the existing DPS can
+    // actually hold it; a genuine deficit still deserves a breakthrough.
+    return CountZombiesInRow(state, row) == 0 || firepower.canHold
+        || (firepower.dps >= 45 && firepower.deficit <= 20);
+}
+
 int CounterPressureScoreInRow(const VSGameState &state, int row) {
     int score = 0;
     for (const VSZombieState &zombie : state.zombies) {
@@ -211,7 +267,11 @@ int CounterPressureScoreInRow(const VSGameState &state, int row) {
     }
     // A genuine pileup is more urgent than the same number of separated
     // zombies, but the stack must fit inside one lawn cell.
-    return score + LargestZombieStackInRow(state, row) * 90;
+    score += LargestZombieStackInRow(state, row) * 90;
+    // Losing a mower turns an intruder in column three into a board-loss
+    // risk.  This must outrank every economy and cross-lane opportunity.
+    score += IsMowerlessThirdColumnEmergency(state, row) ? 2000 : 0;
+    return score;
 }
 
 int MostUrgentCounterRow(const VSGameState &state) {
@@ -421,9 +481,20 @@ PlantLaneFirepower AssessPlantLaneFirepower(const VSGameState &state, int row) {
     }
 
     assessment.closestDistance = std::max(0, static_cast<int>(closestX));
-    // The plant half of the lawn begins near x=240.  Use a deliberately
-    // conservative walking estimate and then account for a present blocker.
-    assessment.secondsToContact = std::clamp((assessment.closestDistance - 240) / 42, 1, 16);
+    // A row's actual forward-most plant is the meaningful contact point.
+    // Treating every lane as if contact began at a fixed rear coordinate
+    // makes a zombie in column five look harmless while it is already about
+    // to chew a forward income plant or a defensive line.
+    int frontPlantColumn = -1;
+    for (const VSPlantState &plant : state.plants) {
+        if (!IsDeadOrOutside(plant) && plant.position.row == row) {
+            frontPlantColumn = std::max(frontPlantColumn, static_cast<int>(plant.position.col));
+        }
+    }
+    const int contactX = frontPlantColumn < 0
+        ? LAWN_XMIN + 120
+        : LAWN_XMIN + frontPlantColumn * 80 + 40;
+    assessment.secondsToContact = std::clamp((assessment.closestDistance - contactX) / 42, 1, 16);
     for (const VSPlantState &plant : state.plants) {
         if (IsDeadOrOutside(plant) || plant.position.row != row) {
             continue;
@@ -489,23 +560,34 @@ PlantLaneFirepower AssessPlantLaneFirepower(const VSGameState &state, int row) {
     return assessment;
 }
 
-int PlantLaneFirepowerDeficit(const VSGameState &state, int row) {
-    return AssessPlantLaneFirepower(state, row).deficit;
-}
-
 PlantLaneAssessment AssessPlantLane(const VSGameState &state, int row) {
     PlantLaneAssessment assessment{};
     assessment.row = row;
     assessment.closest = FindClosestZombie(state, row);
+    int frontPlantColumn = -1;
+    for (const VSPlantState &plant : state.plants) {
+        if (!IsDeadOrOutside(plant) && plant.position.row == row) {
+            frontPlantColumn = std::max(frontPlantColumn, static_cast<int>(plant.position.col));
+        }
+    }
+    const float frontPlantX = frontPlantColumn < 0
+        ? static_cast<float>(LAWN_XMIN + 6 * 80)
+        : static_cast<float>(LAWN_XMIN + frontPlantColumn * 80 + 40);
     for (const VSZombieState &zombie : state.zombies) {
         if (zombie.dead || zombie.row != row) {
             continue;
         }
-        const int advance = std::clamp((850 - static_cast<int>(zombie.positionX)) / 4, 0, 190);
+        const int advance = std::clamp((850 - static_cast<int>(zombie.positionX)) / 3, 0, 240);
         assessment.rawDanger += ZombieThreatWeight(zombie.zombieType) + advance;
         assessment.rawDanger += zombie.eating ? 135 : 0;
-        assessment.rawDanger += zombie.positionX < 560.0f ? 55 : 0;
-        assessment.rawDanger += zombie.positionX < 400.0f ? 85 : 0;
+        assessment.rawDanger += zombie.positionX < 680.0f ? 35 : 0;
+        assessment.rawDanger += zombie.positionX < 600.0f ? 65 : 0;
+        assessment.rawDanger += zombie.positionX < 520.0f ? 100 : 0;
+        assessment.rawDanger += zombie.positionX < 400.0f ? 160 : 0;
+        // Crossing the actual forward plant is a tactical break point. The
+        // resulting score outranks economy opportunities in other rows.
+        assessment.rawDanger += zombie.positionX <= frontPlantX + 30.0f ? 140 : 0;
+        assessment.rawDanger += zombie.positionX <= frontPlantX - 50.0f ? 220 : 0;
         assessment.rawDanger += std::min(40, std::max(0, zombie.shieldHealth) / 30);
         assessment.hasHeavy = assessment.hasHeavy || IsHeavyZombie(zombie.zombieType);
         assessment.hasFast = assessment.hasFast || IsFastZombie(zombie.zombieType);
@@ -546,8 +628,6 @@ PlantLaneAssessment MostThreatenedPlantLane(const VSGameState &state) {
     }
     return best;
 }
-
-bool IsPlantEconomySeed(const VSGameState &state, std::uint16_t seedType);
 
 int LeastDevelopedPlantRow(const VSGameState &state) {
     int bestRow = 0;
@@ -624,6 +704,17 @@ int PlantValueScore(const VSPlantState &plant) {
     return score;
 }
 
+bool IsPlantProtectedByUmbrella(const VSGameState &state, VSGridPosition position) {
+    if (position.col < 0 || position.row < 0) {
+        return false;
+    }
+    return std::any_of(state.plants.begin(), state.plants.end(), [position](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_UMBRELLA)
+            && std::abs(static_cast<int>(plant.position.col) - static_cast<int>(position.col)) <= 1
+            && std::abs(static_cast<int>(plant.position.row) - static_cast<int>(position.row)) <= 1;
+    });
+}
+
 bool IsPlantEconomySeed(const VSGameState &state, std::uint16_t seedType) {
     return seedType == static_cast<std::uint16_t>(SeedType::SEED_SUNFLOWER)
         || seedType == static_cast<std::uint16_t>(SeedType::SEED_TWINSUNFLOWER)
@@ -654,6 +745,8 @@ bool IsPlantCombatSeed(std::uint16_t seedType) {
         case SeedType::SEED_WINTERMELON:
         case SeedType::SEED_GATLINGPEA:
         case SeedType::SEED_COBCANNON:
+        case SeedType::SEED_SPIKEWEED:
+        case SeedType::SEED_SPIKEROCK:
             return true;
         default:
             return false;
@@ -795,6 +888,8 @@ int StraightProjectileThreatToEconomy(const VSPlantState &plant, const VSGridIte
             return 135;
         case SeedType::SEED_SNOWPEA:
             return 150;
+        case SeedType::SEED_SCAREDYSHROOM:
+            return 135;
         case SeedType::SEED_THREEPEATER:
             return 135;
         case SeedType::SEED_PEASHOOTER:
@@ -864,6 +959,66 @@ int StraightProjectileThreatScore(const VSGameState &state, int row) {
     return score;
 }
 
+int LobbedProjectileThreatScore(const VSGameState &state, int row) {
+    int score = 0;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.dead || !IsZombieEconomyItem(item.gridItemType) || item.position.row != row) {
+            continue;
+        }
+        for (const VSPlantState &plant : state.plants) {
+            if (IsDeadOrOutside(plant) || plant.position.row != row) {
+                continue;
+            }
+            const SeedType seed = static_cast<SeedType>(plant.seedType);
+            switch (seed) {
+                case SeedType::SEED_CABBAGEPULT:
+                case SeedType::SEED_KERNELPULT:
+                case SeedType::SEED_MELONPULT:
+                case SeedType::SEED_WINTERMELON:
+                    score += PlantThreatToEconomy(plant, item);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    return score;
+}
+
+bool NeedsProactiveGraveScreen(const VSGameState &state, int row) {
+    if (row < 0 || row >= state.rows || HasZombieGraveGuardInRow(state, row)) {
+        return false;
+    }
+
+    int economyAssets = 0;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (!item.dead && item.position.row == row && IsZombieEconomyItem(item.gridItemType)) {
+            ++economyAssets;
+        }
+    }
+    // A live straight shooter has already acquired the rear economic lane.
+    // Do not wait for the first tombstone to be half dead before assigning a
+    // Trashcan, Door, Pail, or head as the screen.
+    const int directThreat = StraightProjectileThreatScore(state, row);
+    return economyAssets > 0 && directThreat >= (economyAssets >= 2 ? 80 : 110);
+}
+
+int ZombieGraveScreenDeficit(const VSGameState &state, int row) {
+    const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+    if (firepower.dps <= 0 || CountZombiesInRow(state, row) == 0) {
+        return 0;
+    }
+
+    int screenHealth = 0;
+    for (const VSZombieState &zombie : state.zombies) {
+        if (!zombie.dead && zombie.row == row) {
+            screenHealth += std::max(0, zombie.bodyHealth) + std::max(0, zombie.shieldHealth);
+        }
+    }
+    const int horizon = std::max(5, firepower.secondsToContact + 3);
+    return std::max(0, firepower.dps * horizon - screenHealth);
+}
+
 int GraveThreatScore(const VSGameState &state, int row) {
     int score = 0;
     for (const VSGridItemState &item : state.gridItems) {
@@ -877,6 +1032,29 @@ int GraveThreatScore(const VSGameState &state, int row) {
         score += health <= maxHealth / 3 ? 100 : (health <= maxHealth / 2 ? 45 : 0);
         for (const VSPlantState &plant : state.plants) {
             score += PlantThreatToEconomy(plant, item);
+        }
+    }
+    return score;
+}
+
+int ProtectableGraveThreatScore(const VSGameState &state, int row) {
+    int score = 0;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.dead || !IsZombieEconomyItem(item.gridItemType) || item.position.row != row) {
+            continue;
+        }
+
+        const int maxHealth = std::max(1, EstimatedEconomyMaxHealth(item));
+        const int health = std::clamp(item.health, 0, maxHealth);
+        score += std::max(0, (maxHealth - health) * 100 / maxHealth);
+        score += health <= maxHealth / 3 ? 100 : (health <= maxHealth / 2 ? 45 : 0);
+        for (const VSPlantState &plant : state.plants) {
+            // Gravebuster is already consuming this exact grave. Placing a
+            // slow screen in front cannot save it, so it must not bait a
+            // Trashcan or Door away from a real projectile threat.
+            if (!IsDeadOrOutside(plant) && plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_GRAVEBUSTER)) {
+                score += PlantThreatToEconomy(plant, item);
+            }
         }
     }
     return score;
@@ -1022,6 +1200,11 @@ int EconomyPlantsInRow(const VSGameState &state, int row) {
 }
 
 int ZombieLaneAttackScore(const VSGameState &state, int row) {
+    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
+        // A triggered mower or an intruder already in column zero makes this
+        // row a guaranteed whole-lane clear, not an attack opportunity.
+        return std::numeric_limits<int>::min() / 4;
+    }
     const PlantLaneAssessment assessment = AssessPlantLane(state, row);
     const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
     const int zombieCount = CountZombiesInRow(state, row);
@@ -1032,7 +1215,10 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
     // Sunflowers and other economy plants are the most efficient pressure
     // targets. Empty rows are still useful for forcing the plant player to
     // spend resources, but are less valuable than a developed economy lane.
-    score += economyPlants * 150 + std::max(0, economyPlants - 1) * 60;
+    // Separate Sunflower lanes are pressure targets in their own right. A
+    // fresh economy lane should outrank feeding a second cheap zombie into a
+    // defended lane that one Ash card can erase.
+    score += economyPlants * 210 + std::max(0, economyPlants - 1) * 90;
     score += assessment.plantCount == 0 ? 28 : 0;
     score += assessment.defense < 100 ? 35 : 0;
     score += graveThreat * 3;
@@ -1040,14 +1226,24 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
     score += firepower.deficit * 5;
     score += !firepower.canHold && firepower.nearHealth > 0 ? 80 : 0;
 
+    if (row < static_cast<int>(state.mowerAvailable.size()) && !state.mowerAvailable[static_cast<std::size_t>(row)]
+               && assessment.plantCount > 0) {
+        // A mowerless lane is a conversion route.  Do not abandon the front
+        // which paid to remove its mower; retain a strong follow-up bias while
+        // the separate economy scorer continues to guard rear graves.
+        score += zombieCount > 0 ? 290 : 165;
+    }
+
     // Spread the opening across lanes. A single zombie is useful as a probe;
     // additional zombies in that lane receive a progressively larger penalty.
+    const bool pursuingMowerlessLane = row < static_cast<int>(state.mowerAvailable.size())
+        && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row) && assessment.plantCount > 0;
     if (zombieCount == 0) {
-        score += 95;
+        score += 150;
     } else if (zombieCount == 1) {
-        score -= 35;
+        score += pursuingMowerlessLane ? 60 : -115;
     } else {
-        score -= 35 + (zombieCount - 1) * 125;
+        score -= (pursuingMowerlessLane ? 40 : 95) + (zombieCount - 1) * (pursuingMowerlessLane ? 90 : 175);
     }
     score -= ZombiePressureInRow(state, row) / 3;
     return score;

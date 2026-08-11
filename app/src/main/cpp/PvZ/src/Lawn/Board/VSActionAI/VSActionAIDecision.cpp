@@ -11,16 +11,16 @@
 
 #include "PvZ/Lawn/VSActionAIDecision.h"
 
-#include "VSActionAIInternal.h"
+#include "VSActionAIStrategy.h"
 
 namespace vsai {
 
 std::unique_ptr<IVSAgent> CreateBuiltinVSAgent(VSSide side) {
     switch (side) {
         case VSSide::Plants:
-            return detail::CreatePlantVSAgent();
+            return detail::CreatePlantAI();
         case VSSide::Zombies:
-            return detail::CreateZombieVSAgent();
+            return detail::CreateZombieAI();
     }
     return nullptr;
 }

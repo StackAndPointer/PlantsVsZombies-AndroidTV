@@ -109,6 +109,10 @@ struct VSZombieState {
     int bodyMaxHealth = 0;
     int shieldHealth = 0;
     bool eating = false;
+    bool mindControlled = false;
+    // A Bungee may only be damaged after it has reached its target tile.
+    // Other zombie types leave this false.
+    bool bungeeAtTarget = false;
     bool dead = false;
 };
 
@@ -143,6 +147,15 @@ struct VSGameState {
     bool resourceProductionDisabled = false;
     bool playing = false;
     bool paused = false;
+    // Captured with Board::CanPlantAt for a normal ground plant. This keeps
+    // terrain rules such as Zomboni ice and Doom-shroom craters available to
+    // the detached algorithmic AI without exposing Board itself to agents.
+    std::array<std::array<bool, 6>, 6> basePlantableCells{};
+    // A ready mower is the final recovery resource for an overrun lane.
+    std::array<bool, 6> mowerAvailable{};
+    // A triggered mower is still clearing its row. It is distinct from an
+    // already-spent mower, whose row can become a later breakthrough route.
+    std::array<bool, 6> mowerInMotion{};
     std::array<std::vector<VSCardState>, 2> seedBanks;
     std::vector<VSPlantState> plants;
     std::vector<VSZombieState> zombies;

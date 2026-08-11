@@ -9,14 +9,78 @@
  * option) any later version.
  */
 
-#include "VSActionAIInternal.h"
+#include "VSActionAIPlacement.h"
 
 #include "PvZ/Lawn/Board/GridItem.h"
+#include "PvZ/Lawn/Common/GameConstants.h"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <limits>
 
 namespace vsai::detail {
+
+namespace {
+
+bool ReservesRearColumnForCarry(const VSGameState &state) {
+    for (const VSCardState &card : state.seedBanks[0]) {
+        switch (static_cast<SeedType>(card.seedType)) {
+            case SeedType::SEED_SCAREDYSHROOM:
+            case SeedType::SEED_SNOWPEA:
+            case SeedType::SEED_REPEATER:
+            case SeedType::SEED_BLOOMERANG:
+            case SeedType::SEED_THREEPEATER:
+            case SeedType::SEED_STARFRUIT:
+            case SeedType::SEED_CABBAGEPULT:
+            case SeedType::SEED_KERNELPULT:
+            case SeedType::SEED_MELONPULT:
+            case SeedType::SEED_WINTERMELON:
+            case SeedType::SEED_SPORESHROOM:
+                return true;
+            default:
+                break;
+        }
+    }
+    return false;
+}
+
+int IncomeColumnFor(const VSGameState &state, int index) {
+    static constexpr int kDefaultColumns[] = {0, 1, 2};
+    static constexpr int kRearCarryColumns[] = {1, 2, 0};
+    return (ReservesRearColumnForCarry(state) ? kRearCarryColumns : kDefaultColumns)[index];
+}
+
+int IncomeOpeningRowPriority(int rows, int row) {
+    // The recordings open on three separated rows before filling the two
+    // middle lanes. This keeps one cheap probe from immediately chewing
+    // through every early Sunflower in a single line.
+    if (rows == 5) {
+        static constexpr int kFiveRowOrder[] = {2, 0, 4, 1, 3};
+        for (int priority = 0; priority < 5; ++priority) {
+            if (kFiveRowOrder[priority] == row) {
+                return priority;
+            }
+        }
+    }
+    if (rows == 6) {
+        static constexpr int kSixRowOrder[] = {2, 3, 0, 5, 1, 4};
+        for (int priority = 0; priority < 6; ++priority) {
+            if (kSixRowOrder[priority] == row) {
+                return priority;
+            }
+        }
+    }
+    return row;
+}
+
+} // namespace
+
+bool IsPlantableVSTile(const VSGameState &state, VSGridPosition position) {
+    return position.row >= 0 && position.row < state.rows && position.row < static_cast<int>(state.basePlantableCells.size())
+        && position.col >= 0 && position.col < 6
+        && state.basePlantableCells[static_cast<std::size_t>(position.row)][static_cast<std::size_t>(position.col)];
+}
 
 VSGridPosition FindPlantCellInColumns(const VSGameState &state, int preferredRow, int firstColumn, int lastColumn) {
     preferredRow = std::clamp(preferredRow, 0, std::max(0, state.rows - 1));
@@ -26,7 +90,7 @@ VSGridPosition FindPlantCellInColumns(const VSGameState &state, int preferredRow
         const int row = (preferredRow + rowOffset) % state.rows;
         for (int column = firstColumn; column <= lastColumn; ++column) {
             const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
-            if (!HasPlantAt(state, position) && !HasGridItemAt(state, position)) {
+            if (IsPlantableVSTile(state, position) && !HasPlantAt(state, position) && !HasGridItemAt(state, position)) {
                 return position;
             }
         }
@@ -42,19 +106,48 @@ VSGridPosition FindPlantCellInExactRow(const VSGameState &state, int row, int fi
     lastColumn = std::clamp(lastColumn, firstColumn, 5);
     for (int column = firstColumn; column <= lastColumn; ++column) {
         const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
-        if (!HasPlantAt(state, position) && !HasGridItemAt(state, position)) {
+        if (IsPlantableVSTile(state, position) && !HasPlantAt(state, position) && !HasGridItemAt(state, position)) {
             return position;
         }
     }
     return {};
 }
 
-bool IsIncomeRowSafe(const VSGameState &state, int row) {
+namespace {
+
+float PlantCellCenterX(VSGridPosition position) {
+    return static_cast<float>(LAWN_XMIN + static_cast<int>(position.col) * 80 + 40);
+}
+
+bool IsMeleePlant(SeedType seed) {
+    return seed == SeedType::SEED_BONK_CHOY || seed == SeedType::SEED_CELERY_STALKER || seed == SeedType::SEED_CHOMPER;
+}
+
+} // namespace
+
+bool IsPlantPlacementSafe(const VSGameState &state, SeedType seed, VSGridPosition position) {
+    if (!IsPlantableVSTile(state, position)) {
+        return false;
+    }
+    // Instant counters and support/defensive overlays intentionally target an
+    // occupied or threatened cell. Their callers have separate target rules.
+    const bool isIncomePlant = seed == SeedType::SEED_SUNFLOWER || seed == SeedType::SEED_TWINSUNFLOWER
+        || seed == SeedType::SEED_SUNSHROOM;
+    if (!isIncomePlant && !IsPlantCombatSeed(static_cast<std::uint16_t>(seed)) && !IsSustainedOutputSeed(seed)) {
+        return true;
+    }
+
+    const float cellCenterX = PlantCellCenterX(position);
+    const float minimumGap = isIncomePlant ? 180.0f : (IsMeleePlant(seed) ? 45.0f
+        : ((seed == SeedType::SEED_SPIKEWEED || seed == SeedType::SEED_SPIKEROCK) ? 60.0f : 125.0f));
     for (const VSZombieState &zombie : state.zombies) {
-        // Do not invest in more income on a route whose front has already
-        // crossed the zombie-side lawn boundary.  A Sunflower placed there
-        // becomes an immediate target instead of a long-term investment.
-        if (!zombie.dead && zombie.row == row && (zombie.eating || zombie.positionX < 720.0f)) {
+        if (zombie.dead || zombie.row != position.row) {
+            continue;
+        }
+        const float gap = zombie.positionX - cellCenterX;
+        // Zombies move toward decreasing X. Once they are at or behind the
+        // candidate cell, the plant is being offered directly to them.
+        if (gap < minimumGap || (zombie.eating && gap < minimumGap + 100.0f)) {
             return false;
         }
     }
@@ -87,16 +180,178 @@ bool IsRangedOutputTradeUnfavorable(const VSGameState &state, int row) {
 
 VSGridPosition FindSafeIncomeCell(const VSGameState &state, int preferredRow) {
     preferredRow = std::clamp(preferredRow, 0, std::max(0, state.rows - 1));
-    for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
-        const int row = (preferredRow + rowOffset) % state.rows;
-        if (!IsIncomeRowSafe(state, row)) {
+    std::array<int, 6> rowIncome{};
+    int incomeCount = 0;
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant) || !IsPlantEconomySeed(state, plant.seedType)) {
             continue;
         }
-        for (int column = 0; column <= 2; ++column) {
+        ++incomeCount;
+        if (plant.position.row >= 0 && plant.position.row < state.rows) {
+            ++rowIncome[static_cast<std::size_t>(plant.position.row)];
+        }
+    }
+
+    // Open three separated rear-lane flowers, then move one column forward
+    // instead of waiting to fill every row in a single exposed column. This
+    // matches the replay openings and leaves the early probe routes distinct.
+    const int openingColumnCapacity = std::min(3, std::max(1, state.rows));
+    const int phase = std::min(2, incomeCount / openingColumnCapacity);
+    std::array<int, 3> columnOrder{phase, (phase + 1) % 3, (phase + 2) % 3};
+    if (phase == 2) {
+        columnOrder = {2, 1, 0};
+    }
+    for (const int columnIndex : columnOrder) {
+        const int column = IncomeColumnFor(state, columnIndex);
+        int bestRow = -1;
+        int bestRowScore = std::numeric_limits<int>::max();
+        for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
+            const int row = (preferredRow + rowOffset) % state.rows;
             const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
-            if (!HasPlantAt(state, position) && !HasGridItemAt(state, position)) {
-                return position;
+            if (!IsPlantableVSTile(state, position) || HasPlantAt(state, position) || HasGridItemAt(state, position)
+                || !IsPlantPlacementSafe(state, SeedType::SEED_SUNFLOWER, position)) {
+                continue;
             }
+            const int score = rowIncome[static_cast<std::size_t>(row)] * 100
+                + IncomeOpeningRowPriority(state.rows, row) * 5 + rowOffset;
+            if (bestRow < 0 || score < bestRowScore) {
+                bestRow = row;
+                bestRowScore = score;
+            }
+        }
+        if (bestRow >= 0) {
+            return {static_cast<std::int8_t>(column), static_cast<std::int8_t>(bestRow)};
+        }
+    }
+    return {};
+}
+
+VSGridPosition FindIcebergLettuceCell(const VSGameState &state, int row) {
+    const VSZombieState *closest = FindClosestZombie(state, row);
+    if (closest == nullptr) {
+        return {};
+    }
+    const int closestColumn = std::clamp(static_cast<int>((closest->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
+    int frontNutColumn = -1;
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant) || plant.position.row != row
+            || (plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_WALLNUT)
+                && plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_TALLNUT))) {
+            continue;
+        }
+        frontNutColumn = std::max(frontNutColumn, static_cast<int>(plant.position.col));
+    }
+    // The first candidate is the zombie's actual foot cell. Only use a
+    // neighbouring cell when the exact one is already occupied.
+    for (const int offset : {0, -1, 1, -2, 2}) {
+        const int column = closestColumn + offset;
+        if (column < 0 || column > 5) {
+            continue;
+        }
+        // The nut is the front barrier. A lettuce behind it is not exposed
+        // to the zombie's feet and wastes the freeze; if the zombie has
+        // already crossed the nut, defer instead of freezing the rear side.
+        if (frontNutColumn >= 0 && column < frontNutColumn) {
+            continue;
+        }
+        const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+        if (IsPlantableVSTile(state, position) && !HasPlantAt(state, position) && !HasGridItemAt(state, position)) {
+            return position;
+        }
+    }
+    return {};
+}
+
+VSGridPosition FindWallnutCell(const VSGameState &state, int row, int firstColumn, int lastColumn) {
+    if (row < 0 || row >= state.rows) {
+        return {};
+    }
+    // A Zomboni deletes normal plants and leaves an unplantable ice trail;
+    // walls are never a meaningful answer in that lane.
+    if (HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_ZAMBONI)) {
+        return {};
+    }
+    firstColumn = std::clamp(firstColumn, 0, 5);
+    lastColumn = std::clamp(lastColumn, firstColumn, 5);
+    const VSZombieState *closest = FindClosestZombie(state, row);
+    if (closest == nullptr) {
+        return {};
+    }
+    // Zombies travel from right to left. A Wall-nut may be planted in the
+    // zombie's current cell to intercept immediately, or in a cell it has
+    // not reached yet. Planting to its right would leave the wall behind it.
+    const int closestColumn = std::clamp(static_cast<int>((closest->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
+    for (int column = std::min(lastColumn, closestColumn); column >= firstColumn; --column) {
+        const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+        if (!IsPlantableVSTile(state, position) || HasPlantAt(state, position) || HasGridItemAt(state, position)) {
+            continue;
+        }
+        return position;
+    }
+    return {};
+}
+
+VSGridPosition FindSpikeweedCell(const VSGameState &state, int row) {
+    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
+        return {};
+    }
+    const VSZombieState *zamboni = nullptr;
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.row != row || zombie.zombieType != static_cast<std::uint16_t>(ZombieType::ZOMBIE_ZAMBONI)) {
+            continue;
+        }
+        if (zamboni == nullptr || zombie.positionX < zamboni->positionX) {
+            zamboni = &zombie;
+        }
+    }
+    if (zamboni != nullptr && zamboni->positionX <= 760.0f) {
+        const int zamboniColumn = std::clamp(static_cast<int>((zamboni->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
+        // Zomboni creates an unplantable trail behind itself. Plant directly
+        // under it when possible, then one or two cells in its path so the
+        // Spikeweed is consumed by the vehicle instead of waiting for a nut.
+        for (const int offset : {0, -1, -2}) {
+            const int column = zamboniColumn + offset;
+            if (column < 0) {
+                continue;
+            }
+            const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+            if (IsPlantableVSTile(state, target) && !HasPlantAt(state, target) && !HasGridItemAt(state, target)) {
+                return target;
+            }
+        }
+    }
+
+    const VSZombieState *closest = FindClosestZombie(state, row);
+    if (closest == nullptr || closest->positionX > 760.0f) {
+        return {};
+    }
+
+    const VSPlantState *bestWall = nullptr;
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant) || plant.position.row != row
+            || (plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_WALLNUT)
+                && plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_TALLNUT))) {
+            continue;
+        }
+        if (bestWall == nullptr || plant.position.col > bestWall->position.col) {
+            bestWall = &plant;
+        }
+    }
+    if (bestWall == nullptr || bestWall->position.col >= 5) {
+        return {};
+    }
+    // Zombies enter from the right. Spikeweed belongs on the zombie side of
+    // a Wall-nut so every attacker crosses it before chewing the wall, never
+    // on the plant-side cell behind the wall.
+    for (int column = static_cast<int>(bestWall->position.col) + 1; column <= 5; ++column) {
+        const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+        const float cellCenterX = PlantCellCenterX(target);
+        const bool willBeCrossed = std::any_of(state.zombies.begin(), state.zombies.end(), [row, cellCenterX](const VSZombieState &zombie) {
+            return !zombie.dead && !zombie.mindControlled && zombie.row == row && zombie.positionX >= cellCenterX - 20.0f;
+        });
+        if (willBeCrossed && IsPlantableVSTile(state, target) && !HasPlantAt(state, target) && !HasGridItemAt(state, target)
+            && IsPlantPlacementSafe(state, SeedType::SEED_SPIKEWEED, target)) {
+            return target;
         }
     }
     return {};
@@ -122,6 +377,32 @@ VSGridPosition FindZombieCell(const VSGameState &state, SeedType seed, int row) 
     return {static_cast<std::int8_t>(ZombiePlacementColumn(seed)), static_cast<std::int8_t>(row)};
 }
 
+bool CanInvestZombieEconomyInRow(const VSGameState &state, int row) {
+    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
+        return false;
+    }
+    // Once a mower is gone, a developed/high-DPS plant lane is usually the
+    // plant player's conversion route. Do not rebuild graves directly in
+    // front of that firing line; prefer an intact target lane instead.
+    if (IsMowerlessStrongPlantLane(state, row)) {
+        return false;
+    }
+    bool hasTargetMarker = false;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)) {
+            continue;
+        }
+        hasTargetMarker = true;
+        if (!item.dead && item.position.row == row) {
+            return true;
+        }
+    }
+    // Some non-standard VS boards do not expose target markers. Preserve the
+    // normal economy path there, while never reinvesting into a confirmed lost
+    // target lane on standard VS boards.
+    return !hasTargetMarker;
+}
+
 VSGridPosition FindZombieEconomyCell(const VSGameState &state, int preferredRow) {
     preferredRow = std::clamp(preferredRow, 0, std::max(0, state.rows - 1));
     auto HasBlockingGridItem = [&](VSGridPosition position) {
@@ -136,6 +417,9 @@ VSGridPosition FindZombieEconomyCell(const VSGameState &state, int preferredRow)
     for (int column = 8; column >= 6; --column) {
         for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
             const int row = (preferredRow + rowOffset) % state.rows;
+            if (!CanInvestZombieEconomyInRow(state, row)) {
+                continue;
+            }
             const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
             if (!HasPlantAt(state, position) && !HasBlockingGridItem(position)) {
                 return position;
@@ -146,32 +430,23 @@ VSGridPosition FindZombieEconomyCell(const VSGameState &state, int preferredRow)
 }
 
 VSGridPosition FindZombieMoundCell(const VSGameState &state, int row) {
+    if (!CanInvestZombieEconomyInRow(state, row)) {
+        return {};
+    }
     const VSGridItemState *bestItem = nullptr;
     int bestScore = std::numeric_limits<int>::min();
-    const bool hasUpgradeableMound = std::any_of(state.gridItems.begin(), state.gridItems.end(), [](const VSGridItemState &item) {
-        return !item.dead && item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_BURIAL_MOUND) && item.level < 4;
-    });
     for (const VSGridItemState &item : state.gridItems) {
         if (item.dead || item.position.row != row) {
             continue;
         }
 
-        int score = std::numeric_limits<int>::min();
-        if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_GRAVESTONE)) {
-            // Establish one mound first, then retain its accumulated upgrade
-            // value instead of spreading every mound card across new graves.
-            if (!hasUpgradeableMound) {
-                score = 260;
-            }
-        } else if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_BURIAL_MOUND) && item.level < 4) {
-            score = 360 + item.level * 80;
-        }
+        const int score = MoundUpgradePriorityAt(state, item.position);
         if (score > bestScore) {
             bestItem = &item;
             bestScore = score;
         }
     }
-    return bestItem == nullptr ? VSGridPosition{} : bestItem->position;
+    return bestItem == nullptr || bestScore <= 0 ? VSGridPosition{} : bestItem->position;
 }
 
 int MoundUpgradeCostAt(const VSGameState &state, VSGridPosition position) {
@@ -200,6 +475,46 @@ int MoundUpgradeCostAt(const VSGameState &state, VSGridPosition position) {
         }
     }
     return std::numeric_limits<int>::max();
+}
+
+int MoundUpgradePriorityAt(const VSGameState &state, VSGridPosition position) {
+    if (!CanInvestZombieEconomyInRow(state, position.row)) {
+        return std::numeric_limits<int>::min();
+    }
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.dead || item.position.col != position.col || item.position.row != position.row) {
+            continue;
+        }
+
+        int extraBrains = 0;
+        if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_GRAVESTONE)) {
+            // Basic grave -> level 0 adds one small brain.
+            extraBrains = 25;
+        } else if (item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_BURIAL_MOUND)) {
+            switch (item.level) {
+                case 0:
+                case 2:
+                    // Level 0 -> 1 and 2 -> 3 each add a full brain.
+                    extraBrains = 50;
+                    break;
+                case 1:
+                    // Level 1 -> 2 adds a small brain.
+                    extraBrains = 25;
+                    break;
+                default:
+                    // Level 3 -> 4 only improves durability. It is not an
+                    // income purchase while cheaper productive upgrades exist.
+                    return std::numeric_limits<int>::min();
+            }
+        } else {
+            return std::numeric_limits<int>::min();
+        }
+
+        const int upgradeCost = MoundUpgradeCostAt(state, position);
+        return upgradeCost == std::numeric_limits<int>::max() ? std::numeric_limits<int>::min()
+                                                               : extraBrains * 12 - upgradeCost;
+    }
+    return std::numeric_limits<int>::min();
 }
 
 bool IsReadyCard(const VSCardState &card, int resource);

@@ -1,0 +1,378 @@
+#include "PlantAI.h"
+
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <optional>
+#include "PvZ/Lawn/Common/GameConstants.h"
+
+namespace vsai::detail {
+
+bool PlantAIPlanning::IsDaytimeCoffeeMushroom(SeedType seed) {
+    switch (seed) {
+        case SeedType::SEED_PUFFSHROOM:
+        case SeedType::SEED_SCAREDYSHROOM:
+        case SeedType::SEED_FUMESHROOM:
+        case SeedType::SEED_GLOOMSHROOM:
+        case SeedType::SEED_SPORESHROOM:
+        case SeedType::SEED_HYPNOSHROOM:
+        case SeedType::SEED_ICESHROOM:
+        case SeedType::SEED_DOOMSHROOM:
+        case SeedType::SEED_MAGNETSHROOM:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool PlantAIPlanning::IsSquashClusterZombie(std::uint16_t zombieType) {
+    // A bobsled team is one coordinated card and should be answered by
+    // firepower or a dedicated control card, not by treating its riders
+    // as an ordinary same-cell pile.
+    return static_cast<ZombieType>(zombieType) != ZombieType::ZOMBIE_BOBSLED;
+}
+
+bool PlantAIPlanning::IsSquashHighValueZombie(std::uint16_t zombieType) {
+    switch (static_cast<ZombieType>(zombieType)) {
+        case ZombieType::ZOMBIE_DOOR:
+        case ZombieType::ZOMBIE_TRASHCAN:
+        case ZombieType::ZOMBIE_PAIL:
+        case ZombieType::ZOMBIE_FOOTBALL:
+        case ZombieType::ZOMBIE_ZAMBONI:
+        case ZombieType::ZOMBIE_GARGANTUAR:
+        case ZombieType::ZOMBIE_GIGA_FOOTBALL:
+        case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
+        case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+int PlantAIPlanning::LargestSquashTargetStackInRow(const VSGameState &state, int row) {
+    constexpr float kGridCellWidth = 80.0f;
+    int largestStack = 0;
+    for (const VSZombieState &anchor : state.zombies) {
+        if (anchor.dead || anchor.row != row || !IsSquashClusterZombie(anchor.zombieType)) {
+            continue;
+        }
+        int stackSize = 0;
+        for (const VSZombieState &zombie : state.zombies) {
+            if (zombie.dead || zombie.row != row || !IsSquashClusterZombie(zombie.zombieType)) {
+                continue;
+            }
+            const float distance = zombie.positionX - anchor.positionX;
+            if (distance > -kGridCellWidth && distance < kGridCellWidth) {
+                ++stackSize;
+            }
+        }
+        largestStack = std::max(largestStack, stackSize);
+    }
+    return largestStack;
+}
+
+const VSCardState *PlantAIPlanning::FindReadyCard(const VSGameState &state, SeedType seedType) const {
+    for (const VSCardState &card : state.seedBanks[0]) {
+        if (!IsSlotBlocked(card.slot) && card.seedType == static_cast<std::uint16_t>(seedType) && IsReadyCard(card, state.plantSun)) {
+            return &card;
+        }
+    }
+    return nullptr;
+}
+
+std::optional<VSAction> PlantAIPlanning::TryBlover(const VSGameState &state, int preferredRow) {
+    const VSCardState *card = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_BLOVER);
+    if (card == nullptr) {
+        return std::nullopt;
+    }
+
+    int balloonRow = -1;
+    float closestBalloonX = std::numeric_limits<float>::max();
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.zombieType != static_cast<std::uint16_t>(ZombieType::ZOMBIE_BALLOON)) {
+            continue;
+        }
+        if (zombie.positionX < closestBalloonX) {
+            balloonRow = zombie.row;
+            closestBalloonX = zombie.positionX;
+        }
+    }
+    if (balloonRow < 0) {
+        return std::nullopt;
+    }
+
+    // Blover affects every Balloon Zombie. Its target tile is merely a
+    // legal launch point, so use a rear free square instead of spending a
+    // threatened frontline cell in the balloon's row.
+    const VSGridPosition target = FindPlantCellInColumns(state, balloonRow >= 0 ? balloonRow : preferredRow, 0, 5);
+    return target.col < 0 || target.row < 0 ? std::nullopt
+                                            : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, target, state.boardTick));
+}
+
+int PlantAIPlanning::EffectivePlantPlayCost(const VSGameState &state, const VSCardState &card) const {
+    const SeedType seed = static_cast<SeedType>(card.seedType);
+    if (state.isNight || !IsDaytimeCoffeeMushroom(seed)) {
+        return card.cost;
+    }
+
+    // A daytime mushroom is not a deployed defender until Coffee is
+    // available as well. Treat the two clicks as one commitment so a
+    // Spore-shroom carry is never left asleep after spending its sun.
+    const VSCardState *coffee = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
+    return coffee == nullptr ? std::numeric_limits<int>::max() : card.cost + coffee->cost;
+}
+
+bool PlantAIPlanning::IsInstantCounterSeed(SeedType seedType) {
+    switch (seedType) {
+        case SeedType::SEED_ICEBERG_LETTUCE:
+        case SeedType::SEED_IMP_PEAR:
+        case SeedType::SEED_POTATOMINE:
+        case SeedType::SEED_SQUASH:
+        case SeedType::SEED_CHERRYBOMB:
+        case SeedType::SEED_JALAPENO:
+        case SeedType::SEED_ICESHROOM:
+        case SeedType::SEED_DOOMSHROOM:
+        case SeedType::SEED_HYPNOSHROOM:
+            return true;
+        default:
+            return false;
+    }
+}
+
+std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,
+    bool requireExactRow) {
+    const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seedType);
+    if (card == nullptr) {
+        return std::nullopt;
+    }
+    const VSGridPosition target = seedType == SeedType::SEED_WALLNUT || seedType == SeedType::SEED_TALLNUT
+        ? FindWallnutCell(state, row, firstColumn, lastColumn)
+        : (requireExactRow ? FindPlantCellInExactRow(state, row, firstColumn, lastColumn)
+                           : FindPlantCellInColumns(state, row, firstColumn, lastColumn));
+    if (target.col < 0 || target.row < 0
+        || (IsMowerInMotion(state, target.row) && IsInstantCounterSeed(seedType))
+        || (ShouldYieldLaneToMower(state, target.row) && (!requireExactRow || !IsInstantCounterSeed(seedType)))) {
+        return std::nullopt;
+    }
+    if (IsPlantCombatSeed(static_cast<std::uint16_t>(seedType)) && !IsPlantPlacementSafe(state, seedType, target)) {
+        return std::nullopt;
+    }
+    return MakePlayAction(VSSide::Plants, *card, target, state.boardTick);
+}
+
+std::optional<VSAction> PlantAIPlanning::TryPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn) {
+    return PlantAIPlanning::TryPlantInRange(state, seedType, row, firstColumn, lastColumn, false);
+}
+
+std::optional<VSAction> PlantAIPlanning::TryPlantExactRow(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn) {
+    return PlantAIPlanning::TryPlantInRange(state, seedType, row, firstColumn, lastColumn, true);
+}
+
+std::optional<VSAction> PlantAIPlanning::TryRemoveLadderedNut(const VSGameState &state) {
+    const VSPlantState *bestPlant = nullptr;
+    int bestScore = std::numeric_limits<int>::min();
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant)
+            || (plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_WALLNUT)
+                && plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_TALLNUT))) {
+            continue;
+        }
+        const bool laddered = std::any_of(state.gridItems.begin(), state.gridItems.end(), [&plant](const VSGridItemState &item) {
+            return !item.dead && item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_LADDER)
+                && item.position.row == plant.position.row && item.position.col == plant.position.col;
+        });
+        if (!laddered) {
+            continue;
+        }
+
+        // Remove the most valuable/most exposed laddered barrier first;
+        // keeping an unladdered nut is still useful as a temporary wall.
+        int score = PlantValueScore(plant) + static_cast<int>(plant.position.col) * 12;
+        score += CountZombiesInRow(state, plant.position.row) * 35;
+        if (bestPlant == nullptr || score > bestScore) {
+            bestPlant = &plant;
+            bestScore = score;
+        }
+    }
+    return bestPlant == nullptr ? std::nullopt : std::optional<VSAction>(MakeShovelAction(bestPlant->position, state.boardTick));
+}
+
+std::optional<VSAction> PlantAIPlanning::TryCounterPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn) {
+    const VSZombieState *closest = FindClosestZombie(state, row);
+    const int targetColumn = closest == nullptr
+        ? 5
+        : std::clamp(static_cast<int>((closest->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
+    // Answer the zombie's current cell first.  The old right-to-left
+    // search put a late Squash or Imp Pear behind a third-column zombie.
+    for (int column = targetColumn; column >= firstColumn; --column) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TryPlantExactRow(state, seedType, row, column, column)) {
+            return action;
+        }
+    }
+    for (int column = std::max(firstColumn, targetColumn + 1); column <= 5; ++column) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TryPlantExactRow(state, seedType, row, column, column)) {
+            return action;
+        }
+    }
+    return std::nullopt;
+}
+
+
+int PlantAIPlanning::ZombieColumn(const VSZombieState &zombie) {
+    return std::clamp(static_cast<int>((zombie.positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
+}
+
+int PlantAIPlanning::ZombieEffectiveHealth(const VSZombieState &zombie) {
+    return std::max(0, zombie.bodyHealth) + std::max(0, zombie.shieldHealth);
+}
+
+bool PlantAIPlanning::IsHypnoshroomTarget(const VSZombieState &zombie) {
+    switch (static_cast<ZombieType>(zombie.zombieType)) {
+        case ZombieType::ZOMBIE_DOOR:
+        case ZombieType::ZOMBIE_TRASHCAN:
+        case ZombieType::ZOMBIE_PAIL:
+        case ZombieType::ZOMBIE_NEWSPAPER:
+        case ZombieType::ZOMBIE_FOOTBALL:
+        case ZombieType::ZOMBIE_WALLNUT_HEAD:
+        case ZombieType::ZOMBIE_TALLNUT_HEAD:
+        case ZombieType::ZOMBIE_GARGANTUAR:
+        case ZombieType::ZOMBIE_GIGA_FOOTBALL:
+        case ZombieType::ZOMBIE_GIGA_POLEVAULTER:
+        case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+int PlantAIPlanning::PotatoMineArmingLead(const VSZombieState &zombie) {
+    // Potato Mine needs roughly fifteen seconds to arm. Fast units need
+    // a much longer runway than a normal walker; without it, a mine is
+    // only a 25-sun offering placed under the zombie's feet.
+    if (IsFastZombie(zombie.zombieType)) {
+        return 620;
+    }
+    return IsHeavyZombie(zombie.zombieType) ? 440 : 350;
+}
+
+bool PlantAIPlanning::IsSquashTargetZombie(const VSZombieState &zombie) {
+    // Bobsled and Zomboni have dedicated answers. A Squash is saved for a
+    // genuine same-cell stack or a hard body that is otherwise costly to
+    // clear, rather than being thrown at a whole vehicle card.
+    const ZombieType type = static_cast<ZombieType>(zombie.zombieType);
+    return type != ZombieType::ZOMBIE_BOBSLED && type != ZombieType::ZOMBIE_ZAMBONI;
+}
+
+PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState &state, SeedType seedType) const {
+    const int rowRadius = seedType == SeedType::SEED_DOOMSHROOM ? 2
+        : ((seedType == SeedType::SEED_CHERRYBOMB) ? 1 : 0);
+    const int columnRadius = seedType == SeedType::SEED_DOOMSHROOM ? 2
+        : ((seedType == SeedType::SEED_CHERRYBOMB) ? 1 : 0);
+    AshTarget bestTarget;
+    for (int row = 0; row < state.rows; ++row) {
+        for (int column = 0; column < 6; ++column) {
+            const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+            if (!IsPlantableVSTile(state, target) || HasPlantAt(state, target) || HasGridItemAt(state, target)) {
+                continue;
+            }
+
+            AshTarget candidate;
+            candidate.position = target;
+            candidate.score = 0;
+            candidate.mowerlessThirdColumn = IsMowerlessThirdColumnEmergency(state, row);
+            for (const VSZombieState &zombie : state.zombies) {
+                if (zombie.dead || zombie.mindControlled) {
+                    continue;
+                }
+                if (zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_BUNGEE) && !zombie.bungeeAtTarget) {
+                    continue;
+                }
+                const int zombieColumn = PlantAIPlanning::ZombieColumn(zombie);
+                const bool hitsWholeRow = seedType == SeedType::SEED_JALAPENO && zombie.row == row;
+                const bool hitsArea = std::abs(static_cast<int>(zombie.row) - row) <= rowRadius
+                    && std::abs(zombieColumn - column) <= columnRadius;
+                if (!hitsWholeRow && !hitsArea) {
+                    continue;
+                }
+                if (seedType == SeedType::SEED_SQUASH && !IsSquashTargetZombie(zombie)) {
+                    continue;
+                }
+
+                const int health = PlantAIPlanning::ZombieEffectiveHealth(zombie);
+                ++candidate.hitCount;
+                candidate.totalHealth += health;
+                candidate.highValueCount += PlantAIPlanning::IsSquashHighValueZombie(zombie.zombieType) ? 1 : 0;
+                candidate.pailCount += zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PAIL) ? 1 : 0;
+                candidate.frontMostX = std::min(candidate.frontMostX, zombie.positionX);
+                candidate.score += ZombieThreatWeight(zombie.zombieType) * 6 + health / 3;
+                candidate.score += zombie.eating ? 260 : 0;
+                candidate.score += std::clamp((LAWN_XMIN + 6 * 80 - static_cast<int>(zombie.positionX)) / 3, 0, 220);
+            }
+            candidate.score += candidate.hitCount * 230 + candidate.highValueCount * 190;
+            candidate.score += candidate.mowerlessThirdColumn ? 1200 : 0;
+            // Replay priors only break ties between already legal blast
+            // cells. They never make a weak Ash target pass the separate
+            // health/count threshold below.
+            candidate.score += StrategyBonus(state, VSSide::Plants, seedType, row);
+            if (candidate.hitCount == 0) {
+                continue;
+            }
+            if (candidate.score > bestTarget.score
+                || (candidate.score == bestTarget.score && candidate.frontMostX < bestTarget.frontMostX)) {
+                bestTarget = candidate;
+            }
+        }
+    }
+    return bestTarget;
+}
+
+bool PlantAIPlanning::IsAshTargetWorthPlaying(const VSGameState &state, SeedType seedType, const AshTarget &target) {
+    if (target.hitCount <= 0) {
+        return false;
+    }
+    const bool hasReachedThirdColumn = target.frontMostX < static_cast<float>(LAWN_XMIN + 3 * 80);
+    const bool panic = target.mowerlessThirdColumn && hasReachedThirdColumn;
+    switch (seedType) {
+        case SeedType::SEED_SQUASH: {
+            // A lone early Buckethead is the exception to the usual
+            // multi-target Squash rule. If the lane has no meaningful
+            // repeatable fire, waiting for a cluster loses the economy.
+            const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, target.position.row);
+            const bool earlyUnansweredBucket = target.hitCount == 1 && target.pailCount == 1
+                && target.totalHealth >= 400 && target.frontMostX < 780.0f
+                && (firepower.dps < 35 || !firepower.canHold);
+            return earlyUnansweredBucket || (target.hitCount >= 2 && target.totalHealth >= 420)
+                || (target.highValueCount > 0 && target.totalHealth >= (panic ? 260 : 480)
+                    && (target.frontMostX < 660.0f || panic));
+        }
+        case SeedType::SEED_CHERRYBOMB:
+            return target.hitCount >= (panic ? 1 : 2) && target.totalHealth >= (panic ? 320 : 500);
+        case SeedType::SEED_JALAPENO:
+            return target.hitCount >= (panic ? 1 : 3) && target.totalHealth >= (panic ? 360 : 650);
+        case SeedType::SEED_DOOMSHROOM:
+            return target.hitCount >= (panic ? 2 : 4) && target.totalHealth >= (panic ? 600 : 1100);
+        default:
+            return false;
+    }
+}
+
+
+bool IsLobbedOutputSeed(SeedType seed) {
+    switch (seed) {
+        case SeedType::SEED_CABBAGEPULT:
+        case SeedType::SEED_KERNELPULT:
+        case SeedType::SEED_MELONPULT:
+        case SeedType::SEED_WINTERMELON:
+        case SeedType::SEED_COBCANNON:
+        case SeedType::SEED_SPORESHROOM:
+            return true;
+        default:
+            return false;
+    }
+}
+
+std::unique_ptr<IVSAgent> CreatePlantAI() {
+    return std::make_unique<PlantAI>();
+}
+
+} // namespace vsai::detail
