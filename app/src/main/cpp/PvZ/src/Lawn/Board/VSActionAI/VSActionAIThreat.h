@@ -32,6 +32,10 @@ int LargestZombieStackInRow(const VSGameState &state, int row);
 int LargestCherryBombClusterInRow(const VSGameState &state, int row);
 int ZombieThreatWeight(std::uint16_t zombieType);
 bool IsMowerlessThirdColumnEmergency(const VSGameState &state, int row);
+// Returns true only after every tracked plant mower has been spent. A single
+// lost mower still deserves the normal conversion caution; the all-lost
+// state is a different phase where zombie pressure must not stall.
+bool AllMowersSpent(const VSGameState &state);
 // A spent mower is not automatically a free attack route. When the lane has
 // a developed, sustainable defense, feeding it only gives the plant side an
 // efficient ash/firepower trade.

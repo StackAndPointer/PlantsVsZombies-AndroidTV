@@ -388,8 +388,10 @@ bool CanInvestZombieEconomyInRow(const VSGameState &state, int row) {
     }
     // Once a mower is gone, a developed/high-DPS plant lane is usually the
     // plant player's conversion route. Do not rebuild graves directly in
-    // front of that firing line; prefer an intact target lane instead.
-    if (IsMowerlessStrongPlantLane(state, row)) {
+    // front of that firing line; prefer an intact target lane instead. When
+    // every mower is already spent there is no intact safety route left, so
+    // the surviving target lanes must remain investable.
+    if (IsMowerlessStrongPlantLane(state, row) && !AllMowersSpent(state)) {
         return false;
     }
     bool hasTargetMarker = false;

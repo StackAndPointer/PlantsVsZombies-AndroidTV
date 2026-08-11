@@ -204,9 +204,11 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     int targetRow = graveDefenseUrgent ? graveDefenseRow : MostVulnerablePlantRow(state);
     int bestScore = std::numeric_limits<int>::min();
     const bool plantHasReadyAsh = ReadyPlantAreaCounterCount(state) > 0;
+    const bool allMowersSpent = AllMowersSpent(state);
     int unpressuredEconomyRows = 0;
     for (int row = 0; row < state.rows; ++row) {
-        if (!IsMowerInMotion(state, row) && !IsMowerAboutToTrigger(state, row) && !IsMowerlessStrongPlantLane(state, row)
+        if (!IsMowerInMotion(state, row) && !IsMowerAboutToTrigger(state, row)
+            && (!IsMowerlessStrongPlantLane(state, row) || allMowersSpent)
             && CountZombiesInRow(state, row) == 0 && EconomyPlantsInRow(state, row) > 0) {
             ++unpressuredEconomyRows;
         }
@@ -247,11 +249,13 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row);
             // A mowerless lane with working firepower has already paid for
             // its plant-side conversion. Avoid re-opening it with fresh
-            // bodies or a grave screen; attack an intact route instead.
-            if (mowerGone && zombiesInRow == 0 && !isTargetedAction) {
+            // bodies or a grave screen; attack an intact route instead. If
+            // all mowers are gone, this restriction would deadlock the whole
+            // board, so surviving target lanes become valid again.
+            if (mowerGone && zombiesInRow == 0 && !isTargetedAction && !allMowersSpent) {
                 continue;
             }
-            if (IsMowerlessStrongPlantLane(state, row) && !(mowerGone && zombiesInRow > 0)
+            if (IsMowerlessStrongPlantLane(state, row) && !allMowersSpent && !(mowerGone && zombiesInRow > 0)
                 && !isEconomyAction && !isTargetedAction && !isProtectedGuard) {
                 continue;
             }
@@ -317,7 +321,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 score += card.cost <= std::max(50, heavyZombieReserve / 4) ? -45 : -190;
             }
             const bool pursueBrokenMowerRow = mowerGone
-                && CountPlantsInRow(state, row) > 0 && zombiesInRow > 0;
+                && CountPlantsInRow(state, row) > 0 && (zombiesInRow > 0 || allMowersSpent);
             if (isLaneAttack && !IsHeavyZombieSeed(seed) && zombiesInRow > 0 && unpressuredEconomyRows > 0
                 && !pursueBrokenMowerRow) {
                 score -= (zombiesInRow == 1 ? 250 : 460) * std::min(2, unpressuredEconomyRows);

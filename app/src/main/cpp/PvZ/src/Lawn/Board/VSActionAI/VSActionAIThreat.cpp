@@ -223,6 +223,14 @@ int LargestCherryBombClusterInRow(const VSGameState &state, int row) {
 
 int ZombieThreatWeight(std::uint16_t zombieType);
 
+bool AllMowersSpent(const VSGameState &state) {
+    if (state.rows <= 0 || state.mowerAvailable.size() < static_cast<std::size_t>(state.rows)) {
+        return false;
+    }
+    return std::all_of(state.mowerAvailable.begin(), state.mowerAvailable.begin() + state.rows,
+        [](bool available) { return !available; });
+}
+
 bool IsMowerlessThirdColumnEmergency(const VSGameState &state, int row) {
     if (row < 0 || row >= state.rows || row >= static_cast<int>(state.mowerAvailable.size())
         || state.mowerAvailable[static_cast<std::size_t>(row)] || IsMowerInMotion(state, row)) {
@@ -1264,18 +1272,20 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
 
     const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
         && !state.mowerAvailable[static_cast<std::size_t>(row)] && assessment.plantCount > 0;
+    const bool allMowersSpent = AllMowersSpent(state);
     if (mowerGone) {
-        // A mowerless lane is a conversion route.  Do not abandon the front
-        // which paid to remove its mower, but never restart it after that
-        // front has died. The next body belongs on a fresh economy lane.
-        score += zombieCount > 0 ? 500 : -420;
+        // A single mowerless lane is still a conversion route that should not
+        // be fed into a strong firing line. Once every mower is spent, that
+        // safety valve no longer exists anywhere: a live plant lane is the
+        // decisive breakthrough route even when its current zombie count is 0.
+        score += allMowersSpent ? (zombieCount > 0 ? 760 : 420) : (zombieCount > 0 ? 500 : -420);
     }
 
     // Spread the opening across lanes. A single zombie is useful as a probe;
     // additional zombies in that lane receive a progressively larger penalty.
     const bool pursuingMowerlessLane = mowerGone && !IsMowerInMotion(state, row) && zombieCount > 0;
     if (zombieCount == 0) {
-        score += mowerGone ? -240 : 150;
+        score += mowerGone ? (allMowersSpent ? 300 : -240) : 150;
     } else if (zombieCount == 1) {
         score += pursuingMowerlessLane ? 60 : -115;
     } else {

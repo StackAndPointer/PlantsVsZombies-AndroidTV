@@ -47,7 +47,8 @@ int ZombieAIPlanning::GraveGuardPriority(SeedType seed) {
 
 std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &state, int row, bool force) {
     if (row < 0 || row >= state.rows || IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)
-        || (!force && IsMowerlessStrongPlantLane(state, row) && CountZombiesInRow(state, row) == 0)) {
+        || (!force && IsMowerlessStrongPlantLane(state, row) && CountZombiesInRow(state, row) == 0
+            && !AllMowersSpent(state))) {
         return std::nullopt;
     }
     const int protectableThreat = ProtectableGraveThreatScore(state, row);

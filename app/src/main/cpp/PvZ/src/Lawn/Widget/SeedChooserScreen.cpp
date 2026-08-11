@@ -328,8 +328,9 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_SUNFLOWER, SEED_THREEPEATER, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_WALLNUT, SEED_CHILLY_PEPPER},
     {SEED_SUNFLOWER, SEED_SNOWPEA, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_POTATOMINE, SEED_ICEBERG_LETTUCE},
     // New replay templates: Repeater/Celery front support, Pea/Puff/Coffee
-    // pressure, and the Fume/Doom/Coffee answer package. Each still has one
-    // durable carry; Celery and Puff are lane-local support cards.
+    // pressure, and the Fume/Doom/Coffee answer package. Exact templates may
+    // intentionally contain a secondary output; generic Ban recovery below
+    // still keeps accidental carry duplication out of fallback decks.
     {SEED_SUNFLOWER, SEED_REPEATER, SEED_CELERY_STALKER, SEED_JALAPENO, SEED_POTATOMINE, SEED_WALLNUT},
     {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_PUFFSHROOM, SEED_INSTANT_COFFEE, SEED_ICEBERG_LETTUCE, SEED_WALLNUT},
     {SEED_SUNFLOWER, SEED_FUMESHROOM, SEED_DOOMSHROOM, SEED_INSTANT_COFFEE, SEED_CHILLY_PEPPER, SEED_WALLNUT},
@@ -1016,10 +1017,11 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage;
     auto IsCompatible = [&](SeedType seedType) {
         return IsBuiltinAICandidate(screen, seedType) && IsBuiltinAIPlantSupportCandidate(screen, seedType)
-            // Every carry is a main damage family in VS. Once one is in the
-            // bank, Ban recovery and generic fallback may only add counters,
-            // economy, or defense; Snow Pea is not a harmless exception.
-            && (!alreadyHasMainDamage || !IsBuiltinAIPlantCarrySeed(seedType))
+            // A replay template is allowed to preserve its recorded
+            // secondary output (Snow Pea is a later output card in several
+            // recordings). Generic fallback remains single-carry so a Ban
+            // substitution cannot accidentally create two unrelated mains.
+            && (!alreadyHasMainDamage || useTemplate || !IsBuiltinAIPlantCarrySeed(seedType))
             && (!mustPickMainDamage || IsMainDamageCandidate(seedType));
     };
 
