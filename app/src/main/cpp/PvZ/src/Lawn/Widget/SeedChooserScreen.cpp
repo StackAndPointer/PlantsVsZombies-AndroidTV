@@ -663,27 +663,6 @@ bool IsBuiltinAIPlantCarrySeed(SeedType seedType) {
         }
 }
 
-bool IsBuiltinAIPlantMajorCarrySeed(SeedType seedType) {
-    switch (seedType) {
-        case SeedType::SEED_PEASHOOTER:
-        case SeedType::SEED_REPEATER:
-        case SeedType::SEED_THREEPEATER:
-        case SeedType::SEED_SPLITPEA:
-        case SeedType::SEED_CACTUS:
-        case SeedType::SEED_CABBAGEPULT:
-        case SeedType::SEED_KERNELPULT:
-        case SeedType::SEED_MELONPULT:
-        case SeedType::SEED_WINTERMELON:
-        case SeedType::SEED_BLOOMERANG:
-        case SeedType::SEED_STARFRUIT:
-        case SeedType::SEED_FUMESHROOM:
-        case SeedType::SEED_SPORESHROOM:
-            return true;
-        default:
-            return false;
-    }
-}
-
 bool HasBuiltinAIPlantSeed(SeedChooserScreen *screen, SeedType seedType) {
     if (screen == nullptr || screen->mIsZombieChooser || seedType == SeedType::SEED_NONE) {
         return false;
@@ -915,20 +894,6 @@ bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen) {
     return false;
 }
 
-bool HasBuiltinAIPlantMajorCarry(SeedChooserScreen *screen) {
-    if (screen == nullptr || screen->mIsZombieChooser) {
-        return false;
-    }
-    const int storageCount = screen->GetSeedStorageCount();
-    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
-        if (screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
-            && IsBuiltinAIPlantMajorCarrySeed(screen->GetPlantSeedType(seedIndex))) {
-            return true;
-        }
-    }
-    return false;
-}
-
 SeedType PlannedBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen) {
     if (screen == nullptr || screen->mIsZombieChooser) {
         return SeedType::SEED_NONE;
@@ -954,6 +919,19 @@ static constexpr SeedType kBuiltinAIPlantMainFallbacks[] = {
     SeedType::SEED_KERNELPULT,
     SeedType::SEED_STARFRUIT,
     SeedType::SEED_CACTUS,
+};
+
+static constexpr SeedType kBuiltinAIPlantPostCarryFallbacks[] = {
+    SeedType::SEED_CHERRYBOMB,
+    SeedType::SEED_JALAPENO,
+    SeedType::SEED_SQUASH,
+    SeedType::SEED_DOOMSHROOM,
+    SeedType::SEED_ICEBERG_LETTUCE,
+    SeedType::SEED_SUNSHROOM,
+    SeedType::SEED_POTATOMINE,
+    SeedType::SEED_WALLNUT,
+    SeedType::SEED_PUMPKINSHELL,
+    SeedType::SEED_SUNFLOWER,
 };
 
 SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
@@ -1004,7 +982,6 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         }
     }
     const bool alreadyHasMainDamage = HasBuiltinAIPlantMainDamage(screen);
-    const bool alreadyHasMajorCarry = HasBuiltinAIPlantMajorCarry(screen);
     const SeedType plannedMain = useTemplate ? PlannedBuiltinAIPlantMainDamageSeed(screen) : SeedType::SEED_NONE;
     const int plannedIndex = plannedMain == SeedType::SEED_NONE ? -1 : screen->GetSeedPacketIndex(plannedMain);
     const bool plannedMainAvailable = plannedIndex >= 0 && plannedIndex < screen->GetSeedStorageCount()
@@ -1039,12 +1016,10 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage;
     auto IsCompatible = [&](SeedType seedType) {
         return IsBuiltinAICandidate(screen, seedType) && IsBuiltinAIPlantSupportCandidate(screen, seedType)
-            // A plan may carry a low-cost utility gun, but it cannot select
-            // two durable main damage families after Ban fallback changes
-            // its card order. This prevents Starfruit/Threepeater and other
-            // synthetic mixed-carry decks from entering a real VS match.
-            && (!alreadyHasMajorCarry || !IsBuiltinAIPlantMajorCarrySeed(seedType))
-            && (!alreadyHasMainDamage || !IsMainDamageCandidate(seedType))
+            // Every carry is a main damage family in VS. Once one is in the
+            // bank, Ban recovery and generic fallback may only add counters,
+            // economy, or defense; Snow Pea is not a harmless exception.
+            && (!alreadyHasMainDamage || !IsBuiltinAIPlantCarrySeed(seedType))
             && (!mustPickMainDamage || IsMainDamageCandidate(seedType));
     };
 
@@ -1065,6 +1040,21 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         const std::size_t firstFallback = useTemplate ? 0 : static_cast<std::size_t>(Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantMainFallbacks))));
         for (std::size_t offset = 0; offset < std::size(kBuiltinAIPlantMainFallbacks); ++offset) {
             const SeedType seedType = kBuiltinAIPlantMainFallbacks[(firstFallback + offset) % std::size(kBuiltinAIPlantMainFallbacks)];
+            if (IsCompatible(seedType)) {
+                return seedType;
+            }
+        }
+    }
+
+    if (alreadyHasMainDamage) {
+        for (const SeedType seedType : kBuiltinAIPlantPostCarryFallbacks) {
+            // Doom-shroom is a real daytime counter only after Coffee has
+            // been locked in. Otherwise a final-slot Doom would be left
+            // asleep with no remaining opportunity to select its pairing.
+            if (seedType == SeedType::SEED_DOOMSHROOM && IsBuiltinAIDaytimeChooser(screen)
+                && !HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE)) {
+                continue;
+            }
             if (IsCompatible(seedType)) {
                 return seedType;
             }
