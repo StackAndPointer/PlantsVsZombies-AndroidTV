@@ -388,6 +388,19 @@ std::optional<VSAction> PlantAIPlanning::TryHypnoshroom(const VSGameState &state
             if (!IsPlantableVSTile(state, target) || HasPlantAt(state, target) || HasGridItemAt(state, target)) {
                 continue;
             }
+            if (!state.isNight) {
+                const int zombiesOnPlantCell = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(),
+                    [&target](const VSZombieState &other) {
+                        return !other.dead && !other.mindControlled && other.row == target.row
+                            && PlantAIPlanning::ZombieColumn(other) == target.col;
+                    }));
+                // Like Ice-shroom and Doom-shroom, a daytime Hypno-shroom
+                // needs a later Coffee click. Do not place it under a double
+                // chew stack that can consume it before activation.
+                if (zombiesOnPlantCell >= 2) {
+                    continue;
+                }
+            }
             int score = ZombieThreatWeight(zombie.zombieType) * 13 + PlantAIPlanning::ZombieEffectiveHealth(zombie) / 2;
             score += followers * 280 + lane.danger * 3 + (zombie.eating ? 180 : 0);
             score += zombie.row == preferredRow ? 50 : 0;
