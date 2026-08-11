@@ -36,6 +36,18 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     }
     const int economyTarget = state.isSuddenDeath ? economyCount : state.rows * 3;
     const int economyDeficit = std::max(0, economyTarget - economyCount);
+    int zombieTargetCount = 0;
+    int liveZombieTargetCount = 0;
+    for (const VSGridItemState &item : state.gridItems) {
+        if (item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)) {
+            continue;
+        }
+        ++zombieTargetCount;
+        liveZombieTargetCount += item.dead ? 0 : 1;
+    }
+    // A third destroyed target loses VS outright. Once two are gone, the
+    // remaining live target lanes take priority over normal economy tempo.
+    const bool targetDefenseEmergency = zombieTargetCount > 0 && zombieTargetCount - liveZombieTargetCount >= 2;
     const int graveDefenseRow = MostThreatenedEconomyRow(state);
     const int graveDefenseScore = ProtectableGraveThreatScore(state, graveDefenseRow);
     const int graveStraightThreat = StraightProjectileThreatScore(state, graveDefenseRow);
@@ -43,16 +55,21 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int graveScreenDeficit = ZombieGraveScreenDeficit(state, graveDefenseRow);
     const bool hasGraveGuard = HasZombieGraveGuardInRow(state, graveDefenseRow);
     const bool proactiveGraveScreen = NeedsProactiveGraveScreen(state, graveDefenseRow);
-    const bool graveDefenseUrgent = graveDefenseScore >= 50 || graveStraightThreat >= 55
+    const bool graveDefenseUrgent = targetDefenseEmergency || graveDefenseScore >= 50 || graveStraightThreat >= 55
         || graveLobbedThreat >= 70 || graveScreenDeficit >= 55 || proactiveGraveScreen;
-    const bool graveDefenseReinforcement = graveDefenseUrgent && (!hasGraveGuard || graveScreenDeficit >= 55);
+    const bool graveDefenseReinforcement = graveDefenseUrgent && (targetDefenseEmergency || !hasGraveGuard || graveScreenDeficit >= 55);
+    if (targetDefenseEmergency) {
+        if (std::optional<VSAction> action = ZombieAIPlanning::TryProtectEconomy(state, graveDefenseRow, true)) {
+            return action;
+        }
+    }
     if (graveLobbedThreat >= 70 && graveStraightThreat < 70) {
         if (std::optional<VSAction> action = ZombieAIPlanning::TryCounterLobbedGravePressure(state, graveDefenseRow)) {
             return action;
         }
     }
     if (graveDefenseReinforcement) {
-        if (std::optional<VSAction> action = ZombieAIPlanning::TryProtectEconomy(state, graveDefenseRow)) {
+        if (std::optional<VSAction> action = ZombieAIPlanning::TryProtectEconomy(state, graveDefenseRow, targetDefenseEmergency)) {
             return action;
         }
     }

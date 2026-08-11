@@ -45,9 +45,9 @@ int ZombieAIPlanning::GraveGuardPriority(SeedType seed) {
     }
 }
 
-std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &state, int row) {
-    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)
-        || (IsMowerlessStrongPlantLane(state, row) && CountZombiesInRow(state, row) == 0)) {
+std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &state, int row, bool force) {
+    if (row < 0 || row >= state.rows || IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)
+        || (!force && IsMowerlessStrongPlantLane(state, row) && CountZombiesInRow(state, row) == 0)) {
         return std::nullopt;
     }
     const int protectableThreat = ProtectableGraveThreatScore(state, row);
@@ -55,8 +55,8 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
     const int lobbedThreat = LobbedProjectileThreatScore(state, row);
     const int screenDeficit = ZombieGraveScreenDeficit(state, row);
     const bool proactiveScreen = NeedsProactiveGraveScreen(state, row);
-    if (row < 0 || row >= state.rows || (HasZombieGraveGuardInRow(state, row) && screenDeficit < 55)
-        || (!proactiveScreen && protectableThreat < 50 && straightThreat < 55 && lobbedThreat < 70 && screenDeficit < 55)) {
+    if ((HasZombieGraveGuardInRow(state, row) && screenDeficit < 55)
+        || (!force && !proactiveScreen && protectableThreat < 50 && straightThreat < 55 && lobbedThreat < 70 && screenDeficit < 55)) {
         return std::nullopt;
     }
 
@@ -87,7 +87,8 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
             continue;
         }
 
-        int score = ZombieAIPlanning::GraveGuardPriority(seed) + protectableThreat * 2 + (proactiveScreen ? 220 : 0);
+        int score = ZombieAIPlanning::GraveGuardPriority(seed) + protectableThreat * 2 + (proactiveScreen ? 220 : 0)
+            + (force ? 420 : 0);
         // Trashcan is the direct-fire shield from the recordings. Lobbed
         // projectiles pass over every metal screen, so the row filter
         // above leaves durable non-screen heads as the only protection

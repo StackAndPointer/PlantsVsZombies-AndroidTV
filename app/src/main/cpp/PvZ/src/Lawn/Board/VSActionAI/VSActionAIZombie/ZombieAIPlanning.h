@@ -27,7 +27,7 @@ protected:
     bool IsEarlyHeavyCommitCard(const VSGameState &state, SeedType seed, int economyCount, int activePressureRows) const;
     std::optional<VSAction> TryBuildEconomy(const VSGameState &state, int row);
     static int GraveGuardPriority(SeedType seed);
-    std::optional<VSAction> TryProtectEconomy(const VSGameState &state, int row);
+    std::optional<VSAction> TryProtectEconomy(const VSGameState &state, int row, bool force = false);
     std::optional<VSAction> TryCounterLobbedGravePressure(const VSGameState &state, int row);
     int LeastCommittedZombieRow(const VSGameState &state) const;
     static int BungeeTargetScore(const VSGameState &state, const VSPlantState &plant, int row);

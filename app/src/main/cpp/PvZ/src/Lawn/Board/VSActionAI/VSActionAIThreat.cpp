@@ -1134,9 +1134,24 @@ int MostVulnerableZombieEconomyRow(const VSGameState &state) {
 }
 
 int MostThreatenedEconomyRow(const VSGameState &state) {
+    const auto IsLiveZombieTargetRow = [&state](int row) {
+        return std::any_of(state.gridItems.begin(), state.gridItems.end(), [row](const VSGridItemState &item) {
+            return !item.dead && item.position.row == row
+                && item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE);
+        });
+    };
+    const bool hasZombieTargets = std::any_of(state.gridItems.begin(), state.gridItems.end(), [](const VSGridItemState &item) {
+        return item.gridItemType == static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE);
+    });
     int bestRow = 0;
     int bestScore = std::numeric_limits<int>::min();
     for (int row = 0; row < state.rows; ++row) {
+        // A lost target route cannot win the game back. On ordinary VS boards
+        // keep every defensive decision on a surviving target row instead of
+        // paying for a grave screen in a route that is already gone.
+        if (hasZombieTargets && !IsLiveZombieTargetRow(row)) {
+            continue;
+        }
         // Pick the economic row which can still be screened, not merely the
         // one with the largest amount of historical damage.  Direct shooters
         // and pults must both pull a guard toward their current firing lane.
@@ -1145,6 +1160,17 @@ int MostThreatenedEconomyRow(const VSGameState &state) {
         const int lobbedThreat = LobbedProjectileThreatScore(state, row);
         const int screenDeficit = ZombieGraveScreenDeficit(state, row);
         int score = protectableThreat * 2 + straightThreat + lobbedThreat + screenDeficit;
+        if (hasZombieTargets) {
+            const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+            // Target survival is decided by the firing lane rather than only
+            // the health of a grave that happens to be in front of it. Favor
+            // high plant DPS, a developed output line, and an unscreened
+            // target route so the first guard appears before a third target
+            // can be lost.
+            score += firepower.dps * 4 + SustainedOutputScoreInRow(state, row) * 3 + screenDeficit * 3;
+            score += HasZombieGraveGuardInRow(state, row) ? 0 : 180;
+            score += CountZombiesInRow(state, row) == 0 ? 90 : 0;
+        }
         if (NeedsProactiveGraveScreen(state, row)) {
             score += 160;
         }
