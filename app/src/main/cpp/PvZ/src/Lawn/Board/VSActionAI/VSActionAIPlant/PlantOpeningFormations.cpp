@@ -163,7 +163,7 @@ std::optional<VSAction> PlantAIPlanning::TrySnowpeaPuffMagnetPressure(const VSGa
                 || (closest != nullptr && (closest->eating || closest->positionX < 720.0f))) {
                 continue;
             }
-            const VSGridPosition target = FindPlantCellInExactRow(state, row, 3, 3);
+            const VSGridPosition target = FindPuffshroomCell(state, row);
             if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, target)) {
                 continue;
             }
@@ -198,7 +198,7 @@ std::optional<VSAction> PlantAIPlanning::TrySnowpeaPuffMagnetPressure(const VSGa
                 || PlantAIPlanning::ShouldYieldLaneToMower(state, row)) {
                 continue;
             }
-            const VSGridPosition target = FindPlantCellInExactRow(state, row, 3, 4);
+            const VSGridPosition target = FindPuffshroomCell(state, row);
             if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, target)) {
                 continue;
             }
@@ -297,7 +297,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaPuffTempoOpening(const VSGameStat
         int bestScore = std::numeric_limits<int>::min();
         for (int offset = 0; offset < state.rows; ++offset) {
             const int row = (preferredRow + offset) % state.rows;
-            const VSGridPosition target = FindPlantCellInExactRow(state, row, 3, 3);
+            const VSGridPosition target = FindPuffshroomCell(state, row);
             if (PlantAIPlanning::ShouldYieldLaneToMower(state, row) || target.col < 0 || target.row < 0
                 || !IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, target)) {
                 continue;
@@ -380,7 +380,7 @@ std::optional<VSAction> PlantAIPlanning::TrySporePuffTempoPressure(const VSGameS
                 || (closest != nullptr && (closest->eating || closest->positionX < 720.0f))) {
                 continue;
             }
-            const VSGridPosition target = FindPlantCellInExactRow(state, row, 2, 3);
+            const VSGridPosition target = FindPuffshroomCell(state, row);
             if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, target)) {
                 continue;
             }

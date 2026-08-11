@@ -162,6 +162,10 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         && incomePlantCount >= minimumIncomeBeforeOutput && (hasCombatSeed || hasSustainedOutputSeed)
         && (combatPlantCount < highSunCombatTarget || needsSustainedOutput || largestFirepowerDeficit > 0);
     const bool readySustainedOutput = PlantAIPlanning::HasReadySustainedOutputCard(state, protectedSun);
+    // A replay-style grave pressure opening still has to stop the first
+    // live route. Do not turn a firepower deficit into an economy strike.
+    const bool openingNeedsFirepower = hasActiveZombie && (counterFirepower.deficit > 0 || !counterFirepower.canHold
+        || (counterClosest != nullptr && counterClosest->positionX < 720.0f && counterCombatPlants == 0));
     // Five Sunflowers are a compact opening base, not a permanent command to
     // stop farming.  Once the match is in its grave-economy phase, however,
     // every contested lane must be able to remove its incoming health before
@@ -275,10 +279,20 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         }
         return std::nullopt;
     }
+    if (openingNeedsFirepower) {
+        if (hasSustainedOutputSeed) {
+            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun, true, true, true)) {
+                return action;
+            }
+        }
+        if (std::optional<VSAction> action = PlantAIPlanning::TryWakeableMushroomOutput(state, firepowerRow, protectedSun)) {
+            return action;
+        }
+    }
     if (std::optional<VSAction> action = PlantAIPlanning::TryWakeSleepingMushroom(state, danger.row)) {
         return action;
     }
-    if (!immediateCounterThreat && CountZombieEconomy(state) > 0) {
+    if (!immediateCounterThreat && !openingNeedsFirepower && CountZombieEconomy(state) > 0) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryMelonScaredySupport(state, zombieEconomyStrikeRow, protectedSun)) {
             return action;
         }
@@ -292,7 +306,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             return action;
         }
     }
-    if (!immediateCounterThreat) {
+    if (!immediateCounterThreat && !openingNeedsFirepower) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryFumeDoomPressure(state, zombieEconomyStrikeRow, protectedSun)) {
             return action;
         }

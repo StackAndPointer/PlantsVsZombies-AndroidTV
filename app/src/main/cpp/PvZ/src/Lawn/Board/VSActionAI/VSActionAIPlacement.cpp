@@ -160,6 +160,37 @@ bool IsPlantPlacementSafe(const VSGameState &state, SeedType seed, VSGridPositio
     return true;
 }
 
+VSGridPosition FindPuffshroomCell(const VSGameState &state, int row) {
+    if (row < 0 || row >= state.rows) {
+        return {};
+    }
+
+    const VSZombieState *closest = FindClosestZombie(state, row);
+    for (int column = 5; column >= 2; --column) {
+        const VSGridPosition position{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+        if (!IsPlantableVSTile(state, position) || HasPlantAt(state, position) || HasGridItemAt(state, position)) {
+            continue;
+        }
+        if (closest != nullptr) {
+            // Puff-shroom attacks from its front edge for roughly 230 pixels.
+            // Put it in the foremost safe cell that can actually engage the
+            // approaching zombie instead of prebuilding a rear short-range gun.
+            const float attackEndX = static_cast<float>(LAWN_XMIN + column * 80 + 60 + 230);
+            if (closest->positionX > attackEndX) {
+                continue;
+            }
+        } else if (column > 4) {
+            // With no live target, leave the red-line cell available for a
+            // blocker while still keeping the Puff forward enough to pressure.
+            continue;
+        }
+        if (IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, position)) {
+            return position;
+        }
+    }
+    return {};
+}
+
 bool IsRangedOutputTradeUnfavorable(const VSGameState &state, int row) {
     for (const VSZombieState &zombie : state.zombies) {
         if (zombie.dead || zombie.row != row) {

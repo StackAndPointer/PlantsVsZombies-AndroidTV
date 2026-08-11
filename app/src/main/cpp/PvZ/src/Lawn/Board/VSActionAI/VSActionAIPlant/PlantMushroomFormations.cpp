@@ -173,7 +173,7 @@ std::optional<VSAction> PlantAIPlanning::TryScaredyPuffDoomPressure(const VSGame
             || PlantAIPlanning::ShouldYieldLaneToMower(state, row)) {
             continue;
         }
-        const VSGridPosition target = FindPlantCellInExactRow(state, row, 3, 3);
+        const VSGridPosition target = FindPuffshroomCell(state, row);
         if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, target)) {
             continue;
         }
@@ -219,7 +219,7 @@ std::optional<VSAction> PlantAIPlanning::TryStarfruitPuffPressure(const VSGameSt
         if (closest == nullptr || closest->positionX > 720.0f) {
             continue;
         }
-        const VSGridPosition target = FindPlantCellInExactRow(state, row, 2, 3);
+        const VSGridPosition target = FindPuffshroomCell(state, row);
         if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, target)) {
             continue;
         }
@@ -279,7 +279,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaPuffPressure(const VSGameState &s
             || PlantAIPlanning::ShouldYieldLaneToMower(state, row)) {
             continue;
         }
-        const VSGridPosition target = FindPlantCellInExactRow(state, row, 2, 3);
+        const VSGridPosition target = FindPuffshroomCell(state, row);
         if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, target)) {
             continue;
         }
@@ -339,9 +339,9 @@ std::optional<VSAction> PlantAIPlanning::TrySporePuffPressure(const VSGameState 
 
         // The Spore/Puff recordings use Puff-shroom as a Coffee-backed
         // close-range pressure layer while Spore-shroom remains the
-        // long-range carry. Keep that layer in column three, never in
-        // the rear firing cells reserved for the carry.
-        const VSGridPosition target = FindPlantCellInExactRow(state, row, 3, 3);
+        // long-range carry. Keep it at the foremost safe firing cell that
+        // reaches the current zombie, never as a fixed rear placement.
+        const VSGridPosition target = FindPuffshroomCell(state, row);
         if (target.col < 0 || target.row < 0 || PlantAIPlanning::ShouldYieldLaneToMower(state, row)
             || !IsPlantPlacementSafe(state, SeedType::SEED_PUFFSHROOM, target)) {
             continue;
@@ -402,7 +402,8 @@ std::optional<VSAction> PlantAIPlanning::TryWakeableMushroomOutput(const VSGameS
 
             const VSGridPosition target = seed == SeedType::SEED_SCAREDYSHROOM
                 ? PlantAIPlanning::FindSustainedOutputCell(state, seed, row)
-                : FindPlantCellInExactRow(state, row, 2, 3);
+                : (seed == SeedType::SEED_PUFFSHROOM ? FindPuffshroomCell(state, row)
+                                                       : FindPlantCellInExactRow(state, row, 2, 3));
             if (target.col < 0 || target.row < 0 || PlantAIPlanning::ShouldYieldLaneToMower(state, row)
                 || !IsPlantPlacementSafe(state, seed, target)) {
                 continue;

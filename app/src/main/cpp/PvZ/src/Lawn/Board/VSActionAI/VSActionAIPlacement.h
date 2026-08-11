@@ -7,6 +7,7 @@ namespace vsai::detail {
 
 VSGridPosition FindPlantCellInColumns(const VSGameState &state, int preferredRow, int firstColumn, int lastColumn);
 VSGridPosition FindPlantCellInExactRow(const VSGameState &state, int row, int firstColumn, int lastColumn);
+VSGridPosition FindPuffshroomCell(const VSGameState &state, int row);
 bool IsPlantableVSTile(const VSGameState &state, VSGridPosition position);
 bool IsPlantPlacementSafe(const VSGameState &state, SeedType seed, VSGridPosition position);
 bool IsRangedOutputTradeUnfavorable(const VSGameState &state, int row);
