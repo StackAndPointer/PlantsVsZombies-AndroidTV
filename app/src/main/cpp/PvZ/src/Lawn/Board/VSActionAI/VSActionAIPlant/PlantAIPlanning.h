@@ -20,6 +20,7 @@ protected:
         int pailCount = 0;
         float frontMostX = std::numeric_limits<float>::max();
         bool mowerlessThirdColumn = false;
+        bool mowerlessHomeColumn = false;
         int score = std::numeric_limits<int>::min();
     };
 

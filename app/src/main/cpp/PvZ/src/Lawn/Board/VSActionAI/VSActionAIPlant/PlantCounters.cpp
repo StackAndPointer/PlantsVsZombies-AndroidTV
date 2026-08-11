@@ -21,11 +21,16 @@ std::optional<VSAction> PlantAIPlanning::TryAshCounter(const VSGameState &state,
         }
         requiredSun += coffee->cost;
     }
-    if (state.plantSun - requiredSun < protectedSun) {
+    if (state.plantSun < requiredSun) {
         return std::nullopt;
     }
     const AshTarget target = PlantAIPlanning::FindBestAshTarget(state, seedType);
-    if (target.position.row < 0 || IsMowerInMotion(state, target.position.row)
+    if (target.position.row < 0 || IsMowerInMotion(state, target.position.row)) {
+        return std::nullopt;
+    }
+    // A protected reserve exists to keep an answer ready, not to prevent
+    // that same answer when a mowerless zombie has reached column zero.
+    if ((!target.mowerlessHomeColumn && state.plantSun - requiredSun < protectedSun)
         || !IsAshTargetWorthPlaying(state, seedType, target)) {
         return std::nullopt;
     }

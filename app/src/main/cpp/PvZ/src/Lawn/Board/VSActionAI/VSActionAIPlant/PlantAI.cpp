@@ -371,12 +371,18 @@ PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState 
                 candidate.highValueCount += PlantAIPlanning::IsSquashHighValueZombie(zombie.zombieType) ? 1 : 0;
                 candidate.pailCount += zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PAIL) ? 1 : 0;
                 candidate.frontMostX = std::min(candidate.frontMostX, zombie.positionX);
+                candidate.mowerlessHomeColumn = candidate.mowerlessHomeColumn
+                    || (candidate.mowerlessThirdColumn && zombieColumn == 0);
                 candidate.score += ZombieThreatWeight(zombie.zombieType) * 6 + health / 3;
                 candidate.score += zombie.eating ? 260 : 0;
                 candidate.score += std::clamp((LAWN_XMIN + 6 * 80 - static_cast<int>(zombie.positionX)) / 3, 0, 220);
             }
             candidate.score += candidate.hitCount * 230 + candidate.highValueCount * 190;
             candidate.score += candidate.mowerlessThirdColumn ? 1200 : 0;
+            // A mowerless zombie in column zero is the final possible
+            // response window. Its Ash target must outrank every ordinary
+            // cluster on the rest of the lawn.
+            candidate.score += candidate.mowerlessHomeColumn ? 4000 : 0;
             // Replay priors only break ties between already legal blast
             // cells. They never make a weak Ash target pass the separate
             // health/count threshold below.
@@ -399,6 +405,11 @@ bool PlantAIPlanning::IsAshTargetWorthPlaying(const VSGameState &state, SeedType
     }
     const bool hasReachedThirdColumn = target.frontMostX < static_cast<float>(LAWN_XMIN + 3 * 80);
     const bool panic = target.mowerlessThirdColumn && hasReachedThirdColumn;
+    if (target.mowerlessHomeColumn) {
+        // The first plant column without a mower is a loss on the next
+        // contact. Do not keep a ready Ash card for a better cluster.
+        return true;
+    }
     switch (seedType) {
         case SeedType::SEED_SQUASH: {
             // A lone early Buckethead is the exception to the usual
