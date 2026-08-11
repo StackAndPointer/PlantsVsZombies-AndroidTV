@@ -130,6 +130,25 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const bool sledDogHeavyTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED)
         && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER) && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
         && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_FOOTBALL);
+    // These winning replay decks were previously represented only by
+    // generic card scores. Keep their observed release order explicit while
+    // leaving target, grave-screen and anti-Ash constraints in charge.
+    const bool ladderBalloonZamboniTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_LADDER) && HasZombieCard(SeedType::SEED_ZOMBONI)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_BALLOON) && HasZombieCard(SeedType::SEED_ZOMBIE_TALLNUT_HEAD)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_JALAPENO_HEAD);
+    const bool moundBungeeFootballTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN) && HasZombieCard(SeedType::SEED_ZOMBIE_MOUND)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_BUNGEE);
+    const bool newspaperImpFootballGiantTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER) && HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR);
+    const bool peaHeadZomblobGiantTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD) && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_ZOMBLOB) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
+    const bool impPailSledFootballTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED) && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
+        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL);
     const int peaHeadCount = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(), [](const VSZombieState &zombie) {
         return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
     }));
@@ -144,6 +163,8 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const bool peaHeadFlagRelease = peaHeadFlagBungeeTemplate && economyCount >= state.rows * 2
         && peaHeadCount >= std::min(3, state.rows) && CountActiveZombieRows(state) >= 2
         && areaCounterExposure < 120;
+    const bool replayOpeningSpread = economyCount >= 2 && economyCount <= state.rows + 1
+        && CountActiveZombieRows(state) < std::min(3, state.rows);
 
     int score = 20 + ZombieLaneAttackScore(state, targetRow);
     const int graveThreat = ProtectableGraveThreatScore(state, targetRow);
@@ -186,6 +207,12 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += moundTallnutSledTemplate && economyCount >= state.rows && hasWallnut
                 ? (zombieCount == 0 ? 115 : -160)
                 : 0;
+            // Pea Head/Zomblob uses the sled as a later independent lane
+            // opener, once its rear firing pressure has forced responses.
+            score += peaHeadZomblobGiantTemplate && economyCount >= state.rows
+                    && peaHeadCount >= 2 && zombieCount == 0
+                ? 150
+                : 0;
             break;
         case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
             score += 80 + plantCount * 12 + sustainedOutput / 3 + (hasSnowPea ? 115 : 0) + (hasWallnut ? 80 : 0);
@@ -211,6 +238,12 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score -= openingPeaHeadPhase ? 360 : 0;
             score += impSledSundayTemplate && economyCount >= 3 && economyCount <= state.rows * 2
                 && zombieCount == 0 ? 90 : 0;
+            // Imp/Pail/Sled/Football establishes two graves, then fans out
+            // its cheap pair before converting an already live route with
+            // Football. It never needs to rush the unused Sled first.
+            score += impPailSledFootballTemplate && replayOpeningSpread
+                ? (zombieCount == 0 ? 150 : -160)
+                : 0;
             // In cone/imp/football games the first pails are a measured
             // mid-game reinforcement. Cones and Imps establish the broad
             // pressure first, except where a grave needs a screen now.
@@ -229,6 +262,13 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += (normalNewsSledTemplate || peaHeadZamboniTemplate || moundSkirmishTemplate)
                     && economyCount >= 3 && (hasWallnut || sustainedOutput >= 75 || plantCount >= 3)
                 ? (zombieCount == 0 ? 155 : -185)
+                : 0;
+            // Balloon/Cone/Ladder opens three distinct routes, then Zomboni
+            // converts the first formed nut or firing lane. It is not sent
+            // into an already occupied lane just to reproduce the replay.
+            score += ladderBalloonZamboniTemplate && economyCount >= 2
+                    && (hasWallnut || plantHasNutCard || sustainedOutput >= 65) && zombieCount == 0
+                ? 175
                 : 0;
             break;
         case SeedType::SEED_ZOMBIE_TRASHCAN:
@@ -310,6 +350,18 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
                     && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
                     && areaCounterExposure < 120;
+                const bool replayMoundFootballRelease = moundBungeeFootballTemplate
+                    && seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL && economyCount >= 8
+                    && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
+                    && areaCounterExposure < 120;
+                const bool replayImpFootballRelease = newspaperImpFootballGiantTemplate
+                    && seed == SeedType::SEED_ZOMBIE_GARGANTUAR && economyCount >= state.rows + 2
+                    && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
+                    && areaCounterExposure < 120;
+                const bool replayZomblobGigaRelease = peaHeadZomblobGiantTemplate
+                    && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
+                    && peaHeadCount >= 2 && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
+                    && areaCounterExposure < 120;
                 // Standard Gargantuars can convert a five-grave opening
                 // into pressure; the more expensive variants wait for a
                 // broader rear field. Both still need a real board state
@@ -317,14 +369,19 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 const bool hasMidGameHeavyEconomy = economyCount >= std::max(state.rows * 2, heavyEconomyThreshold - 2)
                     && hasBreakthroughTarget;
                 const bool canCommitHeavy = economyCount >= heavyEconomyThreshold || hasMidGameHeavyEconomy
-                    || earlyHeavyCommit || replayGigaRelease || replayFlagGigaRelease || replayArmoredGigaRelease;
+                    || earlyHeavyCommit || replayGigaRelease || replayFlagGigaRelease || replayArmoredGigaRelease
+                    || replayMoundFootballRelease || replayImpFootballRelease || replayZomblobGigaRelease;
                 score += canCommitHeavy
-                    ? ((hasBreakthroughTarget || earlyHeavyCommit || replayGigaRelease || replayFlagGigaRelease || replayArmoredGigaRelease) ? 285 : 35)
+                    ? ((hasBreakthroughTarget || earlyHeavyCommit || replayGigaRelease || replayFlagGigaRelease || replayArmoredGigaRelease
+                        || replayMoundFootballRelease || replayImpFootballRelease || replayZomblobGigaRelease) ? 285 : 35)
                     : -220;
                 score += earlyHeavyCommit ? 125 : 0;
                 score += replayGigaRelease ? 165 : 0;
                 score += replayFlagGigaRelease ? 155 : 0;
                 score += replayArmoredGigaRelease ? 165 : 0;
+                score += replayMoundFootballRelease ? 165 : 0;
+                score += replayImpFootballRelease ? 145 : 0;
+                score += replayZomblobGigaRelease ? 165 : 0;
                 score += plantCount * 18 + sustainedOutput / 2 + economyValue / 3;
                 score += (hasWallnut ? 135 : 0) + (hasPumpkinShell ? 110 : 0) + (hasBonkChoy ? 100 : 0) + (hasSnowPea ? 75 : 0);
                 score += targetLane.defense >= 150 ? 90 : 0;
@@ -374,6 +431,13 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 && economyCount >= 2 && economyCount <= state.rows && CountActiveZombieRows(state) < std::min(3, state.rows)) {
                 score += zombieCount == 0 ? 185 : -175;
             }
+            // Cone/Newspaper/Imp/Football/Gargantuar opens by fanning a
+            // paper screen and an Imp across separate grave routes. The
+            // later Football and Gargantuar are release cards, not an
+            // incentive to pile screens into the same lane.
+            if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && newspaperImpFootballGiantTemplate && replayOpeningSpread) {
+                score += zombieCount == 0 ? 175 : -165;
+            }
             break;
         case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
             score += 45 + plantCount * 10 + sustainedOutput / 4 + economyValue / 5;
@@ -386,12 +450,21 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // a Magnet-shroom package.
             score += peaHeadFlagBungeeTemplate && economyCount >= 3 && economyCount <= state.rows * 2
                 && peaHeadCount >= 2 ? (zombieCount == 0 ? 130 : -165) : 0;
+            score += ladderBalloonZamboniTemplate && replayOpeningSpread
+                ? (zombieCount == 0 ? 135 : -135)
+                : 0;
+            score += newspaperImpFootballGiantTemplate && replayOpeningSpread
+                ? (zombieCount == 0 ? 120 : -140)
+                : 0;
             break;
         case SeedType::SEED_ZOMBIE_LADDER:
             // Ladders are only a worthwhile commitment against an
             // established nut line; otherwise a cheaper probe is better.
             score += hasWallnut ? 275 : (plantHasNutCard ? 220 : -65);
             score += plantCount * 8 + sustainedOutput / 3 + economyValue / 4;
+            score += ladderBalloonZamboniTemplate && replayOpeningSpread && (hasWallnut || plantHasNutCard)
+                ? 125
+                : 0;
             break;
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
             // Sunday Edition is a release card, but the fast-pressure
@@ -434,9 +507,15 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                     ? (zombieCount == 0 ? 130 : -145)
                     : 0;
             score += seed == SeedType::SEED_ZOMBIE_IMP && normalNewsImpSundayTemplate
-                    && economyCount >= 3 && economyCount <= state.rows + 2
-                    && CountActiveZombieRows(state) < std::min(3, state.rows)
+                && economyCount >= 3 && economyCount <= state.rows + 2
+                && CountActiveZombieRows(state) < std::min(3, state.rows)
                 ? (zombieCount == 0 ? 165 : -175)
+                : 0;
+            score += seed == SeedType::SEED_ZOMBIE_IMP && newspaperImpFootballGiantTemplate && replayOpeningSpread
+                ? (zombieCount == 0 ? 170 : -170)
+                : 0;
+            score += seed == SeedType::SEED_ZOMBIE_IMP && impPailSledFootballTemplate && replayOpeningSpread
+                ? (zombieCount == 0 ? 180 : -180)
                 : 0;
             // Digger is a rear-economic strike, never an opening body.
             // Require a developed producer/carry row before spending it.
@@ -456,6 +535,13 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                     && economyCount >= state.rows && CountActiveZombieRows(state) >= 2
                     && (hasWallnut || sustainedOutput >= 75)
                 ? (zombieCount == 0 ? 155 : -140)
+                : 0;
+            score += newspaperImpFootballGiantTemplate && economyCount >= state.rows
+                    && CountActiveZombieRows(state) >= 2 && (hasWallnut || sustainedOutput >= 65)
+                ? (zombieCount == 0 ? 165 : -150)
+                : 0;
+            score += impPailSledFootballTemplate && economyCount >= 2 && CountActiveZombieRows(state) >= 2
+                ? (zombieCount == 0 ? 175 : -170)
                 : 0;
             score -= areaCounterExposure / 3;
             break;
@@ -507,6 +593,9 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += hasPlants ? 220 : -80;
             score += plantHasHighValueCarryCard ? 260 : -180;
             score += (hasWallnut || hasBonkChoy) ? 85 : 0;
+            // Mound/Bungee/Football holds Bungee until the upgraded grave
+            // base has bought enough time for a real carry to appear.
+            score += moundBungeeFootballTemplate && economyCount >= state.rows && plantHasHighValueCarryCard ? 145 : -120;
             break;
         case SeedType::SEED_ZOMBIE_GRAVESTONE:
             if (economyCount < economyTarget) {
@@ -524,6 +613,11 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += economyCount >= std::max(3, state.rows / 2) ? 220 : -220;
             score += graveThreat;
             score += (moundSkirmishTemplate || moundTallnutSledTemplate) && economyCount >= 3 ? 115 : 0;
+            // The recorded Mound/Bungee line upgrades only after the second
+            // rear grave. Per-mound affordability and protection still come
+            // from FindZombieMoundCell and the outer decision layer.
+            score += moundBungeeFootballTemplate && economyCount >= 2 && economyCount <= state.rows + 2
+                && graveScreenDeficit < 80 && graveThreat < 80 ? 310 : 0;
             break;
         case SeedType::SEED_ZOMBIE_DANCER:
             score += 75 + plantCount * 12 + (graveThreat > 0 ? 35 : 0);
@@ -540,6 +634,19 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             break;
         case SeedType::SEED_ZOMBIE_BALLOON:
             score += 65 + plantCount * 8 + (hasSnowPea ? 75 : 0);
+            score += ladderBalloonZamboniTemplate && replayOpeningSpread
+                ? (zombieCount == 0 ? 185 : -170)
+                : 0;
+            break;
+        case SeedType::SEED_ZOMBIE_ZOMBLOB:
+            // Pea Head/Zomblob first spreads distant damage, then uses the
+            // blob to convert a defended economy lane once multiple routes
+            // are live. A single isolated blob is an expensive donation.
+            score += plantCount * 12 + sustainedOutput / 2 + economyValue / 3;
+            score += peaHeadZomblobGiantTemplate && economyCount >= 3 && peaHeadCount >= 2
+                && CountActiveZombieRows(state) >= 2
+                ? (zombieCount == 0 ? 185 : -170)
+                : 0;
             break;
         default:
             score += plantCount * 7 + sustainedOutput / 4 + economyValue / 4;
