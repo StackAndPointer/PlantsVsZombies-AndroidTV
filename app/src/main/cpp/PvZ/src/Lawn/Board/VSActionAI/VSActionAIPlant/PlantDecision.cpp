@@ -30,7 +30,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     }
 
     const PlantLaneAssessment danger = MostThreatenedPlantLane(state);
-    const int openingIncomeTarget = state.rows >= 6 ? 7 : 6;
+    // Five Sunflowers already fund the low-cost pressure seen in VS. Do not
+    // hold a healthy board at seven merely because more income slots exist.
+    const int openingIncomeTarget = state.rows >= 6 ? 5 : 4;
     const int minimumIncomeBeforeOutput = state.rows >= 6 ? 4 : 3;
     const int incomePlantCount = CountPlantIncome(state);
     const int sustainedOutputCount = CountSustainedOutputPlants(state);
@@ -47,12 +49,25 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const PlantLaneFirepower counterFirepower = AssessPlantLaneFirepower(state, counterRow);
     int firepowerRow = counterRow;
     int largestFirepowerDeficit = counterFirepower.deficit;
+    int contestedZombieRows = 0;
+    int unholdableZombieRows = 0;
+    int incomingZombieHealth = 0;
+    int damageBeforeZombieContact = 0;
     for (int row = 0; row < state.rows; ++row) {
         const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
         if (firepower.deficit > largestFirepowerDeficit
             || (firepower.deficit == largestFirepowerDeficit && !firepower.canHold && row != counterRow)) {
             firepowerRow = row;
             largestFirepowerDeficit = firepower.deficit;
+        }
+        if (firepower.incomingHealth <= 0) {
+            continue;
+        }
+        ++contestedZombieRows;
+        incomingZombieHealth += firepower.incomingHealth;
+        damageBeforeZombieContact += firepower.damageBeforeContact;
+        if (!firepower.canHold || firepower.deficit > 0) {
+            ++unholdableZombieRows;
         }
     }
     const PlantLaneFirepower weakestFirepower = AssessPlantLaneFirepower(state, firepowerRow);
@@ -99,6 +114,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const int areaCounterReserve = PlantAIPlanning::AreaCounterReserve(state);
     const bool hasEconomyPressurePlan = PlantAIPlanning::HasEconomyPressurePlan(state);
     const int incomeExpansionTarget = state.isSuddenDeath ? 0 : PlantAIPlanning::EconomyPressureIncomeTarget(state);
+    const bool midGame = state.boardTick >= 32000 || CountZombieEconomy(state) >= state.rows;
+    const bool pressureOutrunsFirepower = hasActiveZombie && (unholdableZombieRows > 0
+        || (contestedZombieRows >= 2 && damageBeforeZombieContact < incomingZombieHealth));
     const bool immediateCounterThreat = squashThreat || impPearThreat || mowerlessThirdColumnEmergency;
     const bool mustHoldCounterReserve = areaCounterReserve > 0 && state.plantSun >= areaCounterReserve
         && HasReadyZombieBreakthroughCard(state);
@@ -119,7 +137,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     if (!state.isSuddenDeath && incomePlantCount >= openingIncomeTarget) {
         desiredOutputCount = std::max(desiredOutputCount, std::min(maximumOutputCount, state.rows + 1));
     }
-    if (!state.isSuddenDeath && state.plantSun >= 200) {
+    if (!state.isSuddenDeath && state.plantSun >= 125) {
         const int reserveOutputTarget = state.rows + (state.plantSun >= 350 ? 2 : 1);
         desiredOutputCount = std::max(desiredOutputCount, std::min(maximumOutputCount, reserveOutputTarget));
     }
@@ -135,9 +153,20 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const bool needsSustainedOutput = hasSustainedOutputSeed
         && (sustainedOutputCount < desiredOutputCount || (hasActiveZombie && largestFirepowerDeficit > 0));
     const int highSunCombatTarget = std::min(maximumOutputCount, state.rows + (state.plantSun >= 350 ? 2 : 1));
-    const bool highSunCombatPressure = !state.isSuddenDeath && state.plantSun >= 200
+    const bool highSunCombatPressure = !state.isSuddenDeath && state.plantSun >= 125
         && incomePlantCount >= minimumIncomeBeforeOutput && (hasCombatSeed || hasSustainedOutputSeed)
         && (combatPlantCount < highSunCombatTarget || needsSustainedOutput || largestFirepowerDeficit > 0);
+    const bool readySustainedOutput = PlantAIPlanning::HasReadySustainedOutputCard(state, protectedSun);
+    // Five Sunflowers are a compact opening base, not a permanent command to
+    // stop farming.  Once the match is in its grave-economy phase, however,
+    // every contested lane must be able to remove its incoming health before
+    // contact before another Sunflower is considered.  This keeps the
+    // decision tied to real lane DPS and zombie health rather than a fixed
+    // producer count.
+    const bool outputTempoHasPriority = incomePlantCount >= openingIncomeTarget && needsSustainedOutput
+        && readySustainedOutput && (pressureOutrunsFirepower || midGame);
+    const bool mayExpandIncomePastOpening = incomePlantCount < openingIncomeTarget || !midGame
+        || (!pressureOutrunsFirepower && (!needsSustainedOutput || !readySustainedOutput));
 
     // The recorded plant side builds its sun base first, then answers a real
     // heavy/fast push with Squash. It is never an opening filler card.
@@ -404,10 +433,11 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     // The replay keeps adding Sunflowers after early probes arrive. Once
     // the opening base exists, continue that expansion whenever no lane
     // needs an instant counter instead of freezing income at six plants.
-    const bool canExpandIncome = (danger.danger < 105 || (counterCombatPlants > 0 && danger.danger < 140))
+    const bool canExpandIncome = mayExpandIncomePastOpening
+        && (danger.danger < 105 || (counterCombatPlants > 0 && danger.danger < 140))
         && (counterFirepower.canHold || weakestFirepower.closestDistance > 760);
     if (hasIncomeSeed && hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && canExpandIncome
-        && !highSunCombatPressure) {
+        && !highSunCombatPressure && !outputTempoHasPriority) {
         if (needsSustainedOutput) {
             if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun)) {
                 return action;
@@ -430,7 +460,8 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
                 return action;
             }
         }
-        if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget && !highSunCombatPressure) {
+        if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget && !highSunCombatPressure
+            && !outputTempoHasPriority && mayExpandIncomePastOpening) {
             if (std::optional<VSAction> action = PlantAIPlanning::TryIncomePlant(state, buildRow, protectedSun)) {
                 return action;
             }
@@ -506,7 +537,8 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             return action;
         }
     }
-    if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget && !highSunCombatPressure) {
+    if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget && !highSunCombatPressure
+        && !outputTempoHasPriority && mayExpandIncomePastOpening) {
         return PlantAIPlanning::TryIncomePlant(state, buildRow, protectedSun);
     }
     return PlantAIPlanning::TryFallbackPlant(state, danger, buildRow);

@@ -170,7 +170,9 @@ std::optional<VSAction> PlantAIPlanning::TrySquashHeadDistraction(const VSGameSt
     const int squashColumn = std::clamp(static_cast<int>((squashHead->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
     int protectedColumn = -1;
     for (const VSPlantState &plant : state.plants) {
-        if (IsDeadOrOutside(plant) || plant.position.row != row || plant.position.col >= squashColumn || PlantValueScore(plant) < 140) {
+        const SeedType seed = static_cast<SeedType>(plant.seedType);
+        const bool valuableOutput = IsSustainedOutputSeed(seed) || PlantValueScore(plant) >= 120;
+        if (IsDeadOrOutside(plant) || plant.position.row != row || plant.position.col >= squashColumn || !valuableOutput) {
             continue;
         }
         protectedColumn = std::max(protectedColumn, static_cast<int>(plant.position.col));
@@ -181,7 +183,9 @@ std::optional<VSAction> PlantAIPlanning::TrySquashHeadDistraction(const VSGameSt
 
     for (const SeedType seed : {SeedType::SEED_SUNSHROOM, SeedType::SEED_PUFFSHROOM, SeedType::SEED_SUNFLOWER}) {
         const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seed);
-        if (card == nullptr || card->cost > 75 || state.plantSun - card->cost < protectedSun) {
+        const bool disposablePad = seed == SeedType::SEED_SUNSHROOM || seed == SeedType::SEED_PUFFSHROOM;
+        if (card == nullptr || card->cost > 75 || state.plantSun < card->cost
+            || (!disposablePad && state.plantSun - card->cost < protectedSun)) {
             continue;
         }
         for (int column = squashColumn; column > protectedColumn; --column) {

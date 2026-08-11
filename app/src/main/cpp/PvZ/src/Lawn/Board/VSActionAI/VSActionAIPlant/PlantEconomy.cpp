@@ -387,25 +387,50 @@ int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const
         hasCrossLaneOutput = hasCrossLaneOutput || seed == SeedType::SEED_STARFRUIT || seed == SeedType::SEED_THREEPEATER;
     }
 
-    // Build enough income to afford the selected carry, but shorten the
-    // farming phase as the zombie grave economy grows. The exact target is
-    // therefore a function of board phase, grave count, and carry price,
-    // rather than a fixed six/ten-Sunflower cutoff.
-    int target = state.rows + 1;
+    int contestedZombieRows = 0;
+    int unholdableZombieRows = 0;
+    int incomingZombieHealth = 0;
+    int damageBeforeZombieContact = 0;
+    for (int row = 0; row < state.rows; ++row) {
+        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+        if (firepower.incomingHealth <= 0) {
+            continue;
+        }
+        ++contestedZombieRows;
+        incomingZombieHealth += firepower.incomingHealth;
+        damageBeforeZombieContact += firepower.damageBeforeContact;
+        if (!firepower.canHold || firepower.deficit > 0) {
+            ++unholdableZombieRows;
+        }
+    }
+
+    // Five Sunflowers on a six-row board (four on smaller boards) finance
+    // the normal VS opening.  A sixth producer is allowed only for a costly
+    // carry on a quiet, covered board; the target must not quietly grow to
+    // ten while the enemy builds grave pressure.
+    const int compactTarget = state.rows >= 6 ? 5 : 4;
+    int target = compactTarget;
     const int graveCount = CountZombieEconomy(state);
     const int phase = static_cast<int>(state.boardTick / 16000);
-    target += std::min(2, phase);
-    target += primaryOutputCost >= 150 ? 2 : (primaryOutputCost >= 100 ? 1 : 0);
-    target += state.plantSun >= primaryOutputCost + 100 ? 1 : 0;
-    target += graveCount <= state.rows ? 1 : 0;
-    target -= std::max(0, graveCount - state.rows) / 2;
-    target -= hasGraveBuster ? 1 : 0;
-    target -= hasCrossLaneOutput ? 1 : 0;
-    target += cheapestOutputCost >= 125 ? 1 : 0;
-    target += cheapestOutputCost == std::numeric_limits<int>::max() ? 1 : 0;
-    // Ten producers is the upper economic limit seen in the recordings;
-    // late grave pressure should move the agent below that ceiling.
-    return std::clamp(target, std::max(3, state.rows - 1), std::min(10, state.rows * 2));
+    const bool midGame = phase >= 2 || graveCount >= state.rows;
+    const bool pressureOutrunsFirepower = unholdableZombieRows > 0
+        || (contestedZombieRows >= 2 && damageBeforeZombieContact < incomingZombieHealth);
+    const bool boardCanSafelyGrow = contestedZombieRows == 0 || !pressureOutrunsFirepower;
+    const int outputCount = CountSustainedOutputPlants(state);
+
+    if (boardCanSafelyGrow && primaryOutputCost >= 150 && (!midGame || outputCount >= std::max(2, state.rows / 2))) {
+        ++target;
+    }
+    if (boardCanSafelyGrow && !midGame && primaryOutputCost >= 225 && state.plantSun < primaryOutputCost) {
+        ++target;
+    }
+    if (hasGraveBuster || hasCrossLaneOutput || graveCount > state.rows || pressureOutrunsFirepower) {
+        --target;
+    }
+    if (cheapestOutputCost == std::numeric_limits<int>::max()) {
+        ++target;
+    }
+    return std::clamp(target, std::max(3, compactTarget - 1), compactTarget + 1);
 }
 
 } // namespace vsai::detail

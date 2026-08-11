@@ -295,6 +295,20 @@ VSGridPosition FindSpikeweedCell(const VSGameState &state, int row) {
     if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
         return {};
     }
+
+    const VSPlantState *frontBarrier = nullptr;
+    for (const VSPlantState &plant : state.plants) {
+        if (IsDeadOrOutside(plant) || plant.position.row != row
+            || (plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_WALLNUT)
+                && plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_TALLNUT)
+                && plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_PUMPKINSHELL))) {
+            continue;
+        }
+        if (frontBarrier == nullptr || plant.position.col > frontBarrier->position.col) {
+            frontBarrier = &plant;
+        }
+    }
+
     const VSZombieState *zamboni = nullptr;
     for (const VSZombieState &zombie : state.zombies) {
         if (zombie.dead || zombie.row != row || zombie.zombieType != static_cast<std::uint16_t>(ZombieType::ZOMBIE_ZAMBONI)) {
@@ -306,12 +320,13 @@ VSGridPosition FindSpikeweedCell(const VSGameState &state, int row) {
     }
     if (zamboni != nullptr && zamboni->positionX <= 760.0f) {
         const int zamboniColumn = std::clamp(static_cast<int>((zamboni->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
-        // Zomboni creates an unplantable trail behind itself. Plant directly
-        // under it when possible, then one or two cells in its path so the
-        // Spikeweed is consumed by the vehicle instead of waiting for a nut.
-        for (const int offset : {0, -1, -2}) {
+        const int barrierColumn = frontBarrier == nullptr ? -1 : static_cast<int>(frontBarrier->position.col);
+        // The tile one step along the vehicle's travel path is the front
+        // response. Never spend Spikeweed behind a Wall-nut or Pumpkin just
+        // because the Zomboni's ice trail made the correct front tile fail.
+        for (const int offset : {-1, -2}) {
             const int column = zamboniColumn + offset;
-            if (column < 0) {
+            if (column <= barrierColumn || column < 0) {
                 continue;
             }
             const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
@@ -326,33 +341,20 @@ VSGridPosition FindSpikeweedCell(const VSGameState &state, int row) {
         return {};
     }
 
-    const VSPlantState *bestWall = nullptr;
-    for (const VSPlantState &plant : state.plants) {
-        if (IsDeadOrOutside(plant) || plant.position.row != row
-            || (plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_WALLNUT)
-                && plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_TALLNUT))) {
-            continue;
-        }
-        if (bestWall == nullptr || plant.position.col > bestWall->position.col) {
-            bestWall = &plant;
-        }
-    }
-    if (bestWall == nullptr || bestWall->position.col >= 5) {
+    if (frontBarrier == nullptr || frontBarrier->position.col >= 5) {
         return {};
     }
-    // Zombies enter from the right. Spikeweed belongs on the zombie side of
-    // a Wall-nut so every attacker crosses it before chewing the wall, never
-    // on the plant-side cell behind the wall.
-    for (int column = static_cast<int>(bestWall->position.col) + 1; column <= 5; ++column) {
-        const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
-        const float cellCenterX = PlantCellCenterX(target);
-        const bool willBeCrossed = std::any_of(state.zombies.begin(), state.zombies.end(), [row, cellCenterX](const VSZombieState &zombie) {
-            return !zombie.dead && !zombie.mindControlled && zombie.row == row && zombie.positionX >= cellCenterX - 20.0f;
-        });
-        if (willBeCrossed && IsPlantableVSTile(state, target) && !HasPlantAt(state, target) && !HasGridItemAt(state, target)
-            && IsPlantPlacementSafe(state, SeedType::SEED_SPIKEWEED, target)) {
-            return target;
-        }
+    // For a normal push, place exactly one tile on the zombie-facing side
+    // of the barrier. A more distant tile is not a substitute: it can be
+    // bypassed or leave a gap immediately in front of the defensive line.
+    const VSGridPosition target{static_cast<std::int8_t>(frontBarrier->position.col + 1), static_cast<std::int8_t>(row)};
+    const float cellCenterX = PlantCellCenterX(target);
+    const bool willBeCrossed = std::any_of(state.zombies.begin(), state.zombies.end(), [row, cellCenterX](const VSZombieState &zombie) {
+        return !zombie.dead && !zombie.mindControlled && zombie.row == row && zombie.positionX >= cellCenterX - 20.0f;
+    });
+    if (willBeCrossed && IsPlantableVSTile(state, target) && !HasPlantAt(state, target) && !HasGridItemAt(state, target)
+        && IsPlantPlacementSafe(state, SeedType::SEED_SPIKEWEED, target)) {
+        return target;
     }
     return {};
 }
