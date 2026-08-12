@@ -26,7 +26,11 @@ bool IsDecisiveCounterZombie(std::uint16_t zombieType);
 bool HasZombieTypeInRow(const VSGameState &state, int row, ZombieType zombieType);
 bool HasMindControlledZombieInRow(const VSGameState &state, int row);
 bool IsMowerInMotion(const VSGameState &state, int row);
+// This deliberately does not depend on mower state. Once a zombie reaches
+// column zero, any additional zombie-side deployment in the lane is wasted.
+bool HasZombieInHomeColumn(const VSGameState &state, int row);
 bool IsMowerAboutToTrigger(const VSGameState &state, int row);
+bool IsNutBypassZombieApproaching(const VSGameState &state, int row);
 int CountLivePlants(const VSGameState &state);
 int CountPlantIncome(const VSGameState &state);
 

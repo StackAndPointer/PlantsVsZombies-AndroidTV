@@ -107,6 +107,7 @@ bool IsHeavyZombie(std::uint16_t zombieType) {
         case ZombieType::ZOMBIE_FOOTBALL:
         case ZombieType::ZOMBIE_BOBSLED:
         case ZombieType::ZOMBIE_ZAMBONI:
+        case ZombieType::ZOMBIE_CATAPULT:
         case ZombieType::ZOMBIE_GARGANTUAR:
         case ZombieType::ZOMBIE_WALLNUT_HEAD:
         case ZombieType::ZOMBIE_GIGA_FOOTBALL:
@@ -168,6 +169,17 @@ bool IsMowerInMotion(const VSGameState &state, int row) {
         && state.mowerInMotion[static_cast<std::size_t>(row)];
 }
 
+bool HasZombieInHomeColumn(const VSGameState &state, int row) {
+    if (row < 0 || row >= state.rows) {
+        return false;
+    }
+
+    constexpr float kHomeColumnX = static_cast<float>(LAWN_XMIN + 80);
+    return std::any_of(state.zombies.begin(), state.zombies.end(), [row](const VSZombieState &zombie) {
+        return !zombie.dead && !zombie.mindControlled && zombie.row == row && zombie.positionX <= kHomeColumnX;
+    });
+}
+
 bool IsMowerAboutToTrigger(const VSGameState &state, int row) {
     if (row < 0 || row >= state.rows || row >= static_cast<int>(state.mowerAvailable.size())
         || !state.mowerAvailable[static_cast<std::size_t>(row)]) {
@@ -176,9 +188,31 @@ bool IsMowerAboutToTrigger(const VSGameState &state, int row) {
 
     // Do not feed a fresh zombie into a lane once an invader has entered the
     // first plant column. The ready mower will clear the whole lane shortly.
-    constexpr float kMowerTriggerApproachX = static_cast<float>(LAWN_XMIN + 80);
+    return HasZombieInHomeColumn(state, row);
+}
+
+bool IsNutBypassZombieApproaching(const VSGameState &state, int row) {
+    if (row < 0 || row >= state.rows) {
+        return false;
+    }
+
+    constexpr float kApproachingHeavyX = 760.0f;
     return std::any_of(state.zombies.begin(), state.zombies.end(), [row](const VSZombieState &zombie) {
-        return !zombie.dead && !zombie.mindControlled && zombie.row == row && zombie.positionX <= kMowerTriggerApproachX;
+        if (zombie.dead || zombie.mindControlled || zombie.row != row) {
+            return false;
+        }
+        switch (static_cast<ZombieType>(zombie.zombieType)) {
+            case ZombieType::ZOMBIE_ZAMBONI:
+                // An ice trail makes walls a losing response even before the
+                // vehicle enters the normal close-range threshold.
+                return true;
+            case ZombieType::ZOMBIE_GARGANTUAR:
+            case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
+            case ZombieType::ZOMBIE_CATAPULT:
+                return zombie.positionX <= kApproachingHeavyX;
+            default:
+                return false;
+        }
     });
 }
 

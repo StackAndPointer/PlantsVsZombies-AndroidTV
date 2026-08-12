@@ -227,7 +227,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     for (int row = 0; row < state.rows; ++row) {
         const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
             && !state.mowerAvailable[static_cast<std::size_t>(row)];
-        if (!IsMowerInMotion(state, row) && !IsMowerAboutToTrigger(state, row)
+        if (!IsMowerInMotion(state, row) && !HasZombieInHomeColumn(state, row) && !IsMowerAboutToTrigger(state, row)
             && (!IsMowerlessStrongPlantLane(state, row) || mowerGone || allMowersSpent)
             && HasLiveZombieTargetInRow(state, row) && CountZombiesInRow(state, row) == 0 && EconomyPlantsInRow(state, row) > 0) {
             ++unpressuredEconomyRows;
@@ -255,7 +255,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             // The mower sweep makes every zombie-side action in this row
             // disposable. Do not spend a body, Bungee, grave, or screen
             // while it is moving, nor after an invader reaches column 0.
-            if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
+            if (IsMowerInMotion(state, row) || HasZombieInHomeColumn(state, row) || IsMowerAboutToTrigger(state, row)) {
                 continue;
             }
             const int effectiveCost = static_cast<SeedType>(card.seedType) == SeedType::SEED_ZOMBIE_MOUND
@@ -267,8 +267,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             const int zombiesInRow = CountZombiesInRow(state, row);
             const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
                 && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row);
-            const bool pursueBrokenMowerRow = mowerGone
-                && CountPlantsInRow(state, row) > 0 && HasLiveZombieTargetInRow(state, row);
+            const bool pursueBrokenMowerRow = mowerGone && HasLiveZombieTargetInRow(state, row);
             // A destroyed zombie target cannot be recovered by spending more
             // bodies in its row. The normal marker-less VS boards retain all
             // rows through HasLiveZombieTargetInRow's compatibility path.
@@ -367,7 +366,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // A cleared mower lane is a live conversion route. Keep
                 // pressure there while the independent grave-defense path
                 // continues to protect the zombie economy.
-                score += 680;
+                score += 920;
             }
             if (bestCard == nullptr || score > bestScore) {
                 bestCard = &card;

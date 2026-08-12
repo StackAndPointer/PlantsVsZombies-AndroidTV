@@ -400,7 +400,7 @@ int EconomyPlantsInRow(const VSGameState &state, int row) {
 }
 
 int ZombieLaneAttackScore(const VSGameState &state, int row) {
-    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
+    if (IsMowerInMotion(state, row) || HasZombieInHomeColumn(state, row) || IsMowerAboutToTrigger(state, row)) {
         // A triggered mower or an intruder already in column zero makes this
         // row a guaranteed whole-lane clear, not an attack opportunity.
         return std::numeric_limits<int>::min() / 4;
@@ -430,14 +430,14 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
     score += !firepower.canHold && firepower.nearHealth > 0 ? 80 : 0;
 
     const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
-        && !state.mowerAvailable[static_cast<std::size_t>(row)] && assessment.plantCount > 0;
+        && !state.mowerAvailable[static_cast<std::size_t>(row)];
     const bool allMowersSpent = AllMowersSpent(state);
     if (mowerGone) {
         // A spent mower means this route can now win by reaching the house.
         // Reopen it even after the mower cleared the first probe; otherwise
         // the AI keeps spending attacks merely to trigger every remaining
         // mower instead of converting the first opening into a victory.
-        score += zombieCount > 0 ? 760 : 650;
+        score += zombieCount > 0 ? 920 : 810;
         score += allMowersSpent ? 120 : 0;
     }
 
@@ -445,7 +445,7 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
     // additional zombies in that lane receive a progressively larger penalty.
     const bool pursuingMowerlessLane = mowerGone && !IsMowerInMotion(state, row);
     if (zombieCount == 0) {
-        score += mowerGone ? 320 : 150;
+        score += mowerGone ? 410 : 150;
     } else if (zombieCount == 1) {
         score += pursuingMowerlessLane ? 60 : -115;
     } else {

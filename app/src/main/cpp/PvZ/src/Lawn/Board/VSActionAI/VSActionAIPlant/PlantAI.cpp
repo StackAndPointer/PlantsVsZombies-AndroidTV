@@ -207,6 +207,10 @@ std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &stat
     if (card == nullptr || totalCost == std::numeric_limits<int>::max() || state.plantSun < totalCost) {
         return std::nullopt;
     }
+    if ((seedType == SeedType::SEED_WALLNUT || seedType == SeedType::SEED_TALLNUT || seedType == SeedType::SEED_PUMPKINSHELL)
+        && IsNutBypassZombieApproaching(state, row)) {
+        return std::nullopt;
+    }
     const VSGridPosition target = seedType == SeedType::SEED_WALLNUT || seedType == SeedType::SEED_TALLNUT
         ? FindWallnutCell(state, row, firstColumn, lastColumn)
         : (requireExactRow ? FindPlantCellInExactRow(state, row, firstColumn, lastColumn)

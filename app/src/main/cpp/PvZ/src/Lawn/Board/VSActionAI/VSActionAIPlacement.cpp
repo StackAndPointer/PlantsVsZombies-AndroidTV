@@ -323,9 +323,10 @@ VSGridPosition FindWallnutCell(const VSGameState &state, int row, int firstColum
     if (row < 0 || row >= state.rows) {
         return {};
     }
-    // A Zomboni deletes normal plants and leaves an unplantable ice trail;
-    // walls are never a meaningful answer in that lane.
-    if (HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_ZAMBONI)) {
+    // Giants flatten walls, Zamboni destroys them and leaves an ice trail,
+    // and a close Catapult shoots over the investment. Save nut-class cards
+    // for a lane where they can actually establish a front line.
+    if (IsNutBypassZombieApproaching(state, row)) {
         return {};
     }
     firstColumn = std::clamp(firstColumn, 0, 5);
@@ -436,11 +437,14 @@ int ZombiePlacementColumn(SeedType seed) {
 
 VSGridPosition FindZombieCell(const VSGameState &state, SeedType seed, int row) {
     row = std::clamp(row, 0, std::max(0, state.rows - 1));
+    if (HasZombieInHomeColumn(state, row)) {
+        return {};
+    }
     return {static_cast<std::int8_t>(ZombiePlacementColumn(seed)), static_cast<std::int8_t>(row)};
 }
 
 bool CanInvestZombieEconomyInRow(const VSGameState &state, int row) {
-    if (IsMowerInMotion(state, row) || IsMowerAboutToTrigger(state, row)) {
+    if (IsMowerInMotion(state, row) || HasZombieInHomeColumn(state, row) || IsMowerAboutToTrigger(state, row)) {
         return false;
     }
     // Once a mower is gone, a developed/high-DPS plant lane is usually the

@@ -22,7 +22,7 @@ std::optional<VSAction> PlantAIPlanning::TryPumpkinShell(const VSGameState &stat
         return std::nullopt;
     }
 
-    if (HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_ZAMBONI)) {
+    if (IsNutBypassZombieApproaching(state, row)) {
         return std::nullopt;
     }
     const float triggerDistance = IsHeavyZombie(closest->zombieType) || IsDecisiveCounterZombie(closest->zombieType) ? 660.0f : 580.0f;
@@ -55,7 +55,7 @@ bool PlantAIPlanning::ShouldDeployWallnut(const VSGameState &state, int row) con
         || HasPlantTypeInRow(state, SeedType::SEED_PUMPKINSHELL, row)) {
         return false;
     }
-    if (HasZombieTypeInRow(state, row, ZombieType::ZOMBIE_ZAMBONI)) {
+    if (IsNutBypassZombieApproaching(state, row)) {
         return false;
     }
 
