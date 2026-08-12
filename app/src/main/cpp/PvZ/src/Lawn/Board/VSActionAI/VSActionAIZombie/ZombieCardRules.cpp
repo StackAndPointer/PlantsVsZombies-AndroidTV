@@ -247,12 +247,12 @@ bool IsZombieTemplatePhaseAvailable(const ZombieTemplateProfile &profile, const 
                 && activePressureRows < tempo.OpeningPressureRowTarget(std::min(plan->openingRowTarget, rows), rows);
         case ZombieTemplatePhase::Conversion:
             return plan->conversionSeed == seed
-                && economyCount >= plan->conversionEconomyFloor - (tempo.IsEnhanced() ? 1 : 0)
-                && activePressureRows >= std::max(0, plan->conversionMinPressureRows - (tempo.IsEnhanced() ? 1 : 0));
+                && economyCount >= tempo.CommitEconomyFloor(plan->conversionEconomyFloor)
+                && tempo.HasCommitPressure(activePressureRows, plan->conversionMinPressureRows, rows);
         case ZombieTemplatePhase::Finisher:
             return plan->finisherSeed == seed
-                && economyCount >= plan->finisherEconomyFloor - (tempo.IsEnhanced() ? 1 : 0)
-                && activePressureRows >= std::max(1, plan->finisherMinPressureRows - (tempo.IsEnhanced() ? 1 : 0));
+                && economyCount >= tempo.CommitEconomyFloor(plan->finisherEconomyFloor)
+                && tempo.HasAttackCommitPressure(activePressureRows, plan->finisherMinPressureRows, rows);
         default:
             return false;
     }
@@ -301,13 +301,15 @@ int ZombieTempoPolicy::EffectiveEconomyCount(int actualCount) const {
     return mEnhanced ? EffectiveAIEconomyCount(VSSide::Zombies, actualCount) : actualCount;
 }
 
-int ZombieTempoPolicy::EconomyTarget(int baseline, int rows) const {
+int ZombieTempoPolicy::EconomyTarget(int baseline, int rows, int activePressureRows) const {
     // Enhanced AI accelerates its transition from grave construction to
     // pressure. EffectiveEconomyCount contributes the first stage; this
     // target is the second stage which keeps the repair branch from pulling
     // the agent back into a full rear-field rebuild after it has opened
     // several routes.
-    return std::max(rows, baseline - (mEnhanced ? 2 : 0));
+    const int establishedPressureReduction = mEnhanced
+        && HasAttackCommitPressure(activePressureRows, 2, rows) ? 1 : 0;
+    return std::max(rows, baseline - (mEnhanced ? 2 + establishedPressureReduction : 0));
 }
 
 int ZombieTempoPolicy::OpeningEconomyFloor(int baseline) const {
@@ -322,8 +324,32 @@ int ZombieTempoPolicy::OpeningPressureRowTarget(int baseline, int rows) const {
     return mEnhanced ? std::min(rows, baseline + 1) : baseline;
 }
 
+int ZombieTempoPolicy::CommitPressureRowTarget(int baseline, int rows) const {
+    return std::clamp(baseline - (mEnhanced ? 1 : 0), 0, rows);
+}
+
+int ZombieTempoPolicy::AttackCommitPressureRowTarget(int baseline, int rows) const {
+    return std::max(1, CommitPressureRowTarget(baseline, rows));
+}
+
+bool ZombieTempoPolicy::HasCommitPressure(int activePressureRows, int baseline, int rows) const {
+    return activePressureRows >= CommitPressureRowTarget(baseline, rows);
+}
+
+bool ZombieTempoPolicy::HasAttackCommitPressure(int activePressureRows, int baseline, int rows) const {
+    return activePressureRows >= AttackCommitPressureRowTarget(baseline, rows);
+}
+
+int ZombieTempoPolicy::CommitEconomyFloor(int baseline) const {
+    return std::max(1, baseline - (mEnhanced ? 1 : 0));
+}
+
 int ZombieTempoPolicy::HeavyBankEconomyThreshold(int rows, int heavyEconomyThreshold) const {
     return std::max(rows + (mEnhanced ? 1 : 2), heavyEconomyThreshold - (mEnhanced ? 3 : 2));
+}
+
+int ZombieTempoPolicy::HeavyCommitEconomyThreshold(int rows, int heavyEconomyThreshold) const {
+    return std::max(rows * 2, heavyEconomyThreshold - (mEnhanced ? 3 : 2));
 }
 
 int ZombieTempoPolicy::EconomyRepairDeficitThreshold() const {

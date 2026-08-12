@@ -113,7 +113,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     // graves only when multiple routes already tax the plant player.
     const bool bankForHeavy = heavyZombieReserve >= 100
         && economyCount >= tempo.HeavyBankEconomyThreshold(state.rows, heavyEconomyThreshold)
-        && activePressureRows >= 2 && CountLivePlants(state) >= state.rows && graveDefenseScore < 100;
+        && tempo.HasAttackCommitPressure(activePressureRows, 2, state.rows)
+        && CountLivePlants(state) >= state.rows && graveDefenseScore < 100;
     const int minimumOpeningEconomy = tempo.OpeningEconomyFloor(std::min(2, std::max(1, state.rows)));
     const int desiredOpeningRows = tempo.OpeningPressureRowTarget(std::min(3, state.rows), state.rows);
     const bool hasReadyFrontlineProbe = ZombieAIPlanning::HasReadyFrontlineProbe(state);
@@ -370,7 +371,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // Do not keep feeding the same lane while another lane can
                 // accept a zombie. This penalty is intentionally skipped
                 // during urgent grave defense.
-                score -= activePressureRows >= 2 ? 210 : 125;
+                score -= tempo.HasAttackCommitPressure(activePressureRows, 2, state.rows) ? 210 : 125;
             }
             if (pursueBrokenMowerRow && !IsZombieEconomySeed(seed) && !IsZombieTargetedSeed(seed)) {
                 // A cleared mower lane is a live conversion route. Keep

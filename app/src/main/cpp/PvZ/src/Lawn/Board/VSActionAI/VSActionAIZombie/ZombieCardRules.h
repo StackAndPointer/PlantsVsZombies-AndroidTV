@@ -64,6 +64,7 @@ struct ZombieTemplateProfile {
 struct ZombieTemplateTacticalState {
     int economyCount = 0;
     int activePressureRows = 0;
+    int attackCommitPressureRows = 0;
     int zombiesInRow = 0;
     int rows = 0;
     int peaHeadCount = 0;
@@ -94,11 +95,17 @@ public:
 
     bool IsEnhanced() const;
     int EffectiveEconomyCount(int actualCount) const;
-    int EconomyTarget(int baseline, int rows) const;
+    int EconomyTarget(int baseline, int rows, int activePressureRows) const;
     int OpeningEconomyFloor(int baseline) const;
     int OpeningEconomyCeiling(int baseline) const;
     int OpeningPressureRowTarget(int baseline, int rows) const;
+    int CommitPressureRowTarget(int baseline, int rows) const;
+    int AttackCommitPressureRowTarget(int baseline, int rows) const;
+    bool HasCommitPressure(int activePressureRows, int baseline, int rows) const;
+    bool HasAttackCommitPressure(int activePressureRows, int baseline, int rows) const;
+    int CommitEconomyFloor(int baseline) const;
     int HeavyBankEconomyThreshold(int rows, int heavyEconomyThreshold) const;
+    int HeavyCommitEconomyThreshold(int rows, int heavyEconomyThreshold) const;
     int EconomyRepairDeficitThreshold() const;
     int PressureRepairDeficitTolerance() const;
     std::uint8_t LaneAttackCooldown(SeedType seed) const;

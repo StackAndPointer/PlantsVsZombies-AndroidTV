@@ -88,11 +88,13 @@ bool ZombieAIPlanning::IsEarlyHeavyCommitCard(const VSGameState &state, SeedType
         return true;
     }
     if (seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER && replayFanPoleTemplate
-        && context.economyCount >= 3 && context.activePressureRows >= 2 && livePlants >= state.rows) {
+        && context.economyCount >= 3 && context.tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
+        && livePlants >= state.rows) {
         return true;
     }
     if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && replayFlagGigaTemplate
-        && context.economyCount >= 8 && context.activePressureRows >= 2 && livePlants >= state.rows) {
+        && context.economyCount >= 8 && context.tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
+        && livePlants >= state.rows) {
         return true;
     }
     // The Normal/Trashcan/Dog replay banks behind protected graves until
@@ -100,13 +102,16 @@ bool ZombieAIPlanning::IsEarlyHeavyCommitCard(const VSGameState &state, SeedType
     // into the first Giga Gargantuar. This is earlier than the generic
     // finisher threshold, but still needs two live routes and a real board.
     if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && replayArmoredNormalTemplate
-        && context.economyCount >= 8 && context.activePressureRows >= 2 && livePlants >= state.rows) {
+        && context.economyCount >= 8 && context.tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
+        && livePlants >= state.rows) {
         return true;
     }
-    if (context.activePressureRows < 2 || livePlants < state.rows) {
+    if (!context.tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows) || livePlants < state.rows) {
         return false;
     }
-    const int minimumEconomy = seed == SeedType::SEED_ZOMBIE_GARGANTUAR ? state.rows : std::max(state.rows * 2, state.rows + 3);
+    const int minimumEconomy = seed == SeedType::SEED_ZOMBIE_GARGANTUAR
+        ? context.tempo.CommitEconomyFloor(state.rows)
+        : context.tempo.CommitEconomyFloor(std::max(state.rows * 2, state.rows + 3));
     return context.economyCount >= minimumEconomy;
 }
 

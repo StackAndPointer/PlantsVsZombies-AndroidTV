@@ -12,6 +12,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const SeedType seed = static_cast<SeedType>(card.seedType);
     const ZombieTempoPolicy &tempo = context.tempo;
     const int economyCount = context.economyCount;
+    const int commitEconomyFloor = tempo.CommitEconomyFloor(state.rows);
     const bool hasPlants = std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); });
     const bool hasSnowPea = HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, targetRow);
     const bool hasBonkChoy = HasPlantTypeInRow(state, SeedType::SEED_BONK_CHOY, targetRow);
@@ -93,7 +94,8 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     // Bungee remains reserved for a legal high-value target by its separate
     // target filter.
     const bool peaHeadFlagRelease = peaHeadFlagBungeeTemplate && economyCount >= state.rows * 2
-        && peaHeadCount >= std::min(3, state.rows) && context.activePressureRows >= 2
+        && peaHeadCount >= std::min(3, state.rows)
+        && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
         && areaCounterExposure < 120;
     const bool replayOpeningSpread = economyCount >= 2 && economyCount <= state.rows + 1
         && context.activePressureRows < std::min(3, state.rows);
@@ -102,6 +104,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const ZombieTemplateTacticalState templateState{
         .economyCount = economyCount,
         .activePressureRows = context.activePressureRows,
+        .attackCommitPressureRows = tempo.AttackCommitPressureRowTarget(2, state.rows),
         .zombiesInRow = zombieCount,
         .rows = state.rows,
         .peaHeadCount = peaHeadCount,
@@ -139,20 +142,23 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // as the first real conversion. Keep Sled as a later independent
             // wave instead of treating it as the mandatory three-grave play.
             score += impSledSundayTemplate
-                ? (economyCount < std::max(state.rows + 3, 8) || context.activePressureRows < 3
+                ? (economyCount < std::max(commitEconomyFloor + 3, 8)
+                    || !tempo.HasAttackCommitPressure(context.activePressureRows, 3, state.rows)
                     ? -240
                     : (zombieCount == 0 && areaCounterExposure < 135 ? -40 : -190))
                 : 0;
             // The Normal/Newspaper/Sled recording uses Bobsled as an
             // isolated second wave after cheap probes have spread out.
-            score += normalNewsSledTemplate && economyCount >= 3 && context.activePressureRows >= 2
+            score += normalNewsSledTemplate && economyCount >= 3
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                 ? (zombieCount == 0 ? 175 : -210)
                 : 0;
-            score += newspaperSledDiggerGigaTemplate && economyCount >= state.rows
-                    && context.activePressureRows >= 2
+            score += newspaperSledDiggerGigaTemplate && economyCount >= commitEconomyFloor
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                 ? (zombieCount == 0 ? 145 : -190)
                 : 0;
-            score += sledDogHeavyTemplate && economyCount >= state.rows && context.activePressureRows >= 2
+            score += sledDogHeavyTemplate && economyCount >= commitEconomyFloor
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                 ? (zombieCount == 0 ? 135 : -180)
                 : 0;
             score += moundTallnutSledTemplate && economyCount >= state.rows && hasWallnut
@@ -162,8 +168,8 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // first. Sled is the later independent route, never the first
             // body delivered into an available Ash counter.
             if (dogSledPeaTemplate) {
-                score += economyCount >= state.rows && peaHeadCount >= 2
-                    && context.activePressureRows >= 2 && areaCounterExposure < 135
+                score += economyCount >= commitEconomyFloor && peaHeadCount >= 2
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows) && areaCounterExposure < 135
                     ? (zombieCount == 0 ? 170 : -230)
                     : -120;
             }
@@ -254,8 +260,9 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // still be the mid-game release card once two lanes are live.
             {
                 const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || hasPumpkinShell || sustainedOutput >= 80 || economyValue >= 120;
-                const bool earlyHeavyCommit = economyCount >= std::max(state.rows * 2, state.rows + 3)
-                    && context.activePressureRows >= 2 && CountLivePlants(state) >= state.rows && areaCounterExposure < 120;
+                const bool earlyHeavyCommit = economyCount >= tempo.HeavyCommitEconomyThreshold(state.rows, heavyEconomyThreshold)
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
+                    && CountLivePlants(state) >= state.rows && areaCounterExposure < 120;
                 // This exact ladder/pole recording releases a Giga Pole
                 // notably earlier than the generic finisher plan, but only
                 // after two low-cost lanes are live and a nut line gives it
@@ -264,7 +271,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                     && context.activePressureRows >= 1 && (plantCount >= 1 || economyValue >= 50)
                     && areaCounterExposure < 120;
                 const bool replayFanPoleRelease = newspaperFanPoleTemplate && economyCount >= 3
-                    && context.activePressureRows >= 2 && CountLivePlants(state) >= state.rows
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows) && CountLivePlants(state) >= state.rows
                     && areaCounterExposure < 120;
                 score += (economyCount >= heavyEconomyThreshold || earlyHeavyCommit || replayPoleRelease || replayFanPoleRelease)
                     ? ((hasBreakthroughTarget || earlyHeavyCommit || replayPoleRelease || replayFanPoleRelease) ? 250 : 15) : -240;
@@ -290,7 +297,8 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 const int earlyEconomyFloor = seed == SeedType::SEED_ZOMBIE_GARGANTUAR
                     ? state.rows
                     : std::max(state.rows * 2, state.rows + 3);
-                const bool earlyHeavyCommit = economyCount >= earlyEconomyFloor && context.activePressureRows >= 2
+                const bool earlyHeavyCommit = economyCount >= earlyEconomyFloor
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                     && hasBoardInvestment && areaCounterExposure < 120;
                 // The Normal/Newspaper/Digger recording banks into a Giga
                 // Gargantuar at roughly ten to eleven graves, then resumes
@@ -299,29 +307,30 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 const bool replayGigaRelease = newspaperDiggerGigaTemplate
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR
                     && economyCount >= std::max(state.rows * 2, 9)
-                    && context.activePressureRows >= 2 && hasBoardInvestment
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows) && hasBoardInvestment
                     && areaCounterExposure < 120;
                 const bool replayFlagGigaRelease = flagSquashTemplate
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
-                    && context.activePressureRows >= 2 && hasBoardInvestment
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows) && hasBoardInvestment
                     && areaCounterExposure < 120;
                 const bool replayArmoredGigaRelease = armoredNormalRushTemplate
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
-                    && context.activePressureRows >= 2 && hasBoardInvestment
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows) && hasBoardInvestment
                     && areaCounterExposure < 120;
                 const bool replayImpFootballRelease = newspaperImpFootballGiantTemplate
                     && seed == SeedType::SEED_ZOMBIE_GARGANTUAR && economyCount >= state.rows + 2
-                    && context.activePressureRows >= 2 && hasBoardInvestment
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows) && hasBoardInvestment
                     && areaCounterExposure < 120;
                 const bool replayZomblobGigaRelease = peaHeadZomblobGiantTemplate
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
-                    && peaHeadCount >= 2 && context.activePressureRows >= 2 && hasBoardInvestment
+                    && peaHeadCount >= 2 && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
+                    && hasBoardInvestment
                     && areaCounterExposure < 120;
                 // Standard Gargantuars can convert a five-grave opening
                 // into pressure; the more expensive variants wait for a
                 // broader rear field. Both still need a real board state
                 // to commit into instead of becoming an opening all-in.
-                const bool hasMidGameHeavyEconomy = economyCount >= std::max(state.rows * 2, heavyEconomyThreshold - 2)
+                const bool hasMidGameHeavyEconomy = economyCount >= tempo.HeavyCommitEconomyThreshold(state.rows, heavyEconomyThreshold)
                     && hasBreakthroughTarget;
                 const bool canCommitHeavy = economyCount >= heavyEconomyThreshold || hasMidGameHeavyEconomy
                     || earlyHeavyCommit || replayGigaRelease || replayFlagGigaRelease || replayArmoredGigaRelease
@@ -431,14 +440,16 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // economy so it is not an isolated expensive donation.
             {
                 const bool earlySundayRelease = sundayPressureTemplate && !impSledSundayTemplate
-                    && economyCount >= std::max(3, state.rows - 1) && context.activePressureRows >= 2
+                    && economyCount >= std::max(3, commitEconomyFloor - 1)
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                     && areaCounterExposure < 150;
                 const bool sledSundayRelease = impSledSundayTemplate
-                    && economyCount >= std::max(state.rows + 3, 8) && context.activePressureRows >= 2
+                    && economyCount >= std::max(commitEconomyFloor + 3, 8)
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                     && areaCounterExposure < 145;
                 const bool peaHeadSundayRelease = peaHeadSundayTemplate
-                    && economyCount >= state.rows + 2 && peaHeadCount >= 2
-                    && context.activePressureRows >= 2 && areaCounterExposure < 145;
+                    && economyCount >= commitEconomyFloor + 2 && peaHeadCount >= 2
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows) && areaCounterExposure < 145;
                 const bool canReleaseSunday = economyCount >= heavyEconomyThreshold || earlySundayRelease
                     || sledSundayRelease || peaHeadSundayRelease;
                 score += canReleaseSunday ? 145 : -170;
@@ -498,19 +509,23 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += peaHeadGiantTemplate && peaHeadCount >= 2 && economyCount >= state.rows + 2 ? 180 : -110;
             score += zombieCount == 0 ? 80 : -170;
             score += (coneImpFootballGiantTemplate || impLadderFootballTemplate)
-                    && economyCount >= state.rows && context.activePressureRows >= 2
+                    && economyCount >= commitEconomyFloor
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                     && (hasWallnut || sustainedOutput >= 75)
                 ? (zombieCount == 0 ? 155 : -140)
                 : 0;
             score += newspaperImpFootballGiantTemplate && economyCount >= state.rows
-                    && context.activePressureRows >= 2 && (hasWallnut || sustainedOutput >= 65)
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
+                    && (hasWallnut || sustainedOutput >= 65)
                 ? (zombieCount == 0 ? 165 : -150)
                 : 0;
-            score += impPailSledFootballTemplate && economyCount >= 2 && context.activePressureRows >= 2
+            score += impPailSledFootballTemplate && economyCount >= 2
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                 ? (zombieCount == 0 ? 175 : -170)
                 : 0;
             score += seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL && moundBungeeFootballTemplate
-                    && economyCount >= state.rows && context.activePressureRows >= 2
+                    && economyCount >= commitEconomyFloor
+                    && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                 ? (zombieCount == 0 ? 165 : -150)
                 : 0;
             score -= areaCounterExposure / 3;
@@ -619,7 +634,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // are live. A single isolated blob is an expensive donation.
             score += plantCount * 12 + sustainedOutput / 2 + economyValue / 3;
             score += peaHeadZomblobGiantTemplate && economyCount >= 3 && peaHeadCount >= 2
-                && context.activePressureRows >= 2
+                && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
                 ? (zombieCount == 0 ? 185 : -170)
                 : 0;
             break;

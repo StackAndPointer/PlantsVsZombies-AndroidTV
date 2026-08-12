@@ -8,6 +8,7 @@ int ZombieTemplateTacticalBonus(const ZombieTemplateProfile &profile, SeedType s
     const ZombieTemplateTacticalState &state) {
     const int economyCount = state.economyCount;
     const int activePressureRows = state.activePressureRows;
+    const int attackCommitPressureRows = state.attackCommitPressureRows;
     const int zombiesInRow = state.zombiesInRow;
     const int rows = state.rows;
     const int peaHeadCount = state.peaHeadCount;
@@ -20,7 +21,8 @@ int ZombieTemplateTacticalBonus(const ZombieTemplateProfile &profile, SeedType s
     const bool emptyRoute = zombiesInRow == 0;
     const bool openingWindow = economyCount >= 2 && economyCount <= rows + 2
         && activePressureRows < std::min(rows, 3);
-    const bool conversionWindow = activePressureRows >= 2 && areaCounterExposure < 140;
+    const bool conversionWindow = activePressureRows >= attackCommitPressureRows
+        && areaCounterExposure < 140;
     const bool developedTarget = plantCount >= 2 || economyValue >= 80 || sustainedOutput >= 65 || hasWallnut;
     int bonus = 0;
 
