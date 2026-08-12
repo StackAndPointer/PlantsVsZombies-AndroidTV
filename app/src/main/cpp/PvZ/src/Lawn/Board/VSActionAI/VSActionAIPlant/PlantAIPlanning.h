@@ -32,7 +32,6 @@ protected:
     std::optional<VSAction> TryBlover(const VSGameState &state, int preferredRow);
     std::optional<VSAction> TryEvadeJalapenoHead(const VSGameState &state);
     int EffectivePlantPlayCost(const VSGameState &state, const VSCardState &card) const;
-    static bool IsInstantCounterSeed(SeedType seedType);
     std::optional<VSAction> TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,
         bool requireExactRow);
     std::optional<VSAction> TryPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn);
@@ -44,7 +43,6 @@ protected:
     static int ZombieEffectiveHealth(const VSZombieState &zombie);
     static bool IsHypnoshroomTarget(const VSZombieState &zombie);
     static int PotatoMineArmingLead(const VSZombieState &zombie);
-    static bool IsSquashTargetZombie(const VSZombieState &zombie);
     AshTarget FindBestAshTarget(const VSGameState &state, SeedType seedType) const;
     static bool IsAshTargetWorthPlaying(const VSGameState &state, SeedType seedType, const AshTarget &target);
     std::optional<VSAction> TryAshCounter(const VSGameState &state, SeedType seedType, int protectedSun);

@@ -1,5 +1,7 @@
 #include "PlantAI.h"
 
+#include "../VSActionAITacticalRules.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -35,12 +37,7 @@ std::optional<VSAction> PlantAIPlanning::TryPumpkinShell(const VSGameState &stat
     for (const VSPlantState &plant : state.plants) {
         if (IsDeadOrOutside(plant) || plant.position.row != row || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_PUMPKINSHELL)
             || (!IsPlantCombatSeed(plant.seedType) && !IsPlantEconomySeed(state, plant.seedType))
-            // Ground traps are disposable lane triggers, not investments to
-            // shell. A Pumpkin on either Spikeweed variant or Potato Mine
-            // wastes sun and can obstruct the intended counter placement.
-            || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_SPIKEWEED)
-            || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_SPIKEROCK)
-            || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_POTATOMINE)
+            || !CanPumpkinShellTarget(static_cast<SeedType>(plant.seedType))
             || plant.position.col < 3 || HasPlantTypeAt(state, SeedType::SEED_PUMPKINSHELL, plant.position)) {
             continue;
         }

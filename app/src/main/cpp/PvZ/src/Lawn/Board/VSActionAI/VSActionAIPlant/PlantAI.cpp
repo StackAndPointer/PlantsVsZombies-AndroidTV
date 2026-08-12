@@ -1,5 +1,7 @@
 #include "PlantAI.h"
 
+#include "../VSActionAITacticalRules.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -170,24 +172,6 @@ int PlantAIPlanning::EffectivePlantPlayCost(const VSGameState &state, const VSCa
     return coffee == nullptr ? std::numeric_limits<int>::max() : card.cost + coffee->cost;
 }
 
-bool PlantAIPlanning::IsInstantCounterSeed(SeedType seedType) {
-    switch (seedType) {
-        case SeedType::SEED_ICEBERG_LETTUCE:
-        case SeedType::SEED_IMP_PEAR:
-        case SeedType::SEED_POTATOMINE:
-        case SeedType::SEED_SQUASH:
-        case SeedType::SEED_CHERRYBOMB:
-        case SeedType::SEED_JALAPENO:
-        case SeedType::SEED_CHILLY_PEPPER:
-        case SeedType::SEED_ICESHROOM:
-        case SeedType::SEED_DOOMSHROOM:
-        case SeedType::SEED_HYPNOSHROOM:
-            return true;
-        default:
-            return false;
-    }
-}
-
 std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,
     bool requireExactRow) {
     const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seedType);
@@ -204,8 +188,8 @@ std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &stat
         : (requireExactRow ? FindPlantCellInExactRow(state, row, firstColumn, lastColumn)
                            : FindPlantCellInColumns(state, row, firstColumn, lastColumn));
     if (target.col < 0 || target.row < 0
-        || (IsMowerInMotion(state, target.row) && IsInstantCounterSeed(seedType))
-        || (ShouldYieldLaneToMower(state, target.row) && (!requireExactRow || !IsInstantCounterSeed(seedType)))) {
+        || (IsMowerInMotion(state, target.row) && IsPlantImmediateCounterSeed(seedType))
+        || (ShouldYieldLaneToMower(state, target.row) && (!requireExactRow || !IsPlantImmediateCounterSeed(seedType)))) {
         return std::nullopt;
     }
     if (IsPlantCombatSeed(static_cast<std::uint16_t>(seedType)) && !IsPlantPlacementSafe(state, seedType, target)) {
@@ -307,17 +291,6 @@ int PlantAIPlanning::PotatoMineArmingLead(const VSZombieState &zombie) {
     return IsFastZombie(zombie.zombieType) ? kThreeCells + 80 : kThreeCells;
 }
 
-bool PlantAIPlanning::IsSquashTargetZombie(const VSZombieState &zombie) {
-    // Bobsled and Zomboni have dedicated answers. A Squash is saved for a
-    // genuine same-cell stack or a hard body that is otherwise costly to
-    // clear, rather than being thrown at a whole vehicle card. A fleeing
-    // Yeti and a Digger are also bad trades: neither is a stable frontline
-    // target worth consuming the plant side's emergency answer.
-    const ZombieType type = static_cast<ZombieType>(zombie.zombieType);
-    return type != ZombieType::ZOMBIE_BOBSLED && type != ZombieType::ZOMBIE_ZAMBONI
-        && type != ZombieType::ZOMBIE_YETI && type != ZombieType::ZOMBIE_DIGGER;
-}
-
 PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState &state, SeedType seedType) const {
     const int rowRadius = seedType == SeedType::SEED_DOOMSHROOM ? 2
         : ((seedType == SeedType::SEED_CHERRYBOMB) ? 1 : 0);
@@ -366,7 +339,7 @@ PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState 
                 if (seedType == SeedType::SEED_SQUASH && !IsSquashTargetZombie(zombie)) {
                     continue;
                 }
-                if (seedType == SeedType::SEED_CHILLY_PEPPER && !zombie.canBeFrozen) {
+                if (seedType == SeedType::SEED_CHILLY_PEPPER && !CanChillyPepperAffect(zombie)) {
                     // Chilly Pepper only damages zombies which the engine
                     // can freeze at this instant. This excludes Zomboni,
                     // intact Bobsleds, airborne units and transient phases
