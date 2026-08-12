@@ -665,7 +665,16 @@ bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
                                       && screen->mBannedSeed[bannedSeedIndex].mSeedState != BannedSeedState::SEED_BANNED);
 }
 
+bool IsBuiltinAIPlantTempoMushroom(SeedType seedType) {
+    // Puff-shroom is an early Coffee-backed tempo response. It must never
+    // satisfy the only-main-damage role in either six- or seven-card banks.
+    return seedType == SeedType::SEED_PUFFSHROOM;
+}
+
 bool IsBuiltinAIPlantCarrySeed(SeedType seedType) {
+    if (IsBuiltinAIPlantTempoMushroom(seedType)) {
+        return false;
+    }
     switch (seedType) {
         case SeedType::SEED_PEASHOOTER:
         case SeedType::SEED_SNOWPEA:
@@ -1168,7 +1177,10 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         : hasSelectedCarry;
     const std::size_t selectedCount = static_cast<std::size_t>(std::max(0, screen->mSeedsInBank));
     const bool templateMainBannedAfterSelection = useTemplate && !plannedMainAvailable && selectedCount > 0;
-    const bool needsCounterMain = templateMainBannedAfterSelection || !useTemplate;
+    // Normal opening bans reroll the template before this picker runs. If a
+    // map restriction or a late Ban makes the planned carry unavailable,
+    // recover with a matchup carry now; never let Puff/Coffee fill its role.
+    const bool needsCounterMain = templateMainBannedAfterSelection || !useTemplate || !plannedMainAvailable;
     const SeedType counterMain = !alreadyHasMainDamage && needsCounterMain
         ? FindBuiltinAICounterCarry(screen)
         : SeedType::SEED_NONE;
@@ -1194,7 +1206,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         if (counterMain != SeedType::SEED_NONE) {
             return seedType == counterMain;
         }
-        return IsBuiltinAIPlantCarrySeed(seedType);
+        return IsBuiltinAIPlantCarrySeed(seedType) && !IsBuiltinAIPlantTempoMushroom(seedType);
     };
     // Blover is a mandatory matchup answer, but it must not displace the
     // plant deck's only carry during a six-card selection. The main-card
@@ -1298,6 +1310,14 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
                 return seedType;
             }
         }
+    }
+
+    // Never complete a plant bank without a durable main card. The earlier
+    // candidate passes exhaust every legal carry first; returning a generic
+    // support here was the remaining escape hatch that could leave a
+    // Puff/Coffee tempo pair looking like the deck's only offense.
+    if (!alreadyHasMainDamage) {
+        return SeedType::SEED_NONE;
     }
 
     const int storageCount = screen->GetSeedStorageCount();
