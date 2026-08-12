@@ -2,11 +2,13 @@
 
 #include "Homura/MemberUtils.h"
 #include "PvZ/Lawn/Common/LawnCommon.h"
+#include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 #include "PvZ/SexyAppFramework/Graphics/Color.h"
 #include "PvZ/SexyAppFramework/Graphics/Graphics.h"
 #include "PvZ/SexyAppFramework/Widget/Checkbox.h"
+#include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
 
 #include <cstring>
@@ -25,28 +27,37 @@ constexpr int kCheckboxStep = 54;
 
 AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
     : mOwner(owner) {
-    Widget::_constructor();
+    reinterpret_cast<void (*)(LawnDialog *, LawnApp *, Sexy::Image *, int, bool, const pvzstl::string &, const pvzstl::string &, const pvzstl::string &, int)>(LawnDialog_LawnDialogAddr)(
+        this,
+        gLawnApp,
+        Sexy::IMAGE_OPTIONS_MENUBACK,
+        VSSetupAddonWidget::VSSetupAddonWidget_AISettings,
+        false,
+        "",
+        "",
+        "",
+        0);
 
     static void *sVTable[122];
     static std::once_flag vtableInitFlag;
-    std::call_once(vtableInitFlag, [this] {
-        std::memcpy(sVTable, vTable, sizeof(sVTable));
+    std::call_once(vtableInitFlag, [&] {
+        std::memcpy(sVTable, this->Sexy::Widget::vTable, sizeof(sVTable));
         sVTable[0] = (void *)homura::ExtractMemFuncPtr(&AISettingsWidget::_destructor);
         sVTable[1] = (void *)homura::ExtractMemFuncPtr(&AISettingsWidget::_destructor2);
         sVTable[29] = (void *)homura::ExtractMemFuncPtr(&AISettingsWidget::AddedToManager);
         sVTable[30] = (void *)homura::ExtractMemFuncPtr(&AISettingsWidget::RemovedFromManager);
         sVTable[36] = (void *)homura::ExtractMemFuncPtr(&AISettingsWidget::Draw);
     });
-    vTable = sVTable;
+    this->Sexy::Widget::vTable = sVTable;
 
-    Resize(370, 130, kPanelWidth, kPanelHeight);
+    LawnDialog::Resize(370, 130, kPanelWidth, kPanelHeight);
     mClip = true;
 
-    mPlantAICheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_PlantAI, this, this, false);
-    mZombieAICheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_ZombieAI, this, this, false);
-    mEnhancementCheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_AIEnhancement, this, this, false);
-    mManualDraftCheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_AIDraftDisabled, this, this, false);
-    mDisableTemplatesCheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_AITemplateDeckDisabled, this, this, false);
+    mPlantAICheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_PlantAI, owner, this, false);
+    mZombieAICheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_ZombieAI, owner, this, false);
+    mEnhancementCheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_AIEnhancement, owner, this, false);
+    mManualDraftCheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_AIDraftDisabled, owner, this, false);
+    mDisableTemplatesCheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_AITemplateDeckDisabled, owner, this, false);
     mCloseButton = MakeButton(VSSetupAddonWidget::VSSetupAddonWidget_AISettingsClose,
         owner == nullptr ? nullptr : owner->mButtonListener, this, "[VS_UI_AI_SETTINGS_CLOSE]");
     mCloseButton->mDrawStoneButton = true;
@@ -78,7 +89,7 @@ void AISettingsWidget::_destructor() {
     delete mEnhancementCheckbox;
     delete mZombieAICheckbox;
     delete mPlantAICheckbox;
-    Widget::_destructor();
+    reinterpret_cast<void (*)(LawnDialog *)>(LawnDialog_Delete2Addr)(this);
 }
 
 void AISettingsWidget::_destructor2() {
@@ -86,7 +97,7 @@ void AISettingsWidget::_destructor2() {
 }
 
 void AISettingsWidget::AddedToManager(WidgetManager *manager) {
-    WidgetContainer::AddedToManager(manager);
+    Sexy::Dialog::AddedToManager(manager);
     AddWidget(mPlantAICheckbox);
     AddWidget(mZombieAICheckbox);
     AddWidget(mEnhancementCheckbox);
@@ -96,13 +107,13 @@ void AISettingsWidget::AddedToManager(WidgetManager *manager) {
 }
 
 void AISettingsWidget::RemovedFromManager(WidgetManager *manager) {
-    WidgetContainer::RemovedFromManager(manager);
     RemoveWidget(mCloseButton);
     RemoveWidget(mDisableTemplatesCheckbox);
     RemoveWidget(mManualDraftCheckbox);
     RemoveWidget(mEnhancementCheckbox);
     RemoveWidget(mZombieAICheckbox);
     RemoveWidget(mPlantAICheckbox);
+    Sexy::Dialog::RemovedFromManager(manager);
 }
 
 void AISettingsWidget::Draw(Graphics *graphics) {
@@ -127,14 +138,8 @@ void AISettingsWidget::Draw(Graphics *graphics) {
     graphics->SetFont(FONT_DWARVENTODCRAFT18);
     for (const Label &label : labels) {
         const Color color = label.checkbox == mFocusedChildWidget ? Color(255, 255, 153) : Color(218, 230, 215);
-        graphics->SetColor(mDisabled ? Color(120, 120, 120) : color);
+        graphics->SetColor(mSettingsDisabled ? Color(120, 120, 120) : color);
         graphics->DrawString(TodStringTranslate(label.text), label.checkbox->mX + 62, label.checkbox->mY + 28);
-    }
-}
-
-void AISettingsWidget::CheckboxChecked(int theId, bool checked) {
-    if (!mDisabled && mOwner != nullptr) {
-        mOwner->CheckboxChecked(theId, checked);
     }
 }
 
@@ -150,7 +155,7 @@ void AISettingsWidget::SyncState() {
 }
 
 void AISettingsWidget::SetDisabled(bool disabled) {
-    mDisabled = disabled;
+    mSettingsDisabled = disabled;
     Sexy::Checkbox *checkboxes[] = {
         mPlantAICheckbox, mZombieAICheckbox, mEnhancementCheckbox, mManualDraftCheckbox, mDisableTemplatesCheckbox,
     };

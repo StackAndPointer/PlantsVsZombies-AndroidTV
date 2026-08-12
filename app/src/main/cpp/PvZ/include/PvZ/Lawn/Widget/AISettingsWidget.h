@@ -1,8 +1,7 @@
 #ifndef PVZ_LAWN_WIDGET_AI_SETTINGS_WIDGET_H
 #define PVZ_LAWN_WIDGET_AI_SETTINGS_WIDGET_H
 
-#include "PvZ/SexyAppFramework/Widget/CheckboxListener.h"
-#include "PvZ/SexyAppFramework/Widget/Widget.h"
+#include "PvZ/Lawn/Widget/LawnDialog.h"
 
 class GameButton;
 class VSSetupAddonWidget;
@@ -12,7 +11,7 @@ class Checkbox;
 class WidgetManager;
 } // namespace Sexy
 
-class AISettingsWidget final : public Sexy::Widget, public Sexy::CheckboxListener {
+class AISettingsWidget final : public LawnDialog {
 public:
     explicit AISettingsWidget(VSSetupAddonWidget *owner);
     ~AISettingsWidget();
@@ -20,7 +19,6 @@ public:
     void AddedToManager(Sexy::WidgetManager *manager);
     void RemovedFromManager(Sexy::WidgetManager *manager);
     void Draw(Sexy::Graphics *graphics);
-    void CheckboxChecked(int theId, bool checked) override;
     void SyncState();
     void SetDisabled(bool disabled);
 
@@ -32,7 +30,7 @@ private:
     Sexy::Checkbox *mManualDraftCheckbox = nullptr;
     Sexy::Checkbox *mDisableTemplatesCheckbox = nullptr;
     GameButton *mCloseButton = nullptr;
-    bool mDisabled = false;
+    bool mSettingsDisabled = false;
 
     void _destructor();
     void _destructor2();
