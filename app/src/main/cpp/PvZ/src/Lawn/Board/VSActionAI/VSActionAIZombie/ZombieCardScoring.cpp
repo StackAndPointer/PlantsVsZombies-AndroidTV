@@ -164,7 +164,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     // A grave is the zombie player's income source. Any available
     // pressure is deliberately biased toward a lane that is shooting it.
     score += graveThreat * 2;
-    if (IsFastAttackSeed(seed) && economyCount >= 1 && economyCount <= state.rows + 2) {
+    if (IsZombieFastAttackSeed(seed) && economyCount >= 1 && economyCount <= state.rows + 2) {
         // The quick-attack recordings use low-cost bodies to make the
         // plant player defend several income rows before heavy cards are
         // affordable. Reward an unoccupied economy lane, not a pileup.
@@ -674,8 +674,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
         score += graveProjectileThreat > 0 && !hasGraveGuard ? 260 + graveProjectileThreat : -35;
         score += lobbedProjectileThreat > 0 && !hasGraveGuard ? 180 + lobbedProjectileThreat : 0;
     }
-    const bool isEconomyOrTargetedSeed = seed == SeedType::SEED_ZOMBIE_GRAVESTONE || seed == SeedType::SEED_ZOMBIE_MOUND
-        || seed == SeedType::SEED_ZOMBIE_BUNGEE;
+    const bool isEconomyOrTargetedSeed = IsZombieEconomySeed(seed) || IsZombieTargetedSeed(seed);
     const bool isEmergencyGraveGuard = IsZombieGraveGuardSeed(seed) && graveProjectileThreat > 0 && !hasGraveGuard;
     if (zombieCount > 0 && !isEconomyOrTargetedSeed && !IsHeavyZombieSeed(seed) && !isEmergencyGraveGuard) {
         // A cheap/medium zombie is a probe, not a reason to feed the

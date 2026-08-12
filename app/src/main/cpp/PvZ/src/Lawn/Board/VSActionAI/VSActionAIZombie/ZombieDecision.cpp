@@ -208,7 +208,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 return std::nullopt;
             }
         }
-        if (IsTargetedSeed(card.seedType)) {
+        if (IsZombieTargetedSeed(seed)) {
             const VSPlantState *targetPlant = nullptr;
             int targetScore = std::numeric_limits<int>::min();
             for (const VSPlantState &plant : state.plants) {
@@ -270,8 +270,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             const int effectiveCost = static_cast<SeedType>(card.seedType) == SeedType::SEED_ZOMBIE_MOUND
                 ? MoundUpgradeCostAt(state, *target)
                 : card.cost;
-            const bool isEconomyAction = ZombieAIPlanning::IsEconomySeed(seed);
-            const bool isTargetedAction = ZombieAIPlanning::IsTargetedSeed(card.seedType);
+            const bool isEconomyAction = IsZombieEconomySeed(seed);
+            const bool isTargetedAction = IsZombieTargetedSeed(seed);
             const bool isProtectedGuard = IsZombieGraveGuardSeed(seed) && graveDefenseUrgent;
             const int zombiesInRow = CountZombiesInRow(state, row);
             const bool pursueBrokenMowerRow = lane.conversionRoute;
@@ -306,7 +306,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             }
             const bool isEarlyHeavyCandidate =
                 ZombieAIPlanning::IsEarlyHeavyCommitCard(state, seed, economyCount, activePressureRows);
-            if ((forceOpeningPressure && !IsFrontlineProbeSeed(seed) && !isEarlyHeavyCandidate)
+            if ((forceOpeningPressure && !IsZombieFrontlineProbeSeed(seed) && !isEarlyHeavyCandidate)
                 || (hasReadyEarlyHeavyCommit && !forceOpeningPressure && !isEarlyHeavyCandidate && isEconomyAction)
                 || (preservePressureDuringRepair && !forceOpeningPressure && isEconomyAction)) {
                 continue;
@@ -373,7 +373,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // during urgent grave defense.
                 score -= activePressureRows >= 2 ? 210 : 125;
             }
-            if (pursueBrokenMowerRow && !IsEconomySeed(seed) && !IsTargetedSeed(card.seedType)) {
+            if (pursueBrokenMowerRow && !IsZombieEconomySeed(seed) && !IsZombieTargetedSeed(seed)) {
                 // A cleared mower lane is a live conversion route. Keep
                 // pressure there while the independent grave-defense path
                 // continues to protect the zombie economy. This must also
@@ -398,7 +398,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         return std::nullopt;
     }
     const SeedType chosenSeed = static_cast<SeedType>(bestCard->seedType);
-    if (IsFrontlineProbeSeed(chosenSeed)) {
+    if (IsZombieFrontlineProbeSeed(chosenSeed)) {
         mLastPressureEconomyCount = std::max(mLastPressureEconomyCount, actualEconomyCount);
     }
     if (chosenSeed != SeedType::SEED_ZOMBIE_GRAVESTONE && chosenSeed != SeedType::SEED_ZOMBIE_MOUND
@@ -406,7 +406,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         mLastAttackRow = targetRow;
         if (targetRow >= 0 && targetRow < static_cast<int>(mLaneAttackCooldown.size())
             && !(IsZombieGraveGuardSeed(chosenSeed) && graveDefenseUrgent)) {
-            mLaneAttackCooldown[static_cast<std::size_t>(targetRow)] = ZombieAIPlanning::IsFastAttackSeed(chosenSeed) ? 4 : 3;
+            mLaneAttackCooldown[static_cast<std::size_t>(targetRow)] = IsZombieFastAttackSeed(chosenSeed) ? 4 : 3;
         }
     }
     return MakePlayAction(VSSide::Zombies, *bestCard, *target, state.boardTick);

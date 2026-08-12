@@ -26,39 +26,6 @@ bool ZombieAIPlanning::HasLobbedPlantInRow(const VSGameState &state, int row) {
     });
 }
 
-bool ZombieAIPlanning::IsTargetedSeed(std::uint16_t seed) {
-    const SeedType seedType = static_cast<SeedType>(seed);
-    return seedType == SeedType::SEED_ZOMBIE_BUNGEE;
-}
-
-bool ZombieAIPlanning::IsEconomySeed(SeedType seed) {
-    return seed == SeedType::SEED_ZOMBIE_GRAVESTONE || seed == SeedType::SEED_ZOMBIE_MOUND;
-}
-
-bool ZombieAIPlanning::IsFrontlineProbeSeed(SeedType seed) {
-    if (IsEconomySeed(seed) || ZombieAIPlanning::IsTargetedSeed(static_cast<std::uint16_t>(seed)) || IsHeavyZombieSeed(seed)) {
-        return false;
-    }
-    // Trashcan and the nut heads are dedicated grave screens. The other
-    // cheap guard cards still make useful opening probes in the replays.
-    return seed != SeedType::SEED_ZOMBIE_TRASHCAN && seed != SeedType::SEED_ZOMBIE_WALLNUT_HEAD
-        && seed != SeedType::SEED_ZOMBIE_TALLNUT_HEAD;
-}
-
-bool ZombieAIPlanning::IsFastAttackSeed(SeedType seed) {
-    switch (seed) {
-        case SeedType::SEED_ZOMBIE_NORMAL:
-        case SeedType::SEED_ZOMBIE_IMP:
-        case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
-        case SeedType::SEED_ZOMBIE_DOGWALKER:
-        case SeedType::SEED_ZOMBIE_FLAG:
-        case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
-            return true;
-        default:
-            return false;
-    }
-}
-
 const VSCardState *ZombieAIPlanning::FindReadyCard(const VSGameState &state, SeedType seedType) const {
     for (const VSCardState &card : state.seedBanks[1]) {
         if (IsSlotBlocked(card.slot) || card.seedType != static_cast<std::uint16_t>(seedType)) {
@@ -94,7 +61,7 @@ int ZombieAIPlanning::HeavyZombieReserve(const VSGameState &state) const {
 
 bool ZombieAIPlanning::HasReadyFrontlineProbe(const VSGameState &state) const {
     return std::any_of(state.seedBanks[1].begin(), state.seedBanks[1].end(), [&](const VSCardState &card) {
-        return !IsSlotBlocked(card.slot) && card.active && !card.matchRestricted && ZombieAIPlanning::IsFrontlineProbeSeed(static_cast<SeedType>(card.seedType))
+        return !IsSlotBlocked(card.slot) && card.active && !card.matchRestricted && IsZombieFrontlineProbeSeed(static_cast<SeedType>(card.seedType))
             && IsReadyCard(card, state.zombieBrains);
     });
 }

@@ -1,7 +1,7 @@
 #ifndef PVZ_LAWN_BOARD_VS_ACTION_AI_ZOMBIE_AI_PLANNING_H
 #define PVZ_LAWN_BOARD_VS_ACTION_AI_ZOMBIE_AI_PLANNING_H
 
-#include "../VSActionAIStrategy.h"
+#include "ZombieCardRules.h"
 
 #include <array>
 #include <optional>
@@ -17,10 +17,6 @@ protected:
     int mLastPressureEconomyCount = -1;
     std::array<std::uint8_t, 6> mLaneAttackCooldown{};
 
-    static bool IsTargetedSeed(std::uint16_t seed);
-    static bool IsEconomySeed(SeedType seed);
-    static bool IsFrontlineProbeSeed(SeedType seed);
-    static bool IsFastAttackSeed(SeedType seed);
     int HeavyZombieReserve(const VSGameState &state) const;
     bool HasReadyFrontlineProbe(const VSGameState &state) const;
     bool HasReadyEarlyHeavyCommit(const VSGameState &state, int economyCount, int activePressureRows) const;
