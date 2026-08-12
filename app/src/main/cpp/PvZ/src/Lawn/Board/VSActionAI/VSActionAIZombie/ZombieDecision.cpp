@@ -31,6 +31,13 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
 
     const ZombieDecisionContext context = BuildZombieDecisionContext(state);
     const int actualEconomyCount = context.actualEconomyCount;
+    // The first zombie turn establishes a grave before any replay template
+    // or pressure branch can spend brains on a unit.
+    if (!state.isSuddenDeath && actualEconomyCount == 0) {
+        if (std::optional<VSAction> action = ZombieAIPlanning::TryBuildEconomy(state, ZombieAIPlanning::LeastCommittedZombieRow(state))) {
+            return action;
+        }
+    }
     if (mLastPressureEconomyCount > actualEconomyCount) {
         // A destroyed grave re-opens the pressure cadence. Rebuilding
         // from a smaller base should not force a full 15-grave rebuild

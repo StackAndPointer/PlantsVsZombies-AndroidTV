@@ -25,8 +25,13 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     // shooter. Establish the map-appropriate income producer before any
     // formation, output, or grave-pressure branch is allowed to run.
     if (!state.isSuddenDeath && CountLivePlants(state) == 0) {
-        const SeedType openingIncome = state.isNight ? SeedType::SEED_SUNSHROOM : SeedType::SEED_SUNFLOWER;
-        const VSCardState *card = PlantAIPlanning::FindReadyCard(state, openingIncome);
+        // Opening pressure must start from an actual income producer. Prefer
+        // Sunflower on every map; a night-only Sun-shroom deck falls back to
+        // its available income producer instead of stalling its first turn.
+        const VSCardState *card = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SUNFLOWER);
+        if (card == nullptr && state.isNight) {
+            card = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SUNSHROOM);
+        }
         const VSGridPosition target = FindSafeIncomeCell(state, LeastDevelopedPlantRow(state));
         if (card != nullptr && target.col >= 0 && target.row >= 0 && state.plantSun >= card->cost) {
             return MakePlayAction(VSSide::Plants, *card, target, state.boardTick);

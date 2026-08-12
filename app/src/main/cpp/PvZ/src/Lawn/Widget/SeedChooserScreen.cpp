@@ -620,6 +620,8 @@ bool HasBuiltinAIOpponentBalloon(SeedChooserScreen *screen) {
     return false;
 }
 
+bool HasBuiltinAIPlantSeed(SeedChooserScreen *screen, SeedType seedType);
+
 bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
     if (seedType == SeedType::SEED_NONE || seedType == SeedType::SEED_IMITATER) {
         return false;
@@ -653,6 +655,15 @@ bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
     if (!screen->mBanningPhase && screen->mIsZombieChooser && HasBuiltinAIOpponentLobbedPressure(screen)
         && (seedType == SeedType::SEED_ZOMBIE_SCREEN_DOOR || seedType == SeedType::SEED_ZOMBIE_NEWSPAPER
             || seedType == SeedType::SEED_ZOMBIE_TRASHCAN)) {
+        return false;
+    }
+
+    // Sun-shroom is a cheap front-line pad. Squash Head and Football
+    // both give that pad an efficient trade, so do not draft either after
+    // the plant side has already committed to Sun-shroom.
+    if (!screen->mBanningPhase && screen->mIsZombieChooser
+        && (seedType == SeedType::SEED_ZOMBIE_SQUASH_HEAD || seedType == SeedType::SEED_ZOMBIE_FOOTBALL)
+        && screen->mApp != nullptr && HasBuiltinAIPlantSeed(screen->mApp->mSeedChooserScreen, SeedType::SEED_SUNSHROOM)) {
         return false;
     }
 

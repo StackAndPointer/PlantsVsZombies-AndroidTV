@@ -640,7 +640,7 @@ std::optional<VSAction> PlantAIPlanning::TryGraveBuster(const VSGameState &state
     int bestScore = std::numeric_limits<int>::min();
     for (const VSGridItemState &item : state.gridItems) {
         if (item.dead || IsMowerInMotion(state, item.position.row)
-            || item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_GRAVESTONE)) {
+            || !IsZombieEconomyItem(item.gridItemType)) {
             continue;
         }
         const PlantLaneAssessment lane = AssessPlantLane(state, item.position.row);
