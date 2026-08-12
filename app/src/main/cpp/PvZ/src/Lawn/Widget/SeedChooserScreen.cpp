@@ -360,6 +360,11 @@ static constexpr SeedType kBuiltinAIPlantDecks[][kBuiltinAIMaxDeckSize] = {
     // remains the carry in the first one; Peashooter is early tempo support.
     {SEED_BLOOMERANG, SEED_PEASHOOTER, SEED_SQUASH, SEED_SPIKEWEED, SEED_PUMPKINSHELL},
     {SEED_REPEATER, SEED_CHOMPER, SEED_CHILLY_PEPPER, SEED_WALLNUT, SEED_SUNSHROOM},
+    // Latest white-day recordings: one Boomerang carry with Garlic lane
+    // control, a fast Coffee/Scaredy shell, and a Peashooter ash tempo deck.
+    {SEED_SUNFLOWER, SEED_BLOOMERANG, SEED_WALLNUT, SEED_SQUASH, SEED_SUNSHROOM, SEED_GARLIC},
+    {SEED_SUNFLOWER, SEED_SCAREDYSHROOM, SEED_INSTANT_COFFEE, SEED_ICEBERG_LETTUCE, SEED_BONK_CHOY, SEED_HYPNOSHROOM},
+    {SEED_SUNFLOWER, SEED_PEASHOOTER, SEED_ICEBERG_LETTUCE, SEED_PUMPKINSHELL, SEED_CHERRYBOMB, SEED_JALAPENO},
 };
 
 // Night VS changes both the income card and the legality of mushrooms. Keep
@@ -406,6 +411,9 @@ static constexpr SeedType kBuiltinAINightPlantDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_SUNSHROOM, SEED_STARFRUIT, SEED_PUFFSHROOM, SEED_WALLNUT, SEED_CHERRYBOMB, SEED_POTATOMINE},
     {SEED_BLOOMERANG, SEED_PEASHOOTER, SEED_SQUASH, SEED_SPIKEWEED, SEED_PUMPKINSHELL},
     {SEED_REPEATER, SEED_CHOMPER, SEED_CHILLY_PEPPER, SEED_WALLNUT, SEED_SUNSHROOM},
+    {SEED_SUNSHROOM, SEED_BLOOMERANG, SEED_WALLNUT, SEED_SQUASH, SEED_POTATOMINE, SEED_GARLIC},
+    {SEED_SUNSHROOM, SEED_SCAREDYSHROOM, SEED_ICEBERG_LETTUCE, SEED_BONK_CHOY, SEED_HYPNOSHROOM, SEED_WALLNUT},
+    {SEED_SUNSHROOM, SEED_PEASHOOTER, SEED_ICEBERG_LETTUCE, SEED_PUMPKINSHELL, SEED_CHERRYBOMB, SEED_JALAPENO},
 };
 static_assert(std::size(kBuiltinAINightPlantDecks) == std::size(kBuiltinAIPlantDecks));
 
@@ -461,6 +469,9 @@ static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIMaxDeckSize] = {
     // Five-card Ban-residual fast attack and giant-finisher profiles.
     {SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_PEA_HEAD, SEED_ZOMBIE_TRASHCAN, SEED_ZOMBIE_ZOMBLOB, SEED_ZOMBIE_GIGA_GARGANTUAR},
     {SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_IMP, SEED_ZOMBIE_GARGANTUAR, SEED_ZOMBIE_FOOTBALL},
+    {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_TRAFFIC_CONE, SEED_ZOMBIE_SUNDAY_EDITION, SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_POLEVAULTER, SEED_ZOMBIE_TALLNUT_HEAD},
+    {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_NORMAL, SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_IMP, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_GIGA_GARGANTUAR},
+    {SEED_ZOMBIE_GRAVESTONE, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_LADDER, SEED_ZOMBONI, SEED_ZOMBIE_JACK_IN_THE_BOX},
 };
 
 std::size_t GetBuiltinAIPlanSize(const SeedChooserScreen *screen) {
@@ -489,7 +500,7 @@ int PickBuiltinAIPlantProfile() {
     // The strongest replay-compatible templates use a tier-one carry and
     // the Potato/Squash/Cherry answer package. Lower-tier carries still
     // occur, but do not drown out those reliable opening plans.
-    static constexpr int kPlantProfileWeights[] = {5, 5, 4, 3, 3, 2, 2, 2, 1, 2, 3, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 1, 1, 1};
+    static constexpr int kPlantProfileWeights[] = {5, 5, 4, 3, 3, 2, 2, 2, 1, 2, 3, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 1, 1, 1, 2, 1, 2};
     static_assert(std::size(kPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
 
     int totalWeight = 0;

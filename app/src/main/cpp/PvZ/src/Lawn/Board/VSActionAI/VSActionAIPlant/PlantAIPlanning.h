@@ -72,6 +72,7 @@ protected:
     int PrimaryOutputCost(const VSGameState &state) const;
     int EconomyPressureIncomeTarget(const VSGameState &state) const;
     std::optional<VSAction> TryBoomerangControlPressure(const VSGameState &state, int preferredRow, int protectedSun);
+    std::optional<VSAction> TryBoomerangGarlicFormation(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryThreepeaterPuffFormation(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TrySnowpeaPuffMagnetPressure(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryPeaPuffTempoOpening(const VSGameState &state, int preferredRow, int protectedSun);
@@ -89,6 +90,7 @@ protected:
     std::optional<VSAction> TrySporeShellPressure(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryFumeDoomPressure(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryMelonScaredySupport(const VSGameState &state, int preferredRow, int protectedSun);
+    std::optional<VSAction> TryScaredyCoffeeTempo(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryScaredyMelonSupport(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryScaredyPuffDoomPressure(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryStarfruitPuffPressure(const VSGameState &state, int preferredRow, int protectedSun);

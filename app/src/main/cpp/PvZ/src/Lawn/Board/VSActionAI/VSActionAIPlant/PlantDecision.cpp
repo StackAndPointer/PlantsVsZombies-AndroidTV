@@ -396,6 +396,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryMelonScaredySupport(state, zombieEconomyStrikeRow, protectedSun)) {
             return action;
         }
+        if (std::optional<VSAction> action = PlantAIPlanning::TryScaredyCoffeeTempo(state, zombieEconomyStrikeRow, protectedSun)) {
+            return action;
+        }
         if (std::optional<VSAction> action = PlantAIPlanning::TryPeaPuffTempoOpening(state, zombieEconomyStrikeRow, protectedSun)) {
             return action;
         }
@@ -417,6 +420,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             return action;
         }
         if (std::optional<VSAction> action = PlantAIPlanning::TryBoomerangControlPressure(state, zombieEconomyStrikeRow, protectedSun)) {
+            return action;
+        }
+        if (std::optional<VSAction> action = PlantAIPlanning::TryBoomerangGarlicFormation(state, zombieEconomyStrikeRow, protectedSun)) {
             return action;
         }
         if (std::optional<VSAction> action = PlantAIPlanning::TryThreepeaterPuffFormation(state, firepowerRow, protectedSun)) {

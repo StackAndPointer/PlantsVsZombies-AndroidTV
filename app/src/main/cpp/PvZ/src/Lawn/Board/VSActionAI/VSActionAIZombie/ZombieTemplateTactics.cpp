@@ -265,6 +265,46 @@ int ZombieTemplateTacticalBonus(const ZombieTemplateProfile &profile, SeedType s
         else if (seed == SeedType::SEED_ZOMBIE_TALLNUT_HEAD && economyCount >= 5 && (graveUnderDirectFire || sustainedOutput >= 80)) bonus += emptyRoute ? 205 : -130;
         else if (seed == SeedType::SEED_ZOMBIE_PAIL && economyCount >= 3 && activePressureRows >= 1) bonus += emptyRoute ? 125 : -115;
     }
+    if (profile.Has(ZombieTemplate::ConeSundayTallnut)) {
+        if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && openingWindow) bonus += emptyRoute ? 165 : -160;
+        else if (seed == SeedType::SEED_ZOMBIE_TALLNUT_HEAD) {
+            // The Tall-nut head in this replay is a grave guard, never a
+            // generic slow attacker. Only expose it where direct fire has
+            // already made the economic route worth protecting.
+            bonus += economyCount >= 4 && (graveUnderDirectFire || sustainedOutput >= 85)
+                ? (emptyRoute ? 195 : -125)
+                : -220;
+        } else if (seed == SeedType::SEED_ZOMBIE_SUNDAY_EDITION) {
+            const bool release = economyCount >= 6 && conversionWindow && developedTarget && areaCounterExposure < 135;
+            bonus += release ? (emptyRoute ? 220 : 55) : -210;
+        } else if (seed == SeedType::SEED_ZOMBIE_BOBSLED) {
+            const bool sledWindow = economyCount >= 5 && conversionWindow && areaCounterExposure < 125;
+            bonus += sledWindow ? (emptyRoute ? 135 : -185) : -230;
+        }
+    }
+    if (profile.Has(ZombieTemplate::NormalNewsImpGiga)) {
+        if (seed == SeedType::SEED_ZOMBIE_NORMAL && openingWindow) bonus += emptyRoute ? 165 : -170;
+        else if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && economyCount >= 2 && economyCount <= rows + 2) bonus += emptyRoute ? 185 : -175;
+        else if (seed == SeedType::SEED_ZOMBIE_IMP && economyCount >= 3 && economyCount <= rows + 3) bonus += emptyRoute ? 145 : -165;
+        else if (seed == SeedType::SEED_ZOMBIE_PAIL && economyCount >= 3 && activePressureRows >= 2) bonus += emptyRoute ? 100 : -130;
+        else if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR) {
+            const bool release = economyCount >= 7 && conversionWindow && developedTarget && areaCounterExposure < 125;
+            bonus += release ? (emptyRoute ? 230 : -135) : -280;
+        }
+    }
+    if (profile.Has(ZombieTemplate::NewspaperLadderZamboniJack)) {
+        if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && openingWindow) bonus += emptyRoute ? 180 : -170;
+        else if (seed == SeedType::SEED_ZOMBIE_PAIL && economyCount >= 2 && economyCount <= rows + 2) bonus += emptyRoute ? 105 : -125;
+        else if (seed == SeedType::SEED_ZOMBIE_LADDER) {
+            bonus += economyCount >= 3 && (hasWallnut || developedTarget) ? (emptyRoute ? 175 : -135) : -190;
+        } else if (seed == SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX) {
+            const bool jackWindow = economyCount >= 4 && conversionWindow && developedTarget && areaCounterExposure < 110;
+            bonus += jackWindow ? (emptyRoute ? 150 : -180) : -250;
+        } else if (seed == SeedType::SEED_ZOMBONI) {
+            const bool zamboniWindow = economyCount >= 5 && conversionWindow && developedTarget && areaCounterExposure < 120;
+            bonus += zamboniWindow ? (emptyRoute ? 210 : -200) : -260;
+        }
+    }
     return bonus;
 }
 

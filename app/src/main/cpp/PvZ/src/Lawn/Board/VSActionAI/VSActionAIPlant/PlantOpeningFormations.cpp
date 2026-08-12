@@ -61,6 +61,98 @@ std::optional<VSAction> PlantAIPlanning::TryBoomerangControlPressure(const VSGam
         : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *boomerang, bestTarget, state.boardTick));
 }
 
+std::optional<VSAction> PlantAIPlanning::TryBoomerangGarlicFormation(const VSGameState &state, int preferredRow, int protectedSun) {
+    const bool isRecordedDeck = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_GARLIC)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SUNSHROOM)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH);
+    if (!isRecordedDeck || CountZombieEconomy(state) == 0) {
+        return std::nullopt;
+    }
+
+    const int income = EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state));
+    const VSCardState *boomerang = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_BLOOMERANG);
+    const int boomerangCost = boomerang == nullptr ? std::numeric_limits<int>::max()
+                                                    : PlantAIPlanning::EffectivePlantPlayCost(state, *boomerang);
+    const int firingTarget = std::min(state.rows, std::max(1, income - 2));
+    if (boomerang != nullptr && boomerangCost != std::numeric_limits<int>::max()
+        && state.plantSun - boomerangCost >= protectedSun
+        && CountPlantType(state, SeedType::SEED_BLOOMERANG) < firingTarget) {
+        VSGridPosition bestTarget{};
+        int bestScore = std::numeric_limits<int>::min();
+        for (int offset = 0; offset < state.rows; ++offset) {
+            const int row = (preferredRow + offset) % state.rows;
+            if (HasPlantTypeInRow(state, SeedType::SEED_BLOOMERANG, row)
+                || PlantAIPlanning::ShouldYieldLaneToMower(state, row)
+                || IsRangedOutputTradeUnfavorable(state, row)) {
+                continue;
+            }
+            const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_BLOOMERANG, row);
+            if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_BLOOMERANG, target)) {
+                continue;
+            }
+            const VSZombieState *closest = FindClosestZombie(state, row);
+            const PlantLaneAssessment lane = AssessPlantLane(state, row);
+            const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+            int score = SeedEconomyPressureOpportunity(state, SeedType::SEED_BLOOMERANG, row) * 9;
+            score += PlantEconomyValueInRow(state, row) * 2 + firepower.deficit * 12;
+            score += closest == nullptr ? 70 : (closest->positionX > 640.0f ? 85 : -120);
+            score += lane.danger < 110 ? 75 : -100;
+            score += row == preferredRow ? 35 : 0;
+            score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_BLOOMERANG, row);
+            if (bestTarget.col < 0 || score > bestScore) {
+                bestTarget = target;
+                bestScore = score;
+            }
+        }
+        if (bestTarget.col >= 0 && bestTarget.row >= 0) {
+            return MakePlayAction(VSSide::Plants, *boomerang, bestTarget, state.boardTick);
+        }
+    }
+
+    const VSCardState *garlic = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_GARLIC);
+    if (garlic == nullptr || state.plantSun - garlic->cost < protectedSun
+        || CountPlantType(state, SeedType::SEED_BLOOMERANG) == 0) {
+        return std::nullopt;
+    }
+    int bestRow = -1;
+    int bestScore = std::numeric_limits<int>::min();
+    for (int row = 0; row < state.rows; ++row) {
+        if (HasPlantTypeInRow(state, SeedType::SEED_GARLIC, row) || PlantAIPlanning::ShouldYieldLaneToMower(state, row)) {
+            continue;
+        }
+        const VSZombieState *closest = FindClosestZombie(state, row);
+        if (closest == nullptr || (!closest->eating && closest->positionX > 620.0f)) {
+            continue;
+        }
+        const VSGridPosition target = FindPlantCellInExactRow(state, row, 4, 4);
+        if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_GARLIC, target)) {
+            continue;
+        }
+        int adjacentBoomerangs = 0;
+        for (const int adjacentRow : {row - 1, row + 1}) {
+            if (adjacentRow >= 0 && adjacentRow < state.rows && HasPlantTypeInRow(state, SeedType::SEED_BLOOMERANG, adjacentRow)) {
+                ++adjacentBoomerangs;
+            }
+        }
+        if (adjacentBoomerangs == 0 && !HasPlantTypeInRow(state, SeedType::SEED_BLOOMERANG, row)) {
+            continue;
+        }
+        const PlantLaneAssessment lane = AssessPlantLane(state, row);
+        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+        int score = adjacentBoomerangs * 220 + lane.danger * 2 + firepower.deficit * 10;
+        score += closest->eating ? 125 : 0;
+        score += closest->positionX < 560.0f ? 70 : 0;
+        score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_GARLIC, row);
+        if (bestRow < 0 || score > bestScore) {
+            bestRow = row;
+            bestScore = score;
+        }
+    }
+    return bestRow < 0 ? std::nullopt : PlantAIPlanning::TryPlantExactRow(state, SeedType::SEED_GARLIC, bestRow, 4, 4);
+}
+
 std::optional<VSAction> PlantAIPlanning::TryThreepeaterPuffFormation(const VSGameState &state, int preferredRow, int protectedSun) {
     // Puff and Potato Mine buy the early runway in this recording. At four
     // producers the first Threepeater belongs in an inner row, where all

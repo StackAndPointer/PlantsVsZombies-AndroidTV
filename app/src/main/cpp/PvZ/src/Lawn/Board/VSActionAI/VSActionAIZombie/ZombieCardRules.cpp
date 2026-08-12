@@ -62,10 +62,13 @@ constexpr ZombieTemplatePlan kZombieTemplatePlans[] = {
     {ZombieTemplate::SundayLadderRaid, SeedType::SEED_ZOMBIE_NORMAL, 1, 7, 3, SeedType::SEED_ZOMBIE_LADDER, 3, 1, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, 5, 2},
     {ZombieTemplate::MoundNewspaperZamboni, SeedType::SEED_ZOMBIE_IMP, 3, 7, 3, SeedType::SEED_ZOMBIE_MOUND, 3, 0, SeedType::SEED_ZOMBONI, 5, 1},
     {ZombieTemplate::MoundTallnutGuard, SeedType::SEED_ZOMBIE_TRAFFIC_CONE, 2, 7, 3, SeedType::SEED_ZOMBIE_MOUND, 3, 0, SeedType::SEED_ZOMBIE_TALLNUT_HEAD, 5, 1},
+    {ZombieTemplate::ConeSundayTallnut, SeedType::SEED_ZOMBIE_TRAFFIC_CONE, 2, 6, 3, SeedType::SEED_ZOMBIE_TALLNUT_HEAD, 4, 1, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, 6, 2},
+    {ZombieTemplate::NormalNewsImpGiga, SeedType::SEED_ZOMBIE_NORMAL, 2, 6, 3, SeedType::SEED_ZOMBIE_NEWSPAPER, 3, 1, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR, 7, 2},
+    {ZombieTemplate::NewspaperLadderZamboniJack, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 6, 3, SeedType::SEED_ZOMBIE_LADDER, 3, 1, SeedType::SEED_ZOMBONI, 5, 2},
 };
 
 static_assert(sizeof(kZombieTemplatePlans) / sizeof(kZombieTemplatePlans[0])
-    == static_cast<std::size_t>(ZombieTemplate::MoundTallnutGuard) + 1);
+    == static_cast<std::size_t>(ZombieTemplate::NewspaperLadderZamboniJack) + 1);
 
 int ZombieTemplatePlanPriority(ZombieTemplate templateId) {
     // These are deliberate broad fallback profiles. More specific replay
@@ -212,6 +215,15 @@ ZombieTemplateProfile DetectZombieTemplateProfile(const VSGameState &state) {
     add(profile, ZombieTemplate::MoundTallnutGuard, hasAll({SeedType::SEED_ZOMBIE_TRAFFIC_CONE,
         SeedType::SEED_ZOMBIE_PAIL, SeedType::SEED_ZOMBIE_TRASHCAN, SeedType::SEED_ZOMBIE_TALLNUT_HEAD,
         SeedType::SEED_ZOMBIE_MOUND}));
+    add(profile, ZombieTemplate::ConeSundayTallnut, hasAll({SeedType::SEED_ZOMBIE_TRAFFIC_CONE,
+        SeedType::SEED_ZOMBIE_SUNDAY_EDITION, SeedType::SEED_ZOMBIE_BOBSLED, SeedType::SEED_ZOMBIE_POLEVAULTER,
+        SeedType::SEED_ZOMBIE_TALLNUT_HEAD}));
+    add(profile, ZombieTemplate::NormalNewsImpGiga, hasAll({SeedType::SEED_ZOMBIE_NORMAL,
+        SeedType::SEED_ZOMBIE_NEWSPAPER, SeedType::SEED_ZOMBIE_IMP, SeedType::SEED_ZOMBIE_PAIL,
+        SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR}));
+    add(profile, ZombieTemplate::NewspaperLadderZamboniJack, hasAll({SeedType::SEED_ZOMBIE_PAIL,
+        SeedType::SEED_ZOMBIE_NEWSPAPER, SeedType::SEED_ZOMBIE_LADDER, SeedType::SEED_ZOMBONI,
+        SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX}));
     return profile;
 }
 

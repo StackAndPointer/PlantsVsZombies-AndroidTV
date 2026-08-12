@@ -165,10 +165,16 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
         if (totalCost == std::numeric_limits<int>::max() || state.plantSun - totalCost < protectedSun) {
             continue;
         }
-        // Scaredy-shroom is a rear pressure layer, not an opening substitute
-        // for the first economy band. Build four producers before its first
-        // Coffee-backed deployment.
-        if (seed == SeedType::SEED_SCAREDYSHROOM && EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4) {
+        // The dedicated Scaredy/Coffee replay tempo can start its rear
+        // layer after two producers. Other decks retain the four-producer
+        // guard so generic fallback never turns it into opening padding.
+        const bool scaredyCoffeeTempoDeck = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM)
+            && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE)
+            && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE)
+            && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BONK_CHOY)
+            && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM);
+        if (seed == SeedType::SEED_SCAREDYSHROOM
+            && EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < (scaredyCoffeeTempoDeck ? 2 : 4)) {
             continue;
         }
         const bool lowCostCombat = allowLowCostCombat && card.cost <= 100

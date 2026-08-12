@@ -58,6 +58,58 @@ std::optional<VSAction> PlantAIPlanning::TryMelonScaredySupport(const VSGameStat
                                                       : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *scaredy, bestTarget, state.boardTick));
 }
 
+std::optional<VSAction> PlantAIPlanning::TryScaredyCoffeeTempo(const VSGameState &state, int preferredRow, int protectedSun) {
+    const bool isRecordedDeck = !state.isNight
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BONK_CHOY)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM);
+    if (!isRecordedDeck || CountZombieEconomy(state) == 0
+        || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 2
+        || CountPlantType(state, SeedType::SEED_SCAREDYSHROOM) >= state.rows) {
+        return std::nullopt;
+    }
+
+    const VSCardState *scaredy = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SCAREDYSHROOM);
+    const int totalCost = scaredy == nullptr ? std::numeric_limits<int>::max()
+                                             : PlantAIPlanning::EffectivePlantPlayCost(state, *scaredy);
+    if (scaredy == nullptr || totalCost == std::numeric_limits<int>::max() || state.plantSun - totalCost < protectedSun) {
+        return std::nullopt;
+    }
+
+    VSGridPosition bestTarget{};
+    int bestScore = std::numeric_limits<int>::min();
+    for (int offset = 0; offset < state.rows; ++offset) {
+        const int row = (preferredRow + offset) % state.rows;
+        if (HasPlantTypeInRow(state, SeedType::SEED_SCAREDYSHROOM, row)
+            || PlantAIPlanning::ShouldYieldLaneToMower(state, row)
+            || IsRangedOutputTradeUnfavorable(state, row)) {
+            continue;
+        }
+        const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_SCAREDYSHROOM, row);
+        if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_SCAREDYSHROOM, target)) {
+            continue;
+        }
+        const VSZombieState *closest = FindClosestZombie(state, row);
+        const PlantLaneAssessment lane = AssessPlantLane(state, row);
+        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
+        int score = SeedEconomyPressureOpportunity(state, SeedType::SEED_SCAREDYSHROOM, row) * 8;
+        score += PlantEconomyValueInRow(state, row) * 2 + firepower.deficit * 14;
+        score += closest == nullptr ? 50 : (closest->positionX > 620.0f ? 80 : -125);
+        score += lane.danger < 110 ? 70 : -105;
+        score += row == preferredRow ? 30 : 0;
+        score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM, row);
+        if (bestTarget.col < 0 || score > bestScore) {
+            bestTarget = target;
+            bestScore = score;
+        }
+    }
+    return bestTarget.col < 0 || bestTarget.row < 0
+        ? std::nullopt
+        : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *scaredy, bestTarget, state.boardTick));
+}
+
 std::optional<VSAction> PlantAIPlanning::TryScaredyMelonSupport(const VSGameState &state, int preferredRow, int protectedSun) {
     const VSCardState *scaredy = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SCAREDYSHROOM);
     const int scaredyCost = scaredy == nullptr ? std::numeric_limits<int>::max() : PlantAIPlanning::EffectivePlantPlayCost(state, *scaredy);

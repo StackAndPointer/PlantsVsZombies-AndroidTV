@@ -44,6 +44,9 @@ enum class ZombieTemplate : std::uint8_t {
     SundayLadderRaid,
     MoundNewspaperZamboni,
     MoundTallnutGuard,
+    ConeSundayTallnut,
+    NormalNewsImpGiga,
+    NewspaperLadderZamboniJack,
 };
 
 enum class ZombieTemplatePhase : std::uint8_t {
