@@ -56,21 +56,13 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const bool heavyZombieDeck = (zombieDeckArchetype & kZombieDeckHeavy) != 0;
     const bool swarmZombieDeck = (zombieDeckArchetype & kZombieDeckSwarm) != 0;
     const bool deckNeedsEarlyFirepower = fastZombieDeck || vehicleZombieDeck || rangedZombieDeck || heavyZombieDeck || swarmZombieDeck;
-    // Five Sunflowers already fund the low-cost pressure seen in VS. Do not
-    // hold a healthy board at seven merely because more income slots exist.
-    const int baseOpeningIncomeTarget = std::max(3, state.rows >= 6 ? 5 : 4);
-    const int openingIncomeTarget = deckNeedsEarlyFirepower
-        ? std::max(3, baseOpeningIncomeTarget - 1)
-        : baseOpeningIncomeTarget;
-    const int minimumIncomeBeforeOutput = std::max(2, deckNeedsEarlyFirepower ? 3 : (state.rows >= 6 ? 4 : 3));
     const int actualIncomePlantCount = CountPlantIncome(state);
-    const int primaryOutputCost = PlantAIPlanning::PrimaryOutputCost(state);
-    // Enhanced AI advances cheap pressure by one economy step. A costly main
-    // still needs its physical producers: treating five real Sunflowers as
-    // six for a Melon/Coffee timing strands the AI below its first carry.
-    const bool enhancedCheapCarry = vsai::IsEnhancedAIEnabled() && vsai::IsSideEnabled(VSSide::Plants)
-        && primaryOutputCost > 0 && primaryOutputCost < 150;
-    const int incomePlantCount = actualIncomePlantCount + (enhancedCheapCarry ? 1 : 0);
+    const int openingIncomeTarget = PlantAIPlanning::MainCarryIncomeTarget(state);
+    // Main-C timing is always based on planted producers. Enhanced mode
+    // accelerates their production cooldown, but must not count a fictitious
+    // extra Sunflower and begin a 125-Sun carry at only four real plants.
+    const int incomePlantCount = actualIncomePlantCount;
+    const int minimumIncomeBeforeOutput = openingIncomeTarget;
     const int sustainedOutputCount = CountSustainedOutputPlants(state);
     const bool hasIncomeSeed = PlantAIPlanning::HasIncomeSeed(state);
     const bool hasSunshroomFiller = PlantAIPlanning::HasSunshroomSeed(state);
@@ -152,14 +144,8 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const int areaCounterReserve = PlantAIPlanning::AreaCounterReserve(state);
     const bool hasEconomyPressurePlan = PlantAIPlanning::HasEconomyPressurePlan(state);
     const bool midGame = state.boardTick >= 32000 || CountZombieEconomy(state) >= state.rows;
-    const int normalIncomeBase = std::max(3, state.rows >= 6 ? 5 : 4);
-    // Enhanced tempo advances pressure thresholds, not the physical plant
-    // count. Restore the real producer line in midgame so accelerated
-    // openings do not remain starved after early trades.
-    const int enhancedIncomeRecoveryTarget = normalIncomeBase
-        + (vsai::IsEnhancedAIEnabled() && vsai::IsSideEnabled(VSSide::Plants) ? 1 : 0);
-    const int lateIncomeRecoveryTarget = !state.isSuddenDeath && midGame && actualIncomePlantCount < enhancedIncomeRecoveryTarget
-        ? enhancedIncomeRecoveryTarget
+    const int lateIncomeRecoveryTarget = !state.isSuddenDeath && midGame && actualIncomePlantCount < openingIncomeTarget
+        ? openingIncomeTarget
         : 0;
     const int economyPressureIncomeTarget = PlantAIPlanning::EconomyPressureIncomeTarget(state);
     const int incomeExpansionTarget = state.isSuddenDeath ? 0
@@ -233,11 +219,6 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     // hold its current wave, recover missing producers even when a high-sun
     // output branch is available; otherwise a cheap early push leaves it at
     // three or four producers for the remainder of the match.
-    const bool canRecoverLateIncome = lateIncomeRecoveryTarget > 0 && !immediateCounterThreat
-        && !pressureOutrunsFirepower && danger.danger < 145
-        && (counterFirepower.canHold || weakestFirepower.closestDistance > 760)
-        && (!openingNeedsFirepower || actualIncomePlantCount < normalIncomeBase);
-
     // The recorded plant side builds its sun base first, then answers a real
     // heavy/fast push with Squash. It is never an opening filler card.
     // Against Gargantuars the replay preserves Imp Pear for the first
@@ -372,14 +353,18 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     if (std::optional<VSAction> action = PlantAIPlanning::TryWakeSleepingMushroom(state, danger.row)) {
         return action;
     }
-    // An early pressure opening may deliberately pause at three producers,
-    // but it must rebuild to the normal four/five-producer base once the
-    // game reaches a stable midgame.  This is intentionally below immediate
-    // defense and above optional replay formations.
-    if (canRecoverLateIncome) {
+    // Template pressure begins only after the physical economy needed by the
+    // selected main C exists. Emergency counters and lane defense above are
+    // still allowed to interrupt this, but an otherwise safe board cannot
+    // turn four Sunflowers into an early 125-Sun carry.
+    const bool mustFundMainCarry = hasIncomeSeed && actualIncomePlantCount < openingIncomeTarget
+        && !immediateCounterThreat && !openingNeedsFirepower && !pressureOutrunsFirepower
+        && danger.danger < 145 && (counterFirepower.canHold || weakestFirepower.closestDistance > 760);
+    if (mustFundMainCarry) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryIncomePlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
             return action;
         }
+        return std::nullopt;
     }
     if (!immediateCounterThreat && !openingNeedsFirepower && CountZombieEconomy(state) > 0) {
         if (economyZombieDeck) {

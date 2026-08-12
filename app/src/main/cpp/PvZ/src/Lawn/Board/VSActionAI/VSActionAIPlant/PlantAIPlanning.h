@@ -72,6 +72,7 @@ protected:
     bool HasSunshroomSeed(const VSGameState &state) const;
     bool HasEconomyPressurePlan(const VSGameState &state) const;
     int PrimaryOutputCost(const VSGameState &state) const;
+    int MainCarryIncomeTarget(const VSGameState &state) const;
     int EconomyPressureIncomeTarget(const VSGameState &state) const;
     std::optional<VSAction> TryBoomerangControlPressure(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryBoomerangGarlicFormation(const VSGameState &state, int preferredRow, int protectedSun);

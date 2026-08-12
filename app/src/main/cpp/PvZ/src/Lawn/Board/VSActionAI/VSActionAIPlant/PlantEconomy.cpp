@@ -395,6 +395,34 @@ int PlantAIPlanning::PrimaryOutputCost(const VSGameState &state) const {
     return primaryOutputCost;
 }
 
+int PlantAIPlanning::MainCarryIncomeTarget(const VSGameState &state) const {
+    const int compactTarget = state.rows >= 6 ? 5 : 4;
+    const int primaryOutputCost = PlantAIPlanning::PrimaryOutputCost(state);
+    if (primaryOutputCost <= 0) {
+        return compactTarget;
+    }
+
+    // These are physical producers, not an enhanced-AI virtual economy. A
+    // 200 Sun Melon-pult needs the eight-Sunflower bank that can actually
+    // support repeated plays; a faster producer cooldown does not replace it.
+    if (primaryOutputCost <= 50) {
+        return std::max(compactTarget, 4);
+    }
+    if (primaryOutputCost <= 100) {
+        return std::max(compactTarget, 5);
+    }
+    if (primaryOutputCost <= 150) {
+        return std::max(compactTarget, 6);
+    }
+    if (primaryOutputCost <= 200) {
+        return std::max(compactTarget, 8);
+    }
+    if (primaryOutputCost <= 250) {
+        return std::max(compactTarget, 9);
+    }
+    return std::max(compactTarget, 10);
+}
+
 int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const {
     bool hasGraveBuster = false;
     bool hasCrossLaneOutput = false;
@@ -444,12 +472,8 @@ int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const
         }
     }
 
-    // Five Sunflowers on a six-row board (four on smaller boards) finance
-    // the normal VS opening.  A sixth producer is allowed only for a costly
-    // carry on a quiet, covered board; the target must not quietly grow to
-    // ten while the enemy builds grave pressure.
-    const int compactTarget = state.rows >= 6 ? 5 : 4;
-    int target = compactTarget;
+    const int mainCarryTarget = MainCarryIncomeTarget(state);
+    int target = mainCarryTarget;
     const int graveCount = CountZombieEconomy(state);
     const int phase = static_cast<int>(state.boardTick / 16000);
     const bool midGame = phase >= 2 || graveCount >= state.rows;
@@ -458,22 +482,20 @@ int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const
     const bool boardCanSafelyGrow = contestedZombieRows == 0 || !pressureOutrunsFirepower;
     const int outputCount = CountSustainedOutputPlants(state);
 
-    if (boardCanSafelyGrow && primaryOutputCost >= 150 && (!midGame || outputCount >= std::max(2, state.rows / 2))) {
+    // The carry-cost target is an opening floor. Tactical pressure can defer
+    // a safe Sunflower for a defense, but may never silently lower the bank
+    // needed to start that main damage card.
+    if (boardCanSafelyGrow && primaryOutputCost >= 225 && (!midGame || outputCount >= std::max(2, state.rows / 2))) {
         ++target;
     }
     if (boardCanSafelyGrow && !midGame && primaryOutputCost >= 225 && state.plantSun < primaryOutputCost) {
         ++target;
     }
-    if (hasGraveBuster || hasCrossLaneOutput || graveCount > state.rows || pressureOutrunsFirepower) {
-        --target;
-    }
-    if (cheapestOutputCost == std::numeric_limits<int>::max()) {
+    if (cheapestOutputCost == std::numeric_limits<int>::max() && !hasGraveBuster && !hasCrossLaneOutput && graveCount <= state.rows
+        && !pressureOutrunsFirepower) {
         ++target;
     }
-    // A 225+ carry should be funded by a real extra producer, including
-    // under enhanced AI. The old +1 cap quietly erased that costly-carry
-    // branch and made Melon-pult/coffee mains stall just below their timing.
-    return std::clamp(target, std::max(3, compactTarget - 1), compactTarget + (primaryOutputCost >= 225 ? 2 : 1));
+    return std::clamp(target, mainCarryTarget, 11);
 }
 
 } // namespace vsai::detail
