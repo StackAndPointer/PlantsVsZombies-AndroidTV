@@ -599,7 +599,7 @@ bool HasReadyZombieBreakthroughCard(const VSGameState &state) {
 
 bool IsHeavyZombieSeed(SeedType seed) {
     return seed == SeedType::SEED_ZOMBIE_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR
-        || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL || seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER;
+        || seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER;
 }
 
 bool IsZombieGraveGuardSeed(SeedType seed) {

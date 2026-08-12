@@ -322,7 +322,6 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             break;
         case SeedType::SEED_ZOMBIE_GARGANTUAR:
         case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
-        case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
             // Heavy cards are release cards, not automatic reinforcements.
             // A human-like commit seeks a defended economic line to force
             // several answers, and avoids walking a giant into a formed
@@ -352,10 +351,6 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
                     && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
                     && areaCounterExposure < 120;
-                const bool replayMoundFootballRelease = moundBungeeFootballTemplate
-                    && seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL && economyCount >= 8
-                    && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
-                    && areaCounterExposure < 120;
                 const bool replayImpFootballRelease = newspaperImpFootballGiantTemplate
                     && seed == SeedType::SEED_ZOMBIE_GARGANTUAR && economyCount >= state.rows + 2
                     && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
@@ -372,16 +367,15 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                     && hasBreakthroughTarget;
                 const bool canCommitHeavy = economyCount >= heavyEconomyThreshold || hasMidGameHeavyEconomy
                     || earlyHeavyCommit || replayGigaRelease || replayFlagGigaRelease || replayArmoredGigaRelease
-                    || replayMoundFootballRelease || replayImpFootballRelease || replayZomblobGigaRelease;
+                    || replayImpFootballRelease || replayZomblobGigaRelease;
                 score += canCommitHeavy
                     ? ((hasBreakthroughTarget || earlyHeavyCommit || replayGigaRelease || replayFlagGigaRelease || replayArmoredGigaRelease
-                        || replayMoundFootballRelease || replayImpFootballRelease || replayZomblobGigaRelease) ? 285 : 35)
+                        || replayImpFootballRelease || replayZomblobGigaRelease) ? 285 : 35)
                     : -220;
                 score += earlyHeavyCommit ? 125 : 0;
                 score += replayGigaRelease ? 165 : 0;
                 score += replayFlagGigaRelease ? 155 : 0;
                 score += replayArmoredGigaRelease ? 165 : 0;
-                score += replayMoundFootballRelease ? 165 : 0;
                 score += replayImpFootballRelease ? 145 : 0;
                 score += replayZomblobGigaRelease ? 165 : 0;
                 score += plantCount * 18 + sustainedOutput / 2 + economyValue / 3;
@@ -534,9 +528,12 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 : 0;
             break;
         case SeedType::SEED_ZOMBIE_FOOTBALL:
+        case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
             // Football is the mid-game runner behind a Pea Head firing
-            // spread. Before that spread exists, keep the brains for graves
-            // and a second ranged lane instead of donating an isolated rush.
+            // spread. Giga Football additionally tackles its first plant,
+            // but its strategic deployment remains the same as Football.
+            // Before that spread exists, keep the brains for graves and a
+            // second ranged lane instead of donating an isolated rush.
             score += plantCount * 15 + sustainedOutput / 2 + economyValue / 3 + (hasSnowPea ? 95 : 0);
             score += peaHeadGiantTemplate && peaHeadCount >= 2 && economyCount >= state.rows + 2 ? 180 : -110;
             score += zombieCount == 0 ? 80 : -170;
@@ -551,6 +548,10 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 : 0;
             score += impPailSledFootballTemplate && economyCount >= 2 && CountActiveZombieRows(state) >= 2
                 ? (zombieCount == 0 ? 175 : -170)
+                : 0;
+            score += seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL && moundBungeeFootballTemplate
+                    && economyCount >= state.rows && CountActiveZombieRows(state) >= 2
+                ? (zombieCount == 0 ? 165 : -150)
                 : 0;
             score -= areaCounterExposure / 3;
             break;

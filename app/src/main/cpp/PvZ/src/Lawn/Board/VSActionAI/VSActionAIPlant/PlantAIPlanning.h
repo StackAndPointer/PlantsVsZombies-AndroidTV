@@ -103,7 +103,7 @@ protected:
     bool ShouldYieldLaneToMower(const VSGameState &state, int row) const;
     std::optional<VSAction> TrySpikeweed(const VSGameState &state, int row, int protectedSun);
     std::optional<VSAction> TryCactusSpikeweedPressure(const VSGameState &state, int preferredRow, int protectedSun);
-    std::optional<VSAction> TrySquashHeadDistraction(const VSGameState &state, int row, int protectedSun);
+    std::optional<VSAction> TryImpactDistraction(const VSGameState &state, int row, int protectedSun);
     int AreaCounterReserve(const VSGameState &state) const;
     std::optional<VSAction> TryFallbackPlant(const VSGameState &state, const PlantLaneAssessment &danger, int buildRow);
 };

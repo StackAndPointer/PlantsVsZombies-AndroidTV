@@ -109,8 +109,9 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     // High-cost cards are a deliberate conversion of a developed grave
     // economy, not an opening all-in.  Start banking before the final two
     // graves only when multiple routes already tax the plant player.
+    const bool enhancedZombieAI = vsai::IsEnhancedAIEnabled() && vsai::IsSideEnabled(VSSide::Zombies);
     const bool bankForHeavy = heavyZombieReserve >= 100
-        && economyCount >= std::max(state.rows + 2, heavyEconomyThreshold - 2)
+        && economyCount >= std::max(state.rows + (enhancedZombieAI ? 1 : 2), heavyEconomyThreshold - (enhancedZombieAI ? 3 : 2))
         && activePressureRows >= 2 && CountLivePlants(state) >= state.rows && graveDefenseScore < 100;
     const int minimumOpeningEconomy = std::min(2, std::max(1, state.rows));
     const int desiredOpeningRows = std::min(3, state.rows);
@@ -350,7 +351,11 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // not repeatedly spend the giant timing on medium cards.
                 // This keeps 100/200-brain finishers reachable without
                 // leaving every grave route unprotected.
-                score += card.cost <= std::max(50, heavyZombieReserve / 4) ? -45 : -190;
+                if (!isProtectedGuard) {
+                    const int lowCostPenalty = enhancedZombieAI ? -90 : -45;
+                    const int mediumCostPenalty = enhancedZombieAI ? -285 : -190;
+                    score += card.cost <= std::max(50, heavyZombieReserve / 4) ? lowCostPenalty : mediumCostPenalty;
+                }
             }
             if (isLaneAttack && !IsHeavyZombieSeed(seed) && zombiesInRow > 0 && unpressuredEconomyRows > 0
                 && !pursueBrokenMowerRow) {

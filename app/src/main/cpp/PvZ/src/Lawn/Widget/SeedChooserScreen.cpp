@@ -652,6 +652,24 @@ bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
         return false;
     }
 
+    // Spikeweed and Spikerock hard-counter the Zomboni path. Once the plant
+    // player has committed either card, do not let a replay template spend a
+    // zombie slot on a vehicle that its opponent already answers directly.
+    if (!screen->mBanningPhase && screen->mIsZombieChooser && seedType == SeedType::SEED_ZOMBONI
+        && screen->mApp != nullptr && screen->mApp->mSeedChooserScreen != nullptr) {
+        SeedChooserScreen *plantScreen = screen->mApp->mSeedChooserScreen;
+        const int plantStorageCount = plantScreen->GetSeedStorageCount();
+        for (int seedIndex = 0; seedIndex < plantStorageCount; ++seedIndex) {
+            if (plantScreen->GetChosenSeed(seedIndex).mSeedState != ChosenSeedState::SEED_IN_BANK) {
+                continue;
+            }
+            const SeedType plantSeed = plantScreen->GetPlantSeedType(seedIndex);
+            if (plantSeed == SeedType::SEED_SPIKEWEED || plantSeed == SeedType::SEED_SPIKEROCK) {
+                return false;
+            }
+        }
+    }
+
     const int seedIndex = screen->GetSeedPacketIndex(seedType);
     if (seedIndex < 0 || seedIndex >= screen->GetSeedStorageCount() || !screen->HasPacket(seedType, screen->mIsZombieChooser)) {
         return false;

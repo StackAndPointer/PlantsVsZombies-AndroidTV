@@ -155,31 +155,44 @@ std::optional<VSAction> PlantAIPlanning::TryCactusSpikeweedPressure(const VSGame
     return bestRow < 0 ? std::nullopt : PlantAIPlanning::TrySpikeweed(state, bestRow, protectedSun);
 }
 
-std::optional<VSAction> PlantAIPlanning::TrySquashHeadDistraction(const VSGameState &state, int row, int protectedSun) {
-    const VSZombieState *squashHead = nullptr;
+std::optional<VSAction> PlantAIPlanning::TryImpactDistraction(const VSGameState &state, int row, int protectedSun) {
+    const VSZombieState *impactZombie = nullptr;
     for (const VSZombieState &zombie : state.zombies) {
-        if (zombie.dead || zombie.row != row || zombie.zombieType != static_cast<std::uint16_t>(ZombieType::ZOMBIE_SQUASH_HEAD)) {
+        const ZombieType type = static_cast<ZombieType>(zombie.zombieType);
+        if (zombie.dead || zombie.row != row
+            || (type != ZombieType::ZOMBIE_SQUASH_HEAD && type != ZombieType::ZOMBIE_GIGA_FOOTBALL)) {
             continue;
         }
-        if (squashHead == nullptr || zombie.positionX < squashHead->positionX) {
-            squashHead = &zombie;
+        if (impactZombie == nullptr || zombie.positionX < impactZombie->positionX) {
+            impactZombie = &zombie;
         }
     }
-    if (squashHead == nullptr || squashHead->positionX > 720.0f) {
+    if (impactZombie == nullptr || impactZombie->positionX > 720.0f) {
         return std::nullopt;
     }
 
-    const int squashColumn = std::clamp(static_cast<int>((squashHead->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
+    const int impactColumn = std::clamp(static_cast<int>((impactZombie->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
     int protectedColumn = -1;
     for (const VSPlantState &plant : state.plants) {
         const SeedType seed = static_cast<SeedType>(plant.seedType);
         const bool valuableOutput = IsSustainedOutputSeed(seed) || PlantValueScore(plant) >= 120;
-        if (IsDeadOrOutside(plant) || plant.position.row != row || plant.position.col >= squashColumn || !valuableOutput) {
+        if (IsDeadOrOutside(plant) || plant.position.row != row || plant.position.col >= impactColumn || !valuableOutput) {
             continue;
         }
         protectedColumn = std::max(protectedColumn, static_cast<int>(plant.position.col));
     }
     if (protectedColumn < 0) {
+        return std::nullopt;
+    }
+
+    // A front plant already absorbs the next Squash Head or Giga Football
+    // tackle. Adding another disposable body behind it spends a card without
+    // buying any additional time for the protected carry.
+    const bool hasExistingPad = std::any_of(state.plants.begin(), state.plants.end(), [&](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.position.row == row
+            && plant.position.col > protectedColumn && plant.position.col <= impactColumn;
+    });
+    if (hasExistingPad) {
         return std::nullopt;
     }
 
@@ -190,7 +203,7 @@ std::optional<VSAction> PlantAIPlanning::TrySquashHeadDistraction(const VSGameSt
             || (!disposablePad && state.plantSun - card->cost < protectedSun)) {
             continue;
         }
-        for (int column = squashColumn; column > protectedColumn; --column) {
+        for (int column = impactColumn; column > protectedColumn; --column) {
             if (std::optional<VSAction> action = PlantAIPlanning::TryPlantExactRow(state, seed, row, column, column)) {
                 return action;
             }

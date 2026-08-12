@@ -21,6 +21,19 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         }
     }
 
+    // A pressure template must never spend the first planting turn on a
+    // shooter. Establish the map-appropriate income producer before any
+    // formation, output, or grave-pressure branch is allowed to run.
+    if (!state.isSuddenDeath && CountLivePlants(state) == 0) {
+        const SeedType openingIncome = state.isNight ? SeedType::SEED_SUNSHROOM : SeedType::SEED_SUNFLOWER;
+        const VSCardState *card = PlantAIPlanning::FindReadyCard(state, openingIncome);
+        const VSGridPosition target = FindSafeIncomeCell(state, LeastDevelopedPlantRow(state));
+        if (card != nullptr && target.col >= 0 && target.row >= 0 && state.plantSun >= card->cost) {
+            return MakePlayAction(VSSide::Plants, *card, target, state.boardTick);
+        }
+        return std::nullopt;
+    }
+
     // A single Blover is the full-board answer to live Balloon Zombies.
     // Resolve it before lane-local counters, economy, or output choices.
     if (std::optional<VSAction> action = PlantAIPlanning::TryBlover(state, MostUrgentCounterRow(state))) {
@@ -108,9 +121,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_GARGANTUAR);
     const bool hasGigaPoleVaulter = HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_POLEVAULTER);
     int zamboniRow = -1;
-    int squashHeadRow = -1;
+    int impactThreatRow = -1;
     float closestZamboniX = std::numeric_limits<float>::max();
-    float closestSquashHeadX = std::numeric_limits<float>::max();
+    float closestImpactThreatX = std::numeric_limits<float>::max();
     for (const VSZombieState &zombie : state.zombies) {
         if (zombie.dead) {
             continue;
@@ -119,9 +132,11 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             zamboniRow = zombie.row;
             closestZamboniX = zombie.positionX;
         }
-        if (zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_SQUASH_HEAD) && zombie.positionX < closestSquashHeadX) {
-            squashHeadRow = zombie.row;
-            closestSquashHeadX = zombie.positionX;
+        const ZombieType zombieType = static_cast<ZombieType>(zombie.zombieType);
+        if ((zombieType == ZombieType::ZOMBIE_SQUASH_HEAD || zombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL)
+            && zombie.positionX < closestImpactThreatX) {
+            impactThreatRow = zombie.row;
+            closestImpactThreatX = zombie.positionX;
         }
     }
     const bool earlySingleBucket = state.boardTick < 32000 && counterZombieCount == 1
@@ -223,8 +238,8 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             return action;
         }
     }
-    if (squashHeadRow >= 0) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TrySquashHeadDistraction(state, squashHeadRow, protectedSun)) {
+    if (impactThreatRow >= 0) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TryImpactDistraction(state, impactThreatRow, protectedSun)) {
             return action;
         }
     }
