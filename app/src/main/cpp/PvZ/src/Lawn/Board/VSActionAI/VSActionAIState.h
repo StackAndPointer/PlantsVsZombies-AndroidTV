@@ -19,6 +19,7 @@ int CountActiveZombies(const VSGameState &state);
 int CountActiveZombieRows(const VSGameState &state);
 int CountPlantType(const VSGameState &state, SeedType seedType);
 bool HasPlantTypeInRow(const VSGameState &state, SeedType seedType, int row);
+bool HasActiveDeckCard(const VSGameState &state, VSSide side, SeedType seedType);
 bool IsHeavyZombie(std::uint16_t zombieType);
 bool IsFastZombie(std::uint16_t zombieType);
 bool IsDecisiveCounterZombie(std::uint16_t zombieType);

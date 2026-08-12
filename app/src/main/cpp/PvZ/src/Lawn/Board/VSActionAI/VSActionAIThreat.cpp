@@ -98,6 +98,13 @@ bool HasPlantTypeInRow(const VSGameState &state, SeedType seedType, int row) {
     });
 }
 
+bool HasActiveDeckCard(const VSGameState &state, VSSide side, SeedType seedType) {
+    const std::size_t sideIndex = side == VSSide::Plants ? 0 : 1;
+    return std::any_of(state.seedBanks[sideIndex].begin(), state.seedBanks[sideIndex].end(), [seedType](const VSCardState &card) {
+        return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(seedType);
+    });
+}
+
 bool IsHeavyZombie(std::uint16_t zombieType) {
     switch (static_cast<ZombieType>(zombieType)) {
         case ZombieType::ZOMBIE_PAIL:

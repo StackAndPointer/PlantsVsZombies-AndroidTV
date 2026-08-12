@@ -116,25 +116,20 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int desiredOpeningRows = std::min(3, state.rows);
     const bool hasReadyFrontlineProbe = ZombieAIPlanning::HasReadyFrontlineProbe(state);
     const bool hasReadyEarlyHeavyCommit = ZombieAIPlanning::HasReadyEarlyHeavyCommit(state, economyCount, activePressureRows);
-    const auto HasZombieCard = [&state](SeedType seed) {
-        return std::any_of(state.seedBanks[1].begin(), state.seedBanks[1].end(), [seed](const VSCardState &card) {
-            return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(seed);
-        });
-    };
     // The Normal/Trashcan/Dog/Football/Giant replay opens with a single
     // Normal immediately after its first grave. That cheap probe forces a
     // response while the later Trashcan still has an economy worth guarding;
     // it is not the same as a generic all-in after one grave.
-    const bool armoredNormalRushTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN) && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL)
-        && (HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR) || HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR));
-    const bool impPailSundayTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL) && HasZombieCard(SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_SCREEN_DOOR);
-    const bool zamboniPoleOpeningTemplate = HasZombieCard(SeedType::SEED_ZOMBONI)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER) && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasZombieCard(SeedType::SEED_ZOMBIE_IMP);
+    const bool armoredNormalRushTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL)
+        && (HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR) || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR));
+    const bool impPailSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR);
+    const bool zamboniPoleOpeningTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBONI)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP);
     // Both recorded lines establish three rear graves before their first
     // Imp/Zomboni probe. Two graves give neither the later Sunday release
     // nor a returned Zomboni enough economy to stay on the board.

@@ -10,18 +10,6 @@ namespace vsai::detail {
 int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int actualEconomyCount, int effectiveCost) {
     const SeedType seed = static_cast<SeedType>(card.seedType);
     const int economyCount = EffectiveAIEconomyCount(VSSide::Zombies, actualEconomyCount);
-    const auto HasPlantCard = [&state](SeedType candidate) {
-        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [candidate](const VSCardState &plantCard) {
-            return plantCard.active && !plantCard.matchRestricted
-                && plantCard.seedType == static_cast<std::uint16_t>(candidate);
-        });
-    };
-    const auto HasZombieCard = [&state](SeedType candidate) {
-        return std::any_of(state.seedBanks[1].begin(), state.seedBanks[1].end(), [candidate](const VSCardState &zombieCard) {
-            return zombieCard.active && !zombieCard.matchRestricted
-                && zombieCard.seedType == static_cast<std::uint16_t>(candidate);
-        });
-    };
     const bool hasPlants = std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); });
     const bool hasSnowPea = HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, targetRow);
     const bool hasBonkChoy = HasPlantTypeInRow(state, SeedType::SEED_BONK_CHOY, targetRow);
@@ -41,119 +29,119 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const int economyValue = PlantEconomyValueInRow(state, targetRow);
     const PlantLaneAssessment targetLane = AssessPlantLane(state, targetRow);
     const int areaCounterExposure = PlantAreaCounterExposure(state, targetRow);
-    const bool plantHasMagnet = HasPlantCard(SeedType::SEED_MAGNETSHROOM)
+    const bool plantHasMagnet = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MAGNETSHROOM)
         || CountPlantType(state, SeedType::SEED_MAGNETSHROOM) > 0;
-    const bool plantHasPeaCarry = HasPlantCard(SeedType::SEED_PEASHOOTER)
-        || HasPlantCard(SeedType::SEED_REPEATER) || HasPlantCard(SeedType::SEED_THREEPEATER);
-    const bool plantHasShortPult = HasPlantCard(SeedType::SEED_FUMESHROOM)
-        || HasPlantCard(SeedType::SEED_SPORESHROOM) || HasPlantCard(SeedType::SEED_PUFFSHROOM);
-    const bool plantHasLobbedCard = HasPlantCard(SeedType::SEED_CABBAGEPULT)
-        || HasPlantCard(SeedType::SEED_KERNELPULT) || HasPlantCard(SeedType::SEED_MELONPULT)
-        || HasPlantCard(SeedType::SEED_WINTERMELON) || HasPlantCard(SeedType::SEED_SPORESHROOM)
-        || HasPlantCard(SeedType::SEED_FUMESHROOM) || HasPlantCard(SeedType::SEED_PUFFSHROOM);
-    const bool plantHasNutCard = HasPlantCard(SeedType::SEED_WALLNUT)
-        || HasPlantCard(SeedType::SEED_PUMPKINSHELL);
-    const bool plantHasHighValueCarryCard = HasPlantCard(SeedType::SEED_MELONPULT)
-        || HasPlantCard(SeedType::SEED_SPORESHROOM) || HasPlantCard(SeedType::SEED_STARFRUIT)
-        || HasPlantCard(SeedType::SEED_REPEATER) || HasPlantCard(SeedType::SEED_THREEPEATER);
-    const bool fastPressureTemplate = (HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL) || HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER)
-        || HasZombieCard(SeedType::SEED_ZOMBIE_SUPER_FAN_IMP) || HasZombieCard(SeedType::SEED_ZOMBIE_FLAG))
-        && (HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER) || HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-            || HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE));
-    const bool rangedSiegeTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD)
-        && (HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN) || HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
-            || HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL));
-    const bool sundayPressureTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
-        && (HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL) || HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-            || HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER));
-    const bool zamboniPoleTemplate = HasZombieCard(SeedType::SEED_ZOMBONI)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER) && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasZombieCard(SeedType::SEED_ZOMBIE_IMP);
-    const bool peaHeadGiantTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL) && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN)
-        && (HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR) || HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR));
-    const bool impSledSundayTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL) && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_SUNDAY_EDITION) && HasZombieCard(SeedType::SEED_ZOMBIE_SCREEN_DOOR);
-    const bool armoredNormalRushTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN) && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
+    const bool plantHasPeaCarry = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
+    const bool plantHasShortPult = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
+    const bool plantHasLobbedCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CABBAGEPULT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_KERNELPULT) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WINTERMELON) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
+    const bool plantHasNutCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL);
+    const bool plantHasHighValueCarryCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
+    const bool fastPressureTemplate = (HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL) || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
+        || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUPER_FAN_IMP) || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FLAG))
+        && (HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER) || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+            || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE));
+    const bool rangedSiegeTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD)
+        && (HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN) || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
+            || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL));
+    const bool sundayPressureTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
+        && (HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL) || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+            || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER));
+    const bool zamboniPoleTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBONI)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP);
+    const bool peaHeadGiantTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN)
+        && (HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR) || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR));
+    const bool impSledSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR);
+    const bool armoredNormalRushTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
     // Replay-specific archetypes only refine a legal candidate's score below.
     // They deliberately retain the general economy, anti-pult and lane-spread
     // checks so a recorded opening cannot turn into an unconditional script.
-    const bool newspaperDiggerGigaTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER) && HasZombieCard(SeedType::SEED_ZOMBIE_DIGGER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
+    const bool newspaperDiggerGigaTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DIGGER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
     const bool newspaperSledDiggerGigaTemplate = newspaperDiggerGigaTemplate
-        && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED);
-    const bool coneImpFootballGiantTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL) && HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR);
-    const bool normalNewsSledTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER) && HasZombieCard(SeedType::SEED_ZOMBONI)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED) && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER);
-    const bool normalNewsImpSundayTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER) && HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_IMP) && HasZombieCard(SeedType::SEED_ZOMBIE_SUNDAY_EDITION);
-    const bool ladderPoleTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasZombieCard(SeedType::SEED_ZOMBIE_LADDER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER);
-    const bool newspaperFanPoleTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER) && HasZombieCard(SeedType::SEED_ZOMBIE_SUPER_FAN_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER);
-    const bool peaHeadSundayTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_IMP) && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_SUNDAY_EDITION) && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR);
-    const bool peaHeadZamboniTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL) && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN)
-        && HasZombieCard(SeedType::SEED_ZOMBONI) && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR);
-    const bool peaHeadFlagBungeeTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_BUNGEE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FLAG);
-    const bool moundSkirmishTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_MOUND)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL) && HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER) && HasZombieCard(SeedType::SEED_ZOMBONI);
-    const bool flagSquashTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_FLAG)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_SQUASH_HEAD)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_SCREEN_DOOR) && HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
-    const bool fanImpTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_SUPER_FAN_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_SQUASH_HEAD) && HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_SCREEN_DOOR) && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN);
-    const bool moundTallnutSledTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL) && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN) && HasZombieCard(SeedType::SEED_ZOMBIE_TALLNUT_HEAD)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_MOUND);
-    const bool impLadderFootballTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR) && HasZombieCard(SeedType::SEED_ZOMBIE_LADDER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_SCREEN_DOOR);
-    const bool sledDogHeavyTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER) && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_FOOTBALL);
-    const bool dogSledPeaTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED) && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD) && HasZombieCard(SeedType::SEED_ZOMBIE_IMP);
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED);
+    const bool coneImpFootballGiantTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR);
+    const bool normalNewsSledTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBONI)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER);
+    const bool normalNewsImpSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION);
+    const bool ladderPoleTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_LADDER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER);
+    const bool newspaperFanPoleTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUPER_FAN_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER);
+    const bool peaHeadSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR);
+    const bool peaHeadZamboniTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBONI) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR);
+    const bool peaHeadFlagBungeeTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BUNGEE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FLAG);
+    const bool moundSkirmishTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_MOUND)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBONI);
+    const bool flagSquashTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FLAG)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SQUASH_HEAD)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
+    const bool fanImpTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUPER_FAN_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SQUASH_HEAD) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN);
+    const bool moundTallnutSledTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TALLNUT_HEAD)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_MOUND);
+    const bool impLadderFootballTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_LADDER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR);
+    const bool sledDogHeavyTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL);
+    const bool dogSledPeaTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP);
     // These winning replay decks were previously represented only by
     // generic card scores. Keep their observed release order explicit while
     // leaving target, grave-screen and anti-Ash constraints in charge.
-    const bool ladderBalloonZamboniTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_LADDER) && HasZombieCard(SeedType::SEED_ZOMBONI)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_BALLOON) && HasZombieCard(SeedType::SEED_ZOMBIE_TALLNUT_HEAD)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_JALAPENO_HEAD);
-    const bool moundBungeeFootballTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN) && HasZombieCard(SeedType::SEED_ZOMBIE_MOUND)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_BUNGEE);
-    const bool newspaperImpFootballGiantTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER) && HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_GARGANTUAR);
-    const bool peaHeadZomblobGiantTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_PEA_HEAD) && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_ZOMBLOB) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
-    const bool impPailSledFootballTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED) && HasZombieCard(SeedType::SEED_ZOMBIE_PAIL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL);
+    const bool ladderBalloonZamboniTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_LADDER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBONI)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BALLOON) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TALLNUT_HEAD)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_JALAPENO_HEAD);
+    const bool moundBungeeFootballTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_MOUND)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BUNGEE);
+    const bool newspaperImpFootballGiantTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR);
+    const bool peaHeadZomblobGiantTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_ZOMBLOB) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
+    const bool impPailSledFootballTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL);
     const int peaHeadCount = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(), [](const VSZombieState &zombie) {
         return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
     }));

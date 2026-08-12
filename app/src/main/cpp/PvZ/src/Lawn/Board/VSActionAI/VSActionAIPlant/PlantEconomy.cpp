@@ -140,23 +140,18 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
     const VSCardState *bestCard = nullptr;
     VSGridPosition bestTarget{};
     int bestScore = std::numeric_limits<int>::min();
-    const auto HasActiveSeed = [&state](SeedType seed) {
-        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [seed](const VSCardState &card) {
-            return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(seed);
-        });
-    };
-    const bool peaCabbageTorchTemplate = HasActiveSeed(SeedType::SEED_PEASHOOTER)
-        && HasActiveSeed(SeedType::SEED_CABBAGEPULT) && HasActiveSeed(SeedType::SEED_TORCHWOOD);
-    const bool threepeaterPuffTemplate = HasActiveSeed(SeedType::SEED_THREEPEATER)
-        && HasActiveSeed(SeedType::SEED_PUFFSHROOM);
-    const bool boomerangControlTemplate = HasActiveSeed(SeedType::SEED_BLOOMERANG)
-        && HasActiveSeed(SeedType::SEED_HYPNOSHROOM) && HasActiveSeed(SeedType::SEED_DOOMSHROOM);
-    const bool sporeShellTemplate = HasActiveSeed(SeedType::SEED_SPORESHROOM)
-        && HasActiveSeed(SeedType::SEED_PUMPKINSHELL) && HasActiveSeed(SeedType::SEED_SQUASH);
-    const bool melonMineTemplate = HasActiveSeed(SeedType::SEED_MELONPULT)
-        && HasActiveSeed(SeedType::SEED_POTATOMINE) && !HasActiveSeed(SeedType::SEED_SCAREDYSHROOM);
-    const bool cactusSpikeTemplate = HasActiveSeed(SeedType::SEED_CACTUS)
-        && HasActiveSeed(SeedType::SEED_SPIKEWEED);
+    const bool peaCabbageTorchTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CABBAGEPULT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_TORCHWOOD);
+    const bool threepeaterPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
+    const bool boomerangControlTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM);
+    const bool sporeShellTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH);
+    const bool melonMineTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE) && !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM);
+    const bool cactusSpikeTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CACTUS)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPIKEWEED);
     const int threepeaterCount = CountPlantType(state, SeedType::SEED_THREEPEATER);
     const int peaCount = CountPlantType(state, SeedType::SEED_PEASHOOTER);
     const int cabbageCount = CountPlantType(state, SeedType::SEED_CABBAGEPULT);

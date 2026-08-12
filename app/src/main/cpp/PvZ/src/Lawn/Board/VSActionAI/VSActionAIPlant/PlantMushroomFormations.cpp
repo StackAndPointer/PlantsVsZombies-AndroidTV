@@ -111,16 +111,11 @@ std::optional<VSAction> PlantAIPlanning::TryScaredyMelonSupport(const VSGameStat
 }
 
 std::optional<VSAction> PlantAIPlanning::TryScaredyPuffDoomPressure(const VSGameState &state, int preferredRow, int protectedSun) {
-    const auto HasActiveSeed = [&state](SeedType seed) {
-        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [seed](const VSCardState &card) {
-            return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(seed);
-        });
-    };
     // This replay family has Scaredy-shroom as the only durable carry. Puff
     // is a short-range Coffee-backed layer and Doom is reserved for the
     // real multi-zombie break, not an excuse to omit the firing core.
-    if (!HasActiveSeed(SeedType::SEED_SCAREDYSHROOM) || !HasActiveSeed(SeedType::SEED_PUFFSHROOM)
-        || !HasActiveSeed(SeedType::SEED_DOOMSHROOM) || HasActiveSeed(SeedType::SEED_MELONPULT)
+    if (!HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM) || !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
+        || !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
         || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4) {
         return std::nullopt;
     }
@@ -240,23 +235,18 @@ std::optional<VSAction> PlantAIPlanning::TryStarfruitPuffPressure(const VSGameSt
 }
 
 std::optional<VSAction> PlantAIPlanning::TryPeaPuffPressure(const VSGameState &state, int preferredRow, int protectedSun) {
-    const auto HasActiveSeed = [&state](SeedType seed) {
-        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [seed](const VSCardState &card) {
-            return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(seed);
-        });
-    };
     // This is the short-range pressure package from the newer recordings:
     // Peashooter supplies the durable carry, while one Coffee-backed Puff
     // buys time in a threatened lane. It is intentionally separate from the
     // Spore/Starfruit branches so Puff is not selected as a second carry.
-    const bool hasPeaFamilyCarry = HasActiveSeed(SeedType::SEED_PEASHOOTER)
-        || HasActiveSeed(SeedType::SEED_REPEATER) || HasActiveSeed(SeedType::SEED_THREEPEATER);
+    const bool hasPeaFamilyCarry = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
     const int peaFamilyPlants = CountPlantType(state, SeedType::SEED_PEASHOOTER)
         + CountPlantType(state, SeedType::SEED_REPEATER) + CountPlantType(state, SeedType::SEED_THREEPEATER);
     const bool earlyPuffResponse = CountActiveZombies(state) > 0 && EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) >= 2;
-    if (!hasPeaFamilyCarry || !HasActiveSeed(SeedType::SEED_PUFFSHROOM)
-        || (peaFamilyPlants == 0 && !earlyPuffResponse) || HasActiveSeed(SeedType::SEED_STARFRUIT)
-        || HasActiveSeed(SeedType::SEED_SPORESHROOM)) {
+    if (!hasPeaFamilyCarry || !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
+        || (peaFamilyPlants == 0 && !earlyPuffResponse) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)) {
         return std::nullopt;
     }
     const VSCardState *puff = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_PUFFSHROOM);
@@ -367,13 +357,8 @@ std::optional<VSAction> PlantAIPlanning::TrySporePuffPressure(const VSGameState 
 
 std::optional<VSAction> PlantAIPlanning::TryWakeableMushroomOutput(const VSGameState &state, int preferredRow, int protectedSun) {
     const VSCardState *coffee = state.isNight ? nullptr : PlantAIPlanning::FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
-    const auto HasActiveSeed = [&state](SeedType seed) {
-        return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [seed](const VSCardState &card) {
-            return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(seed);
-        });
-    };
-    const bool fumeDoomTemplate = HasActiveSeed(SeedType::SEED_FUMESHROOM) && HasActiveSeed(SeedType::SEED_DOOMSHROOM);
-    const bool starfruitPuffTemplate = HasActiveSeed(SeedType::SEED_STARFRUIT) && HasActiveSeed(SeedType::SEED_PUFFSHROOM);
+    const bool fumeDoomTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM);
+    const bool starfruitPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
     const VSCardState *bestCard = nullptr;
     VSGridPosition bestTarget{};
     int bestScore = std::numeric_limits<int>::min();

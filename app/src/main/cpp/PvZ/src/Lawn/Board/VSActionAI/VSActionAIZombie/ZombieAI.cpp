@@ -103,24 +103,19 @@ bool ZombieAIPlanning::IsEarlyHeavyCommitCard(const VSGameState &state, SeedType
     if (!IsHeavyZombieSeed(seed)) {
         return false;
     }
-    const auto HasZombieCard = [&state](SeedType seed) {
-        return std::any_of(state.seedBanks[1].begin(), state.seedBanks[1].end(), [seed](const VSCardState &card) {
-            return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(seed);
-        });
-    };
-    const bool replayPoleTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasZombieCard(SeedType::SEED_ZOMBIE_LADDER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_BOBSLED) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER);
-    const bool replayFanPoleTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_NEWSPAPER) && HasZombieCard(SeedType::SEED_ZOMBIE_SUPER_FAN_IMP)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER);
-    const bool replayFlagGigaTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_FLAG)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_SQUASH_HEAD) && HasZombieCard(SeedType::SEED_ZOMBIE_SCREEN_DOOR)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
-    const bool replayArmoredNormalTemplate = HasZombieCard(SeedType::SEED_ZOMBIE_NORMAL)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_TRASHCAN) && HasZombieCard(SeedType::SEED_ZOMBIE_DOGWALKER)
-        && HasZombieCard(SeedType::SEED_ZOMBIE_FOOTBALL) && HasZombieCard(SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
+    const bool replayPoleTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_LADDER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER);
+    const bool replayFanPoleTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUPER_FAN_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER);
+    const bool replayFlagGigaTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FLAG)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SQUASH_HEAD) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
+    const bool replayArmoredNormalTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
     const int livePlants = CountLivePlants(state);
     // These recordings have exceptional, but not arbitrary, early
     // conversions. They still need a real plant board and either a
