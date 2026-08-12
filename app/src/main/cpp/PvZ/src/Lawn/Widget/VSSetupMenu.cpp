@@ -1229,6 +1229,15 @@ void VSSetupMenu::ButtonDepress(int theId) {
         gVSSetupRequestState = 0;
     }
 
+    // These controls own a local overlay and must not be sent through the
+    // VS setup event stream. Builtin AI is local-only by design.
+    if (mAddonWidget != nullptr
+        && (theId == VSSetupAddonWidget::VSSetupAddonWidget_AISettings
+            || theId == VSSetupAddonWidget::VSSetupAddonWidget_AISettingsClose)) {
+        mAddonWidget->ButtonDepress(theId);
+        return;
+    }
+
     if (gTcpConnected) {
         U8_Event event = {{EventType::EVENT_CLIENT_VSSETUPMENU_BUTTON_DEPRESS}, uint8_t(theId)};
         netplay::PutEvent(event);
@@ -1303,9 +1312,7 @@ void VSSetupMenu::ButtonDepress_Origin(int theId) {
                     mAddonWidget->SetDisable(mAddonWidget->mExtendedSeedsCheckbox);
                     mAddonWidget->SetDisable(mAddonWidget->mBanModeCheckbox);
                     mAddonWidget->SetDisable(mAddonWidget->mBalancePatchCheckbox);
-                    mAddonWidget->SetDisable(mAddonWidget->mPlantAICheckbox);
-                    mAddonWidget->SetDisable(mAddonWidget->mZombieAICheckbox);
-                    mAddonWidget->SetDisable(mAddonWidget->mAIEnhancementCheckbox);
+                    mAddonWidget->SetDisable(mAddonWidget->mAISettingsButton);
                     mAddonWidget->SetDisable(mAddonWidget->mBackButton);
                     mAddonWidget->mDrawString = false;
                     //                    PickBackgroundImmediately();
@@ -1390,6 +1397,8 @@ void VSSetupMenu::ButtonDepress_Origin(int theId) {
     switch (theId) {
         case VSSetupAddonWidget::VSSetupAddonWidget_Back: // 返回模式选择
         case VSSetupAddonWidget::VSSetupAddonWidget_GlobalBP:
+        case VSSetupAddonWidget::VSSetupAddonWidget_AISettings:
+        case VSSetupAddonWidget::VSSetupAddonWidget_AISettingsClose:
             mAddonWidget->ButtonDepress(theId);
             break;
         default:

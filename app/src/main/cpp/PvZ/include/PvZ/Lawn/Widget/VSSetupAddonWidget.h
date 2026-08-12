@@ -22,6 +22,7 @@
 
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/Widget/AISettingsWidget.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/SexyAppFramework/Widget/CheckboxListener.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
@@ -31,9 +32,7 @@ inline int VS_BUTTON_EXTRA_PACKET_Y = 280;
 inline int VS_BUTTON_EXTENDED_SEEDS_Y = 240;
 inline int VS_BUTTON_BAN_MODE_Y = 320;
 inline int VS_BUTTON_BALANCE_PATCH_Y = 200;
-inline int VS_BUTTON_PLANT_AI_Y = 400;
-inline int VS_BUTTON_ZOMBIE_AI_Y = 440;
-inline int VS_BUTTON_AI_ENHANCEMENT_Y = 480;
+inline int VS_BUTTON_AI_SETTINGS_Y = 440;
 
 namespace Sexy {
 class ButtonWidget;
@@ -52,6 +51,12 @@ public:
         VSSetupAddonWidget_AIEnhancement,
         VSSetupAddonWidget_Back,
         VSSetupAddonWidget_GlobalBP,
+        // Keep the existing setup/network IDs stable. The remaining
+        // controls are local-only AI preferences.
+        VSSetupAddonWidget_AIDraftDisabled,
+        VSSetupAddonWidget_AITemplateDeckDisabled,
+        VSSetupAddonWidget_AISettings,
+        VSSetupAddonWidget_AISettingsClose,
     };
 
     enum GlobalBpMode {
@@ -66,6 +71,8 @@ public:
     static inline bool msPlantAIMode = false;
     static inline bool msZombieAIMode = false;
     static inline bool msAIEnhancementMode = false;
+    static inline bool msAIDraftDisabledMode = false;
+    static inline bool msAITemplateDeckDisabledMode = false;
     static inline GlobalBpMode msGlobalBpMode = GlobalBpMode::GLOBALBP_CLOSED;
     static inline bool msGlobalBpSeedsInitialized = false;
     static inline int msGlobalBpWins[2] = {0, 0};
@@ -80,9 +87,8 @@ public:
     Sexy::Checkbox *mExtendedSeedsCheckbox = nullptr;
     Sexy::Checkbox *mBanModeCheckbox = nullptr;
     Sexy::Checkbox *mBalancePatchCheckbox = nullptr;
-    Sexy::Checkbox *mPlantAICheckbox = nullptr;
-    Sexy::Checkbox *mZombieAICheckbox = nullptr;
-    Sexy::Checkbox *mAIEnhancementCheckbox = nullptr;
+    GameButton *mAISettingsButton = nullptr;
+    AISettingsWidget *mAISettingsWidget = nullptr;
     bool mExtraPacketMode = false;
     bool mExtendedSeedsMode = false;
     bool mBanMode = false;
@@ -90,6 +96,8 @@ public:
     bool mPlantAIMode = false;
     bool mZombieAIMode = false;
     bool mAIEnhancementMode = false;
+    bool mAIDraftDisabledMode = false;
+    bool mAITemplateDeckDisabledMode = false;
     bool mDrawString = true;
 
     VSSetupAddonWidget(VSSetupMenu *theVSSetupMenu);
@@ -102,6 +110,8 @@ public:
     bool GetAddonMode(int theId) const;
     void SetAddonMode(int theId, bool checked, bool saveDetails);
     void UpdateGlobalBpButtonState() const;
+    void OpenAISettings();
+    void CloseAISettings();
 
 private:
     static inline const Sexy::ButtonListener::VTable sButtonListenerVtable{
