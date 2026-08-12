@@ -77,6 +77,11 @@ bool GamepadButtonDown(LawnApp *app, int playerIndex, int button) {
     return gamepad->IsButtonDown(button);
 }
 
+bool HasValidSelectedSeed(const GamepadControls *gamepadControls, const SeedBank *seedBank) {
+    const int selectedIndex = gamepadControls->mSelectedSeedIndex;
+    return seedBank != nullptr && selectedIndex >= 0 && selectedIndex < seedBank->mNumPackets && selectedIndex < 10;
+}
+
 void GamepadControls_UpdateOriginal(GamepadControls *gamepadControls, float dt) {
     if (gamepadControls->mGamepadIndex == -1) {
         return;
@@ -1006,6 +1011,16 @@ void GamepadControls::UpdatePreviewReanim() {
 void GamepadControls::UpdateStates(float dt) {
     BaseGamepadControls::UpdateStates(dt);
 
+    if (mGamepadState == MOVEMENT_STATE_PLANT_CURSOR || mGamepadState == MOVEMENT_STATE_SELECT_SEED || mGamepadState == MOVEMENT_STATE_DIG_HOLD) {
+        SeedBank *seedBank = GetSeedBank();
+        if (!HasValidSelectedSeed(this, seedBank)) {
+            LOG_WARN("[NETPLAY] cancel seed state={} with invalid selected index={} packetCount={}", int(mGamepadState), mSelectedSeedIndex, seedBank ? seedBank->mNumPackets : -1);
+            mSelectedSeedIndex = -1;
+            mGamepadState = MOVEMENT_STATE_NORMAL;
+            return;
+        }
+    }
+
     // 在状态为MOVEMENT_STATE_PLANT_CURSOR下也要执行UpdateSeedSelect，此函数会更新CursorObject的mType为GetSeedBank->mSeedPackets[mSelectedSeedIndex].mPacketType，或许可以修复偶现的种下种子与SeedBank选中种子不一致的BUG
     if (mGamepadState == MOVEMENT_STATE_PLANT_CURSOR) {
         UpdateSeedSelect(dt);
@@ -1161,6 +1176,12 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
     }
 
     SeedBank *aSeedBank = GetSeedBank();
+    if (!HasValidSelectedSeed(this, aSeedBank)) {
+        LOG_WARN("[NETPLAY] ignore plant input with invalid selected index={} packetCount={}", mSelectedSeedIndex, aSeedBank ? aSeedBank->mNumPackets : -1);
+        mSelectedSeedIndex = -1;
+        mGamepadState = MOVEMENT_STATE_NORMAL;
+        return;
+    }
     SeedPacket *aSeedPacket = &aSeedBank->mSeedPackets[mSelectedSeedIndex];
     SeedType aPacketType = aSeedPacket->mPacketType;
 
@@ -1317,7 +1338,8 @@ void GamepadControls::OnButtonDown(Sexy::GamepadButton theButton, int thePlayerI
             return;
         }
 
-        if (aPacketType < SeedType::NUM_SEED_TYPES || (aPacketType >= SeedType::SEED_ICEBERG_LETTUCE && aPacketType < SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED)) {
+        if ((aPacketType >= SeedType::SEED_PEASHOOTER && aPacketType < SeedType::NUM_SEED_TYPES)
+            || (aPacketType >= SeedType::SEED_ICEBERG_LETTUCE && aPacketType < SeedType::NUM_SEEDS_IN_CHOOSER_EXTENDED)) {
             //            LOG_DEBUG("before MouseDownWithPlant {}", mPlayerIndex);
             mBoard->MouseDownWithPlant(mCursorPositionX, mCursorPositionY, 1, mPlayerIndex);
             mBoard->ClearCursor(mPlayerIndex);
