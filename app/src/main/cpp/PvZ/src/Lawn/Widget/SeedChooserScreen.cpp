@@ -544,6 +544,9 @@ void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
 
 bool UsesBuiltinAITemplate(SeedChooserScreen *screen) {
     EnsureBuiltinAIDeckPlans(screen);
+    if (VSSetupAddonWidget::msAITemplateDeckDisabledMode) {
+        return false;
+    }
     return screen != nullptr && (screen->mIsZombieChooser ? gBuiltinAIDeckPlans.useZombieTemplate
                                                             : gBuiltinAIDeckPlans.usePlantTemplate);
 }
@@ -818,10 +821,16 @@ bool HasBuiltinAIOpponentLobbedPressure(SeedChooserScreen *screen) {
 }
 
 bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen);
+bool HasBuiltinAIOpponentZombieSeed(SeedChooserScreen *screen, SeedType seedType);
 
 bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedType) {
     if (screen == nullptr || screen->mIsZombieChooser) {
         return true;
+    }
+
+    if (seedType == SeedType::SEED_UMBRELLA) {
+        return HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_BUNGEE)
+            || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_CATAPULT);
     }
 
     if (seedType == SeedType::SEED_CHOMPER) {
@@ -910,6 +919,21 @@ static constexpr SeedType kBuiltinAIPlantMainFallbacks[] = {
     SeedType::SEED_CABBAGEPULT,
     SeedType::SEED_SPORESHROOM,
     SeedType::SEED_KERNELPULT,
+    SeedType::SEED_STARFRUIT,
+    SeedType::SEED_CACTUS,
+};
+
+// Rule-random decks deliberately use the high-confidence carries. The
+// recorded template selector still retains Cabbage-pult and Kernel-pult;
+// this path avoids making either a generic default against an unknown deck.
+static constexpr SeedType kBuiltinAIRulePlantMainFallbacks[] = {
+    SeedType::SEED_PEASHOOTER,
+    SeedType::SEED_REPEATER,
+    SeedType::SEED_SNOWPEA,
+    SeedType::SEED_SCAREDYSHROOM,
+    SeedType::SEED_MELONPULT,
+    SeedType::SEED_BLOOMERANG,
+    SeedType::SEED_SPORESHROOM,
     SeedType::SEED_STARFRUIT,
     SeedType::SEED_CACTUS,
 };
@@ -1037,10 +1061,13 @@ int BuiltinAIPlantCarryMatchupScore(SeedChooserScreen *screen, SeedType seedType
     return score;
 }
 
-SeedType FindBuiltinAICounterCarry(SeedChooserScreen *screen) {
+SeedType FindBuiltinAICounterCarry(SeedChooserScreen *screen, bool useTemplateFallbacks = true) {
     SeedType bestSeed = SeedType::SEED_NONE;
     int bestScore = std::numeric_limits<int>::min();
-    for (const SeedType seedType : kBuiltinAIPlantMainFallbacks) {
+    const std::span<const SeedType> candidates = useTemplateFallbacks
+        ? std::span<const SeedType>(kBuiltinAIPlantMainFallbacks)
+        : std::span<const SeedType>(kBuiltinAIRulePlantMainFallbacks);
+    for (const SeedType seedType : candidates) {
         if (!IsBuiltinAICandidate(screen, seedType) || !IsBuiltinAIPlantSupportCandidate(screen, seedType)) {
             continue;
         }
@@ -1074,6 +1101,80 @@ SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prior
     }
     return vsai::draft::FindRotatedEligibleSeed(chooserSeeds, static_cast<std::size_t>(Sexy::Rand(storageCount)),
         [screen](SeedType seed) { return IsBuiltinAICandidate(screen, seed); });
+}
+
+int BuiltinAIZombieRuleMatchupScore(SeedChooserScreen *screen, SeedType seedType) {
+    if (screen == nullptr || !screen->mIsZombieChooser || screen->mApp == nullptr || screen->mApp->mSeedChooserScreen == nullptr) {
+        return std::numeric_limits<int>::min();
+    }
+
+    SeedChooserScreen *plantScreen = screen->mApp->mSeedChooserScreen;
+    const auto HasPlantSeed = [plantScreen](SeedType target) {
+        return HasBuiltinAIPlantSeed(plantScreen, target);
+    };
+    const bool lobbed = HasBuiltinAIOpponentLobbedPressure(screen);
+    const bool peas = HasPlantSeed(SeedType::SEED_PEASHOOTER) || HasPlantSeed(SeedType::SEED_REPEATER)
+        || HasPlantSeed(SeedType::SEED_SNOWPEA) || HasPlantSeed(SeedType::SEED_SCAREDYSHROOM)
+        || HasPlantSeed(SeedType::SEED_THREEPEATER);
+    const bool nuts = HasPlantSeed(SeedType::SEED_WALLNUT) || HasPlantSeed(SeedType::SEED_PUMPKINSHELL);
+    const bool highValue = HasPlantSeed(SeedType::SEED_MELONPULT) || HasPlantSeed(SeedType::SEED_REPEATER)
+        || HasPlantSeed(SeedType::SEED_STARFRUIT) || HasPlantSeed(SeedType::SEED_SPORESHROOM);
+
+    int score = 40 + Sexy::Rand(31);
+    switch (seedType) {
+        case SeedType::SEED_ZOMBIE_NORMAL:
+        case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
+        case SeedType::SEED_ZOMBIE_IMP:
+            score += 120;
+            break;
+        case SeedType::SEED_ZOMBIE_DOGWALKER:
+            score += 175;
+            break;
+        case SeedType::SEED_ZOMBIE_PAIL:
+            score += 100;
+            break;
+        case SeedType::SEED_ZOMBIE_LADDER:
+        case SeedType::SEED_ZOMBONI:
+            score += nuts ? 165 : 25;
+            break;
+        case SeedType::SEED_ZOMBIE_BUNGEE:
+            score += highValue ? 175 : -120;
+            break;
+        case SeedType::SEED_ZOMBIE_CATAPULT:
+            score += lobbed ? 170 : -80;
+            break;
+        case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
+        case SeedType::SEED_ZOMBIE_NEWSPAPER:
+        case SeedType::SEED_ZOMBIE_TRASHCAN:
+            score += lobbed ? -500 : (peas ? 95 : 30);
+            break;
+        case SeedType::SEED_ZOMBIE_BOBSLED:
+        case SeedType::SEED_ZOMBIE_FOOTBALL:
+        case SeedType::SEED_ZOMBIE_GARGANTUAR:
+            score += 70;
+            break;
+        default:
+            break;
+    }
+    return score;
+}
+
+SeedType FindBuiltinAIRuleZombieCandidate(SeedChooserScreen *screen) {
+    SeedType bestSeed = SeedType::SEED_NONE;
+    int bestScore = std::numeric_limits<int>::min();
+    const int storageCount = screen == nullptr ? 0 : screen->GetSeedStorageCount();
+    for (int index = 0; index < storageCount; ++index) {
+        const SeedType seedType = screen->GetZombieSeedType(index);
+        if (!IsBuiltinAICandidate(screen, seedType)) {
+            continue;
+        }
+        const int score = BuiltinAIZombieRuleMatchupScore(screen, seedType);
+        if (bestSeed == SeedType::SEED_NONE || score > bestScore || (score == bestScore && Sexy::Rand(2) == 0)) {
+            bestSeed = seedType;
+            bestScore = score;
+        }
+    }
+    return bestSeed;
 }
 
 SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount,
@@ -1116,7 +1217,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     // recover with a matchup carry now; never let Puff/Coffee fill its role.
     const bool needsCounterMain = templateMainBannedAfterSelection || !useTemplate || !plannedMainAvailable;
     const SeedType counterMain = !alreadyHasMainDamage && needsCounterMain
-        ? FindBuiltinAICounterCarry(screen)
+        ? FindBuiltinAICounterCarry(screen, useTemplate)
         : SeedType::SEED_NONE;
     const std::size_t planSize = GetBuiltinAIPlanSize(screen);
     const std::size_t slotsRemaining = selectedCount < planSize ? planSize - selectedCount : 0;
@@ -1159,7 +1260,10 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     for (std::size_t index = 0; index < priorityCount && !hasAvailableMainDamage; ++index) {
         hasAvailableMainDamage = IsAvailableMain(prioritySeeds[index]);
     }
-    for (const SeedType seedType : kBuiltinAIPlantMainFallbacks) {
+    const std::span<const SeedType> mainFallbacks = useTemplate
+        ? std::span<const SeedType>(kBuiltinAIPlantMainFallbacks)
+        : std::span<const SeedType>(kBuiltinAIRulePlantMainFallbacks);
+    for (const SeedType seedType : mainFallbacks) {
         hasAvailableMainDamage = hasAvailableMainDamage || IsAvailableMain(seedType);
     }
     const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage && !deferMainDamage;
@@ -1221,8 +1325,8 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     // support cards.  This is what keeps Ban substitutions playable instead
     // of producing a melee-only deck.
     if (!alreadyHasMainDamage) {
-        const std::size_t firstFallback = useTemplate ? 0 : static_cast<std::size_t>(Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantMainFallbacks))));
-        const SeedType candidate = vsai::draft::FindRotatedEligibleSeed(kBuiltinAIPlantMainFallbacks, firstFallback, IsPreferredCompatible);
+        const std::size_t firstFallback = useTemplate ? 0 : static_cast<std::size_t>(Sexy::Rand(static_cast<int>(mainFallbacks.size())));
+        const SeedType candidate = vsai::draft::FindRotatedEligibleSeed(mainFallbacks, firstFallback, IsPreferredCompatible);
         if (candidate != SeedType::SEED_NONE) {
             return candidate;
         }
@@ -1886,7 +1990,8 @@ void SeedChooserScreen::RebuildHelpbar() {
 }
 
 void SeedChooserScreen::UpdateBuiltinAIPick() {
-    if (!IsLocalBuiltinAIChooser(this) || mApp->mVSSetupMenu == nullptr || !CanPickNow() || mSeedsInFlight != 0) {
+    if (!IsLocalBuiltinAIChooser(this) || mApp->mVSSetupMenu == nullptr || !CanPickNow() || mSeedsInFlight != 0
+        || VSSetupAddonWidget::msAIDraftDisabledMode) {
         return;
     }
 
@@ -1950,7 +2055,9 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
     }
 
     SeedType selectedSeedType = mBanningPhase ? FindBuiltinAIBanCandidate(this, prioritySeeds, priorityCount)
-                                              : (mIsZombieChooser ? FindBuiltinAICandidate(this, prioritySeeds, priorityCount)
+                                              : (mIsZombieChooser ? (UsesBuiltinAITemplate(this)
+                                                                              ? FindBuiltinAICandidate(this, prioritySeeds, priorityCount)
+                                                                              : FindBuiltinAIRuleZombieCandidate(this))
                                                                   : FindBuiltinAIPlantDeckCandidate(this, prioritySeeds, priorityCount,
                                                                         UsesBuiltinAITemplate(this)));
     if (!mBanningPhase && !mIsZombieChooser && selectedSeedType == SeedType::SEED_NONE) {
