@@ -205,6 +205,7 @@ bool IsEnhancedAIEnabled();
 // The boost is intentionally confined to local non-replay VS matches so it
 // cannot change the deterministic economy of online or replay sessions.
 bool HasEnhancedEconomy(Board *board, VSSide side);
+int ScaleEnhancedAIIncome(int amount);
 // Returns a point-in-time copy of all state exposed to traditional algorithmic AI.
 VSGameState BuildGameState(Board *board);
 // Queued actions are executed by Update when their tick window opens.

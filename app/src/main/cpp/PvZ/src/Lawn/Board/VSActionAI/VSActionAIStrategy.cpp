@@ -11,6 +11,7 @@
 
 #include "VSActionAIStrategy.h"
 
+#include "PvZ/Lawn/VSActionSystem.h"
 #include "PvZ/SexyAppFramework/Buffer.h"
 #include "PvZ/SexyAppFramework/SexyAppBase.h"
 
@@ -21,6 +22,14 @@
 #include <vector>
 
 namespace vsai::detail {
+
+int EffectiveAIEconomyCount(VSSide side, int actualCount) {
+    constexpr int kEnhancedStrategyEconomyLead = 1;
+    if (actualCount <= 0 || !vsai::IsEnhancedAIEnabled() || !vsai::IsSideEnabled(side)) {
+        return actualCount;
+    }
+    return actualCount + kEnhancedStrategyEconomyLead;
+}
 
 struct StrategyRule {
     VSSide side = VSSide::Plants;
@@ -461,7 +470,8 @@ public:
             return 0;
         }
 
-        const int ownEconomy = side == VSSide::Plants ? CountPlantIncome(state) : CountZombieEconomy(state);
+        const int actualEconomy = side == VSSide::Plants ? CountPlantIncome(state) : CountZombieEconomy(state);
+        const int ownEconomy = EffectiveAIEconomyCount(side, actualEconomy);
         const int opponentUnits = side == VSSide::Plants ? CountActiveZombies(state) : CountLivePlants(state);
         const int ownLaneUnits = side == VSSide::Plants ? CountPlantsInRow(state, targetRow) : CountZombiesInRow(state, targetRow);
         const int opponentLaneUnits = side == VSSide::Plants ? CountZombiesInRow(state, targetRow) : CountPlantsInRow(state, targetRow);

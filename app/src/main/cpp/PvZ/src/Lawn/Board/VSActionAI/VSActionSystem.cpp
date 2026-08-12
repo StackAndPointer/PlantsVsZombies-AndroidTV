@@ -508,6 +508,12 @@ bool HasEnhancedEconomy(Board *board, VSSide side) {
     return IsLocalVSMatch(board) && !gIsReplayMode && VSSetupAddonWidget::msAIEnhancementMode && IsSideEnabled(side);
 }
 
+int ScaleEnhancedAIIncome(int amount) {
+    constexpr int kEnhancedIncomeNumerator = 7;
+    constexpr int kEnhancedIncomeDenominator = 5;
+    return amount > 0 ? amount * kEnhancedIncomeNumerator / kEnhancedIncomeDenominator : amount;
+}
+
 VSGameState BuildGameState(Board *board) {
     VSGameState state{};
     if (board == nullptr) {

@@ -72,7 +72,7 @@ std::optional<VSAction> PlantAIPlanning::TryRecycleIncomeForOutput(const VSGameS
     // front flower when it prevents a real firing line from being built.
     // Do not trade economy during the opening or merely to make space.
     const int compactIncomeBase = state.rows >= 6 ? 5 : 4;
-    if (state.isSuddenDeath || CountPlantIncome(state) < compactIncomeBase || !HasReadySustainedOutputCard(state, protectedSun)) {
+    if (state.isSuddenDeath || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < compactIncomeBase || !HasReadySustainedOutputCard(state, protectedSun)) {
         return std::nullopt;
     }
 
@@ -173,7 +173,7 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
         // Scaredy-shroom is a rear pressure layer, not an opening substitute
         // for the first economy band. Build four producers before its first
         // Coffee-backed deployment.
-        if (seed == SeedType::SEED_SCAREDYSHROOM && CountPlantIncome(state) < 4) {
+        if (seed == SeedType::SEED_SCAREDYSHROOM && EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4) {
             continue;
         }
         const bool lowCostCombat = allowLowCostCombat && card.cost <= 100

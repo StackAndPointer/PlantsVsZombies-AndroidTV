@@ -120,7 +120,7 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
 
 std::optional<VSAction> ZombieAIPlanning::TryCounterLobbedGravePressure(const VSGameState &state, int row) {
     const VSCardState *catapult = FindReadyCard(state, SeedType::SEED_ZOMBIE_CATAPULT);
-    if (catapult == nullptr || CountZombieEconomy(state) < state.rows || HasMindControlledZombieInRow(state, row)
+    if (catapult == nullptr || EffectiveAIEconomyCount(VSSide::Zombies, CountZombieEconomy(state)) < state.rows || HasMindControlledZombieInRow(state, row)
         || LobbedProjectileThreatScore(state, row) < 70) {
         return std::nullopt;
     }

@@ -5,7 +5,6 @@
 #include <limits>
 #include <optional>
 #include "PvZ/Lawn/Common/GameConstants.h"
-#include "PvZ/Lawn/VSActionSystem.h"
 
 namespace vsai::detail {
 
@@ -47,14 +46,12 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const bool deckNeedsEarlyFirepower = fastZombieDeck || vehicleZombieDeck || rangedZombieDeck || heavyZombieDeck || swarmZombieDeck;
     // Five Sunflowers already fund the low-cost pressure seen in VS. Do not
     // hold a healthy board at seven merely because more income slots exist.
-    const bool enhancedAI = vsai::IsEnhancedAIEnabled();
-    const int baseOpeningIncomeTarget = std::max(3, (state.rows >= 6 ? 5 : 4) - (enhancedAI ? 1 : 0));
+    const int baseOpeningIncomeTarget = std::max(3, state.rows >= 6 ? 5 : 4);
     const int openingIncomeTarget = deckNeedsEarlyFirepower
         ? std::max(3, baseOpeningIncomeTarget - 1)
         : baseOpeningIncomeTarget;
-    const int minimumIncomeBeforeOutput = std::max(2, (deckNeedsEarlyFirepower ? 3 : (state.rows >= 6 ? 4 : 3))
-        - (enhancedAI ? 1 : 0));
-    const int incomePlantCount = CountPlantIncome(state);
+    const int minimumIncomeBeforeOutput = std::max(2, deckNeedsEarlyFirepower ? 3 : (state.rows >= 6 ? 4 : 3));
+    const int incomePlantCount = EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state));
     const int sustainedOutputCount = CountSustainedOutputPlants(state);
     const bool hasIncomeSeed = PlantAIPlanning::HasIncomeSeed(state);
     const bool hasSunshroomFiller = PlantAIPlanning::HasSunshroomSeed(state);
@@ -134,14 +131,13 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const int areaCounterReserve = PlantAIPlanning::AreaCounterReserve(state);
     const bool hasEconomyPressurePlan = PlantAIPlanning::HasEconomyPressurePlan(state);
     const bool midGame = state.boardTick >= 32000 || CountZombieEconomy(state) >= state.rows;
-    const int normalIncomeBase = std::max(3, (state.rows >= 6 ? 5 : 4) - (enhancedAI ? 1 : 0));
+    const int normalIncomeBase = std::max(3, state.rows >= 6 ? 5 : 4);
     const int lateIncomeRecoveryTarget = !state.isSuddenDeath && midGame && incomePlantCount < normalIncomeBase
         ? normalIncomeBase
         : 0;
     const int economyPressureIncomeTarget = PlantAIPlanning::EconomyPressureIncomeTarget(state);
     const int incomeExpansionTarget = state.isSuddenDeath ? 0
-        : std::max(enhancedAI ? std::max(3, economyPressureIncomeTarget - 1) : economyPressureIncomeTarget,
-            lateIncomeRecoveryTarget);
+        : std::max(economyPressureIncomeTarget, lateIncomeRecoveryTarget);
     const bool pressureOutrunsFirepower = hasActiveZombie && (unholdableZombieRows > 0
         || (contestedZombieRows >= 2 && damageBeforeZombieContact < incomingZombieHealth));
     const bool immediateCounterThreat = squashThreat || impPearThreat || mowerlessThirdColumnEmergency;

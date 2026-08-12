@@ -4,7 +4,6 @@
 #include <cmath>
 #include <limits>
 #include <optional>
-#include "PvZ/Lawn/VSActionSystem.h"
 
 namespace vsai::detail {
 
@@ -28,15 +27,16 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         }
     }
 
-    const int economyCount = CountZombieEconomy(state);
-    if (mLastPressureEconomyCount > economyCount) {
+    const int actualEconomyCount = CountZombieEconomy(state);
+    if (mLastPressureEconomyCount > actualEconomyCount) {
         // A destroyed grave re-opens the pressure cadence. Rebuilding
         // from a smaller base should not force a full 15-grave rebuild
         // before the next low-cost probe is allowed.
-        mLastPressureEconomyCount = economyCount - 1;
+        mLastPressureEconomyCount = actualEconomyCount - 1;
     }
+    const int economyCount = EffectiveAIEconomyCount(VSSide::Zombies, actualEconomyCount);
     const int economyTarget = state.isSuddenDeath ? economyCount
-        : std::max(state.rows * 2, state.rows * 3 - (vsai::IsEnhancedAIEnabled() ? 1 : 0));
+        : std::max(state.rows * 2, state.rows * 3);
     const int economyDeficit = std::max(0, economyTarget - economyCount);
     int targetMarkersOnBoard = 0;
     int zeroHealthTargetMarkers = 0;
@@ -141,13 +141,13 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int openingPressureEconomyFloor = (impPailSundayTemplate || zamboniPoleOpeningTemplate)
         ? std::min(3, state.rows)
         : minimumOpeningEconomy;
-    const bool firstGraveProbe = armoredNormalRushTemplate && economyCount == 1 && activePressureRows == 0
-        && hasReadyFrontlineProbe && mLastPressureEconomyCount < economyCount;
+    const bool firstGraveProbe = armoredNormalRushTemplate && actualEconomyCount == 1 && activePressureRows == 0
+        && hasReadyFrontlineProbe && mLastPressureEconomyCount < actualEconomyCount;
     // Winning zombie replays establish a few rear graves, then alternate
     // a probe with another grave. One uninterrupted build to 15 gives the
     // plant side a free economic opening and never creates a threat lane.
     const bool forceOpeningPressure = firstGraveProbe || (economyCount >= openingPressureEconomyFloor && economyCount <= state.rows + 1
-        && activePressureRows < desiredOpeningRows && hasReadyFrontlineProbe && mLastPressureEconomyCount < economyCount);
+        && activePressureRows < desiredOpeningRows && hasReadyFrontlineProbe && mLastPressureEconomyCount < actualEconomyCount);
     const bool preservePressureDuringRepair = economyCount >= minimumOpeningEconomy && economyDeficit <= 2
         && activePressureRows > 0 && hasReadyFrontlineProbe;
     const int survivingFrontRow = criticalTargetRow >= 0 ? criticalTargetRow : MostValuableZombieFrontRow(state);
@@ -296,7 +296,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 continue;
             }
 
-            int score = ZombieAIPlanning::CardScore(card, state, row, economyCount, effectiveCost);
+            int score = ZombieAIPlanning::CardScore(card, state, row, actualEconomyCount, effectiveCost);
             if (seed == SeedType::SEED_ZOMBIE_MOUND) {
                 // The target already passed the per-mound affordability
                 // check. Add its marginal income return so level 0/2
@@ -391,7 +391,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     }
     const SeedType chosenSeed = static_cast<SeedType>(bestCard->seedType);
     if (IsFrontlineProbeSeed(chosenSeed)) {
-        mLastPressureEconomyCount = std::max(mLastPressureEconomyCount, economyCount);
+        mLastPressureEconomyCount = std::max(mLastPressureEconomyCount, actualEconomyCount);
     }
     if (chosenSeed != SeedType::SEED_ZOMBIE_GRAVESTONE && chosenSeed != SeedType::SEED_ZOMBIE_MOUND
         && chosenSeed != SeedType::SEED_ZOMBIE_BUNGEE) {

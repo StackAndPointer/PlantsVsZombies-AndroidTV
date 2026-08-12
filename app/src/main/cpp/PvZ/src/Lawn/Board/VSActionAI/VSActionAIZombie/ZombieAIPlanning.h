@@ -31,7 +31,7 @@ protected:
     std::optional<VSAction> TryCounterLobbedGravePressure(const VSGameState &state, int row);
     int LeastCommittedZombieRow(const VSGameState &state) const;
     static int BungeeTargetScore(const VSGameState &state, const VSPlantState &plant, int row);
-    static int CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int economyCount, int effectiveCost);
+    static int CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int actualEconomyCount, int effectiveCost);
 
 public:
     void Reset() override;

@@ -5,11 +5,11 @@
 #include <limits>
 #include <optional>
 #include "PvZ/Lawn/Board/Plant.h"
-#include "PvZ/Lawn/VSActionSystem.h"
 
 namespace vsai::detail {
-int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int economyCount, int effectiveCost) {
+int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int actualEconomyCount, int effectiveCost) {
     const SeedType seed = static_cast<SeedType>(card.seedType);
+    const int economyCount = EffectiveAIEconomyCount(VSSide::Zombies, actualEconomyCount);
     const auto HasPlantCard = [&state](SeedType candidate) {
         return std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [candidate](const VSCardState &plantCard) {
             return plantCard.active && !plantCard.matchRestricted
@@ -35,7 +35,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const int graveScreenDeficit = ZombieGraveScreenDeficit(state, targetRow);
     const bool hasGraveGuard = HasZombieGraveGuardInRow(state, targetRow);
     const int economyTarget = state.isSuddenDeath ? economyCount
-        : std::max(state.rows * 2, state.rows * 3 - (vsai::IsEnhancedAIEnabled() ? 1 : 0));
+        : std::max(state.rows * 2, state.rows * 3);
     const int heavyEconomyThreshold = HeavyZombieEconomyThreshold(state);
     const int sustainedOutput = SustainedOutputScoreInRow(state, targetRow);
     const int economyValue = PlantEconomyValueInRow(state, targetRow);

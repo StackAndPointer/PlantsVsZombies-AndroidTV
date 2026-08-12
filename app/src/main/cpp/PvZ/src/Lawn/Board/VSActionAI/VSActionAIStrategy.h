@@ -12,6 +12,11 @@ namespace vsai::detail {
 int StrategyBucket(int value);
 int StrategyBonus(const VSGameState &state, VSSide side, SeedType seed, int targetRow);
 
+// Strategy thresholds use this instead of raw producer/grave counts. Enhanced
+// local AI treats an established economy as one step further developed while
+// leaving physical board state and zero-economy openings unchanged.
+int EffectiveAIEconomyCount(VSSide side, int actualCount);
+
 // These masks are the stable tactical features used by the replay extractor.
 // They intentionally describe counterable plans rather than exact six-card
 // deck hashes, so a Ban replacement still selects the correct response.
