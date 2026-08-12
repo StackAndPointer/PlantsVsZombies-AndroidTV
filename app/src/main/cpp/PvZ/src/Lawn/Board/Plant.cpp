@@ -2838,7 +2838,22 @@ void Plant::UpdateProductionPlant() {
         return;
     }
 
+    const bool enhancedProducer = mApp->IsVSMode()
+        && (mSeedType == SeedType::SEED_SUNFLOWER || mSeedType == SeedType::SEED_SUNSHROOM)
+        && vsai::HasEnhancedAIProduction(mBoard, vsai::VSSide::Plants);
+    if (!enhancedProducer) {
+        old_Plant_UpdateProductionPlant(this);
+        return;
+    }
+
+    // Local VS reaches the original producer path, not the custom network
+    // path above. Scale the freshly reset counter after that path produces,
+    // so every Sunflower/Sun-shroom cycle is 0.7x rather than only its first.
+    const int counterBeforeUpdate = mLaunchCounter;
     old_Plant_UpdateProductionPlant(this);
+    if (counterBeforeUpdate <= 1 && mLaunchCounter > 0) {
+        mLaunchCounter = vsai::ScaleEnhancedAIProductionCooldown(mLaunchCounter);
+    }
 }
 
 void Plant::UpdateShooting() {

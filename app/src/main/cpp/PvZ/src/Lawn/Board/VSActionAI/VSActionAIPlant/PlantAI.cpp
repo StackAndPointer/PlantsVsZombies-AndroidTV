@@ -172,6 +172,43 @@ int PlantAIPlanning::EffectivePlantPlayCost(const VSGameState &state, const VSCa
     return coffee == nullptr ? std::numeric_limits<int>::max() : card.cost + coffee->cost;
 }
 
+std::optional<VSAction> PlantAIPlanning::TryClearDaytimeSunshroomForPlanting(const VSGameState &state, SeedType replacementSeed, int row,
+    int firstColumn, int lastColumn, bool requireExactRow) {
+    if (state.isNight || replacementSeed == SeedType::SEED_SUNSHROOM) {
+        return std::nullopt;
+    }
+    firstColumn = std::clamp(firstColumn, 0, 5);
+    lastColumn = std::clamp(lastColumn, firstColumn, 5);
+
+    const VSPlantState *bestPad = nullptr;
+    int bestScore = std::numeric_limits<int>::min();
+    for (int rowOffset = 0; rowOffset < (requireExactRow ? 1 : state.rows); ++rowOffset) {
+        const int targetRow = requireExactRow ? row : (row + rowOffset) % state.rows;
+        if (targetRow < 0 || targetRow >= state.rows || IsMowerInMotion(state, targetRow)) {
+            continue;
+        }
+        for (const VSPlantState &plant : state.plants) {
+            if (IsDeadOrOutside(plant) || plant.position.row != targetRow
+                || plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_SUNSHROOM)
+                || plant.position.col < firstColumn || plant.position.col > lastColumn) {
+                continue;
+            }
+            // Do not clear a pad for a projectile plant that would still be
+            // placed into a losing point-blank trade on the following turn.
+            if (IsPlantCombatSeed(static_cast<std::uint16_t>(replacementSeed))
+                && !IsPlantPlacementSafe(state, replacementSeed, plant.position)) {
+                continue;
+            }
+            const int score = static_cast<int>(plant.position.col) * 100 + (targetRow == row ? 25 : 0) - rowOffset;
+            if (bestPad == nullptr || score > bestScore) {
+                bestPad = &plant;
+                bestScore = score;
+            }
+        }
+    }
+    return bestPad == nullptr ? std::nullopt : std::optional<VSAction>(MakeShovelAction(bestPad->position, state.boardTick));
+}
+
 std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,
     bool requireExactRow) {
     const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seedType);
@@ -187,6 +224,9 @@ std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &stat
         ? FindWallnutCell(state, row, firstColumn, lastColumn)
         : (requireExactRow ? FindPlantCellInExactRow(state, row, firstColumn, lastColumn)
                            : FindPlantCellInColumns(state, row, firstColumn, lastColumn));
+    if (target.col < 0 || target.row < 0) {
+        return TryClearDaytimeSunshroomForPlanting(state, seedType, row, firstColumn, lastColumn, requireExactRow);
+    }
     if (target.col < 0 || target.row < 0
         || (IsMowerInMotion(state, target.row) && IsPlantImmediateCounterSeed(seedType))
         || (ShouldYieldLaneToMower(state, target.row) && (!requireExactRow || !IsPlantImmediateCounterSeed(seedType)))) {

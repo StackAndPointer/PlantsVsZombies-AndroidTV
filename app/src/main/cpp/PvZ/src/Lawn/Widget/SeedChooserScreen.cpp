@@ -568,9 +568,13 @@ int BuiltinAIPlantMainPickSlot(SeedChooserScreen *screen) {
     }
     if (gBuiltinAIDeckPlans.plantMainPickSlot < 0) {
         const int planSize = static_cast<int>(GetBuiltinAIPlanSize(screen));
-        const int earliestSlot = std::min(3, planSize);
+        // Preserve one final packet for a response/support card. This keeps
+        // the carry timing varied without ever revealing the main C as the
+        // last pick in either six- or seven-slot VS selection.
+        const int earliestSlot = std::min(3, std::max(1, planSize - 1));
+        const int latestSlot = std::max(earliestSlot, planSize - 1);
         gBuiltinAIDeckPlans.plantMainPickSlot = earliestSlot
-            + Sexy::Rand(std::max(1, planSize - earliestSlot + 1));
+            + Sexy::Rand(std::max(1, latestSlot - earliestSlot + 1));
     }
     return gBuiltinAIDeckPlans.plantMainPickSlot;
 }

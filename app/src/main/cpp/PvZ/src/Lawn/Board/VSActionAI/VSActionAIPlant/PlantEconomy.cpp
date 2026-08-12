@@ -340,6 +340,45 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
     if (bestCard != nullptr) {
         return MakePlayAction(VSSide::Plants, *bestCard, bestTarget, state.boardTick);
     }
+
+    // Daytime Sun-shrooms are front-line disposable pads. Sustained-output
+    // placement computes its own firing cells and therefore does not pass
+    // through TryPlantInRange; explicitly reclaim an occupied firing cell
+    // before giving up on an otherwise legal carry placement.
+    for (const VSCardState &card : state.seedBanks[0]) {
+        if (IsSlotBlocked(card.slot) || !IsReadyCard(card, state.plantSun)) {
+            continue;
+        }
+        const SeedType seed = static_cast<SeedType>(card.seedType);
+        const int totalCost = PlantAIPlanning::EffectivePlantPlayCost(state, card);
+        if (!IsSustainedOutputSeed(seed) || totalCost == std::numeric_limits<int>::max()
+            || state.plantSun - totalCost < protectedSun) {
+            continue;
+        }
+
+        int firstColumn = 0;
+        int lastColumn = 3;
+        switch (seed) {
+            case SeedType::SEED_STARFRUIT:
+            case SeedType::SEED_BLOOMERANG:
+            case SeedType::SEED_THREEPEATER:
+                firstColumn = 1;
+                break;
+            case SeedType::SEED_FUMESHROOM:
+            case SeedType::SEED_GLOOMSHROOM:
+                firstColumn = 2;
+                break;
+            case SeedType::SEED_SCAREDYSHROOM:
+                lastColumn = 0;
+                break;
+            default:
+                break;
+        }
+        if (std::optional<VSAction> action = TryClearDaytimeSunshroomForPlanting(state, seed, row, firstColumn, lastColumn,
+                requirePreferredRow)) {
+            return action;
+        }
+    }
     return allowLowCostCombat ? std::nullopt : PlantAIPlanning::TryRecycleIncomeForOutput(state, row, protectedSun);
 }
 

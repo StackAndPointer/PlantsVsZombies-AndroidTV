@@ -34,6 +34,8 @@ protected:
     std::optional<VSAction> TryBlover(const VSGameState &state, int preferredRow);
     std::optional<VSAction> TryEvadeJalapenoHead(const VSGameState &state);
     int EffectivePlantPlayCost(const VSGameState &state, const VSCardState &card) const;
+    std::optional<VSAction> TryClearDaytimeSunshroomForPlanting(const VSGameState &state, SeedType replacementSeed, int row,
+        int firstColumn, int lastColumn, bool requireExactRow);
     std::optional<VSAction> TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,
         bool requireExactRow);
     std::optional<VSAction> TryPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn);

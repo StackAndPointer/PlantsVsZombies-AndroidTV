@@ -8,6 +8,22 @@
 
 namespace vsai::detail {
 
+namespace {
+
+bool CanUseSunshroomFootPad(const VSZombieState &zombie) {
+    switch (static_cast<ZombieType>(zombie.zombieType)) {
+        case ZombieType::ZOMBIE_GARGANTUAR:
+        case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
+        case ZombieType::ZOMBIE_ZAMBONI:
+        case ZombieType::ZOMBIE_CATAPULT:
+            return false;
+        default:
+            return !zombie.dead && !zombie.mindControlled;
+    }
+}
+
+} // namespace
+
 std::optional<VSAction> PlantAIPlanning::TryAshCounter(const VSGameState &state, SeedType seedType, int protectedSun) {
     const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seedType);
     if (card == nullptr) {
@@ -585,19 +601,20 @@ std::optional<VSAction> PlantAIPlanning::TrySunshroomFiller(const VSGameState &s
         return std::nullopt;
     }
 
-    int bestRow = -1;
+    VSGridPosition bestTarget{};
     int bestScore = std::numeric_limits<int>::min();
     for (int rowOffset = 0; rowOffset < state.rows; ++rowOffset) {
         const int row = (preferredRow + rowOffset) % state.rows;
-        if (HasPlantTypeInRow(state, SeedType::SEED_SUNSHROOM, row)) {
+        if (HasPlantTypeInRow(state, SeedType::SEED_SUNSHROOM, row) || IsMowerInMotion(state, row)) {
             continue;
         }
 
-        VSGridPosition target{};
-        for (int column = 5; column >= 4; --column) {
-            target = FindPlantCellInExactRow(state, row, column, column);
-            if (target.col >= 0 && target.row >= 0) {
-                break;
+        VSGridPosition target = FindPlantCellInExactRow(state, row, 5, 5);
+        const VSZombieState *closest = FindClosestZombie(state, row);
+        if (closest != nullptr && CanUseSunshroomFootPad(*closest)) {
+            const VSGridPosition footTarget{static_cast<std::int8_t>(ZombieColumn(*closest)), static_cast<std::int8_t>(row)};
+            if (IsPlantableVSTile(state, footTarget) && !HasPlantAt(state, footTarget) && !HasGridItemAt(state, footTarget)) {
+                target = footTarget;
             }
         }
         if (target.col < 0 || target.row < 0) {
@@ -605,29 +622,23 @@ std::optional<VSAction> PlantAIPlanning::TrySunshroomFiller(const VSGameState &s
         }
 
         const PlantLaneAssessment lane = AssessPlantLane(state, row);
-        const VSZombieState *closest = FindClosestZombie(state, row);
         if (closest == nullptr && CountActiveZombies(state) == 0) {
             continue;
         }
         int score = lane.rawDanger * 2 + PlantEconomyValueInRow(state, row) * 2 + SustainedOutputScoreInRow(state, row);
         score += closest == nullptr ? 35 : (closest->positionX < 760.0f ? 140 : 0);
+        score += closest != nullptr && target.col == ZombieColumn(*closest) ? 380 : 0;
         score += row == preferredRow ? 35 : 0;
         score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_SUNSHROOM, row);
-        if (bestRow < 0 || score > bestScore) {
-            bestRow = row;
+        if (bestTarget.col < 0 || score > bestScore) {
+            bestTarget = target;
             bestScore = score;
         }
     }
-    if (bestRow < 0) {
+    if (bestTarget.col < 0 || bestTarget.row < 0) {
         return std::nullopt;
     }
-
-    for (int column = 5; column >= 4; --column) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TryPlantExactRow(state, SeedType::SEED_SUNSHROOM, bestRow, column, column)) {
-            return action;
-        }
-    }
-    return std::nullopt;
+    return MakePlayAction(VSSide::Plants, *card, bestTarget, state.boardTick);
 }
 
 std::optional<VSAction> PlantAIPlanning::TryGraveBuster(const VSGameState &state, int protectedSun) {
