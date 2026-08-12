@@ -878,6 +878,13 @@ bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedTy
         return true;
     }
 
+    if (seedType == SeedType::SEED_CHOMPER) {
+        // Chomper is a close-range answer, not a durable main damage plant.
+        // Keep its low-priority template role behind a real carry so a Ban
+        // residual cannot open with an all-answer deck.
+        return HasBuiltinAIPlantMainDamage(screen);
+    }
+
     if (seedType == SeedType::SEED_TORCHWOOD) {
         // Torchwood amplifies peas, not pults or starfruit. Require the pea
         // main card to be in the bank before allowing the support card. A
@@ -975,6 +982,131 @@ static constexpr SeedType kBuiltinAIPlantPostCarryFallbacks[] = {
     SeedType::SEED_SUNFLOWER,
 };
 
+bool HasBuiltinAIOpponentZombieSeed(SeedChooserScreen *screen, SeedType seedType) {
+    if (screen == nullptr || screen->mIsZombieChooser || screen->mApp == nullptr || screen->mApp->mZombieChooserScreen == nullptr) {
+        return false;
+    }
+
+    SeedChooserScreen *zombieScreen = screen->mApp->mZombieChooserScreen;
+    bool hasChosenZombie = false;
+    const int storageCount = zombieScreen->GetSeedStorageCount();
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        if (zombieScreen->GetChosenSeed(seedIndex).mSeedState != ChosenSeedState::SEED_IN_BANK) {
+            continue;
+        }
+        hasChosenZombie = true;
+        if (zombieScreen->GetZombieSeedType(seedIndex) == seedType) {
+            return true;
+        }
+    }
+
+    // Local AIs can fill their two choosers in either order. Before the
+    // zombie side clicks its first card, its retained replay template is the
+    // only reliable deck information available to a plant Ban replacement.
+    if (!hasChosenZombie && VSSetupAddonWidget::msZombieAIMode && UsesBuiltinAITemplate(zombieScreen)) {
+        const SeedType *plannedDeck = GetBuiltinAIDeckPriority(zombieScreen);
+        return std::any_of(plannedDeck, plannedDeck + GetBuiltinAIPlanSize(zombieScreen), [seedType](SeedType plannedSeed) {
+            return plannedSeed == seedType;
+        });
+    }
+    return false;
+}
+
+int BuiltinAIPlantCarryMatchupScore(SeedChooserScreen *screen, SeedType seedType) {
+    int score = 0;
+    switch (seedType) {
+        case SeedType::SEED_PEASHOOTER:
+            score = 108;
+            break;
+        case SeedType::SEED_REPEATER:
+            score = 112;
+            break;
+        case SeedType::SEED_SNOWPEA:
+            score = 106;
+            break;
+        case SeedType::SEED_CABBAGEPULT:
+            score = 104;
+            break;
+        case SeedType::SEED_MELONPULT:
+            score = 96;
+            break;
+        case SeedType::SEED_SPORESHROOM:
+            score = 102;
+            break;
+        case SeedType::SEED_BLOOMERANG:
+            score = 92;
+            break;
+        case SeedType::SEED_SCAREDYSHROOM:
+            score = 88;
+            break;
+        case SeedType::SEED_CACTUS:
+            score = 76;
+            break;
+        case SeedType::SEED_KERNELPULT:
+        case SeedType::SEED_STARFRUIT:
+            score = 82;
+            break;
+        default:
+            return std::numeric_limits<int>::min();
+    }
+
+    const bool metalScreen = HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_SCREEN_DOOR)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_NEWSPAPER)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_TRASHCAN);
+    const bool vehicle = HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBONI)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_BOBSLED);
+    const bool rangedSiege = HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_CATAPULT)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_PEA_HEAD)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_SUNDAY_EDITION);
+    const bool heavy = HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_GARGANTUAR)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL);
+    const bool fastPressure = HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_DOGWALKER)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_FOOTBALL)
+        || HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_IMP);
+    const bool balloon = HasBuiltinAIOpponentZombieSeed(screen, SeedType::SEED_ZOMBIE_BALLOON);
+    const bool lobbedCarry = seedType == SeedType::SEED_CABBAGEPULT || seedType == SeedType::SEED_MELONPULT
+        || seedType == SeedType::SEED_SPORESHROOM || seedType == SeedType::SEED_KERNELPULT;
+    const bool peaCarry = seedType == SeedType::SEED_PEASHOOTER || seedType == SeedType::SEED_REPEATER
+        || seedType == SeedType::SEED_SNOWPEA;
+
+    if (metalScreen) {
+        score += lobbedCarry ? 145 : (seedType == SeedType::SEED_BLOOMERANG ? 65 : -35);
+    }
+    if (vehicle) {
+        score += peaCarry ? 70 : (lobbedCarry ? 35 : 0);
+    }
+    if (rangedSiege) {
+        score += lobbedCarry ? 125 : -15;
+    }
+    if (heavy) {
+        score += seedType == SeedType::SEED_MELONPULT ? 150 : (seedType == SeedType::SEED_REPEATER || seedType == SeedType::SEED_SPORESHROOM ? 65 : 0);
+    }
+    if (fastPressure) {
+        score += seedType == SeedType::SEED_SNOWPEA ? 90 : (peaCarry ? 50 : 0);
+    }
+    if (balloon) {
+        score += seedType == SeedType::SEED_CACTUS ? 145 : 0;
+    }
+    return score;
+}
+
+SeedType FindBuiltinAICounterCarry(SeedChooserScreen *screen) {
+    SeedType bestSeed = SeedType::SEED_NONE;
+    int bestScore = std::numeric_limits<int>::min();
+    for (const SeedType seedType : kBuiltinAIPlantMainFallbacks) {
+        if (!IsBuiltinAICandidate(screen, seedType) || !IsBuiltinAIPlantSupportCandidate(screen, seedType)) {
+            continue;
+        }
+        const int score = BuiltinAIPlantCarryMatchupScore(screen, seedType);
+        if (bestSeed == SeedType::SEED_NONE || score > bestScore || (score == bestScore && seedType < bestSeed)) {
+            bestSeed = seedType;
+            bestScore = score;
+        }
+    }
+    return bestSeed;
+}
+
 SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
     if (priorityCount > 0) {
         const std::size_t firstPriority = static_cast<std::size_t>(Sexy::Rand(static_cast<int>(priorityCount)));
@@ -1034,6 +1166,9 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     const bool alreadyHasMainDamage = useTemplate && plannedMainAvailable
         ? HasBuiltinAIPlantSeed(screen, plannedMain)
         : hasSelectedCarry;
+    const SeedType counterMain = !alreadyHasMainDamage && (!useTemplate || !plannedMainAvailable)
+        ? FindBuiltinAICounterCarry(screen)
+        : SeedType::SEED_NONE;
     const std::size_t planSize = GetBuiltinAIPlanSize(screen);
     const std::size_t selectedCount = static_cast<std::size_t>(std::max(0, screen->mSeedsInBank));
     const std::size_t slotsRemaining = selectedCount < planSize ? planSize - selectedCount : 0;
@@ -1053,6 +1188,9 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     const auto IsMainDamageCandidate = [&](SeedType seedType) {
         if (plannedMain != SeedType::SEED_NONE && plannedMainAvailable) {
             return seedType == plannedMain;
+        }
+        if (counterMain != SeedType::SEED_NONE) {
+            return seedType == counterMain;
         }
         return IsBuiltinAIPlantCarrySeed(seedType);
     };
@@ -1207,16 +1345,24 @@ void ReplaceBuiltinAIPlantTemplateAfterOpeningBan(SeedChooserScreen *screen) {
         return;
     }
 
-    const int firstProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantDecks)));
+    int bestProfile = -1;
+    int bestScore = std::numeric_limits<int>::min();
     for (int offset = 0; offset < static_cast<int>(std::size(kBuiltinAIPlantDecks)); ++offset) {
-        const int candidateProfile = (firstProfile + offset) % static_cast<int>(std::size(kBuiltinAIPlantDecks));
+        const int candidateProfile = offset;
         const SeedType candidateMain = PlantTemplateMainSeed(screen, candidateProfile);
         if (candidateProfile == currentProfile || candidateMain == SeedType::SEED_NONE || candidateMain == bannedMain
             || IsBuiltinAIPlantSeedBanned(screen, candidateMain) || !IsBuiltinAICandidate(screen, candidateMain)) {
             continue;
         }
-        gBuiltinAIDeckPlans.plantProfile = candidateProfile;
-        gLastBuiltinAIPlantProfile = candidateProfile;
+        const int score = BuiltinAIPlantCarryMatchupScore(screen, candidateMain);
+        if (bestProfile < 0 || score > bestScore || (score == bestScore && candidateProfile < bestProfile)) {
+            bestProfile = candidateProfile;
+            bestScore = score;
+        }
+    }
+    if (bestProfile >= 0) {
+        gBuiltinAIDeckPlans.plantProfile = bestProfile;
+        gLastBuiltinAIPlantProfile = bestProfile;
         gBuiltinAIDeckPlans.plantMainPickSlot = -1;
         return;
     }

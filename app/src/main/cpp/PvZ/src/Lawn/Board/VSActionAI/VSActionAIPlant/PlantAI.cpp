@@ -371,6 +371,14 @@ PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState 
                 if (seedType == SeedType::SEED_SQUASH && !IsSquashTargetZombie(zombie)) {
                     continue;
                 }
+                if (seedType == SeedType::SEED_CHILLY_PEPPER
+                    && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_ZAMBONI)) {
+                    // Chilly Pepper does not damage a Zomboni.  Do not let
+                    // its large health score turn a lone vehicle into a
+                    // fake Ash target after another answer has cleared the
+                    // actual zombies in that row.
+                    continue;
+                }
 
                 const int health = PlantAIPlanning::ZombieEffectiveHealth(zombie);
                 ++candidate.hitCount;

@@ -130,8 +130,13 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const int counterFirstColumn = mowerlessThirdColumnEmergency ? 0 : 4;
     const int areaCounterReserve = PlantAIPlanning::AreaCounterReserve(state);
     const bool hasEconomyPressurePlan = PlantAIPlanning::HasEconomyPressurePlan(state);
-    const int incomeExpansionTarget = state.isSuddenDeath ? 0 : PlantAIPlanning::EconomyPressureIncomeTarget(state);
     const bool midGame = state.boardTick >= 32000 || CountZombieEconomy(state) >= state.rows;
+    const int normalIncomeBase = state.rows >= 6 ? 5 : 4;
+    const int lateIncomeRecoveryTarget = !state.isSuddenDeath && midGame && incomePlantCount < normalIncomeBase
+        ? normalIncomeBase
+        : 0;
+    const int incomeExpansionTarget = state.isSuddenDeath ? 0
+        : std::max(PlantAIPlanning::EconomyPressureIncomeTarget(state), lateIncomeRecoveryTarget);
     const bool pressureOutrunsFirepower = hasActiveZombie && (unholdableZombieRows > 0
         || (contestedZombieRows >= 2 && damageBeforeZombieContact < incomingZombieHealth));
     const bool immediateCounterThreat = squashThreat || impPearThreat || mowerlessThirdColumnEmergency;
@@ -197,6 +202,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         && readySustainedOutput && (pressureOutrunsFirepower || midGame);
     const bool mayExpandIncomePastOpening = incomePlantCount < openingIncomeTarget || !midGame
         || (!pressureOutrunsFirepower && (!needsSustainedOutput || !readySustainedOutput));
+    const bool canRecoverLateIncome = lateIncomeRecoveryTarget > 0 && !immediateCounterThreat && !openingNeedsFirepower
+        && !pressureOutrunsFirepower && !highSunCombatPressure && danger.danger < 120
+        && (counterFirepower.canHold || weakestFirepower.closestDistance > 760);
 
     // The recorded plant side builds its sun base first, then answers a real
     // heavy/fast push with Squash. It is never an opening filler card.
@@ -325,6 +333,15 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     }
     if (std::optional<VSAction> action = PlantAIPlanning::TryWakeSleepingMushroom(state, danger.row)) {
         return action;
+    }
+    // An early pressure opening may deliberately pause at three producers,
+    // but it must rebuild to the normal four/five-producer base once the
+    // game reaches a stable midgame.  This is intentionally below immediate
+    // defense and above optional replay formations.
+    if (canRecoverLateIncome) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TryIncomePlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
+            return action;
+        }
     }
     if (!immediateCounterThreat && !openingNeedsFirepower && CountZombieEconomy(state) > 0) {
         if (economyZombieDeck) {

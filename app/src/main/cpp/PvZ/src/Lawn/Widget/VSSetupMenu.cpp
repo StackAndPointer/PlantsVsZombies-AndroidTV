@@ -1305,6 +1305,7 @@ void VSSetupMenu::ButtonDepress_Origin(int theId) {
                     mAddonWidget->SetDisable(mAddonWidget->mBalancePatchCheckbox);
                     mAddonWidget->SetDisable(mAddonWidget->mPlantAICheckbox);
                     mAddonWidget->SetDisable(mAddonWidget->mZombieAICheckbox);
+                    mAddonWidget->SetDisable(mAddonWidget->mAIEnhancementCheckbox);
                     mAddonWidget->SetDisable(mAddonWidget->mBackButton);
                     mAddonWidget->mDrawString = false;
                     //                    PickBackgroundImmediately();
