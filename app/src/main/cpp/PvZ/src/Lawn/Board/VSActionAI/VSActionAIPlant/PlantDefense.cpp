@@ -298,6 +298,7 @@ std::optional<VSAction> PlantAIPlanning::TryFallbackPlant(const VSGameState &sta
                                             : (requiresExactRow ? FindPlantCellInExactRow(state, row, firstColumn, lastColumn)
                                                                 : FindPlantCellInColumns(state, row, firstColumn, lastColumn)));
         if (target.col >= 0 && target.row >= 0
+            && (seed != SeedType::SEED_UMBRELLA || !IsPlantProtectedByUmbrella(state, target))
             && (!IsPlantCombatSeed(static_cast<std::uint16_t>(seed)) || IsPlantPlacementSafe(state, seed, target))) {
             if (!state.isNight && (seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM)) {
                 const int zombiesOnPlantCell = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(),

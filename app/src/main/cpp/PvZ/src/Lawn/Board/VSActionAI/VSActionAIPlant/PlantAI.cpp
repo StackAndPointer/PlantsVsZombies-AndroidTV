@@ -205,7 +205,8 @@ std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &stat
                            : FindPlantCellInColumns(state, row, firstColumn, lastColumn));
     if (target.col < 0 || target.row < 0
         || (IsMowerInMotion(state, target.row) && IsInstantCounterSeed(seedType))
-        || (ShouldYieldLaneToMower(state, target.row) && (!requireExactRow || !IsInstantCounterSeed(seedType)))) {
+        || (ShouldYieldLaneToMower(state, target.row) && (!requireExactRow || !IsInstantCounterSeed(seedType)))
+        || (seedType == SeedType::SEED_UMBRELLA && IsPlantProtectedByUmbrella(state, target))) {
         return std::nullopt;
     }
     if (IsPlantCombatSeed(static_cast<std::uint16_t>(seedType)) && !IsPlantPlacementSafe(state, seedType, target)) {

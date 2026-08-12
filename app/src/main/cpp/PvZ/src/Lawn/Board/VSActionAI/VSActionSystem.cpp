@@ -180,6 +180,10 @@ VSActionResult ExecutePlaySeed(Board *board, const VSAction &action) {
 
     const int gridX = static_cast<int>(action.target.col);
     const int gridY = static_cast<int>(action.target.row);
+    const SeedType selectedSeed = packet.mPacketType == SeedType::SEED_IMITATER ? packet.mImitaterType : packet.mPacketType;
+    if (selectedSeed == SeedType::SEED_UMBRELLA && board->FindUmbrellaPlant(gridX, gridY) != nullptr) {
+        return VSActionResult::RejectedInvalidTarget;
+    }
     if (packet.mPacketType == SeedType::SEED_ZOMBIE_MOUND) {
         // Mound upgrade cost depends on the level at the cursor target.
         SetCursorForSeed(board, controls, packet, action.seedSlot, action.target);
