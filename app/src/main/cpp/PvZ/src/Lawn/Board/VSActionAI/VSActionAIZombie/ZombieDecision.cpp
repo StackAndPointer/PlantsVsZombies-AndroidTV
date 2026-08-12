@@ -117,6 +117,16 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int desiredOpeningRows = std::min(3, state.rows);
     const bool hasReadyFrontlineProbe = ZombieAIPlanning::HasReadyFrontlineProbe(state);
     const bool hasReadyEarlyHeavyCommit = ZombieAIPlanning::HasReadyEarlyHeavyCommit(state, economyCount, activePressureRows);
+    bool canConvertMowerlessTargetRoute = false;
+    for (int row = 0; row < state.rows; ++row) {
+        const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
+            && !state.mowerAvailable[static_cast<std::size_t>(row)] && !IsMowerInMotion(state, row);
+        if (mowerGone && HasLiveZombieTargetInRow(state, row) && !HasZombieInHomeColumn(state, row)
+            && !IsMowerAboutToTrigger(state, row)) {
+            canConvertMowerlessTargetRoute = true;
+            break;
+        }
+    }
     // The Normal/Trashcan/Dog/Football/Giant replay opens with a single
     // Normal immediately after its first grave. That cheap probe forces a
     // response while the later Trashcan still has an economy worth guarding;
@@ -155,7 +165,9 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const bool restorationCanProceed = !graveDefenseReinforcement || hasGraveGuard;
     const bool restorationOutweighsFront = economyDeficit >= 2 || graveDefenseScore < 100 || hasGraveGuard;
     const bool economyRepairIsUrgent = economyCount < minimumOpeningEconomy || economyDeficit >= 3;
-    if (economyDeficit > 0 && restorationCanProceed && !forceOpeningPressure && !hasReadyEarlyHeavyCommit && !bankForHeavy
+    if (economyDeficit > 0 && restorationCanProceed && !forceOpeningPressure
+        && (!canConvertMowerlessTargetRoute || !hasReadyFrontlineProbe)
+        && !hasReadyEarlyHeavyCommit && !bankForHeavy
         && (economyRepairIsUrgent || !preservePressureDuringRepair) && (!preserveSurvivingFront || restorationOutweighsFront)) {
         if (std::optional<VSAction> action = ZombieAIPlanning::TryBuildEconomy(state, economicRow)) {
             return action;
@@ -287,7 +299,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             // routes are all occupied, the existing score penalties still
             // permit a deliberate late-game commitment.
             if (plantHasReadyAsh && isLaneAttack && !IsHeavyZombieSeed(seed)
-                && zombiesInRow >= 2 && unpressuredEconomyRows > 0) {
+                && zombiesInRow >= 2 && unpressuredEconomyRows > 0 && !pursueBrokenMowerRow) {
                 continue;
             }
 
@@ -370,8 +382,11 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             if (pursueBrokenMowerRow && !IsEconomySeed(seed) && !IsTargetedSeed(card.seedType)) {
                 // A cleared mower lane is a live conversion route. Keep
                 // pressure there while the independent grave-defense path
-                // continues to protect the zombie economy.
-                score += 920;
+                // continues to protect the zombie economy. This must also
+                // overcome the ordinary multi-lane spreading bias: that
+                // bias is correct before a mower falls, but not when the
+                // next successful push wins through this still-live target.
+                score += zombiesInRow == 0 ? 1450 : 1700;
             }
             if (bestCard == nullptr || score > bestScore) {
                 bestCard = &card;

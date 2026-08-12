@@ -437,19 +437,19 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
         // Reopen it even after the mower cleared the first probe; otherwise
         // the AI keeps spending attacks merely to trigger every remaining
         // mower instead of converting the first opening into a victory.
-        score += zombieCount > 0 ? 920 : 810;
-        score += allMowersSpent ? 120 : 0;
+        score += zombieCount > 0 ? 1420 : 1280;
+        score += allMowersSpent ? 240 : 0;
     }
 
     // Spread the opening across lanes. A single zombie is useful as a probe;
     // additional zombies in that lane receive a progressively larger penalty.
     const bool pursuingMowerlessLane = mowerGone && !IsMowerInMotion(state, row);
     if (zombieCount == 0) {
-        score += mowerGone ? 410 : 150;
+        score += mowerGone ? 620 : 150;
     } else if (zombieCount == 1) {
-        score += pursuingMowerlessLane ? 60 : -115;
+        score += pursuingMowerlessLane ? 180 : -115;
     } else {
-        score -= (pursuingMowerlessLane ? 40 : 95) + (zombieCount - 1) * (pursuingMowerlessLane ? 90 : 175);
+        score -= (pursuingMowerlessLane ? 15 : 95) + (zombieCount - 1) * (pursuingMowerlessLane ? 45 : 175);
     }
     score -= ZombiePressureInRow(state, row) / 3;
     return score;
