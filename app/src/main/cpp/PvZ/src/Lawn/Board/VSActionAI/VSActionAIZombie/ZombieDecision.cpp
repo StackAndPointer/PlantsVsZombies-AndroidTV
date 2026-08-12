@@ -36,7 +36,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         // before the next low-cost probe is allowed.
         mLastPressureEconomyCount = actualEconomyCount - 1;
     }
-    const int economyCount = EffectiveAIEconomyCount(VSSide::Zombies, actualEconomyCount);
+    const ZombieTempoPolicy tempo = GetZombieTempoPolicy();
+    const int economyCount = tempo.EffectiveEconomyCount(actualEconomyCount);
     const int economyTarget = state.isSuddenDeath ? economyCount
         : std::max(state.rows * 2, state.rows * 3);
     const int economyDeficit = std::max(0, economyTarget - economyCount);
@@ -111,12 +112,11 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     // High-cost cards are a deliberate conversion of a developed grave
     // economy, not an opening all-in.  Start banking before the final two
     // graves only when multiple routes already tax the plant player.
-    const bool enhancedZombieAI = vsai::IsEnhancedAIEnabled() && vsai::IsSideEnabled(VSSide::Zombies);
     const bool bankForHeavy = heavyZombieReserve >= 100
-        && economyCount >= std::max(state.rows + (enhancedZombieAI ? 1 : 2), heavyEconomyThreshold - (enhancedZombieAI ? 3 : 2))
+        && economyCount >= tempo.HeavyBankEconomyThreshold(state.rows, heavyEconomyThreshold)
         && activePressureRows >= 2 && CountLivePlants(state) >= state.rows && graveDefenseScore < 100;
     const int minimumOpeningEconomy = std::min(2, std::max(1, state.rows));
-    const int desiredOpeningRows = std::min(3, state.rows);
+    const int desiredOpeningRows = tempo.OpeningPressureRowTarget(std::min(3, state.rows), state.rows);
     const bool hasReadyFrontlineProbe = ZombieAIPlanning::HasReadyFrontlineProbe(state);
     const bool hasReadyEarlyHeavyCommit = ZombieAIPlanning::HasReadyEarlyHeavyCommit(state, economyCount, activePressureRows);
     if (std::optional<VSAction> action = ZombieAIPlanning::TryTemplateSundayRelease(state, economyCount, activePressureRows)) {
@@ -133,16 +133,10 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     // Normal immediately after its first grave. That cheap probe forces a
     // response while the later Trashcan still has an economy worth guarding;
     // it is not the same as a generic all-in after one grave.
-    const bool armoredNormalRushTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL)
-        && (HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR) || HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR));
-    const bool impPailSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR);
-    const bool zamboniPoleOpeningTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBONI)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP);
+    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
+    const bool armoredNormalRushTemplate = profile.Has(ZombieTemplate::ArmoredNormalRush);
+    const bool impPailSundayTemplate = profile.Has(ZombieTemplate::ImpSledSunday);
+    const bool zamboniPoleOpeningTemplate = profile.Has(ZombieTemplate::ZamboniPole);
     // Both recorded lines establish three rear graves before their first
     // Imp/Zomboni probe. Two graves give neither the later Sunday release
     // nor a returned Zomboni enough economy to stay on the board.
@@ -359,8 +353,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // This keeps 100/200-brain finishers reachable without
                 // leaving every grave route unprotected.
                 if (!isProtectedGuard) {
-                    const int lowCostPenalty = enhancedZombieAI ? -90 : -45;
-                    const int mediumCostPenalty = enhancedZombieAI ? -285 : -190;
+                    const int lowCostPenalty = tempo.IsEnhanced() ? -90 : -45;
+                    const int mediumCostPenalty = tempo.IsEnhanced() ? -285 : -190;
                     score += card.cost <= std::max(50, heavyZombieReserve / 4) ? lowCostPenalty : mediumCostPenalty;
                 }
             }

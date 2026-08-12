@@ -72,19 +72,11 @@ bool ZombieAIPlanning::IsEarlyHeavyCommitCard(const VSGameState &state, SeedType
     if (!IsHeavyZombieSeed(seed)) {
         return false;
     }
-    const bool replayPoleTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_LADDER)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER);
-    const bool replayFanPoleTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUPER_FAN_IMP)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER);
-    const bool replayFlagGigaTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FLAG)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SQUASH_HEAD) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRAFFIC_CONE) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
-    const bool replayArmoredNormalTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_FOOTBALL) && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR);
+    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
+    const bool replayPoleTemplate = profile.Has(ZombieTemplate::LadderPole);
+    const bool replayFanPoleTemplate = profile.Has(ZombieTemplate::NewspaperFanPole);
+    const bool replayFlagGigaTemplate = profile.Has(ZombieTemplate::FlagSquash);
+    const bool replayArmoredNormalTemplate = profile.Has(ZombieTemplate::ArmoredNormalRush);
     const int livePlants = CountLivePlants(state);
     // These recordings have exceptional, but not arbitrary, early
     // conversions. They still need a real plant board and either a
@@ -130,21 +122,10 @@ std::optional<VSAction> ZombieAIPlanning::TryTemplateSundayRelease(const VSGameS
         return std::nullopt;
     }
 
-    const bool normalNewsImpSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION);
-    const bool impPailSledSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR);
-    const bool peaHeadSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
-        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR);
+    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
+    const bool normalNewsImpSundayTemplate = profile.Has(ZombieTemplate::NormalNewsImpSunday);
+    const bool impPailSledSundayTemplate = profile.Has(ZombieTemplate::ImpSledSunday);
+    const bool peaHeadSundayTemplate = profile.Has(ZombieTemplate::PeaHeadSunday);
     const int peaHeadCount = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(), [](const VSZombieState &zombie) {
         return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
     }));
