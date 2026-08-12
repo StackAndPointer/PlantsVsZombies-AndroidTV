@@ -179,11 +179,14 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // commitment on an empty route and use it to open a second lane,
             // instead of stacking four riders into one Cherry/Squash cell.
             score += zombieCount == 0 ? 300 : -420;
-            // The Imp/Pail/Sled/Sunday recording spends a three-grave base
-            // on a first isolated Sled, then resumes grave construction.
-            // It is a lane opener, not a partner for an existing Imp/Pail.
-            score += impSledSundayTemplate && economyCount >= 3 && economyCount <= state.rows + 3
-                ? (zombieCount == 0 ? 180 : -180)
+            // The Imp/Pail/Sled/Sunday recording holds its Sled while Imps
+            // and Pails establish the early routes, then uses Sunday Edition
+            // as the first real conversion. Keep Sled as a later independent
+            // wave instead of treating it as the mandatory three-grave play.
+            score += impSledSundayTemplate
+                ? (economyCount < std::max(state.rows + 3, 8) || CountActiveZombieRows(state) < 3
+                    ? -240
+                    : (zombieCount == 0 && areaCounterExposure < 135 ? -40 : -190))
                 : 0;
             // The Normal/Newspaper/Sled recording uses Bobsled as an
             // isolated second wave after cheap probes have spread out.
@@ -472,7 +475,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // Without that multi-lane setup it still waits for the mature
             // economy so it is not an isolated expensive donation.
             {
-                const bool earlySundayRelease = sundayPressureTemplate
+                const bool earlySundayRelease = sundayPressureTemplate && !impSledSundayTemplate
                     && economyCount >= std::max(3, state.rows - 1) && CountActiveZombieRows(state) >= 2
                     && areaCounterExposure < 150;
                 const bool sledSundayRelease = impSledSundayTemplate
@@ -481,7 +484,9 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 const bool peaHeadSundayRelease = peaHeadSundayTemplate
                     && economyCount >= state.rows + 2 && peaHeadCount >= 2
                     && CountActiveZombieRows(state) >= 2 && areaCounterExposure < 145;
-                score += (economyCount >= heavyEconomyThreshold || earlySundayRelease) ? 145 : -170;
+                const bool canReleaseSunday = economyCount >= heavyEconomyThreshold || earlySundayRelease
+                    || sledSundayRelease || peaHeadSundayRelease;
+                score += canReleaseSunday ? 145 : -170;
                 score += earlySundayRelease ? 155 : 0;
                 score += sledSundayRelease ? 190 : 0;
                 score += peaHeadSundayRelease ? 205 : 0;

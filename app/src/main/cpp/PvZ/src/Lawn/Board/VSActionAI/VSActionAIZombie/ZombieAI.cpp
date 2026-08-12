@@ -1,5 +1,7 @@
 #include "ZombieAI.h"
 
+#include "../VSActionAILanePolicy.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -121,6 +123,60 @@ bool ZombieAIPlanning::HasReadyEarlyHeavyCommit(const VSGameState &state, int ec
         return !IsSlotBlocked(card.slot) && card.active && !card.matchRestricted && IsReadyCard(card, state.zombieBrains)
             && IsEarlyHeavyCommitCard(state, seed, economyCount, activePressureRows);
     });
+}
+
+std::optional<VSAction> ZombieAIPlanning::TryTemplateSundayRelease(const VSGameState &state, int economyCount, int activePressureRows) {
+    if (activePressureRows < 2) {
+        return std::nullopt;
+    }
+
+    const bool normalNewsImpSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NORMAL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_DOGWALKER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_NEWSPAPER)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION);
+    const bool impPailSledSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PAIL)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_BOBSLED)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SCREEN_DOOR);
+    const bool peaHeadSundayTemplate = HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_PEA_HEAD)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_IMP)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_TRASHCAN)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_SUNDAY_EDITION)
+        && HasActiveDeckCard(state, VSSide::Zombies, SeedType::SEED_ZOMBIE_GARGANTUAR);
+    const int peaHeadCount = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(), [](const VSZombieState &zombie) {
+        return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
+    }));
+    const int maximumCounterExposure = impPailSledSundayTemplate || peaHeadSundayTemplate ? 145 : 150;
+    const bool releaseWindow = (normalNewsImpSundayTemplate && economyCount >= std::max(3, state.rows - 1))
+        || (impPailSledSundayTemplate && economyCount >= std::max(state.rows + 3, 8))
+        || (peaHeadSundayTemplate && economyCount >= state.rows + 2 && peaHeadCount >= 2);
+    const VSCardState *sundayEdition = FindReadyCard(state, SeedType::SEED_ZOMBIE_SUNDAY_EDITION);
+    if (!releaseWindow || sundayEdition == nullptr) {
+        return std::nullopt;
+    }
+
+    int bestRow = -1;
+    int bestScore = std::numeric_limits<int>::min();
+    for (int row = 0; row < state.rows; ++row) {
+        const VSGridPosition target = FindZombieCell(state, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, row);
+        if (EvaluateZombieLanePolicy(state, row).allowsAttack && target.col >= 0 && target.row >= 0
+            && IsCardReadyForZombieTarget(*sundayEdition, state, target)
+            && PlantAreaCounterExposure(state, row) < maximumCounterExposure) {
+            const int score = ZombieLaneAttackScore(state, row) + PlantEconomyValueInRow(state, row)
+                + SustainedOutputScoreInRow(state, row) - PlantAreaCounterExposure(state, row);
+            if (bestRow < 0 || score > bestScore) {
+                bestRow = row;
+                bestScore = score;
+            }
+        }
+    }
+    if (bestRow < 0) {
+        return std::nullopt;
+    }
+    return MakePlayAction(VSSide::Zombies, *sundayEdition,
+        FindZombieCell(state, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, bestRow), state.boardTick);
 }
 
 std::unique_ptr<IVSAgent> CreateZombieAI() {

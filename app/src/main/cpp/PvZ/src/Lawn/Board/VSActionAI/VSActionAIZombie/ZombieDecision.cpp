@@ -119,6 +119,9 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int desiredOpeningRows = std::min(3, state.rows);
     const bool hasReadyFrontlineProbe = ZombieAIPlanning::HasReadyFrontlineProbe(state);
     const bool hasReadyEarlyHeavyCommit = ZombieAIPlanning::HasReadyEarlyHeavyCommit(state, economyCount, activePressureRows);
+    if (std::optional<VSAction> action = ZombieAIPlanning::TryTemplateSundayRelease(state, economyCount, activePressureRows)) {
+        return action;
+    }
     bool canConvertMowerlessTargetRoute = false;
     for (int row = 0; row < state.rows; ++row) {
         if (EvaluateZombieLanePolicy(state, row).conversionRoute) {

@@ -20,6 +20,7 @@ protected:
     int HeavyZombieReserve(const VSGameState &state) const;
     bool HasReadyFrontlineProbe(const VSGameState &state) const;
     bool HasReadyEarlyHeavyCommit(const VSGameState &state, int economyCount, int activePressureRows) const;
+    std::optional<VSAction> TryTemplateSundayRelease(const VSGameState &state, int economyCount, int activePressureRows);
     bool IsEarlyHeavyCommitCard(const VSGameState &state, SeedType seed, int economyCount, int activePressureRows) const;
     std::optional<VSAction> TryBuildEconomy(const VSGameState &state, int row);
     std::optional<VSAction> TryProtectEconomy(const VSGameState &state, int row, bool force = false);
