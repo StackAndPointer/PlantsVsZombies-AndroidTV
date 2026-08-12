@@ -150,7 +150,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int openingPressureEconomyCeiling = tempo.OpeningEconomyCeiling(state.rows + 1);
     const bool forceOpeningPressure = firstGraveProbe || (economyCount >= openingPressureEconomyFloor && economyCount <= openingPressureEconomyCeiling
         && activePressureRows < desiredOpeningRows && hasReadyFrontlineProbe && mLastPressureEconomyCount < actualEconomyCount);
-    const bool preservePressureDuringRepair = economyCount >= minimumOpeningEconomy && economyDeficit <= 2
+    const bool preservePressureDuringRepair = economyCount >= minimumOpeningEconomy
+        && economyDeficit <= tempo.PressureRepairDeficitTolerance()
         && activePressureRows > 0 && hasReadyFrontlineProbe;
     const int survivingFrontRow = criticalTargetRow >= 0 ? criticalTargetRow : MostValuableZombieFrontRow(state);
     const int survivingFrontValue = ZombieFrontlineValueInRow(state, survivingFrontRow);
@@ -160,7 +161,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int economicRow = economyCount < state.rows * 2 ? ZombieAIPlanning::LeastCommittedZombieRow(state) : LeastThreatenedEconomyRow(state);
     const bool restorationCanProceed = !graveDefenseReinforcement || hasGraveGuard;
     const bool restorationOutweighsFront = economyDeficit >= 2 || graveDefenseScore < 100 || hasGraveGuard;
-    const bool economyRepairIsUrgent = economyCount < minimumOpeningEconomy || economyDeficit >= 3;
+    const bool economyRepairIsUrgent = economyCount < minimumOpeningEconomy
+        || economyDeficit >= tempo.EconomyRepairDeficitThreshold();
     const bool hasReadyTemplateCommit = HasReadyZombieTemplateCommit(state, context.templateProfile, context.tempo,
         context.actualEconomyCount, context.activePressureRows);
     if (economyDeficit > 0 && restorationCanProceed && !forceOpeningPressure

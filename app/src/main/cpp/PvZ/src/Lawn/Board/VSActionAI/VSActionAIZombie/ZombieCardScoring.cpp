@@ -99,6 +99,20 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
         && context.activePressureRows < std::min(3, state.rows);
     const int templatePhaseBonus = ZombieTemplatePhaseBonus(profile, tempo, seed, context.actualEconomyCount,
         context.activePressureRows, zombieCount, state.rows);
+    const ZombieTemplateTacticalState templateState{
+        .economyCount = economyCount,
+        .activePressureRows = context.activePressureRows,
+        .zombiesInRow = zombieCount,
+        .rows = state.rows,
+        .peaHeadCount = peaHeadCount,
+        .plantCount = plantCount,
+        .economyValue = economyValue,
+        .sustainedOutput = sustainedOutput,
+        .areaCounterExposure = areaCounterExposure,
+        .hasWallnut = hasWallnut,
+        .graveUnderDirectFire = graveProjectileThreat >= 55,
+    };
+    const int templateTacticalBonus = ZombieTemplateTacticalBonus(profile, seed, templateState);
 
     int score = 20 + ZombieLaneAttackScore(state, targetRow);
     const int graveThreat = ProtectableGraveThreatScore(state, targetRow);
@@ -614,6 +628,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             break;
     }
     score += templatePhaseBonus;
+    score += templateTacticalBonus;
     if (seed != SeedType::SEED_ZOMBIE_TRASHCAN && IsZombieGraveGuardSeed(seed)) {
         // The replay with Screen Door has no Trashcan.  A Door, Pail or
         // Wall-nut Head must still be allowed to screen direct fire from

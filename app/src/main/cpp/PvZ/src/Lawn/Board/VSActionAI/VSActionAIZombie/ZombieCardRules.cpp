@@ -61,10 +61,11 @@ constexpr ZombieTemplatePlan kZombieTemplatePlans[] = {
     {ZombieTemplate::MoundPeaZomblobFootball, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_MOUND, 2, 0, SeedType::SEED_ZOMBIE_ZOMBLOB, 5, 2},
     {ZombieTemplate::SundayLadderRaid, SeedType::SEED_ZOMBIE_NORMAL, 1, 7, 3, SeedType::SEED_ZOMBIE_LADDER, 3, 1, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, 5, 2},
     {ZombieTemplate::MoundNewspaperZamboni, SeedType::SEED_ZOMBIE_IMP, 3, 7, 3, SeedType::SEED_ZOMBIE_MOUND, 3, 0, SeedType::SEED_ZOMBONI, 5, 1},
+    {ZombieTemplate::MoundTallnutGuard, SeedType::SEED_ZOMBIE_TRAFFIC_CONE, 2, 7, 3, SeedType::SEED_ZOMBIE_MOUND, 3, 0, SeedType::SEED_ZOMBIE_TALLNUT_HEAD, 5, 1},
 };
 
 static_assert(sizeof(kZombieTemplatePlans) / sizeof(kZombieTemplatePlans[0])
-    == static_cast<std::size_t>(ZombieTemplate::MoundNewspaperZamboni) + 1);
+    == static_cast<std::size_t>(ZombieTemplate::MoundTallnutGuard) + 1);
 
 int ZombieTemplatePlanPriority(ZombieTemplate templateId) {
     // These are deliberate broad fallback profiles. More specific replay
@@ -143,7 +144,11 @@ ZombieTemplateProfile DetectZombieTemplateProfile(const VSGameState &state) {
         SeedType::SEED_ZOMBIE_IMP, SeedType::SEED_ZOMBIE_FOOTBALL, SeedType::SEED_ZOMBIE_GARGANTUAR}));
     add(profile, ZombieTemplate::NormalNewsSled, hasAll({SeedType::SEED_ZOMBIE_NORMAL, SeedType::SEED_ZOMBIE_NEWSPAPER,
         SeedType::SEED_ZOMBONI, SeedType::SEED_ZOMBIE_BOBSLED, SeedType::SEED_ZOMBIE_DOGWALKER}));
-    add(profile, ZombieTemplate::NormalNewsImpSunday, hasAll({SeedType::SEED_ZOMBIE_NORMAL, SeedType::SEED_ZOMBIE_DOGWALKER,
+    // Dogwalker was the sixth selectable card in an earlier recording, but
+    // the actual Normal/Newspaper/Imp/Sunday sequence only depends on this
+    // four-card core. Treat the sixth slot as a Ban replacement instead of
+    // letting it erase the recorded opening when it is unavailable.
+    add(profile, ZombieTemplate::NormalNewsImpSunday, hasAll({SeedType::SEED_ZOMBIE_NORMAL,
         SeedType::SEED_ZOMBIE_NEWSPAPER, SeedType::SEED_ZOMBIE_IMP, SeedType::SEED_ZOMBIE_SUNDAY_EDITION}));
     add(profile, ZombieTemplate::LadderPole, hasAll({SeedType::SEED_ZOMBIE_NEWSPAPER, SeedType::SEED_ZOMBIE_TRAFFIC_CONE,
         SeedType::SEED_ZOMBIE_LADDER, SeedType::SEED_ZOMBIE_BOBSLED, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER}));
@@ -204,6 +209,9 @@ ZombieTemplateProfile DetectZombieTemplateProfile(const VSGameState &state) {
         SeedType::SEED_ZOMBIE_NORMAL}));
     add(profile, ZombieTemplate::MoundNewspaperZamboni, hasAll({SeedType::SEED_ZOMBIE_NEWSPAPER, SeedType::SEED_ZOMBIE_IMP,
         SeedType::SEED_ZOMBONI, SeedType::SEED_ZOMBIE_SCREEN_DOOR, SeedType::SEED_ZOMBIE_MOUND}));
+    add(profile, ZombieTemplate::MoundTallnutGuard, hasAll({SeedType::SEED_ZOMBIE_TRAFFIC_CONE,
+        SeedType::SEED_ZOMBIE_PAIL, SeedType::SEED_ZOMBIE_TRASHCAN, SeedType::SEED_ZOMBIE_TALLNUT_HEAD,
+        SeedType::SEED_ZOMBIE_MOUND}));
     return profile;
 }
 
@@ -294,7 +302,12 @@ int ZombieTempoPolicy::EffectiveEconomyCount(int actualCount) const {
 }
 
 int ZombieTempoPolicy::EconomyTarget(int baseline, int rows) const {
-    return std::max(rows, baseline - (mEnhanced ? 1 : 0));
+    // Enhanced AI accelerates its transition from grave construction to
+    // pressure. EffectiveEconomyCount contributes the first stage; this
+    // target is the second stage which keeps the repair branch from pulling
+    // the agent back into a full rear-field rebuild after it has opened
+    // several routes.
+    return std::max(rows, baseline - (mEnhanced ? 2 : 0));
 }
 
 int ZombieTempoPolicy::OpeningEconomyFloor(int baseline) const {
@@ -311,6 +324,14 @@ int ZombieTempoPolicy::OpeningPressureRowTarget(int baseline, int rows) const {
 
 int ZombieTempoPolicy::HeavyBankEconomyThreshold(int rows, int heavyEconomyThreshold) const {
     return std::max(rows + (mEnhanced ? 1 : 2), heavyEconomyThreshold - (mEnhanced ? 3 : 2));
+}
+
+int ZombieTempoPolicy::EconomyRepairDeficitThreshold() const {
+    return mEnhanced ? 4 : 3;
+}
+
+int ZombieTempoPolicy::PressureRepairDeficitTolerance() const {
+    return EconomyRepairDeficitThreshold() - 1;
 }
 
 std::uint8_t ZombieTempoPolicy::LaneAttackCooldown(SeedType seed) const {
