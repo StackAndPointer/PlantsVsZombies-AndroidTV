@@ -206,6 +206,11 @@ bool IsNutBypassZombieApproaching(const VSGameState &state, int row) {
                 // An ice trail makes walls a losing response even before the
                 // vehicle enters the normal close-range threshold.
                 return true;
+            case ZombieType::ZOMBIE_JALAPENO_HEAD:
+            case ZombieType::ZOMBIE_JACK_IN_THE_BOX:
+                // Both explode on contact. A nut-class barrier spends sun
+                // without protecting the firing line behind it.
+                return true;
             case ZombieType::ZOMBIE_GARGANTUAR:
             case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
             case ZombieType::ZOMBIE_CATAPULT:

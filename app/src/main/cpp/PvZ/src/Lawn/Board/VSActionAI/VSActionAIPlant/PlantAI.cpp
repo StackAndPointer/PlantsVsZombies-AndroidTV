@@ -110,7 +110,6 @@ std::optional<VSAction> PlantAIPlanning::TryBlover(const VSGameState &state, int
 }
 
 std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState &state) {
-    constexpr float kPreContactDistance = 90.0f;
     const VSPlantState *bestPlant = nullptr;
     int bestScore = std::numeric_limits<int>::min();
     for (const VSZombieState &zombie : state.zombies) {
@@ -119,7 +118,6 @@ std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState 
             continue;
         }
 
-        const VSPlantState *frontPlant = nullptr;
         const VSPlantState *contactPlant = nullptr;
         for (const VSPlantState &plant : state.plants) {
             if (IsDeadOrOutside(plant) || plant.position.row != zombie.row) {
@@ -128,12 +126,8 @@ std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState 
             if (plant.id == zombie.jalapenoContactPlantId) {
                 contactPlant = &plant;
             }
-            if (frontPlant == nullptr || plant.position.col > frontPlant->position.col) {
-                frontPlant = &plant;
-            }
         }
-        const VSPlantState *candidate = contactPlant != nullptr ? contactPlant : frontPlant;
-        if (candidate == nullptr) {
+        if (contactPlant == nullptr) {
             continue;
         }
 
@@ -141,28 +135,22 @@ std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState 
         // burn trigger in Zombie::UpdateZombieJalapenoHead. Ash plants are
         // one-shot counters that must remain available. Keep all of them in
         // place rather than creating an opening behind the Jalapeno Head.
-        const SeedType candidateSeed = static_cast<SeedType>(candidate->seedType);
+        const SeedType candidateSeed = static_cast<SeedType>(contactPlant->seedType);
         const bool isAshPlant = candidateSeed == SeedType::SEED_POTATOMINE || candidateSeed == SeedType::SEED_SQUASH
             || candidateSeed == SeedType::SEED_CHERRYBOMB || candidateSeed == SeedType::SEED_JALAPENO
             || candidateSeed == SeedType::SEED_CHILLY_PEPPER || candidateSeed == SeedType::SEED_DOOMSHROOM
             || candidateSeed == SeedType::SEED_ICESHROOM;
-        if (candidateSeed == SeedType::SEED_GARLIC || (candidateSeed == SeedType::SEED_HYPNOSHROOM && !candidate->asleep) || isAshPlant) {
+        if (candidateSeed == SeedType::SEED_GARLIC || (candidateSeed == SeedType::SEED_HYPNOSHROOM && !contactPlant->asleep) || isAshPlant) {
             continue;
         }
 
-        const bool hasExactContact = contactPlant != nullptr;
-        const float frontPlantX = static_cast<float>(LAWN_XMIN + static_cast<int>(candidate->position.col) * 80 + 40);
-        if (!hasExactContact && zombie.positionX - frontPlantX > kPreContactDistance) {
-            continue;
-        }
-
-        // Exact collision uses FindPlantTarget(ATTACKTYPE_CHEW), which fires
-        // at 20 pixels of attack-rect overlap. The short 90-pixel runway is
-        // only a pre-contact buffer for the asynchronous AI turn.
-        const int score = (hasExactContact ? 1000 : 0) + PlantValueScore(*candidate)
-            + static_cast<int>(candidate->position.col) * 10;
+        // BuildGameState obtains this exact target from
+        // FindPlantTarget(ATTACKTYPE_CHEW). The engine requires 20 pixels of
+        // attack-rect overlap before a Jalapeno Head begins its burn trigger,
+        // so never shovel a merely approaching front plant.
+        const int score = PlantValueScore(*contactPlant) + static_cast<int>(contactPlant->position.col) * 10;
         if (bestPlant == nullptr || score > bestScore) {
-            bestPlant = candidate;
+            bestPlant = contactPlant;
             bestScore = score;
         }
     }
