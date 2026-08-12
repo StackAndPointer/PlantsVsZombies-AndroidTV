@@ -400,12 +400,13 @@ void VSSetupAddonWidget::Draw(Graphics *g) const {
 }
 
 void VSSetupAddonWidget::OpenAISettings() {
-    if (mAISettingsWidget != nullptr || mBoard == nullptr || mAISettingsButton->mDisabled) {
+    if (mAISettingsWidget != nullptr || mApp == nullptr || mAISettingsButton->mDisabled) {
         return;
     }
     mAISettingsWidget = new AISettingsWidget(this);
     mAISettingsWidget->SetDisabled(Challenge::msVSShuffleMode);
-    mBoard->AddWidget(mAISettingsWidget);
+    mApp->mWidgetManager->AddWidget(mAISettingsWidget);
+    mApp->mWidgetManager->BringToFront(mAISettingsWidget);
     mApp->mWidgetManager->SetFocus(mAISettingsWidget);
 }
 
@@ -415,10 +416,8 @@ void VSSetupAddonWidget::CloseAISettings() {
     }
     AISettingsWidget *const settingsWidget = mAISettingsWidget;
     mAISettingsWidget = nullptr;
-    if (mBoard != nullptr) {
-        mBoard->RemoveWidget(settingsWidget);
-    }
     if (mApp != nullptr) {
+        mApp->mWidgetManager->RemoveWidget(settingsWidget);
         mApp->SafeDeleteWidget(settingsWidget);
     } else {
         delete settingsWidget;

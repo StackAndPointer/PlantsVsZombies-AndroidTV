@@ -23,6 +23,9 @@ constexpr int kPanelHeight = 430;
 constexpr int kCheckboxX = 58;
 constexpr int kFirstCheckboxY = 86;
 constexpr int kCheckboxStep = 54;
+
+using LawnDialogDraw = void (*)(LawnDialog *, Sexy::Graphics *);
+LawnDialogDraw gBaseLawnDialogDraw = nullptr;
 }
 
 AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
@@ -30,9 +33,9 @@ AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
     reinterpret_cast<void (*)(LawnDialog *, LawnApp *, Sexy::Image *, int, bool, const pvzstl::string &, const pvzstl::string &, const pvzstl::string &, int)>(LawnDialog_LawnDialogAddr)(
         this,
         gLawnApp,
-        Sexy::IMAGE_OPTIONS_MENUBACK,
+        nullptr,
         VSSetupAddonWidget::VSSetupAddonWidget_AISettings,
-        false,
+        true,
         "",
         "",
         "",
@@ -42,6 +45,7 @@ AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
     static std::once_flag vtableInitFlag;
     std::call_once(vtableInitFlag, [&] {
         std::memcpy(sVTable, this->Sexy::Widget::vTable, sizeof(sVTable));
+        gBaseLawnDialogDraw = reinterpret_cast<LawnDialogDraw>(sVTable[36]);
         sVTable[0] = (void *)homura::ExtractMemFuncPtr(&AISettingsWidget::_destructor);
         sVTable[1] = (void *)homura::ExtractMemFuncPtr(&AISettingsWidget::_destructor2);
         sVTable[29] = (void *)homura::ExtractMemFuncPtr(&AISettingsWidget::AddedToManager);
@@ -117,10 +121,7 @@ void AISettingsWidget::RemovedFromManager(WidgetManager *manager) {
 }
 
 void AISettingsWidget::Draw(Graphics *graphics) {
-    graphics->SetColor(Color(25, 31, 34, 245));
-    graphics->FillRect(Rect(0, 0, mWidth, mHeight));
-    graphics->SetColor(Color(188, 159, 91, 255));
-    graphics->DrawRect(Rect(2, 2, mWidth - 4, mHeight - 4));
+    gBaseLawnDialogDraw(this, graphics);
     TodDrawString(graphics, "[VS_UI_AI_SETTINGS]", mWidth / 2, 45, FONT_DWARVENTODCRAFT24,
         Color(255, 244, 180), DrawStringJustification::DS_ALIGN_CENTER);
 
