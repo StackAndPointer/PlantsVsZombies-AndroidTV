@@ -53,6 +53,7 @@ protected:
     std::optional<VSAction> TryMagnetShroom(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryHypnoshroom(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryWakeSleepingDoomshroom(const VSGameState &state);
+    std::optional<VSAction> TryUmbrellaDefense(const VSGameState &state, int protectedSun);
     std::optional<VSAction> TryStarfruitGarlicFormation(const VSGameState &state, int protectedSun);
     std::optional<VSAction> TryIcebergLettuce(const VSGameState &state, int row, int protectedSun, bool forceEmergencyControl = false);
     std::optional<VSAction> TryTorchwoodSupport(const VSGameState &state, int protectedSun);

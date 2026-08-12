@@ -167,12 +167,16 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const bool restorationCanProceed = !graveDefenseReinforcement || hasGraveGuard;
     const bool restorationOutweighsFront = economyDeficit >= 2 || graveDefenseScore < 100 || hasGraveGuard;
     const bool economyRepairIsUrgent = economyCount < minimumOpeningEconomy
-        || economyDeficit >= tempo.EconomyRepairDeficitThreshold();
+        || economyDeficit >= tempo.EconomyRepairDeficitThreshold()
+        // Enhanced AI must restore a cleared midgame grave line instead of
+        // permanently preferring pressure once it has a nominal lead.
+        || (tempo.IsEnhanced() && economyDeficit > 0 && activePressureRows >= std::min(2, state.rows));
     const bool hasReadyTemplateCommit = HasReadyZombieTemplateCommit(state, context.templateProfile, context.tempo,
         context.actualEconomyCount, context.activePressureRows);
     if (economyDeficit > 0 && restorationCanProceed && !forceOpeningPressure
         && (!canConvertMowerlessTargetRoute || !hasReadyFrontlineProbe)
-        && !hasReadyEarlyHeavyCommit && !hasReadyTemplateCommit && !bankForHeavy
+        && !hasReadyEarlyHeavyCommit && !hasReadyTemplateCommit
+        && (!bankForHeavy || (tempo.IsEnhanced() && economyDeficit >= 2))
         && (economyRepairIsUrgent || !preservePressureDuringRepair) && (!preserveSurvivingFront || restorationOutweighsFront)) {
         if (std::optional<VSAction> action = ZombieAIPlanning::TryBuildEconomy(state, economicRow)) {
             return action;

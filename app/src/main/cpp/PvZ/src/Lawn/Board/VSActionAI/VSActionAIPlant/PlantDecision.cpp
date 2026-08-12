@@ -154,8 +154,13 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const bool hasEconomyPressurePlan = PlantAIPlanning::HasEconomyPressurePlan(state);
     const bool midGame = state.boardTick >= 32000 || CountZombieEconomy(state) >= state.rows;
     const int normalIncomeBase = std::max(3, state.rows >= 6 ? 5 : 4);
-    const int lateIncomeRecoveryTarget = !state.isSuddenDeath && midGame && incomePlantCount < normalIncomeBase
-        ? normalIncomeBase
+    // Enhanced tempo advances pressure thresholds, not the physical plant
+    // count. Restore the real producer line in midgame so accelerated
+    // openings do not remain starved after early trades.
+    const int enhancedIncomeRecoveryTarget = normalIncomeBase
+        + (vsai::IsEnhancedAIEnabled() && vsai::IsSideEnabled(VSSide::Plants) ? 1 : 0);
+    const int lateIncomeRecoveryTarget = !state.isSuddenDeath && midGame && actualIncomePlantCount < enhancedIncomeRecoveryTarget
+        ? enhancedIncomeRecoveryTarget
         : 0;
     const int economyPressureIncomeTarget = PlantAIPlanning::EconomyPressureIncomeTarget(state);
     const int incomeExpansionTarget = state.isSuddenDeath ? 0
@@ -225,9 +230,14 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         && readySustainedOutput && (pressureOutrunsFirepower || midGame);
     const bool mayExpandIncomePastOpening = incomePlantCount < openingIncomeTarget || !midGame
         || (!pressureOutrunsFirepower && (!needsSustainedOutput || !readySustainedOutput));
-    const bool canRecoverLateIncome = lateIncomeRecoveryTarget > 0 && !immediateCounterThreat && !openingNeedsFirepower
-        && !pressureOutrunsFirepower && !highSunCombatPressure && danger.danger < 120
-        && (counterFirepower.canHold || weakestFirepower.closestDistance > 760);
+    // Enhanced AI still needs a real late economy. Once every live lane can
+    // hold its current wave, recover missing producers even when a high-sun
+    // output branch is available; otherwise a cheap early push leaves it at
+    // three or four producers for the remainder of the match.
+    const bool canRecoverLateIncome = lateIncomeRecoveryTarget > 0 && !immediateCounterThreat
+        && !pressureOutrunsFirepower && danger.danger < 145
+        && (counterFirepower.canHold || weakestFirepower.closestDistance > 760)
+        && (!openingNeedsFirepower || actualIncomePlantCount < normalIncomeBase);
 
     // The recorded plant side builds its sun base first, then answers a real
     // heavy/fast push with Squash. It is never an opening filler card.
@@ -268,6 +278,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_CHILLY_PEPPER, protectedSun)) {
             return action;
         }
+    }
+    if (std::optional<VSAction> action = PlantAIPlanning::TryUmbrellaDefense(state, protectedSun)) {
+        return action;
     }
     if (hasActiveZombie && !mowerlessThirdColumnEmergency) {
         // Hypno-shroom is a conversion card, not generic mushroom filler:

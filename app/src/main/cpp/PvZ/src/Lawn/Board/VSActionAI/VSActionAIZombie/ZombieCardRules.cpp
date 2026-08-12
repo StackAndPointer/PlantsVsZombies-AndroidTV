@@ -302,14 +302,9 @@ int ZombieTempoPolicy::EffectiveEconomyCount(int actualCount) const {
 }
 
 int ZombieTempoPolicy::EconomyTarget(int baseline, int rows, int activePressureRows) const {
-    // Enhanced AI accelerates its transition from grave construction to
-    // pressure. EffectiveEconomyCount contributes the first stage; this
-    // target is the second stage which keeps the repair branch from pulling
-    // the agent back into a full rear-field rebuild after it has opened
-    // several routes.
-    const int establishedPressureReduction = mEnhanced
-        && HasAttackCommitPressure(activePressureRows, 2, rows) ? 1 : 0;
-    return std::max(rows, baseline - (mEnhanced ? 2 + establishedPressureReduction : 0));
+    // Enhanced AI produces brains faster, but has no free complete grave
+    // field. Retain a near-normal target so midgame losses are rebuilt.
+    return std::max(rows, baseline - (mEnhanced ? 1 : 0));
 }
 
 int ZombieTempoPolicy::OpeningEconomyFloor(int baseline) const {
@@ -367,7 +362,7 @@ int ZombieTempoPolicy::HeavyCommitEconomyThreshold(int rows, int heavyEconomyThr
 }
 
 int ZombieTempoPolicy::EconomyRepairDeficitThreshold() const {
-    return mEnhanced ? 4 : 3;
+    return 3;
 }
 
 int ZombieTempoPolicy::PressureRepairDeficitTolerance() const {

@@ -31,6 +31,10 @@ struct PlantLaneFirepower {
 int LargestZombieStackInRow(const VSGameState &state, int row);
 int LargestCherryBombClusterInRow(const VSGameState &state, int row);
 int ZombieThreatWeight(std::uint16_t zombieType);
+// Trashcan zombies are deliberately slow grave screens. Their raw health is
+// useful for lane survival, but they should not outweigh active attackers
+// when choosing an ash target or comparing lanes.
+int ZombieEffectiveThreatHealth(const VSZombieState &zombie);
 bool IsMowerlessThirdColumnEmergency(const VSGameState &state, int row);
 // On standard VS boards, a destroyed target marks a route which can no
 // longer contribute to a zombie victory. Boards without target markers keep

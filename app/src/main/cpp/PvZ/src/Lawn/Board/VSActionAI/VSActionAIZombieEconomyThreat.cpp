@@ -178,7 +178,7 @@ int ZombieGraveScreenDeficit(const VSGameState &state, int row) {
     int screenHealth = 0;
     for (const VSZombieState &zombie : state.zombies) {
         if (!zombie.dead && zombie.row == row) {
-            screenHealth += std::max(0, zombie.bodyHealth) + std::max(0, zombie.shieldHealth);
+            screenHealth += ZombieEffectiveThreatHealth(zombie);
         }
     }
     const int horizon = std::max(5, firepower.secondsToContact + 3);
@@ -382,7 +382,13 @@ int PlantLaneWeaknessScore(const VSGameState &state, int row) {
 
     // A line with multiple Sunflowers is a real investment. It must outrank
     // a merely sparse line so zombies keep opening distinct economic fronts.
-    int score = assessment.plantCount * 14 + economyPlants * 95 + std::max(0, economyPlants - 1) * 45 + highValuePlants * 24;
+    int economyScore = economyPlants * 95 + std::max(0, economyPlants - 1) * 45;
+    // A Sunflower-only row is a cheap breakthrough opportunity. Count its
+    // income twice until the plant side commits real firepower to the lane.
+    if (combatPlants == 0 && economyPlants > 0) {
+        economyScore *= 2;
+    }
+    int score = assessment.plantCount * 14 + economyScore + highValuePlants * 24;
     score += std::max(0, 120 - assessment.defense);
     score += combatPlants == 0 ? 35 : 0;
     score += assessment.rawDanger / 4;

@@ -243,7 +243,7 @@ std::optional<VSAction> PlantAIPlanning::TryFallbackPlant(const VSGameState &sta
             || seed == SeedType::SEED_INSTANT_COFFEE || seed == SeedType::SEED_PUMPKINSHELL || seed == SeedType::SEED_ICEBERG_LETTUCE
             || seed == SeedType::SEED_TORCHWOOD || seed == SeedType::SEED_GARLIC || seed == SeedType::SEED_HYPNOSHROOM
             || seed == SeedType::SEED_POTATOMINE || seed == SeedType::SEED_SWEET_POTATO || seed == SeedType::SEED_SPIKEWEED
-            || seed == SeedType::SEED_SPIKEROCK || seed == SeedType::SEED_CHILLY_PEPPER) {
+            || seed == SeedType::SEED_SPIKEROCK || seed == SeedType::SEED_CHILLY_PEPPER || seed == SeedType::SEED_UMBRELLA) {
             continue;
         }
         const bool emergencySeed = seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO
@@ -258,7 +258,8 @@ std::optional<VSAction> PlantAIPlanning::TryFallbackPlant(const VSGameState &sta
 
         // Instant counters are selected by their dedicated target logic;
         // they must never become generic emergency fillers in another lane.
-        if (seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB) {
+        if (seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO
+            || seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM) {
             continue;
         }
 

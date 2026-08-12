@@ -307,7 +307,7 @@ std::optional<VSAction> PlantAIPlanning::TryMagnetShroom(const VSGameState &stat
                 continue;
             }
             ++metalCount;
-            metalHealth += std::max(0, zombie.bodyHealth) + std::max(0, zombie.shieldHealth);
+            metalHealth += ZombieEffectiveThreatHealth(zombie);
             closestX = std::min(closestX, zombie.positionX);
         }
         if (metalCount == 0 || closestX > 760.0f) {

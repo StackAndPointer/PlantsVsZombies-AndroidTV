@@ -237,9 +237,10 @@ std::optional<VSAction> PlantAIPlanning::TryRemoveLadderedNut(const VSGameState 
 
 std::optional<VSAction> PlantAIPlanning::TryCounterPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn) {
     const VSZombieState *closest = FindClosestZombie(state, row);
-    const int targetColumn = closest == nullptr
-        ? 5
-        : std::clamp(static_cast<int>((closest->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
+    if (closest == nullptr) {
+        return std::nullopt;
+    }
+    const int targetColumn = std::clamp(static_cast<int>((closest->positionX - static_cast<float>(LAWN_XMIN)) / 80.0f), 0, 5);
     // Answer the zombie's current cell first.  The old right-to-left
     // search put a late Squash or Imp Pear behind a third-column zombie.
     for (int column = targetColumn; column >= firstColumn; --column) {
@@ -261,7 +262,7 @@ int PlantAIPlanning::ZombieColumn(const VSZombieState &zombie) {
 }
 
 int PlantAIPlanning::ZombieEffectiveHealth(const VSZombieState &zombie) {
-    return std::max(0, zombie.bodyHealth) + std::max(0, zombie.shieldHealth);
+    return ZombieEffectiveThreatHealth(zombie);
 }
 
 bool PlantAIPlanning::IsHypnoshroomTarget(const VSZombieState &zombie) {
@@ -444,6 +445,72 @@ bool IsLobbedOutputSeed(SeedType seed) {
         default:
             return false;
     }
+}
+
+std::optional<VSAction> PlantAIPlanning::TryUmbrellaDefense(const VSGameState &state, int protectedSun) {
+    const VSCardState *card = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_UMBRELLA);
+    if (card == nullptr || state.plantSun - card->cost < protectedSun) {
+        return std::nullopt;
+    }
+
+    bool hasRaidThreat = false;
+    for (const VSCardState &zombieCard : state.seedBanks[1]) {
+        if (!zombieCard.matchRestricted && zombieCard.active
+            && (zombieCard.seedType == static_cast<std::uint16_t>(SeedType::SEED_ZOMBIE_BUNGEE)
+                || zombieCard.seedType == static_cast<std::uint16_t>(SeedType::SEED_ZOMBIE_CATAPULT))) {
+            hasRaidThreat = true;
+            break;
+        }
+    }
+    if (!hasRaidThreat) {
+        hasRaidThreat = std::any_of(state.zombies.begin(), state.zombies.end(), [](const VSZombieState &zombie) {
+            const ZombieType type = static_cast<ZombieType>(zombie.zombieType);
+            return !zombie.dead && !zombie.mindControlled
+                && (type == ZombieType::ZOMBIE_BUNGEE || type == ZombieType::ZOMBIE_CATAPULT);
+        });
+    }
+    if (!hasRaidThreat) {
+        return std::nullopt;
+    }
+
+    VSGridPosition bestTarget{};
+    int bestScore = 0;
+    for (int row = 0; row < state.rows; ++row) {
+        for (int column = 0; column < 6; ++column) {
+            const VSGridPosition target{static_cast<std::int8_t>(column), static_cast<std::int8_t>(row)};
+            if (!IsPlantableVSTile(state, target) || HasPlantAt(state, target) || HasGridItemAt(state, target)
+                || IsPlantProtectedByUmbrella(state, target)) {
+                continue;
+            }
+
+            int protectedValue = 0;
+            int protectedPlants = 0;
+            for (const VSPlantState &plant : state.plants) {
+                if (IsDeadOrOutside(plant) || IsPlantOneShotSeed(static_cast<SeedType>(plant.seedType))
+                    || IsPlantProtectedByUmbrella(state, plant.position)
+                    || std::abs(static_cast<int>(plant.position.col) - column) > 1
+                    || std::abs(static_cast<int>(plant.position.row) - row) > 1) {
+                    continue;
+                }
+                const int value = PlantValueScore(plant);
+                if (value >= 100) {
+                    protectedValue += value;
+                    ++protectedPlants;
+                }
+            }
+
+            // Bungee or Catapult availability alone is not a placement
+            // reason. The umbrella must cover a meaningful unprotected
+            // investment and never overlap an existing umbrella radius.
+            const int score = protectedValue + protectedPlants * 90 - std::abs(column - 2) * 12;
+            if ((protectedPlants >= 2 || protectedValue >= 180) && score > bestScore) {
+                bestTarget = target;
+                bestScore = score;
+            }
+        }
+    }
+    return bestTarget.col < 0 ? std::nullopt
+                              : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *card, bestTarget, state.boardTick));
 }
 
 std::unique_ptr<IVSAgent> CreatePlantAI() {

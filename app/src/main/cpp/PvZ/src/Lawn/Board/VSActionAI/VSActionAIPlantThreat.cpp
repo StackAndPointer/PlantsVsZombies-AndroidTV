@@ -19,6 +19,18 @@
 
 namespace vsai::detail {
 
+namespace {
+
+bool IsSlowTrashcan(const VSZombieState &zombie) {
+    return static_cast<ZombieType>(zombie.zombieType) == ZombieType::ZOMBIE_TRASHCAN;
+}
+
+int ScaleZombieThreat(const VSZombieState &zombie, int value) {
+    return IsSlowTrashcan(zombie) && value > 0 ? std::max(1, value / 5) : value;
+}
+
+} // namespace
+
 int LargestZombieStackInRow(const VSGameState &state, int row) {
     constexpr float kGridCellWidth = 80.0f;
     int largestStack = 0;
@@ -63,6 +75,10 @@ int LargestCherryBombClusterInRow(const VSGameState &state, int row) {
 
 int ZombieThreatWeight(std::uint16_t zombieType) {
     switch (static_cast<ZombieType>(zombieType)) {
+        // Trashcan is a slow grave screen, not an attacking body. Keep its
+        // contribution at one fifth of an ordinary threat during planning.
+        case ZombieType::ZOMBIE_TRASHCAN:
+            return 6;
         case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
         case ZombieType::ZOMBIE_GARGANTUAR:
         case ZombieType::ZOMBIE_GIGA_FOOTBALL:
@@ -81,6 +97,14 @@ int ZombieThreatWeight(std::uint16_t zombieType) {
         default:
             return 30;
     }
+}
+
+int ZombieEffectiveThreatHealth(const VSZombieState &zombie) {
+    const int health = std::max(0, zombie.bodyHealth) + std::max(0, zombie.shieldHealth);
+    if (static_cast<ZombieType>(zombie.zombieType) == ZombieType::ZOMBIE_TRASHCAN) {
+        return health > 0 ? std::max(1, health / 5) : 0;
+    }
+    return health;
 }
 
 bool HasLiveZombieTargetInRow(const VSGameState &state, int row) {
@@ -153,9 +177,9 @@ int CounterPressureScoreInRow(const VSGameState &state, int row) {
             continue;
         }
         score += ZombieThreatWeight(zombie.zombieType);
-        score += IsDecisiveCounterZombie(zombie.zombieType) ? 150 : 0;
-        score += zombie.eating ? 90 : 0;
-        score += std::clamp((880 - static_cast<int>(zombie.positionX)) / 8, 0, 70);
+        score += ScaleZombieThreat(zombie, IsDecisiveCounterZombie(zombie.zombieType) ? 150 : 0);
+        score += ScaleZombieThreat(zombie, zombie.eating ? 90 : 0);
+        score += ScaleZombieThreat(zombie, std::clamp((880 - static_cast<int>(zombie.positionX)) / 8, 0, 70));
         if (zombie.bodyMaxHealth > 0 && zombie.bodyHealth * 100 / zombie.bodyMaxHealth >= 70) {
             score += IsHeavyZombie(zombie.zombieType) ? 45 : 0;
         }
@@ -189,10 +213,10 @@ int ZombieFrontlineValueInRow(const VSGameState &state, int row) {
             continue;
         }
         score += ZombieThreatWeight(zombie.zombieType);
-        score += IsHeavyZombie(zombie.zombieType) ? 70 : 0;
-        score += zombie.shieldHealth > 0 ? 20 : 0;
-        score += zombie.eating ? 35 : 0;
-        score += zombie.positionX < 760.0f ? 25 : 0;
+        score += ScaleZombieThreat(zombie, IsHeavyZombie(zombie.zombieType) ? 70 : 0);
+        score += ScaleZombieThreat(zombie, zombie.shieldHealth > 0 ? 20 : 0);
+        score += ScaleZombieThreat(zombie, zombie.eating ? 35 : 0);
+        score += ScaleZombieThreat(zombie, zombie.positionX < 760.0f ? 25 : 0);
     }
     return score;
 }
@@ -216,9 +240,9 @@ int ZombiePressureInRow(const VSGameState &state, int row) {
         if (zombie.dead || zombie.row != row) {
             continue;
         }
-        pressure += 55 + std::clamp((900 - static_cast<int>(zombie.positionX)) / 10, 0, 65);
-        pressure += IsHeavyZombie(zombie.zombieType) ? 25 : 0;
-        pressure += zombie.eating ? 40 : 0;
+        pressure += ScaleZombieThreat(zombie, 55 + std::clamp((900 - static_cast<int>(zombie.positionX)) / 10, 0, 65));
+        pressure += ScaleZombieThreat(zombie, IsHeavyZombie(zombie.zombieType) ? 25 : 0);
+        pressure += ScaleZombieThreat(zombie, zombie.eating ? 40 : 0);
     }
     return pressure;
 }
@@ -339,7 +363,7 @@ PlantLaneFirepower AssessPlantLaneFirepower(const VSGameState &state, int row) {
         if (zombie.dead || zombie.row != row) {
             continue;
         }
-        const int health = std::max(0, zombie.bodyHealth) + std::max(0, zombie.shieldHealth);
+        const int health = ZombieEffectiveThreatHealth(zombie);
         assessment.incomingHealth += health;
         if (zombie.positionX <= 700.0f || zombie.eating) {
             assessment.nearHealth += health;
@@ -447,17 +471,20 @@ PlantLaneAssessment AssessPlantLane(const VSGameState &state, int row) {
             continue;
         }
         const int advance = std::clamp((850 - static_cast<int>(zombie.positionX)) / 3, 0, 240);
-        assessment.rawDanger += ZombieThreatWeight(zombie.zombieType) + advance;
-        assessment.rawDanger += zombie.eating ? 135 : 0;
-        assessment.rawDanger += zombie.positionX < 680.0f ? 35 : 0;
-        assessment.rawDanger += zombie.positionX < 600.0f ? 65 : 0;
-        assessment.rawDanger += zombie.positionX < 520.0f ? 100 : 0;
-        assessment.rawDanger += zombie.positionX < 400.0f ? 160 : 0;
+        assessment.rawDanger += ZombieThreatWeight(zombie.zombieType) + ScaleZombieThreat(zombie, advance);
+        assessment.rawDanger += ScaleZombieThreat(zombie, zombie.eating ? 135 : 0);
+        assessment.rawDanger += ScaleZombieThreat(zombie, zombie.positionX < 680.0f ? 35 : 0);
+        assessment.rawDanger += ScaleZombieThreat(zombie, zombie.positionX < 600.0f ? 65 : 0);
+        assessment.rawDanger += ScaleZombieThreat(zombie, zombie.positionX < 520.0f ? 100 : 0);
+        assessment.rawDanger += ScaleZombieThreat(zombie, zombie.positionX < 400.0f ? 160 : 0);
         // Crossing the actual forward plant is a tactical break point. The
         // resulting score outranks economy opportunities in other rows.
-        assessment.rawDanger += zombie.positionX <= frontPlantX + 30.0f ? 140 : 0;
-        assessment.rawDanger += zombie.positionX <= frontPlantX - 50.0f ? 220 : 0;
-        assessment.rawDanger += std::min(40, std::max(0, zombie.shieldHealth) / 30);
+        assessment.rawDanger += ScaleZombieThreat(zombie, zombie.positionX <= frontPlantX + 30.0f ? 140 : 0);
+        assessment.rawDanger += ScaleZombieThreat(zombie, zombie.positionX <= frontPlantX - 50.0f ? 220 : 0);
+        const int shieldThreat = std::max(0, zombie.shieldHealth) / 30;
+        assessment.rawDanger += static_cast<ZombieType>(zombie.zombieType) == ZombieType::ZOMBIE_TRASHCAN
+            ? shieldThreat / 5
+            : std::min(40, shieldThreat);
         assessment.hasHeavy = assessment.hasHeavy || IsHeavyZombie(zombie.zombieType);
         assessment.hasFast = assessment.hasFast || IsFastZombie(zombie.zombieType);
     }
