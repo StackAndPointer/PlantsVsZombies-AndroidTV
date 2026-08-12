@@ -24,29 +24,6 @@ std::optional<VSAction> ZombieAIPlanning::TryBuildEconomy(const VSGameState &sta
     return MakePlayAction(VSSide::Zombies, *card, target, state.boardTick);
 }
 
-int ZombieAIPlanning::GraveGuardPriority(SeedType seed) {
-    switch (seed) {
-        case SeedType::SEED_ZOMBIE_TRASHCAN:
-            return 520;
-        case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
-            return 465;
-        case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
-            return 410;
-        case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
-            return 380;
-        case SeedType::SEED_ZOMBIE_PAIL:
-            return 340;
-        case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
-            return 285;
-        case SeedType::SEED_ZOMBIE_NEWSPAPER:
-            return 255;
-        case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
-            return 160;
-        default:
-            return 0;
-    }
-}
-
 std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &state, int row, bool force) {
     const ZombieLanePolicy lane = EvaluateZombieLanePolicy(state, row);
     if (!lane.hasLiveTarget || lane.deploymentBlocked
@@ -69,10 +46,6 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
     const bool plantHasMagnet = std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [](const VSCardState &card) {
         return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(SeedType::SEED_MAGNETSHROOM);
     }) || CountPlantType(state, SeedType::SEED_MAGNETSHROOM) > 0;
-    const auto IsMetalGuard = [](SeedType seed) {
-        return seed == SeedType::SEED_ZOMBIE_PAIL || seed == SeedType::SEED_ZOMBIE_SCREEN_DOOR
-            || seed == SeedType::SEED_ZOMBIE_TRASHCAN;
-    };
     for (const VSCardState &card : state.seedBanks[1]) {
         const SeedType seed = static_cast<SeedType>(card.seedType);
         if (IsSlotBlocked(card.slot) || !IsZombieGraveGuardSeed(seed) || !IsReadyCard(card, state.zombieBrains)) {
@@ -81,9 +54,7 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
         // A pult, including Spore-shroom, attacks over a slow screen.
         // Do not turn an urgent grave-defense branch into a free
         // Trashcan, Door, or Newspaper donation.
-        if (HasLobbedPlantInRow(state, row)
-            && (seed == SeedType::SEED_ZOMBIE_TRASHCAN || seed == SeedType::SEED_ZOMBIE_SCREEN_DOOR
-                || seed == SeedType::SEED_ZOMBIE_NEWSPAPER)) {
+        if (HasLobbedPlantInRow(state, row) && IsZombieLobbedScreenDonation(seed)) {
             continue;
         }
         const VSGridPosition target = FindZombieCell(state, seed, row);
@@ -91,7 +62,7 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
             continue;
         }
 
-        int score = ZombieAIPlanning::GraveGuardPriority(seed) + protectableThreat * 2 + (proactiveScreen ? 220 : 0)
+        int score = ZombieGraveGuardPriority(seed) + protectableThreat * 2 + (proactiveScreen ? 220 : 0)
             + (force ? 420 : 0);
         // Trashcan is the direct-fire shield from the recordings. Lobbed
         // projectiles pass over every metal screen, so the row filter
@@ -104,7 +75,7 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
             score += lobbedThreat > 0 ? 170 : 0;
         }
         if (plantHasMagnet) {
-            score += IsMetalGuard(seed) ? -420 : 260;
+            score += IsZombieMetalGraveGuard(seed) ? -420 : 260;
         }
         score += screenDeficit * 2;
         score += StrategyBonus(state, VSSide::Zombies, seed, row);

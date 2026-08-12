@@ -193,8 +193,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         // A thrown projectile passes a slow metal screen rather than
         // trading into it. Spore-shroom uses the same trajectory class.
         const bool hasLobbedPlant = ZombieAIPlanning::HasLobbedPlantInRow(state, row);
-        if (hasLobbedPlant && (seed == SeedType::SEED_ZOMBIE_SCREEN_DOOR || seed == SeedType::SEED_ZOMBIE_NEWSPAPER
-                               || seed == SeedType::SEED_ZOMBIE_TRASHCAN)) {
+        if (hasLobbedPlant && IsZombieLobbedScreenDonation(seed)) {
             return std::nullopt;
         }
         if (seed == SeedType::SEED_ZOMBIE_TRASHCAN || seed == SeedType::SEED_ZOMBIE_TALLNUT_HEAD) {
@@ -249,7 +248,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         // Sudden death removes zombie-side economy actions.  Filter them
         // before scoring so an otherwise attractive grave cannot stall
         // the agent on a target the mode rejects.
-        if (state.isSuddenDeath && (seed == SeedType::SEED_ZOMBIE_GRAVESTONE || seed == SeedType::SEED_ZOMBIE_MOUND)) {
+        if (state.isSuddenDeath && IsZombieEconomySeed(seed)) {
             continue;
         }
         if (graveDefenseUrgent && card.seedType == static_cast<std::uint16_t>(SeedType::SEED_ZOMBIE_GRAVESTONE)) {
@@ -347,8 +346,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                     // remaining valuable front alive before restarting
                     // economic expansion on an empty route.
                     score += criticalTargetRow >= 0 ? 560 : 320;
-                } else if (!IsHeavyZombieSeed(seed) && seed != SeedType::SEED_ZOMBIE_GRAVESTONE
-                           && seed != SeedType::SEED_ZOMBIE_MOUND) {
+                } else if (!IsHeavyZombieSeed(seed) && !IsZombieEconomySeed(seed)) {
                     score += criticalTargetRow >= 0 ? 110 : 75;
                 }
             }
@@ -401,8 +399,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     if (IsZombieFrontlineProbeSeed(chosenSeed)) {
         mLastPressureEconomyCount = std::max(mLastPressureEconomyCount, actualEconomyCount);
     }
-    if (chosenSeed != SeedType::SEED_ZOMBIE_GRAVESTONE && chosenSeed != SeedType::SEED_ZOMBIE_MOUND
-        && chosenSeed != SeedType::SEED_ZOMBIE_BUNGEE) {
+    if (!IsZombieEconomySeed(chosenSeed) && !IsZombieTargetedSeed(chosenSeed)) {
         mLastAttackRow = targetRow;
         if (targetRow >= 0 && targetRow < static_cast<int>(mLaneAttackCooldown.size())
             && !(IsZombieGraveGuardSeed(chosenSeed) && graveDefenseUrgent)) {

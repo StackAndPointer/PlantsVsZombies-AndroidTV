@@ -9,6 +9,9 @@ bool IsZombieTargetedSeed(SeedType seed);
 bool IsZombieEconomySeed(SeedType seed);
 bool IsZombieFrontlineProbeSeed(SeedType seed);
 bool IsZombieFastAttackSeed(SeedType seed);
+bool IsZombieMetalGraveGuard(SeedType seed);
+bool IsZombieLobbedScreenDonation(SeedType seed);
+int ZombieGraveGuardPriority(SeedType seed);
 
 } // namespace vsai::detail
 
