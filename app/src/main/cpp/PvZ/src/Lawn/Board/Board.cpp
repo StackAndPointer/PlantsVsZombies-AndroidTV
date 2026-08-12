@@ -673,9 +673,6 @@ void Board::AddSunMoney(int theAmount, int thePlayerIndex) {
             mSunMoney2 = 9990;
         }
     } else {
-        if (theAmount > 0 && vsai::HasEnhancedEconomy(this, vsai::VSSide::Plants)) {
-            theAmount = vsai::ScaleEnhancedAIIncome(theAmount);
-        }
         old_Board_AddSunMoney(this, theAmount, thePlayerIndex);
     }
 }
@@ -685,9 +682,6 @@ void Board::AddDeathMoney(int theAmount) {
     if (infiniteSun && !IsOnlineServerModeActive() && !gIsReplayMode) {
         mDeathMoney = 9990;
     } else {
-        if (theAmount > 0 && vsai::HasEnhancedEconomy(this, vsai::VSSide::Zombies)) {
-            theAmount = vsai::ScaleEnhancedAIIncome(theAmount);
-        }
         old_Board_AddDeathMoney(this, theAmount);
     }
 }
@@ -7352,6 +7346,9 @@ GridItem *Board::AddAGraveStone(int theGridX, int theGridY) {
     aGraveStone->mRenderOrder = MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, theGridY, 3);
     aGraveStone->mGridX = theGridX;
     aGraveStone->mGridY = theGridY;
+    if (vsai::HasEnhancedAIProduction(this, vsai::VSSide::Zombies)) {
+        aGraveStone->mLaunchCounter = vsai::ScaleEnhancedAIProductionCooldown(aGraveStone->mLaunchCounter);
+    }
 
     if (mApp->IsVSMode()) {
         aGraveStone->unkBool = true;
@@ -7390,6 +7387,9 @@ GridItem *Board::AddAMound(int theGridX, int theGridY, int theMoundLevel) {
     aMound->mGridItemType = GridItemType::GRIDITEM_MP_BURIAL_MOUND;
     aMound->mGridItemCounter = -Rand(50);
     aMound->mLaunchCounter = RandRangeInt(aMound->mLaunchRate - 150, aMound->mLaunchRate);
+    if (vsai::HasEnhancedAIProduction(this, vsai::VSSide::Zombies)) {
+        aMound->mLaunchCounter = vsai::ScaleEnhancedAIProductionCooldown(aMound->mLaunchCounter);
+    }
     aMound->mSummonCounter = RandRangeInt(1000, 1500);
     aMound->mRenderOrder = MakeRenderOrder(RenderLayer::RENDER_LAYER_GRAVE_STONE, theGridY, 3);
 

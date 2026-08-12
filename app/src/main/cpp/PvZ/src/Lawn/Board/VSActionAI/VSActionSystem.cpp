@@ -504,14 +504,14 @@ bool IsEnhancedAIEnabled() {
     return VSSetupAddonWidget::msAIEnhancementMode;
 }
 
-bool HasEnhancedEconomy(Board *board, VSSide side) {
+bool HasEnhancedAIProduction(Board *board, VSSide side) {
     return IsLocalVSMatch(board) && !gIsReplayMode && VSSetupAddonWidget::msAIEnhancementMode && IsSideEnabled(side);
 }
 
-int ScaleEnhancedAIIncome(int amount) {
-    constexpr int kEnhancedIncomeNumerator = 7;
-    constexpr int kEnhancedIncomeDenominator = 5;
-    return amount > 0 ? amount * kEnhancedIncomeNumerator / kEnhancedIncomeDenominator : amount;
+int ScaleEnhancedAIProductionCooldown(int cooldown) {
+    constexpr int kEnhancedCooldownNumerator = 7;
+    constexpr int kEnhancedCooldownDenominator = 10;
+    return cooldown > 0 ? std::max(1, (cooldown * kEnhancedCooldownNumerator + kEnhancedCooldownDenominator - 1) / kEnhancedCooldownDenominator) : cooldown;
 }
 
 VSGameState BuildGameState(Board *board) {
