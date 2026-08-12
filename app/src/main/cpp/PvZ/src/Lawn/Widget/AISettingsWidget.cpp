@@ -33,7 +33,7 @@ AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
     reinterpret_cast<void (*)(LawnDialog *, LawnApp *, Sexy::Image *, int, bool, const pvzstl::string &, const pvzstl::string &, const pvzstl::string &, int)>(LawnDialog_LawnDialogAddr)(
         this,
         gLawnApp,
-        nullptr,
+        Sexy::IMAGE_OPTIONS_MENUBACK,
         VSSetupAddonWidget::VSSetupAddonWidget_AISettings,
         true,
         "",
