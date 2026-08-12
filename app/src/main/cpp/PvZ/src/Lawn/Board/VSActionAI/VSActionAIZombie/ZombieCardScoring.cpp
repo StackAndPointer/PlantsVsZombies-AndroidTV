@@ -5,6 +5,7 @@
 #include <limits>
 #include <optional>
 #include "PvZ/Lawn/Board/Plant.h"
+#include "PvZ/Lawn/VSActionSystem.h"
 
 namespace vsai::detail {
 int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int economyCount, int effectiveCost) {
@@ -33,7 +34,8 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const bool hasLobbedPlant = ZombieAIPlanning::HasLobbedPlantInRow(state, targetRow);
     const int graveScreenDeficit = ZombieGraveScreenDeficit(state, targetRow);
     const bool hasGraveGuard = HasZombieGraveGuardInRow(state, targetRow);
-    const int economyTarget = state.isSuddenDeath ? economyCount : state.rows * 3;
+    const int economyTarget = state.isSuddenDeath ? economyCount
+        : std::max(state.rows * 2, state.rows * 3 - (vsai::IsEnhancedAIEnabled() ? 1 : 0));
     const int heavyEconomyThreshold = HeavyZombieEconomyThreshold(state);
     const int sustainedOutput = SustainedOutputScoreInRow(state, targetRow);
     const int economyValue = PlantEconomyValueInRow(state, targetRow);

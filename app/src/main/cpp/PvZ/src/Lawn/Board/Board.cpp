@@ -674,7 +674,7 @@ void Board::AddSunMoney(int theAmount, int thePlayerIndex) {
         }
     } else {
         if (theAmount > 0 && vsai::HasEnhancedEconomy(this, vsai::VSSide::Plants)) {
-            theAmount = theAmount * 6 / 5;
+            theAmount = theAmount * 7 / 5;
         }
         old_Board_AddSunMoney(this, theAmount, thePlayerIndex);
     }
@@ -686,7 +686,7 @@ void Board::AddDeathMoney(int theAmount) {
         mDeathMoney = 9990;
     } else {
         if (theAmount > 0 && vsai::HasEnhancedEconomy(this, vsai::VSSide::Zombies)) {
-            theAmount = theAmount * 6 / 5;
+            theAmount = theAmount * 7 / 5;
         }
         old_Board_AddDeathMoney(this, theAmount);
     }

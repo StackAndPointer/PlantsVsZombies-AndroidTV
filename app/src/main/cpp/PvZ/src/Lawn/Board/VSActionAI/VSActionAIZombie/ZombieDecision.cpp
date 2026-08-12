@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include "PvZ/Lawn/VSActionSystem.h"
 
 namespace vsai::detail {
 
@@ -34,7 +35,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         // before the next low-cost probe is allowed.
         mLastPressureEconomyCount = economyCount - 1;
     }
-    const int economyTarget = state.isSuddenDeath ? economyCount : state.rows * 3;
+    const int economyTarget = state.isSuddenDeath ? economyCount
+        : std::max(state.rows * 2, state.rows * 3 - (vsai::IsEnhancedAIEnabled() ? 1 : 0));
     const int economyDeficit = std::max(0, economyTarget - economyCount);
     int targetMarkersOnBoard = 0;
     int zeroHealthTargetMarkers = 0;

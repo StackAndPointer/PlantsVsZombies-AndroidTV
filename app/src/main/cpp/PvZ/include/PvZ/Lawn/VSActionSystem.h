@@ -201,6 +201,7 @@ void SetThinkIntervalTicks(VSSide side, std::uint32_t ticks);
 std::uint32_t GetThinkIntervalTicks(VSSide side);
 
 bool IsSideEnabled(VSSide side);
+bool IsEnhancedAIEnabled();
 // The boost is intentionally confined to local non-replay VS matches so it
 // cannot change the deterministic economy of online or replay sessions.
 bool HasEnhancedEconomy(Board *board, VSSide side);

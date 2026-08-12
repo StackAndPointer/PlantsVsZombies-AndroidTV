@@ -1166,11 +1166,13 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     const bool alreadyHasMainDamage = useTemplate && plannedMainAvailable
         ? HasBuiltinAIPlantSeed(screen, plannedMain)
         : hasSelectedCarry;
-    const SeedType counterMain = !alreadyHasMainDamage && (!useTemplate || !plannedMainAvailable)
+    const std::size_t selectedCount = static_cast<std::size_t>(std::max(0, screen->mSeedsInBank));
+    const bool templateMainBannedAfterSelection = useTemplate && !plannedMainAvailable && selectedCount > 0;
+    const bool needsCounterMain = templateMainBannedAfterSelection || !useTemplate;
+    const SeedType counterMain = !alreadyHasMainDamage && needsCounterMain
         ? FindBuiltinAICounterCarry(screen)
         : SeedType::SEED_NONE;
     const std::size_t planSize = GetBuiltinAIPlanSize(screen);
-    const std::size_t selectedCount = static_cast<std::size_t>(std::max(0, screen->mSeedsInBank));
     const std::size_t slotsRemaining = selectedCount < planSize ? planSize - selectedCount : 0;
     // Pick one persistent target slot per match. The main carry is still
     // protected from the opening two picks, but it can appear at any later
