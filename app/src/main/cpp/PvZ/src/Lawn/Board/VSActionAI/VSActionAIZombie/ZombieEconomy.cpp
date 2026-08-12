@@ -92,10 +92,11 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
     return MakePlayAction(VSSide::Zombies, *bestCard, FindZombieCell(state, static_cast<SeedType>(bestCard->seedType), row), state.boardTick);
 }
 
-std::optional<VSAction> ZombieAIPlanning::TryCounterLobbedGravePressure(const VSGameState &state, int row) {
+std::optional<VSAction> ZombieAIPlanning::TryCounterLobbedGravePressure(const VSGameState &state,
+    const ZombieDecisionContext &context, int row) {
     const VSCardState *catapult = FindReadyCard(state, SeedType::SEED_ZOMBIE_CATAPULT);
     if (catapult == nullptr || !EvaluateZombieLanePolicy(state, row).allowsAttack
-        || GetZombieTempoPolicy().EffectiveEconomyCount(CountZombieEconomy(state)) < state.rows || HasMindControlledZombieInRow(state, row)
+        || context.economyCount < state.rows || HasMindControlledZombieInRow(state, row)
         || LobbedProjectileThreatScore(state, row) < 70) {
         return std::nullopt;
     }

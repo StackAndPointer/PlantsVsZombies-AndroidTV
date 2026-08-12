@@ -68,11 +68,12 @@ bool ZombieAIPlanning::HasReadyFrontlineProbe(const VSGameState &state) const {
     });
 }
 
-bool ZombieAIPlanning::IsEarlyHeavyCommitCard(const VSGameState &state, SeedType seed, int economyCount, int activePressureRows) const {
+bool ZombieAIPlanning::IsEarlyHeavyCommitCard(const VSGameState &state, SeedType seed,
+    const ZombieDecisionContext &context) const {
     if (!IsHeavyZombieSeed(seed)) {
         return false;
     }
-    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
+    const ZombieTemplateProfile &profile = context.templateProfile;
     const bool replayPoleTemplate = profile.Has(ZombieTemplate::LadderPole);
     const bool replayFanPoleTemplate = profile.Has(ZombieTemplate::NewspaperFanPole);
     const bool replayFlagGigaTemplate = profile.Has(ZombieTemplate::FlagSquash);
@@ -83,15 +84,15 @@ bool ZombieAIPlanning::IsEarlyHeavyCommitCard(const VSGameState &state, SeedType
     // live probe or multiple spread probes before the heavy card may
     // interrupt the normal grave-building cadence.
     if (seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER && replayPoleTemplate
-        && economyCount >= 2 && activePressureRows >= 1 && livePlants >= 3) {
+        && context.economyCount >= 2 && context.activePressureRows >= 1 && livePlants >= 3) {
         return true;
     }
     if (seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER && replayFanPoleTemplate
-        && economyCount >= 3 && activePressureRows >= 2 && livePlants >= state.rows) {
+        && context.economyCount >= 3 && context.activePressureRows >= 2 && livePlants >= state.rows) {
         return true;
     }
     if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && replayFlagGigaTemplate
-        && economyCount >= 8 && activePressureRows >= 2 && livePlants >= state.rows) {
+        && context.economyCount >= 8 && context.activePressureRows >= 2 && livePlants >= state.rows) {
         return true;
     }
     // The Normal/Trashcan/Dog replay banks behind protected graves until
@@ -99,30 +100,27 @@ bool ZombieAIPlanning::IsEarlyHeavyCommitCard(const VSGameState &state, SeedType
     // into the first Giga Gargantuar. This is earlier than the generic
     // finisher threshold, but still needs two live routes and a real board.
     if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && replayArmoredNormalTemplate
-        && economyCount >= 8 && activePressureRows >= 2 && livePlants >= state.rows) {
+        && context.economyCount >= 8 && context.activePressureRows >= 2 && livePlants >= state.rows) {
         return true;
     }
-    if (activePressureRows < 2 || livePlants < state.rows) {
+    if (context.activePressureRows < 2 || livePlants < state.rows) {
         return false;
     }
     const int minimumEconomy = seed == SeedType::SEED_ZOMBIE_GARGANTUAR ? state.rows : std::max(state.rows * 2, state.rows + 3);
-    return economyCount >= minimumEconomy;
+    return context.economyCount >= minimumEconomy;
 }
 
-bool ZombieAIPlanning::HasReadyEarlyHeavyCommit(const VSGameState &state, int economyCount, int activePressureRows) const {
+bool ZombieAIPlanning::HasReadyEarlyHeavyCommit(const VSGameState &state, const ZombieDecisionContext &context) const {
     return std::any_of(state.seedBanks[1].begin(), state.seedBanks[1].end(), [&](const VSCardState &card) {
         const SeedType seed = static_cast<SeedType>(card.seedType);
         return !IsSlotBlocked(card.slot) && card.active && !card.matchRestricted && IsReadyCard(card, state.zombieBrains)
-            && IsEarlyHeavyCommitCard(state, seed, economyCount, activePressureRows);
+            && IsEarlyHeavyCommitCard(state, seed, context);
     });
 }
 
-std::optional<VSAction> ZombieAIPlanning::TryTemplateSundayRelease(const VSGameState &state, int economyCount, int activePressureRows) {
-    if (activePressureRows < 2) {
-        return std::nullopt;
-    }
-
-    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
+std::optional<VSAction> ZombieAIPlanning::TryTemplateSundayRelease(const VSGameState &state,
+    const ZombieDecisionContext &context) {
+    const ZombieTemplateProfile &profile = context.templateProfile;
     const bool normalNewsImpSundayTemplate = profile.Has(ZombieTemplate::NormalNewsImpSunday);
     const bool impPailSledSundayTemplate = profile.Has(ZombieTemplate::ImpSledSunday);
     const bool peaHeadSundayTemplate = profile.Has(ZombieTemplate::PeaHeadSunday);
@@ -130,16 +128,16 @@ std::optional<VSAction> ZombieAIPlanning::TryTemplateSundayRelease(const VSGameS
         return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
     }));
     const int maximumCounterExposure = impPailSledSundayTemplate || peaHeadSundayTemplate ? 145 : 150;
-    const ZombieTempoPolicy tempo = GetZombieTempoPolicy();
+    const ZombieTempoPolicy &tempo = context.tempo;
     const bool releaseWindow = (normalNewsImpSundayTemplate
             && IsZombieTemplatePhaseAvailable(profile, tempo, SeedType::SEED_ZOMBIE_SUNDAY_EDITION,
-                economyCount, activePressureRows, state.rows, ZombieTemplatePhase::Finisher))
+                context.actualEconomyCount, context.activePressureRows, state.rows, ZombieTemplatePhase::Finisher))
         || (impPailSledSundayTemplate
             && IsZombieTemplatePhaseAvailable(profile, tempo, SeedType::SEED_ZOMBIE_SUNDAY_EDITION,
-                economyCount, activePressureRows, state.rows, ZombieTemplatePhase::Finisher))
+                context.actualEconomyCount, context.activePressureRows, state.rows, ZombieTemplatePhase::Finisher))
         || (peaHeadSundayTemplate
             && IsZombieTemplatePhaseAvailable(profile, tempo, SeedType::SEED_ZOMBIE_SUNDAY_EDITION,
-                economyCount, activePressureRows, state.rows, ZombieTemplatePhase::Finisher)
+                context.actualEconomyCount, context.activePressureRows, state.rows, ZombieTemplatePhase::Finisher)
             && peaHeadCount >= 2);
     const VSCardState *sundayEdition = FindReadyCard(state, SeedType::SEED_ZOMBIE_SUNDAY_EDITION);
     if (!releaseWindow || sundayEdition == nullptr) {

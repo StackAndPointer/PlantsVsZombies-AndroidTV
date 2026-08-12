@@ -7,10 +7,11 @@
 #include "PvZ/Lawn/Board/Plant.h"
 
 namespace vsai::detail {
-int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &state, int targetRow, int actualEconomyCount, int effectiveCost) {
+int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &state,
+    const ZombieDecisionContext &context, int targetRow, int effectiveCost) {
     const SeedType seed = static_cast<SeedType>(card.seedType);
-    const ZombieTempoPolicy tempo = GetZombieTempoPolicy();
-    const int economyCount = tempo.EffectiveEconomyCount(actualEconomyCount);
+    const ZombieTempoPolicy &tempo = context.tempo;
+    const int economyCount = context.economyCount;
     const bool hasPlants = std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); });
     const bool hasSnowPea = HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, targetRow);
     const bool hasBonkChoy = HasPlantTypeInRow(state, SeedType::SEED_BONK_CHOY, targetRow);
@@ -23,9 +24,8 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const bool hasLobbedPlant = ZombieAIPlanning::HasLobbedPlantInRow(state, targetRow);
     const int graveScreenDeficit = ZombieGraveScreenDeficit(state, targetRow);
     const bool hasGraveGuard = HasZombieGraveGuardInRow(state, targetRow);
-    const int economyTarget = state.isSuddenDeath ? economyCount
-        : std::max(state.rows * 2, state.rows * 3);
-    const int heavyEconomyThreshold = HeavyZombieEconomyThreshold(state);
+    const int economyTarget = context.economyTarget;
+    const int heavyEconomyThreshold = context.heavyEconomyThreshold;
     const int sustainedOutput = SustainedOutputScoreInRow(state, targetRow);
     const int economyValue = PlantEconomyValueInRow(state, targetRow);
     const PlantLaneAssessment targetLane = AssessPlantLane(state, targetRow);
@@ -45,7 +45,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const bool plantHasHighValueCarryCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
         || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT)
         || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
-    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
+    const ZombieTemplateProfile &profile = context.templateProfile;
     const bool fastPressureTemplate = profile.fastPressure;
     const bool rangedSiegeTemplate = profile.rangedSiege;
     const bool sundayPressureTemplate = profile.sundayPressure;
@@ -85,7 +85,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
         return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
     }));
     const bool earlyRangedSiegeDeployment = rangedSiegeTemplate && economyCount >= 2 && economyCount <= state.rows + 1
-        && CountActiveZombieRows(state) < std::min(3, state.rows);
+        && context.activePressureRows < std::min(3, state.rows);
     const bool openingPeaHeadPhase = peaHeadGiantTemplate && economyCount >= 2 && economyCount <= state.rows + 2
         && peaHeadCount < std::min(3, state.rows);
     // The Pea-head/Flag replay opens with distant ranged pressure on several
@@ -93,12 +93,12 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     // Bungee remains reserved for a legal high-value target by its separate
     // target filter.
     const bool peaHeadFlagRelease = peaHeadFlagBungeeTemplate && economyCount >= state.rows * 2
-        && peaHeadCount >= std::min(3, state.rows) && CountActiveZombieRows(state) >= 2
+        && peaHeadCount >= std::min(3, state.rows) && context.activePressureRows >= 2
         && areaCounterExposure < 120;
     const bool replayOpeningSpread = economyCount >= 2 && economyCount <= state.rows + 1
-        && CountActiveZombieRows(state) < std::min(3, state.rows);
-    const int templatePhaseBonus = ZombieTemplatePhaseBonus(profile, tempo, seed, actualEconomyCount,
-        CountActiveZombieRows(state), zombieCount, state.rows);
+        && context.activePressureRows < std::min(3, state.rows);
+    const int templatePhaseBonus = ZombieTemplatePhaseBonus(profile, tempo, seed, context.actualEconomyCount,
+        context.activePressureRows, zombieCount, state.rows);
 
     int score = 20 + ZombieLaneAttackScore(state, targetRow);
     const int graveThreat = ProtectableGraveThreatScore(state, targetRow);
@@ -125,20 +125,20 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // as the first real conversion. Keep Sled as a later independent
             // wave instead of treating it as the mandatory three-grave play.
             score += impSledSundayTemplate
-                ? (economyCount < std::max(state.rows + 3, 8) || CountActiveZombieRows(state) < 3
+                ? (economyCount < std::max(state.rows + 3, 8) || context.activePressureRows < 3
                     ? -240
                     : (zombieCount == 0 && areaCounterExposure < 135 ? -40 : -190))
                 : 0;
             // The Normal/Newspaper/Sled recording uses Bobsled as an
             // isolated second wave after cheap probes have spread out.
-            score += normalNewsSledTemplate && economyCount >= 3 && CountActiveZombieRows(state) >= 2
+            score += normalNewsSledTemplate && economyCount >= 3 && context.activePressureRows >= 2
                 ? (zombieCount == 0 ? 175 : -210)
                 : 0;
             score += newspaperSledDiggerGigaTemplate && economyCount >= state.rows
-                    && CountActiveZombieRows(state) >= 2
+                    && context.activePressureRows >= 2
                 ? (zombieCount == 0 ? 145 : -190)
                 : 0;
-            score += sledDogHeavyTemplate && economyCount >= state.rows && CountActiveZombieRows(state) >= 2
+            score += sledDogHeavyTemplate && economyCount >= state.rows && context.activePressureRows >= 2
                 ? (zombieCount == 0 ? 135 : -180)
                 : 0;
             score += moundTallnutSledTemplate && economyCount >= state.rows && hasWallnut
@@ -149,7 +149,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // body delivered into an available Ash counter.
             if (dogSledPeaTemplate) {
                 score += economyCount >= state.rows && peaHeadCount >= 2
-                    && CountActiveZombieRows(state) >= 2 && areaCounterExposure < 135
+                    && context.activePressureRows >= 2 && areaCounterExposure < 135
                     ? (zombieCount == 0 ? 170 : -230)
                     : -120;
             }
@@ -241,16 +241,16 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             {
                 const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || hasPumpkinShell || sustainedOutput >= 80 || economyValue >= 120;
                 const bool earlyHeavyCommit = economyCount >= std::max(state.rows * 2, state.rows + 3)
-                    && CountActiveZombieRows(state) >= 2 && CountLivePlants(state) >= state.rows && areaCounterExposure < 120;
+                    && context.activePressureRows >= 2 && CountLivePlants(state) >= state.rows && areaCounterExposure < 120;
                 // This exact ladder/pole recording releases a Giga Pole
                 // notably earlier than the generic finisher plan, but only
                 // after two low-cost lanes are live and a nut line gives it
                 // a meaningful jump target.
                 const bool replayPoleRelease = ladderPoleTemplate && economyCount >= 2
-                    && CountActiveZombieRows(state) >= 1 && (plantCount >= 1 || economyValue >= 50)
+                    && context.activePressureRows >= 1 && (plantCount >= 1 || economyValue >= 50)
                     && areaCounterExposure < 120;
                 const bool replayFanPoleRelease = newspaperFanPoleTemplate && economyCount >= 3
-                    && CountActiveZombieRows(state) >= 2 && CountLivePlants(state) >= state.rows
+                    && context.activePressureRows >= 2 && CountLivePlants(state) >= state.rows
                     && areaCounterExposure < 120;
                 score += (economyCount >= heavyEconomyThreshold || earlyHeavyCommit || replayPoleRelease || replayFanPoleRelease)
                     ? ((hasBreakthroughTarget || earlyHeavyCommit || replayPoleRelease || replayFanPoleRelease) ? 250 : 15) : -240;
@@ -276,7 +276,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 const int earlyEconomyFloor = seed == SeedType::SEED_ZOMBIE_GARGANTUAR
                     ? state.rows
                     : std::max(state.rows * 2, state.rows + 3);
-                const bool earlyHeavyCommit = economyCount >= earlyEconomyFloor && CountActiveZombieRows(state) >= 2
+                const bool earlyHeavyCommit = economyCount >= earlyEconomyFloor && context.activePressureRows >= 2
                     && hasBoardInvestment && areaCounterExposure < 120;
                 // The Normal/Newspaper/Digger recording banks into a Giga
                 // Gargantuar at roughly ten to eleven graves, then resumes
@@ -285,23 +285,23 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 const bool replayGigaRelease = newspaperDiggerGigaTemplate
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR
                     && economyCount >= std::max(state.rows * 2, 9)
-                    && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
+                    && context.activePressureRows >= 2 && hasBoardInvestment
                     && areaCounterExposure < 120;
                 const bool replayFlagGigaRelease = flagSquashTemplate
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
-                    && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
+                    && context.activePressureRows >= 2 && hasBoardInvestment
                     && areaCounterExposure < 120;
                 const bool replayArmoredGigaRelease = armoredNormalRushTemplate
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
-                    && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
+                    && context.activePressureRows >= 2 && hasBoardInvestment
                     && areaCounterExposure < 120;
                 const bool replayImpFootballRelease = newspaperImpFootballGiantTemplate
                     && seed == SeedType::SEED_ZOMBIE_GARGANTUAR && economyCount >= state.rows + 2
-                    && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
+                    && context.activePressureRows >= 2 && hasBoardInvestment
                     && areaCounterExposure < 120;
                 const bool replayZomblobGigaRelease = peaHeadZomblobGiantTemplate
                     && seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8
-                    && peaHeadCount >= 2 && CountActiveZombieRows(state) >= 2 && hasBoardInvestment
+                    && peaHeadCount >= 2 && context.activePressureRows >= 2 && hasBoardInvestment
                     && areaCounterExposure < 120;
                 // Standard Gargantuars can convert a five-grave opening
                 // into pressure; the more expensive variants wait for a
@@ -370,7 +370,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // cards on separate rows. A direct-fire screen is still
             // rejected above, so this only refines a legal first probe.
             if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && normalNewsImpSundayTemplate
-                && economyCount >= 2 && economyCount <= state.rows && CountActiveZombieRows(state) < std::min(3, state.rows)) {
+                && economyCount >= 2 && economyCount <= state.rows && context.activePressureRows < std::min(3, state.rows)) {
                 score += zombieCount == 0 ? 185 : -175;
             }
             // Cone/Newspaper/Imp/Football/Gargantuar opens by fanning a
@@ -417,14 +417,14 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // economy so it is not an isolated expensive donation.
             {
                 const bool earlySundayRelease = sundayPressureTemplate && !impSledSundayTemplate
-                    && economyCount >= std::max(3, state.rows - 1) && CountActiveZombieRows(state) >= 2
+                    && economyCount >= std::max(3, state.rows - 1) && context.activePressureRows >= 2
                     && areaCounterExposure < 150;
                 const bool sledSundayRelease = impSledSundayTemplate
-                    && economyCount >= std::max(state.rows + 3, 8) && CountActiveZombieRows(state) >= 2
+                    && economyCount >= std::max(state.rows + 3, 8) && context.activePressureRows >= 2
                     && areaCounterExposure < 145;
                 const bool peaHeadSundayRelease = peaHeadSundayTemplate
                     && economyCount >= state.rows + 2 && peaHeadCount >= 2
-                    && CountActiveZombieRows(state) >= 2 && areaCounterExposure < 145;
+                    && context.activePressureRows >= 2 && areaCounterExposure < 145;
                 const bool canReleaseSunday = economyCount >= heavyEconomyThreshold || earlySundayRelease
                     || sledSundayRelease || peaHeadSundayRelease;
                 score += canReleaseSunday ? 145 : -170;
@@ -452,7 +452,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                     : 0;
             score += seed == SeedType::SEED_ZOMBIE_IMP && normalNewsImpSundayTemplate
                 && economyCount >= 3 && economyCount <= state.rows + 2
-                && CountActiveZombieRows(state) < std::min(3, state.rows)
+                && context.activePressureRows < std::min(3, state.rows)
                 ? (zombieCount == 0 ? 165 : -175)
                 : 0;
             score += seed == SeedType::SEED_ZOMBIE_IMP && newspaperImpFootballGiantTemplate && replayOpeningSpread
@@ -463,7 +463,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 : 0;
             score += seed == SeedType::SEED_ZOMBIE_IMP && dogSledPeaTemplate
                     && economyCount >= 3 && economyCount <= state.rows + 1
-                    && CountActiveZombieRows(state) < std::min(3, state.rows)
+                    && context.activePressureRows < std::min(3, state.rows)
                 ? (zombieCount == 0 ? 155 : -165)
                 : 0;
             // Digger is a rear-economic strike, never an opening body.
@@ -484,19 +484,19 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             score += peaHeadGiantTemplate && peaHeadCount >= 2 && economyCount >= state.rows + 2 ? 180 : -110;
             score += zombieCount == 0 ? 80 : -170;
             score += (coneImpFootballGiantTemplate || impLadderFootballTemplate)
-                    && economyCount >= state.rows && CountActiveZombieRows(state) >= 2
+                    && economyCount >= state.rows && context.activePressureRows >= 2
                     && (hasWallnut || sustainedOutput >= 75)
                 ? (zombieCount == 0 ? 155 : -140)
                 : 0;
             score += newspaperImpFootballGiantTemplate && economyCount >= state.rows
-                    && CountActiveZombieRows(state) >= 2 && (hasWallnut || sustainedOutput >= 65)
+                    && context.activePressureRows >= 2 && (hasWallnut || sustainedOutput >= 65)
                 ? (zombieCount == 0 ? 165 : -150)
                 : 0;
-            score += impPailSledFootballTemplate && economyCount >= 2 && CountActiveZombieRows(state) >= 2
+            score += impPailSledFootballTemplate && economyCount >= 2 && context.activePressureRows >= 2
                 ? (zombieCount == 0 ? 175 : -170)
                 : 0;
             score += seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL && moundBungeeFootballTemplate
-                    && economyCount >= state.rows && CountActiveZombieRows(state) >= 2
+                    && economyCount >= state.rows && context.activePressureRows >= 2
                 ? (zombieCount == 0 ? 165 : -150)
                 : 0;
             score -= areaCounterExposure / 3;
@@ -521,12 +521,12 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 ? (zombieCount == 0 ? 135 : -180)
                 : 0;
             score += normalNewsImpSundayTemplate && economyCount >= 3 && economyCount <= state.rows + 2
-                    && CountActiveZombieRows(state) < std::min(3, state.rows)
+                    && context.activePressureRows < std::min(3, state.rows)
                 ? (zombieCount == 0 ? 145 : -185)
                 : 0;
             score += seed == SeedType::SEED_ZOMBIE_DOGWALKER && dogSledPeaTemplate
                     && economyCount >= 2 && economyCount <= state.rows + 2
-                    && CountActiveZombieRows(state) < std::min(3, state.rows)
+                    && context.activePressureRows < std::min(3, state.rows)
                 ? (zombieCount == 0 ? 175 : -200)
                 : 0;
             score += seed == SeedType::SEED_ZOMBIE_FLAG && peaHeadFlagBungeeTemplate
@@ -605,7 +605,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // are live. A single isolated blob is an expensive donation.
             score += plantCount * 12 + sustainedOutput / 2 + economyValue / 3;
             score += peaHeadZomblobGiantTemplate && economyCount >= 3 && peaHeadCount >= 2
-                && CountActiveZombieRows(state) >= 2
+                && context.activePressureRows >= 2
                 ? (zombieCount == 0 ? 185 : -170)
                 : 0;
             break;

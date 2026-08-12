@@ -29,18 +29,17 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         }
     }
 
-    const int actualEconomyCount = CountZombieEconomy(state);
+    const ZombieDecisionContext context = BuildZombieDecisionContext(state);
+    const int actualEconomyCount = context.actualEconomyCount;
     if (mLastPressureEconomyCount > actualEconomyCount) {
         // A destroyed grave re-opens the pressure cadence. Rebuilding
         // from a smaller base should not force a full 15-grave rebuild
         // before the next low-cost probe is allowed.
         mLastPressureEconomyCount = actualEconomyCount - 1;
     }
-    const ZombieTempoPolicy tempo = GetZombieTempoPolicy();
-    const int economyCount = tempo.EffectiveEconomyCount(actualEconomyCount);
-    const int economyTarget = state.isSuddenDeath ? economyCount
-        : tempo.EconomyTarget(std::max(state.rows * 2, state.rows * 3), state.rows);
-    const int economyDeficit = std::max(0, economyTarget - economyCount);
+    const ZombieTempoPolicy &tempo = context.tempo;
+    const int economyCount = context.economyCount;
+    const int economyDeficit = context.economyDeficit;
     int targetMarkersOnBoard = 0;
     int zeroHealthTargetMarkers = 0;
     for (const VSGridItemState &item : state.gridItems) {
@@ -97,7 +96,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         }
     }
     if (graveLobbedThreat >= 70 && graveStraightThreat < 70) {
-        if (std::optional<VSAction> action = ZombieAIPlanning::TryCounterLobbedGravePressure(state, graveDefenseRow)) {
+        if (std::optional<VSAction> action = ZombieAIPlanning::TryCounterLobbedGravePressure(state, context, graveDefenseRow)) {
             return action;
         }
     }
@@ -106,9 +105,9 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
             return action;
         }
     }
-    const int activePressureRows = CountActiveZombieRows(state);
+    const int activePressureRows = context.activePressureRows;
     const int heavyZombieReserve = ZombieAIPlanning::HeavyZombieReserve(state);
-    const int heavyEconomyThreshold = HeavyZombieEconomyThreshold(state);
+    const int heavyEconomyThreshold = context.heavyEconomyThreshold;
     // High-cost cards are a deliberate conversion of a developed grave
     // economy, not an opening all-in.  Start banking before the final two
     // graves only when multiple routes already tax the plant player.
@@ -118,8 +117,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const int minimumOpeningEconomy = tempo.OpeningEconomyFloor(std::min(2, std::max(1, state.rows)));
     const int desiredOpeningRows = tempo.OpeningPressureRowTarget(std::min(3, state.rows), state.rows);
     const bool hasReadyFrontlineProbe = ZombieAIPlanning::HasReadyFrontlineProbe(state);
-    const bool hasReadyEarlyHeavyCommit = ZombieAIPlanning::HasReadyEarlyHeavyCommit(state, economyCount, activePressureRows);
-    if (std::optional<VSAction> action = ZombieAIPlanning::TryTemplateSundayRelease(state, economyCount, activePressureRows)) {
+    const bool hasReadyEarlyHeavyCommit = ZombieAIPlanning::HasReadyEarlyHeavyCommit(state, context);
+    if (std::optional<VSAction> action = ZombieAIPlanning::TryTemplateSundayRelease(state, context)) {
         return action;
     }
     bool canConvertMowerlessTargetRoute = false;
@@ -133,7 +132,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     // Normal immediately after its first grave. That cheap probe forces a
     // response while the later Trashcan still has an economy worth guarding;
     // it is not the same as a generic all-in after one grave.
-    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
+    const ZombieTemplateProfile &profile = context.templateProfile;
     const bool armoredNormalRushTemplate = profile.Has(ZombieTemplate::ArmoredNormalRush);
     const bool impPailSundayTemplate = profile.Has(ZombieTemplate::ImpSledSunday);
     const bool zamboniPoleOpeningTemplate = profile.Has(ZombieTemplate::ZamboniPole);
@@ -148,7 +147,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     // Winning zombie replays establish a few rear graves, then alternate
     // a probe with another grave. One uninterrupted build to 15 gives the
     // plant side a free economic opening and never creates a threat lane.
-    const bool forceOpeningPressure = firstGraveProbe || (economyCount >= openingPressureEconomyFloor && economyCount <= state.rows + 1
+    const int openingPressureEconomyCeiling = tempo.OpeningEconomyCeiling(state.rows + 1);
+    const bool forceOpeningPressure = firstGraveProbe || (economyCount >= openingPressureEconomyFloor && economyCount <= openingPressureEconomyCeiling
         && activePressureRows < desiredOpeningRows && hasReadyFrontlineProbe && mLastPressureEconomyCount < actualEconomyCount);
     const bool preservePressureDuringRepair = economyCount >= minimumOpeningEconomy && economyDeficit <= 2
         && activePressureRows > 0 && hasReadyFrontlineProbe;
@@ -161,7 +161,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const bool restorationCanProceed = !graveDefenseReinforcement || hasGraveGuard;
     const bool restorationOutweighsFront = economyDeficit >= 2 || graveDefenseScore < 100 || hasGraveGuard;
     const bool economyRepairIsUrgent = economyCount < minimumOpeningEconomy || economyDeficit >= 3;
-    const bool hasReadyTemplateCommit = HasReadyZombieTemplateCommit(state, actualEconomyCount, activePressureRows);
+    const bool hasReadyTemplateCommit = HasReadyZombieTemplateCommit(state, context.templateProfile, context.tempo,
+        context.actualEconomyCount, context.activePressureRows);
     if (economyDeficit > 0 && restorationCanProceed && !forceOpeningPressure
         && (!canConvertMowerlessTargetRoute || !hasReadyFrontlineProbe)
         && !hasReadyEarlyHeavyCommit && !hasReadyTemplateCommit && !bankForHeavy
@@ -294,7 +295,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 continue;
             }
 
-            int score = ZombieAIPlanning::CardScore(card, state, row, actualEconomyCount, effectiveCost);
+            int score = ZombieAIPlanning::CardScore(card, state, context, row, effectiveCost);
             if (seed == SeedType::SEED_ZOMBIE_MOUND) {
                 // The target already passed the per-mound affordability
                 // check. Add its marginal income return so level 0/2
@@ -302,7 +303,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 score += MoundUpgradePriorityAt(state, *target);
             }
             const bool isEarlyHeavyCandidate =
-                ZombieAIPlanning::IsEarlyHeavyCommitCard(state, seed, economyCount, activePressureRows);
+                ZombieAIPlanning::IsEarlyHeavyCommitCard(state, seed, context);
             if ((forceOpeningPressure && !IsZombieFrontlineProbeSeed(seed) && !isEarlyHeavyCandidate)
                 || (hasReadyEarlyHeavyCommit && !forceOpeningPressure && !isEarlyHeavyCandidate && isEconomyAction)
                 || (preservePressureDuringRepair && !forceOpeningPressure && isEconomyAction)) {

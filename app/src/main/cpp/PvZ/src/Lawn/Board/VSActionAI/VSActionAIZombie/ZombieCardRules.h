@@ -34,6 +34,15 @@ enum class ZombieTemplate : std::uint8_t {
     NewspaperImpFootballGiant,
     PeaHeadZomblobGiant,
     ImpPailSledFootball,
+    NewspaperScreenFootball,
+    DogPeaFootball,
+    NewspaperFootballPole,
+    DancerRaid,
+    PeaHeadRaid,
+    PeaHeadDancerRaid,
+    MoundPeaZomblobFootball,
+    SundayLadderRaid,
+    MoundNewspaperZamboni,
 };
 
 enum class ZombieTemplatePhase : std::uint8_t {
@@ -43,7 +52,7 @@ enum class ZombieTemplatePhase : std::uint8_t {
 };
 
 struct ZombieTemplateProfile {
-    std::uint32_t templates = 0;
+    std::uint64_t templates = 0;
     bool fastPressure = false;
     bool rangedSiege = false;
     bool sundayPressure = false;
@@ -57,7 +66,8 @@ ZombieTemplateProfile DetectZombieTemplateProfile(const VSGameState &state);
 bool IsZombieTemplatePhaseSeed(const ZombieTemplateProfile &profile, SeedType seed, ZombieTemplatePhase phase);
 bool IsZombieTemplatePhaseAvailable(const ZombieTemplateProfile &profile, const ZombieTempoPolicy &tempo, SeedType seed,
     int actualEconomyCount, int activePressureRows, int rows, ZombieTemplatePhase phase);
-bool HasReadyZombieTemplateCommit(const VSGameState &state, int actualEconomyCount, int activePressureRows);
+bool HasReadyZombieTemplateCommit(const VSGameState &state, const ZombieTemplateProfile &profile,
+    const ZombieTempoPolicy &tempo, int actualEconomyCount, int activePressureRows);
 int ZombieTemplatePhaseBonus(const ZombieTemplateProfile &profile, const ZombieTempoPolicy &tempo, SeedType seed,
     int actualEconomyCount, int activePressureRows, int zombiesInRow, int rows);
 

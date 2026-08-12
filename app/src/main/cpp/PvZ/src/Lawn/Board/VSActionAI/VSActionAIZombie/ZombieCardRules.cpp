@@ -7,8 +7,8 @@ namespace vsai::detail {
 
 namespace {
 
-constexpr std::uint32_t TemplateMask(ZombieTemplate value) {
-    return 1U << static_cast<std::uint8_t>(value);
+constexpr std::uint64_t TemplateMask(ZombieTemplate value) {
+    return 1ULL << static_cast<std::uint8_t>(value);
 }
 
 struct ZombieTemplatePlan {
@@ -52,15 +52,42 @@ constexpr ZombieTemplatePlan kZombieTemplatePlans[] = {
     {ZombieTemplate::NewspaperImpFootballGiant, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 7, 3, SeedType::SEED_ZOMBIE_IMP, 3, 1, SeedType::SEED_ZOMBIE_FOOTBALL, 5, 2},
     {ZombieTemplate::PeaHeadZomblobGiant, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_ZOMBLOB, 5, 2, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR, 8, 2},
     {ZombieTemplate::ImpPailSledFootball, SeedType::SEED_ZOMBIE_IMP, 2, 7, 3, SeedType::SEED_ZOMBIE_PAIL, 3, 1, SeedType::SEED_ZOMBIE_FOOTBALL, 4, 2},
+    {ZombieTemplate::NewspaperScreenFootball, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 7, 3, SeedType::SEED_ZOMBIE_PAIL, 3, 1, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL, 6, 2},
+    {ZombieTemplate::DogPeaFootball, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_TRAFFIC_CONE, 3, 1, SeedType::SEED_ZOMBIE_FOOTBALL, 5, 2},
+    {ZombieTemplate::NewspaperFootballPole, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 7, 3, SeedType::SEED_ZOMBIE_NORMAL, 3, 1, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER, 5, 2},
+    {ZombieTemplate::DancerRaid, SeedType::SEED_ZOMBIE_DANCER, 3, 8, 3, SeedType::SEED_ZOMBIE_PAIL, 5, 1, SeedType::SEED_ZOMBIE_JACKSON, 6, 2},
+    {ZombieTemplate::PeaHeadRaid, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_SQUASH_HEAD, 3, 1, SeedType::SEED_ZOMBIE_BUNGEE, 5, 1},
+    {ZombieTemplate::PeaHeadDancerRaid, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_DANCER, 3, 1, SeedType::SEED_ZOMBIE_JALAPENO_HEAD, 5, 2},
+    {ZombieTemplate::MoundPeaZomblobFootball, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_MOUND, 2, 0, SeedType::SEED_ZOMBIE_ZOMBLOB, 5, 2},
+    {ZombieTemplate::SundayLadderRaid, SeedType::SEED_ZOMBIE_NORMAL, 1, 7, 3, SeedType::SEED_ZOMBIE_LADDER, 3, 1, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, 5, 2},
+    {ZombieTemplate::MoundNewspaperZamboni, SeedType::SEED_ZOMBIE_IMP, 3, 7, 3, SeedType::SEED_ZOMBIE_MOUND, 3, 0, SeedType::SEED_ZOMBONI, 5, 1},
 };
 
+static_assert(sizeof(kZombieTemplatePlans) / sizeof(kZombieTemplatePlans[0])
+    == static_cast<std::size_t>(ZombieTemplate::MoundNewspaperZamboni) + 1);
+
+int ZombieTemplatePlanPriority(ZombieTemplate templateId) {
+    // These are deliberate broad fallback profiles. More specific replay
+    // decks must keep their observed conversion rather than inheriting a
+    // generic Pea Head or Newspaper finisher.
+    switch (templateId) {
+        case ZombieTemplate::PeaHeadGiant:
+        case ZombieTemplate::NewspaperDiggerGiga:
+            return 10;
+        default:
+            return 100;
+    }
+}
+
 const ZombieTemplatePlan *FindZombieTemplatePlan(const ZombieTemplateProfile &profile) {
+    const ZombieTemplatePlan *bestPlan = nullptr;
     for (const ZombieTemplatePlan &plan : kZombieTemplatePlans) {
-        if (profile.Has(plan.templateId)) {
-            return &plan;
+        if (profile.Has(plan.templateId)
+            && (bestPlan == nullptr || ZombieTemplatePlanPriority(plan.templateId) > ZombieTemplatePlanPriority(bestPlan->templateId))) {
+            bestPlan = &plan;
         }
     }
-    return nullptr;
+    return bestPlan;
 }
 
 } // namespace
@@ -153,6 +180,30 @@ ZombieTemplateProfile DetectZombieTemplateProfile(const VSGameState &state) {
         SeedType::SEED_ZOMBIE_TRASHCAN, SeedType::SEED_ZOMBIE_ZOMBLOB, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR}));
     add(profile, ZombieTemplate::ImpPailSledFootball, hasAll({SeedType::SEED_ZOMBIE_IMP, SeedType::SEED_ZOMBIE_BOBSLED,
         SeedType::SEED_ZOMBIE_PAIL, SeedType::SEED_ZOMBIE_FOOTBALL}));
+    add(profile, ZombieTemplate::NewspaperScreenFootball, hasAll({SeedType::SEED_ZOMBIE_NEWSPAPER, SeedType::SEED_ZOMBIE_PAIL,
+        SeedType::SEED_ZOMBIE_SCREEN_DOOR, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL, SeedType::SEED_ZOMBIE_TALLNUT_HEAD}));
+    add(profile, ZombieTemplate::DogPeaFootball, hasAll({SeedType::SEED_ZOMBIE_DOGWALKER, SeedType::SEED_ZOMBIE_TRAFFIC_CONE,
+        SeedType::SEED_ZOMBIE_PEA_HEAD, SeedType::SEED_ZOMBIE_SCREEN_DOOR, SeedType::SEED_ZOMBIE_FOOTBALL,
+        SeedType::SEED_ZOMBIE_GIGA_FOOTBALL}));
+    add(profile, ZombieTemplate::NewspaperFootballPole, hasAll({SeedType::SEED_ZOMBIE_TRAFFIC_CONE, SeedType::SEED_ZOMBIE_NEWSPAPER,
+        SeedType::SEED_ZOMBIE_FOOTBALL, SeedType::SEED_ZOMBIE_DOGWALKER, SeedType::SEED_ZOMBIE_NORMAL,
+        SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER}));
+    add(profile, ZombieTemplate::DancerRaid, hasAll({SeedType::SEED_ZOMBIE_TRAFFIC_CONE, SeedType::SEED_ZOMBIE_PAIL,
+        SeedType::SEED_ZOMBIE_DANCER, SeedType::SEED_ZOMBIE_TRASHCAN, SeedType::SEED_ZOMBIE_BUNGEE,
+        SeedType::SEED_ZOMBIE_JACKSON}));
+    add(profile, ZombieTemplate::PeaHeadRaid, hasAll({SeedType::SEED_ZOMBIE_BUNGEE, SeedType::SEED_ZOMBIE_PEA_HEAD,
+        SeedType::SEED_ZOMBIE_SQUASH_HEAD, SeedType::SEED_ZOMBIE_TRAFFIC_CONE, SeedType::SEED_ZOMBIE_SCREEN_DOOR}));
+    add(profile, ZombieTemplate::PeaHeadDancerRaid, hasAll({SeedType::SEED_ZOMBIE_BUNGEE, SeedType::SEED_ZOMBIE_PAIL,
+        SeedType::SEED_ZOMBIE_PEA_HEAD, SeedType::SEED_ZOMBIE_DANCER, SeedType::SEED_ZOMBIE_TRASHCAN,
+        SeedType::SEED_ZOMBIE_JALAPENO_HEAD}));
+    add(profile, ZombieTemplate::MoundPeaZomblobFootball, hasAll({SeedType::SEED_ZOMBIE_BUNGEE, SeedType::SEED_ZOMBIE_PEA_HEAD,
+        SeedType::SEED_ZOMBIE_MOUND, SeedType::SEED_ZOMBIE_ZOMBLOB, SeedType::SEED_ZOMBIE_SQUASH_HEAD,
+        SeedType::SEED_ZOMBIE_GIGA_FOOTBALL}));
+    add(profile, ZombieTemplate::SundayLadderRaid, hasAll({SeedType::SEED_ZOMBIE_ZOMBLOB, SeedType::SEED_ZOMBIE_SUNDAY_EDITION,
+        SeedType::SEED_ZOMBIE_BUNGEE, SeedType::SEED_ZOMBIE_LADDER, SeedType::SEED_ZOMBIE_JALAPENO_HEAD,
+        SeedType::SEED_ZOMBIE_NORMAL}));
+    add(profile, ZombieTemplate::MoundNewspaperZamboni, hasAll({SeedType::SEED_ZOMBIE_NEWSPAPER, SeedType::SEED_ZOMBIE_IMP,
+        SeedType::SEED_ZOMBONI, SeedType::SEED_ZOMBIE_SCREEN_DOOR, SeedType::SEED_ZOMBIE_MOUND}));
     return profile;
 }
 
@@ -199,9 +250,8 @@ bool IsZombieTemplatePhaseAvailable(const ZombieTemplateProfile &profile, const 
     }
 }
 
-bool HasReadyZombieTemplateCommit(const VSGameState &state, int actualEconomyCount, int activePressureRows) {
-    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
-    const ZombieTempoPolicy tempo = GetZombieTempoPolicy();
+bool HasReadyZombieTemplateCommit(const VSGameState &state, const ZombieTemplateProfile &profile,
+    const ZombieTempoPolicy &tempo, int actualEconomyCount, int activePressureRows) {
     for (const VSCardState &card : state.seedBanks[1]) {
         if (!card.active || card.matchRestricted || card.refreshing || card.refreshCounter > 0
             || !IsReadyCard(card, state.zombieBrains)) {
