@@ -33,6 +33,7 @@
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/Lawn/Widget/ImitaterDialog.h"
 #include "PvZ/Lawn/Widget/StoreScreen.h"
+#include "VSActionAIDraftPolicy.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/SexyAppFramework/Buffer.h"
 #include "PvZ/SexyAppFramework/SexyAppBase.h"
@@ -683,37 +684,6 @@ bool IsBuiltinAICandidate(SeedChooserScreen *screen, SeedType seedType) {
                                       && screen->mBannedSeed[bannedSeedIndex].mSeedState != BannedSeedState::SEED_BANNED);
 }
 
-bool IsBuiltinAIPlantTempoMushroom(SeedType seedType) {
-    // Puff-shroom is an early Coffee-backed tempo response. It must never
-    // satisfy the only-main-damage role in either six- or seven-card banks.
-    return seedType == SeedType::SEED_PUFFSHROOM;
-}
-
-bool IsBuiltinAIPlantCarrySeed(SeedType seedType) {
-    if (IsBuiltinAIPlantTempoMushroom(seedType)) {
-        return false;
-    }
-    switch (seedType) {
-        case SeedType::SEED_PEASHOOTER:
-        case SeedType::SEED_SNOWPEA:
-        case SeedType::SEED_REPEATER:
-        case SeedType::SEED_THREEPEATER:
-        case SeedType::SEED_SPLITPEA:
-        case SeedType::SEED_CACTUS:
-        case SeedType::SEED_CABBAGEPULT:
-        case SeedType::SEED_KERNELPULT:
-        case SeedType::SEED_MELONPULT:
-        case SeedType::SEED_BLOOMERANG:
-        case SeedType::SEED_STARFRUIT:
-        case SeedType::SEED_SCAREDYSHROOM:
-        case SeedType::SEED_FUMESHROOM:
-        case SeedType::SEED_SPORESHROOM:
-            return true;
-        default:
-            return false;
-        }
-}
-
 bool HasBuiltinAIPlantSeed(SeedChooserScreen *screen, SeedType seedType) {
     if (screen == nullptr || screen->mIsZombieChooser || seedType == SeedType::SEED_NONE) {
         return false;
@@ -724,20 +694,6 @@ bool HasBuiltinAIPlantSeed(SeedChooserScreen *screen, SeedType seedType) {
         && screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK;
 }
 
-bool IsBuiltinAIPeaMainDamageSeed(SeedType seedType) {
-    switch (seedType) {
-        case SeedType::SEED_PEASHOOTER:
-        case SeedType::SEED_SNOWPEA:
-        case SeedType::SEED_REPEATER:
-        case SeedType::SEED_THREEPEATER:
-        case SeedType::SEED_SPLITPEA:
-        case SeedType::SEED_GATLINGPEA:
-            return true;
-        default:
-            return false;
-    }
-}
-
 bool HasBuiltinAIPlantPeaMain(SeedChooserScreen *screen) {
     if (screen == nullptr || screen->mIsZombieChooser) {
         return false;
@@ -746,7 +702,7 @@ bool HasBuiltinAIPlantPeaMain(SeedChooserScreen *screen) {
     const int storageCount = screen->GetSeedStorageCount();
     for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
         if (screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
-            && IsBuiltinAIPeaMainDamageSeed(screen->GetPlantSeedType(seedIndex))) {
+            && vsai::draft::IsPeaMainDamageSeed(screen->GetPlantSeedType(seedIndex))) {
             return true;
         }
     }
@@ -778,25 +734,6 @@ bool HasBuiltinAIPlantWakeableMushroom(SeedChooserScreen *screen) {
     return false;
 }
 
-bool IsBuiltinAICoffeeDependentPlant(SeedType seedType) {
-    // Sun-shroom is the one intentional exception: it is an economy card at
-    // night and disposable front padding by day, never a Coffee target.
-    switch (seedType) {
-        case SeedType::SEED_PUFFSHROOM:
-        case SeedType::SEED_SCAREDYSHROOM:
-        case SeedType::SEED_FUMESHROOM:
-        case SeedType::SEED_GLOOMSHROOM:
-        case SeedType::SEED_SPORESHROOM:
-        case SeedType::SEED_HYPNOSHROOM:
-        case SeedType::SEED_ICESHROOM:
-        case SeedType::SEED_DOOMSHROOM:
-        case SeedType::SEED_MAGNETSHROOM:
-            return true;
-        default:
-            return false;
-    }
-}
-
 bool IsBuiltinAIDaytimeChooser(const SeedChooserScreen *screen) {
     return screen != nullptr && screen->mBoard != nullptr && !screen->mBoard->StageIsNight();
 }
@@ -816,24 +753,6 @@ bool CanReserveBuiltinAICoffee(SeedChooserScreen *screen) {
         && IsBuiltinAICandidate(screen, SeedType::SEED_INSTANT_COFFEE);
 }
 
-bool IsBuiltinAIMagnetTargetZombieSeed(SeedType seedType) {
-    // These are the cards for which Magnet-shroom has a meaningful object to
-    // remove in VS. Keep this list aligned with Plant::UpdateMagnetShroom.
-    switch (seedType) {
-        case SeedType::SEED_ZOMBIE_PAIL:
-        case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
-        case SeedType::SEED_ZOMBIE_FOOTBALL:
-        case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX:
-        case SeedType::SEED_ZOMBIE_DIGGER:
-        case SeedType::SEED_ZOMBIE_POGO:
-        case SeedType::SEED_ZOMBIE_LADDER:
-        case SeedType::SEED_ZOMBIE_TRASHCAN:
-            return true;
-        default:
-            return false;
-    }
-}
-
 bool HasBuiltinAIOpponentMetalTargets(SeedChooserScreen *screen) {
     if (screen == nullptr || screen->mIsZombieChooser || screen->mApp == nullptr || screen->mApp->mZombieChooserScreen == nullptr) {
         return false;
@@ -844,7 +763,7 @@ bool HasBuiltinAIOpponentMetalTargets(SeedChooserScreen *screen) {
     const int storageCount = zombieScreen->GetSeedStorageCount();
     for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
         if (zombieScreen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
-            && IsBuiltinAIMagnetTargetZombieSeed(zombieScreen->GetZombieSeedType(seedIndex))) {
+            && vsai::draft::IsMagnetTargetZombieSeed(zombieScreen->GetZombieSeedType(seedIndex))) {
             ++targetCount;
         }
     }
@@ -930,7 +849,7 @@ bool IsBuiltinAIPlantSupportCandidate(SeedChooserScreen *screen, SeedType seedTy
         return IsBuiltinAIDaytimeChooser(screen) && HasBuiltinAIPlantWakeableMushroom(screen);
     }
 
-    if (IsBuiltinAIDaytimeChooser(screen) && IsBuiltinAICoffeeDependentPlant(seedType)) {
+    if (IsBuiltinAIDaytimeChooser(screen) && vsai::draft::IsCoffeeDependentPlant(seedType)) {
         // Never let a six- or seven-slot fallback split a daytime mushroom
         // from Coffee. This is a deck legality gate, not a scoring preference.
         if (!CanReserveBuiltinAICoffee(screen)) {
@@ -961,7 +880,7 @@ bool HasBuiltinAIPlantMainDamage(SeedChooserScreen *screen) {
     const int storageCount = screen->GetSeedStorageCount();
     for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
         if (screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
-            && IsBuiltinAIPlantCarrySeed(screen->GetPlantSeedType(seedIndex))) {
+            && vsai::draft::IsPlantCarrySeed(screen->GetPlantSeedType(seedIndex))) {
             return true;
         }
     }
@@ -974,7 +893,7 @@ SeedType PlannedBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen) {
     }
     const SeedType *deck = GetBuiltinAIDeckPriority(screen);
     for (std::size_t index = 0; index < GetBuiltinAIPlanSize(screen); ++index) {
-        if (IsBuiltinAIPlantCarrySeed(deck[index])) {
+        if (vsai::draft::IsPlantCarrySeed(deck[index])) {
             return deck[index];
         }
     }
@@ -1137,11 +1056,10 @@ SeedType FindBuiltinAICounterCarry(SeedChooserScreen *screen) {
 SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount) {
     if (priorityCount > 0) {
         const std::size_t firstPriority = static_cast<std::size_t>(Sexy::Rand(static_cast<int>(priorityCount)));
-        for (std::size_t offset = 0; offset < priorityCount; ++offset) {
-            const SeedType seedType = prioritySeeds[(firstPriority + offset) % priorityCount];
-            if (IsBuiltinAICandidate(screen, seedType)) {
-                return seedType;
-            }
+        const SeedType candidate = vsai::draft::FindRotatedEligibleSeed(std::span<const SeedType>(prioritySeeds, priorityCount), firstPriority,
+            [screen](SeedType seed) { return IsBuiltinAICandidate(screen, seed); });
+        if (candidate != SeedType::SEED_NONE) {
+            return candidate;
         }
     }
 
@@ -1149,15 +1067,13 @@ SeedType FindBuiltinAICandidate(SeedChooserScreen *screen, const SeedType *prior
     if (storageCount <= 0) {
         return SeedType::SEED_NONE;
     }
-    const int firstSeedIndex = Sexy::Rand(storageCount);
-    for (int offset = 0; offset < storageCount; ++offset) {
-        const int seedIndex = (firstSeedIndex + offset) % storageCount;
-        const SeedType seedType = screen->mIsZombieChooser ? screen->GetZombieSeedType(seedIndex) : screen->GetPlantSeedType(seedIndex);
-        if (IsBuiltinAICandidate(screen, seedType)) {
-            return seedType;
-        }
+    std::vector<SeedType> chooserSeeds;
+    chooserSeeds.reserve(static_cast<std::size_t>(storageCount));
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        chooserSeeds.push_back(screen->mIsZombieChooser ? screen->GetZombieSeedType(seedIndex) : screen->GetPlantSeedType(seedIndex));
     }
-    return SeedType::SEED_NONE;
+    return vsai::draft::FindRotatedEligibleSeed(chooserSeeds, static_cast<std::size_t>(Sexy::Rand(storageCount)),
+        [screen](SeedType seed) { return IsBuiltinAICandidate(screen, seed); });
 }
 
 SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedType *prioritySeeds, std::size_t priorityCount,
@@ -1167,7 +1083,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         const int storageCount = screen->GetSeedStorageCount();
         for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
             if (screen->GetChosenSeed(seedIndex).mSeedState == ChosenSeedState::SEED_IN_BANK
-                && IsBuiltinAICoffeeDependentPlant(screen->GetPlantSeedType(seedIndex))) {
+                && vsai::draft::IsCoffeeDependentPlant(screen->GetPlantSeedType(seedIndex))) {
                 hasUnpairedDaytimeMushroom = true;
                 break;
             }
@@ -1209,7 +1125,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     // slot rather than being predictably forced into the final packet.
     const int mainPickSlot = BuiltinAIPlantMainPickSlot(screen);
     const bool plannedMainNeedsCoffee = IsBuiltinAIDaytimeChooser(screen)
-        && IsBuiltinAICoffeeDependentPlant(plannedMain)
+        && vsai::draft::IsCoffeeDependentPlant(plannedMain)
         && !HasBuiltinAIPlantSeed(screen, SeedType::SEED_INSTANT_COFFEE);
     // A daytime mushroom carry may use the random target slot, but Coffee
     // must remain selectable immediately after it when the dependency is
@@ -1224,7 +1140,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         if (counterMain != SeedType::SEED_NONE) {
             return seedType == counterMain;
         }
-        return IsBuiltinAIPlantCarrySeed(seedType) && !IsBuiltinAIPlantTempoMushroom(seedType);
+        return vsai::draft::IsPlantCarrySeed(seedType) && !vsai::draft::IsPlantTempoMushroom(seedType);
     };
     // Blover is a mandatory matchup answer, but it must not displace the
     // plant deck's only carry during a six-card selection. The main-card
@@ -1248,7 +1164,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     }
     const bool mustPickMainDamage = !alreadyHasMainDamage && hasAvailableMainDamage && !deferMainDamage;
     const auto IsPlannedTemplateSecondaryOutput = [&](SeedType seedType) {
-        if (!useTemplate || !IsBuiltinAIPlantCarrySeed(seedType)) {
+        if (!useTemplate || !vsai::draft::IsPlantCarrySeed(seedType)) {
             return false;
         }
         const SeedType *plannedDeck = GetBuiltinAIDeckPriority(screen);
@@ -1257,7 +1173,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         });
     };
     auto IsCompatible = [&](SeedType seedType) {
-        if (deferMainDamage && IsBuiltinAIPlantCarrySeed(seedType)) {
+        if (deferMainDamage && vsai::draft::IsPlantCarrySeed(seedType)) {
             // A recorded template may explicitly include a low-cost secondary
             // output before the real carry. Generic decks remain one-carry.
             if (!useTemplate || seedType == plannedMain || !IsPlannedTemplateSecondaryOutput(seedType)) {
@@ -1269,7 +1185,7 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
             // secondary output, but only when that exact card belongs to its
             // template. Generic fallback remains single-carry so a Ban
             // substitution cannot accidentally create two unrelated mains.
-            && (!alreadyHasMainDamage || !IsBuiltinAIPlantCarrySeed(seedType) || IsPlannedTemplateSecondaryOutput(seedType))
+            && (!alreadyHasMainDamage || !vsai::draft::IsPlantCarrySeed(seedType) || IsPlannedTemplateSecondaryOutput(seedType))
             && (!mustPickMainDamage || IsMainDamageCandidate(seedType));
     };
 
@@ -1294,11 +1210,10 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
 
     if (priorityCount > 0) {
         const std::size_t firstPriority = static_cast<std::size_t>(Sexy::Rand(static_cast<int>(priorityCount)));
-        for (std::size_t offset = 0; offset < priorityCount; ++offset) {
-            const SeedType seedType = prioritySeeds[(firstPriority + offset) % priorityCount];
-            if (IsPreferredCompatible(seedType)) {
-                return seedType;
-            }
+        const SeedType candidate = vsai::draft::FindRotatedEligibleSeed(std::span<const SeedType>(prioritySeeds, priorityCount), firstPriority,
+            IsPreferredCompatible);
+        if (candidate != SeedType::SEED_NONE) {
+            return candidate;
         }
     }
 
@@ -1307,11 +1222,9 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
     // of producing a melee-only deck.
     if (!alreadyHasMainDamage) {
         const std::size_t firstFallback = useTemplate ? 0 : static_cast<std::size_t>(Sexy::Rand(static_cast<int>(std::size(kBuiltinAIPlantMainFallbacks))));
-        for (std::size_t offset = 0; offset < std::size(kBuiltinAIPlantMainFallbacks); ++offset) {
-            const SeedType seedType = kBuiltinAIPlantMainFallbacks[(firstFallback + offset) % std::size(kBuiltinAIPlantMainFallbacks)];
-            if (IsPreferredCompatible(seedType)) {
-                return seedType;
-            }
+        const SeedType candidate = vsai::draft::FindRotatedEligibleSeed(kBuiltinAIPlantMainFallbacks, firstFallback, IsPreferredCompatible);
+        if (candidate != SeedType::SEED_NONE) {
+            return candidate;
         }
     }
 
@@ -1388,7 +1301,7 @@ SeedType PlantTemplateMainSeed(SeedChooserScreen *screen, int profile) {
         ? kBuiltinAINightPlantDecks[profile]
         : kBuiltinAIPlantDecks[profile];
     for (std::size_t index = 0; index < GetBuiltinAIPlanSize(screen); ++index) {
-        if (IsBuiltinAIPlantCarrySeed(deck[index])) {
+        if (vsai::draft::IsPlantCarrySeed(deck[index])) {
             return deck[index];
         }
     }
@@ -1457,7 +1370,7 @@ SeedType FindBuiltinAIBanCandidate(SeedChooserScreen *screen, const SeedType *fa
         if (!IsBuiltinAICandidate(screen, seedType)) {
             continue;
         }
-        if (preserveUnusedPlantCarries && IsBuiltinAIPlantCarrySeed(seedType)) {
+        if (preserveUnusedPlantCarries && vsai::draft::IsPlantCarrySeed(seedType)) {
             continue;
         }
 
