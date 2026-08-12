@@ -1330,12 +1330,16 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         }
     }
 
-    // Never complete a plant bank without a durable main card. The earlier
-    // candidate passes exhaust every legal carry first; returning a generic
-    // support here was the remaining escape hatch that could leave a
-    // Puff/Coffee tempo pair looking like the deck's only offense.
+    // Every legal carry was exhausted. Do not leave the chooser frozen on
+    // SEED_NONE: global Ban combinations can remove every valid main card.
+    // The normal support predicate still preserves Coffee and matchup
+    // legality; this is only a progress fallback for an unwinnable draft.
     if (!alreadyHasMainDamage) {
-        return SeedType::SEED_NONE;
+        for (const SeedType seedType : kBuiltinAIPlantPostCarryFallbacks) {
+            if (IsPreferredCompatible(seedType)) {
+                return seedType;
+            }
+        }
     }
 
     const int storageCount = screen->GetSeedStorageCount();
@@ -1349,6 +1353,29 @@ SeedType FindBuiltinAIPlantDeckCandidate(SeedChooserScreen *screen, const SeedTy
         if (IsPreferredCompatible(seedType)) {
             return seedType;
         }
+    }
+    return SeedType::SEED_NONE;
+}
+
+SeedType FindBuiltinAILegalProgressCandidate(SeedChooserScreen *screen) {
+    if (screen == nullptr) {
+        return SeedType::SEED_NONE;
+    }
+
+    const int storageCount = screen->GetSeedStorageCount();
+    for (int seedIndex = 0; seedIndex < storageCount; ++seedIndex) {
+        const SeedType seedType = screen->mIsZombieChooser ? screen->GetZombieSeedType(seedIndex) : screen->GetPlantSeedType(seedIndex);
+        if (seedType == SeedType::SEED_NONE || seedType == SeedType::SEED_IMITATER
+            || (!screen->mIsZombieChooser && Plant::IsUpgrade(seedType))
+            || (!screen->mShowExtendedSeeds
+                && ((screen->mIsZombieChooser && seedType > SeedType::SEED_ZOMBIE_GARGANTUAR)
+                    || (!screen->mIsZombieChooser && seedType >= SeedType::SEED_ICEBERG_LETTUCE)))
+            || !screen->HasPacket(seedType, screen->mIsZombieChooser)
+            || screen->GetChosenSeed(seedIndex).mSeedState != ChosenSeedState::SEED_IN_CHOOSER
+            || screen->SeedNotAllowedToPick(seedType)) {
+            continue;
+        }
+        return seedType;
     }
     return SeedType::SEED_NONE;
 }
@@ -2013,6 +2040,20 @@ void SeedChooserScreen::UpdateBuiltinAIPick() {
                                               : (mIsZombieChooser ? FindBuiltinAICandidate(this, prioritySeeds, priorityCount)
                                                                   : FindBuiltinAIPlantDeckCandidate(this, prioritySeeds, priorityCount,
                                                                         UsesBuiltinAITemplate(this)));
+    if (!mBanningPhase && !mIsZombieChooser && selectedSeedType == SeedType::SEED_NONE) {
+        // The deck picker has already attempted every role-aware main and
+        // support alternative. A map restriction plus Ban can still make
+        // each of those constraints mutually exclusive. The raw chooser
+        // predicate is the final legal-progress fallback, preventing the
+        // local AI from leaving the last seed slot permanently unpicked.
+        selectedSeedType = FindBuiltinAICandidate(this, nullptr, 0);
+        if (selectedSeedType == SeedType::SEED_NONE) {
+            // All tactical deck constraints were exhausted. This fallback
+            // retains engine and Ban legality while dropping only optional
+            // composition preferences, so a local draft can always finish.
+            selectedSeedType = FindBuiltinAILegalProgressCandidate(this);
+        }
+    }
     if (!mBanningPhase && mIsZombieChooser) {
         constexpr SeedType kDogwalker = SeedType::SEED_ZOMBIE_DOGWALKER;
         const int dogwalkerIndex = GetSeedPacketIndex(kDogwalker);
