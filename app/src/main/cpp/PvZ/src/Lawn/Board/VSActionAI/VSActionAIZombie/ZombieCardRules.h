@@ -74,6 +74,8 @@ struct ZombieTemplateTacticalState {
     int areaCounterExposure = 0;
     bool hasWallnut = false;
     bool graveUnderDirectFire = false;
+    bool plantHasNutCard = false;
+    bool plantHasHighValueCarryCard = false;
 };
 
 class ZombieTempoPolicy;
@@ -99,6 +101,7 @@ public:
     int OpeningEconomyFloor(int baseline) const;
     int OpeningEconomyCeiling(int baseline) const;
     int OpeningPressureRowTarget(int baseline, int rows) const;
+    bool ShouldExtendPressure(int economyCount, int activePressureRows, int rows) const;
     int CommitPressureRowTarget(int baseline, int rows) const;
     int AttackCommitPressureRowTarget(int baseline, int rows) const;
     bool HasCommitPressure(int activePressureRows, int baseline, int rows) const;

@@ -149,8 +149,12 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     // a probe with another grave. One uninterrupted build to 15 gives the
     // plant side a free economic opening and never creates a threat lane.
     const int openingPressureEconomyCeiling = tempo.OpeningEconomyCeiling(state.rows + 1);
-    const bool forceOpeningPressure = firstGraveProbe || (economyCount >= openingPressureEconomyFloor && economyCount <= openingPressureEconomyCeiling
-        && activePressureRows < desiredOpeningRows && hasReadyFrontlineProbe && mLastPressureEconomyCount < actualEconomyCount);
+    const bool openingPressureCadence = economyCount >= openingPressureEconomyFloor
+        && economyCount <= openingPressureEconomyCeiling && activePressureRows < desiredOpeningRows
+        && mLastPressureEconomyCount < actualEconomyCount;
+    const bool enhancedPressureRecovery = tempo.ShouldExtendPressure(economyCount, activePressureRows, state.rows);
+    const bool forceOpeningPressure = firstGraveProbe || (hasReadyFrontlineProbe
+        && (openingPressureCadence || enhancedPressureRecovery));
     const bool preservePressureDuringRepair = economyCount >= minimumOpeningEconomy
         && economyDeficit <= tempo.PressureRepairDeficitTolerance()
         && activePressureRows > 0 && hasReadyFrontlineProbe;

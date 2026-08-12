@@ -324,6 +324,20 @@ int ZombieTempoPolicy::OpeningPressureRowTarget(int baseline, int rows) const {
     return mEnhanced ? std::min(rows, baseline + 1) : baseline;
 }
 
+bool ZombieTempoPolicy::ShouldExtendPressure(int economyCount, int activePressureRows, int rows) const {
+    if (!mEnhanced) {
+        return false;
+    }
+    const int desiredRows = OpeningPressureRowTarget(std::min(3, rows), rows);
+    const int minimumEconomy = OpeningEconomyFloor(std::min(2, std::max(1, rows)));
+    // Keep one effective economy step ahead of every live opening route.
+    // This preserves the replay cadence of grave, probe, grave, probe at
+    // low economy, but lets enhanced AI restore a cleared pressure lane
+    // instead of rebuilding the entire rear field first.
+    return activePressureRows < desiredRows
+        && economyCount >= std::max(minimumEconomy, activePressureRows + 2);
+}
+
 int ZombieTempoPolicy::CommitPressureRowTarget(int baseline, int rows) const {
     return std::clamp(baseline - (mEnhanced ? 1 : 0), 0, rows);
 }

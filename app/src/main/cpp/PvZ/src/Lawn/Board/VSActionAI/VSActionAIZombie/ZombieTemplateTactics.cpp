@@ -18,6 +18,8 @@ int ZombieTemplateTacticalBonus(const ZombieTemplateProfile &profile, SeedType s
     const int areaCounterExposure = state.areaCounterExposure;
     const bool hasWallnut = state.hasWallnut;
     const bool graveUnderDirectFire = state.graveUnderDirectFire;
+    const bool plantHasNutCard = state.plantHasNutCard;
+    const bool plantHasHighValueCarryCard = state.plantHasHighValueCarryCard;
     const bool emptyRoute = zombiesInRow == 0;
     const bool openingWindow = economyCount >= 2 && economyCount <= rows + 2
         && activePressureRows < std::min(rows, 3);
@@ -28,6 +30,184 @@ int ZombieTemplateTacticalBonus(const ZombieTemplateProfile &profile, SeedType s
 
     // Template tactics only refine candidates accepted by the placement,
     // counter, grave-protection, and lane-spread rules.
+    if (profile.fastPressure && (seed == SeedType::SEED_ZOMBIE_NORMAL
+        || seed == SeedType::SEED_ZOMBIE_DOGWALKER || seed == SeedType::SEED_ZOMBIE_FLAG)) {
+        bonus += 120;
+    }
+    if (profile.rangedSiege && seed == SeedType::SEED_ZOMBIE_PEA_HEAD) {
+        bonus += 145 + economyValue;
+    }
+    if (profile.sundayPressure && !profile.Has(ZombieTemplate::ImpSledSunday)
+        && seed == SeedType::SEED_ZOMBIE_SUNDAY_EDITION && economyCount >= std::max(3, rows - 1)
+        && conversionWindow && areaCounterExposure < 150) {
+        bonus += 155;
+    }
+    if (profile.Has(ZombieTemplate::ZamboniPole)) {
+        if (seed == SeedType::SEED_ZOMBIE_IMP && economyCount <= rows + 2) bonus += emptyRoute ? 145 : -115;
+        else if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && economyCount <= rows + 2) bonus += emptyRoute ? 95 : -100;
+        else if (seed == SeedType::SEED_ZOMBONI && economyCount >= 3 && economyCount <= rows + 3) bonus += emptyRoute ? 155 : -135;
+    }
+    if (profile.Has(ZombieTemplate::PeaHeadGiant)) {
+        if (seed == SeedType::SEED_ZOMBIE_PEA_HEAD && openingWindow && peaHeadCount < std::min(rows, 3)) bonus += emptyRoute ? 230 : -175;
+        else if (seed == SeedType::SEED_ZOMBIE_PAIL && peaHeadCount < std::min(rows, 3)) bonus -= 360;
+        else if (seed == SeedType::SEED_ZOMBIE_TRASHCAN && peaHeadCount < std::min(rows, 3) && !graveUnderDirectFire) bonus -= 340;
+        else if ((seed == SeedType::SEED_ZOMBIE_FOOTBALL || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL)
+            && peaHeadCount >= 2 && economyCount >= rows + 2) bonus += 180;
+    }
+    if (profile.Has(ZombieTemplate::ImpSledSunday)) {
+        if (seed == SeedType::SEED_ZOMBIE_IMP && economyCount >= 3 && economyCount <= rows * 2) bonus += emptyRoute ? 155 : -135;
+        else if (seed == SeedType::SEED_ZOMBIE_PAIL && economyCount >= 3 && economyCount <= rows * 2) bonus += emptyRoute ? 90 : -110;
+        else if (seed == SeedType::SEED_ZOMBIE_BOBSLED) {
+            const bool lateSledWindow = economyCount >= std::max(rows + 2, 8)
+                && activePressureRows >= std::max(attackCommitPressureRows, 2) && areaCounterExposure < 135;
+            bonus += lateSledWindow && emptyRoute ? 130 : -240;
+        } else if (seed == SeedType::SEED_ZOMBIE_SUNDAY_EDITION) {
+            const bool sundayWindow = economyCount >= std::max(rows + 2, 8)
+                && activePressureRows >= attackCommitPressureRows && areaCounterExposure < 145;
+            bonus += sundayWindow && developedTarget ? 190 : -165;
+        }
+    }
+    if (profile.Has(ZombieTemplate::ArmoredNormalRush)) {
+        if (seed == SeedType::SEED_ZOMBIE_NORMAL && economyCount >= 1 && economyCount <= rows + 2) bonus += emptyRoute ? 135 : -180;
+        else if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8 && conversionWindow
+            && developedTarget) bonus += emptyRoute ? 165 : -150;
+    }
+    if (profile.Has(ZombieTemplate::NewspaperDiggerGiga)) {
+        if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && economyCount <= rows + 2) bonus += emptyRoute ? 135 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_NORMAL && economyCount <= rows + 2) bonus += emptyRoute ? 110 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_DIGGER) bonus += economyCount >= rows && developedTarget ? 245 : -320;
+        else if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= std::max(rows * 2, 9)
+            && conversionWindow && developedTarget) bonus += emptyRoute ? 165 : -155;
+    }
+    if (profile.Has(ZombieTemplate::NewspaperSledDiggerGiga)) {
+        if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && economyCount <= rows + 2) bonus += emptyRoute ? 135 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_BOBSLED && economyCount >= rows && conversionWindow) bonus += emptyRoute ? 145 : -190;
+    }
+    if (profile.Has(ZombieTemplate::ConeImpFootballGiant)) {
+        if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && openingWindow) bonus += emptyRoute ? 115 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_IMP && economyCount <= rows + 2) bonus += emptyRoute ? 130 : -145;
+        else if (seed == SeedType::SEED_ZOMBIE_PAIL && economyCount < 3 && !graveUnderDirectFire) bonus -= 210;
+        else if ((seed == SeedType::SEED_ZOMBIE_FOOTBALL || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL)
+            && conversionWindow && (hasWallnut || sustainedOutput >= 75)) bonus += emptyRoute ? 155 : -140;
+    }
+    if (profile.Has(ZombieTemplate::NormalNewsSled)) {
+        if (seed == SeedType::SEED_ZOMBIE_NORMAL && openingWindow) bonus += emptyRoute ? 110 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && openingWindow) bonus += emptyRoute ? 150 : -140;
+        else if (seed == SeedType::SEED_ZOMBIE_BOBSLED && economyCount >= 3 && conversionWindow) bonus += emptyRoute ? 175 : -210;
+        else if (seed == SeedType::SEED_ZOMBONI && economyCount >= 3 && developedTarget) bonus += emptyRoute ? 155 : -185;
+    }
+    if (profile.Has(ZombieTemplate::NormalNewsImpSunday)) {
+        if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && economyCount >= 2 && economyCount <= rows) bonus += emptyRoute ? 185 : -175;
+        else if (seed == SeedType::SEED_ZOMBIE_IMP && economyCount >= 3 && economyCount <= rows + 2) bonus += emptyRoute ? 165 : -175;
+        else if (seed == SeedType::SEED_ZOMBIE_NORMAL && economyCount >= 3 && economyCount <= rows + 2) bonus += emptyRoute ? 145 : -185;
+    }
+    if (profile.Has(ZombieTemplate::LadderPole)) {
+        if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && economyCount <= rows + 2) bonus += emptyRoute ? 135 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && openingWindow) bonus += emptyRoute ? 115 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER && economyCount >= 2 && activePressureRows >= 1
+            && (plantCount >= 1 || economyValue >= 50) && areaCounterExposure < 120) bonus += emptyRoute ? 235 : -145;
+    }
+    if (profile.Has(ZombieTemplate::NewspaperFanPole)) {
+        if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && economyCount <= rows + 2) bonus += emptyRoute ? 135 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_SUPER_FAN_IMP && openingWindow) bonus += emptyRoute ? 125 : -115;
+        else if (seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER && economyCount >= 3 && conversionWindow
+            && developedTarget) bonus += emptyRoute ? 180 : -145;
+    }
+    if (profile.Has(ZombieTemplate::PeaHeadSunday)) {
+        if (seed == SeedType::SEED_ZOMBIE_PEA_HEAD && openingWindow && peaHeadCount < std::min(rows, 3)) bonus += emptyRoute ? 175 : -160;
+        else if (seed == SeedType::SEED_ZOMBIE_IMP && economyCount <= rows + 2) bonus += emptyRoute ? 130 : -145;
+        else if (seed == SeedType::SEED_ZOMBIE_SUNDAY_EDITION && economyCount >= rows + 1 && peaHeadCount >= 2
+            && conversionWindow) bonus += emptyRoute && developedTarget ? 205 : -155;
+    }
+    if (profile.Has(ZombieTemplate::PeaHeadZamboni)) {
+        if (seed == SeedType::SEED_ZOMBIE_PEA_HEAD && openingWindow && peaHeadCount < std::min(rows, 3)) bonus += emptyRoute ? 150 : -155;
+        else if (seed == SeedType::SEED_ZOMBIE_PAIL && economyCount >= 3 && peaHeadCount >= 2) bonus += emptyRoute ? 100 : -125;
+        else if (seed == SeedType::SEED_ZOMBONI && economyCount >= 3 && developedTarget) bonus += emptyRoute ? 155 : -185;
+    }
+    if (profile.Has(ZombieTemplate::PeaHeadFlagBungee)) {
+        if (seed == SeedType::SEED_ZOMBIE_PEA_HEAD && economyCount >= 2 && economyCount <= rows + 3
+            && peaHeadCount < std::min(rows, 3)) bonus += emptyRoute ? 185 : -165;
+        else if (seed == SeedType::SEED_ZOMBIE_PAIL && peaHeadCount < std::min(rows, 3)) bonus -= 260;
+        else if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && economyCount >= 3 && peaHeadCount >= 2) bonus += emptyRoute ? 130 : -165;
+        else if (seed == SeedType::SEED_ZOMBIE_FLAG) {
+            const bool release = economyCount >= rows * 2 && peaHeadCount >= std::min(rows, 3)
+                && conversionWindow && areaCounterExposure < 120;
+            bonus += release ? (emptyRoute ? 235 : 80) : -430;
+        }
+    }
+    if (profile.Has(ZombieTemplate::MoundSkirmish)) {
+        if (seed == SeedType::SEED_ZOMBIE_MOUND && economyCount >= 3) bonus += graveUnderDirectFire ? -160 : 115;
+        else if (seed == SeedType::SEED_ZOMBIE_NORMAL && openingWindow) bonus += emptyRoute ? 110 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_IMP && economyCount <= rows + 2) bonus += emptyRoute ? 130 : -145;
+        else if (seed == SeedType::SEED_ZOMBONI && economyCount >= 3 && developedTarget) bonus += emptyRoute ? 155 : -185;
+    }
+    if (profile.Has(ZombieTemplate::FlagSquash)) {
+        if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && openingWindow) bonus += emptyRoute ? 115 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_SQUASH_HEAD && economyCount >= 2 && developedTarget) bonus += emptyRoute ? 130 : -135;
+        else if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8 && conversionWindow
+            && developedTarget) bonus += emptyRoute ? 155 : -150;
+    }
+    if (profile.Has(ZombieTemplate::FanImp)) {
+        if (seed == SeedType::SEED_ZOMBIE_SUPER_FAN_IMP && openingWindow) bonus += emptyRoute ? 125 : -115;
+        else if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && openingWindow) bonus += emptyRoute ? 115 : -120;
+        else if (seed == SeedType::SEED_ZOMBIE_SQUASH_HEAD && economyCount >= 2 && developedTarget) bonus += emptyRoute ? 130 : -135;
+    }
+    if (profile.Has(ZombieTemplate::MoundTallnutSled)) {
+        if (seed == SeedType::SEED_ZOMBIE_MOUND && economyCount >= 3) bonus += graveUnderDirectFire ? -160 : 115;
+        else if (seed == SeedType::SEED_ZOMBIE_BOBSLED && economyCount >= rows && hasWallnut) bonus += emptyRoute ? 115 : -160;
+    }
+    if (profile.Has(ZombieTemplate::ImpLadderFootball)) {
+        if (seed == SeedType::SEED_ZOMBIE_IMP && economyCount <= rows + 2) bonus += emptyRoute ? 130 : -145;
+        else if (seed == SeedType::SEED_ZOMBIE_LADDER && (hasWallnut || plantHasNutCard)) bonus += emptyRoute ? 125 : -95;
+        else if ((seed == SeedType::SEED_ZOMBIE_FOOTBALL || seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL)
+            && conversionWindow && (hasWallnut || sustainedOutput >= 75)) bonus += emptyRoute ? 155 : -140;
+    }
+    if (profile.Has(ZombieTemplate::SledDogHeavy)) {
+        if (seed == SeedType::SEED_ZOMBIE_DOGWALKER && openingWindow) bonus += emptyRoute ? 160 : -155;
+        else if (seed == SeedType::SEED_ZOMBIE_BOBSLED && economyCount >= rows && conversionWindow) bonus += emptyRoute ? 135 : -180;
+    }
+    if (profile.Has(ZombieTemplate::DogSledPea)) {
+        if (seed == SeedType::SEED_ZOMBIE_DOGWALKER && economyCount >= 2 && economyCount <= rows + 2) bonus += emptyRoute ? 175 : -200;
+        else if (seed == SeedType::SEED_ZOMBIE_PEA_HEAD && economyCount >= 3 && economyCount <= rows + 2
+            && peaHeadCount < std::min(rows, 3)) bonus += emptyRoute ? 185 : -165;
+        else if (seed == SeedType::SEED_ZOMBIE_BOBSLED && economyCount >= rows && peaHeadCount >= 2
+            && conversionWindow && areaCounterExposure < 135) bonus += emptyRoute ? 170 : -230;
+    }
+    if (profile.Has(ZombieTemplate::LadderBalloonZamboni)) {
+        if (seed == SeedType::SEED_ZOMBIE_BALLOON && openingWindow) bonus += emptyRoute ? 185 : -170;
+        else if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && openingWindow) bonus += emptyRoute ? 135 : -135;
+        else if (seed == SeedType::SEED_ZOMBIE_LADDER && openingWindow && (hasWallnut || plantHasNutCard)) bonus += 125;
+        else if (seed == SeedType::SEED_ZOMBONI && economyCount >= 2 && emptyRoute
+            && (hasWallnut || plantHasNutCard || sustainedOutput >= 65)) bonus += 175;
+    }
+    if (profile.Has(ZombieTemplate::MoundBungeeFootball)) {
+        if (seed == SeedType::SEED_ZOMBIE_MOUND && economyCount >= 2 && economyCount <= rows + 2
+            && !graveUnderDirectFire) bonus += 310;
+        else if (seed == SeedType::SEED_ZOMBIE_BUNGEE && economyCount >= rows && plantHasHighValueCarryCard) bonus += 145;
+        else if (seed == SeedType::SEED_ZOMBIE_GIGA_FOOTBALL && economyCount >= rows && conversionWindow) bonus += emptyRoute ? 165 : -150;
+    }
+    if (profile.Has(ZombieTemplate::NewspaperImpFootballGiant)) {
+        if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && openingWindow) bonus += emptyRoute ? 175 : -165;
+        else if (seed == SeedType::SEED_ZOMBIE_IMP && openingWindow) bonus += emptyRoute ? 170 : -170;
+        else if (seed == SeedType::SEED_ZOMBIE_TRAFFIC_CONE && openingWindow) bonus += emptyRoute ? 120 : -140;
+        else if (seed == SeedType::SEED_ZOMBIE_FOOTBALL && economyCount >= rows && conversionWindow
+            && (hasWallnut || sustainedOutput >= 65)) bonus += emptyRoute ? 165 : -150;
+        else if (seed == SeedType::SEED_ZOMBIE_GARGANTUAR && economyCount >= rows + 2 && conversionWindow
+            && developedTarget) bonus += emptyRoute ? 145 : -145;
+    }
+    if (profile.Has(ZombieTemplate::PeaHeadZomblobGiant)) {
+        if (seed == SeedType::SEED_ZOMBIE_PEA_HEAD && openingWindow && peaHeadCount < std::min(rows, 3)) bonus += emptyRoute ? 180 : -170;
+        else if (seed == SeedType::SEED_ZOMBIE_BOBSLED && economyCount >= rows && peaHeadCount >= 2) bonus += emptyRoute ? 150 : -150;
+        else if (seed == SeedType::SEED_ZOMBIE_ZOMBLOB && economyCount >= 3 && peaHeadCount >= 2
+            && conversionWindow) bonus += emptyRoute ? 185 : -170;
+        else if (seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR && economyCount >= 8 && peaHeadCount >= 2
+            && conversionWindow && developedTarget) bonus += emptyRoute ? 165 : -155;
+    }
+    if (profile.Has(ZombieTemplate::ImpPailSledFootball)) {
+        if (seed == SeedType::SEED_ZOMBIE_IMP && openingWindow) bonus += emptyRoute ? 180 : -180;
+        else if (seed == SeedType::SEED_ZOMBIE_PAIL && openingWindow) bonus += emptyRoute ? 150 : -160;
+        else if (seed == SeedType::SEED_ZOMBIE_FOOTBALL && economyCount >= 2 && conversionWindow) bonus += emptyRoute ? 175 : -170;
+    }
     if (profile.Has(ZombieTemplate::NewspaperScreenFootball)) {
         if (seed == SeedType::SEED_ZOMBIE_NEWSPAPER && openingWindow) bonus += emptyRoute ? 175 : -145;
         else if (seed == SeedType::SEED_ZOMBIE_PAIL && economyCount >= 3 && economyCount <= rows + 2) bonus += emptyRoute ? 145 : -125;
