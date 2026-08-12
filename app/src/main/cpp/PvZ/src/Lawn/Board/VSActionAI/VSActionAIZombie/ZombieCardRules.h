@@ -36,6 +36,12 @@ enum class ZombieTemplate : std::uint8_t {
     ImpPailSledFootball,
 };
 
+enum class ZombieTemplatePhase : std::uint8_t {
+    Opening,
+    Conversion,
+    Finisher,
+};
+
 struct ZombieTemplateProfile {
     std::uint32_t templates = 0;
     bool fastPressure = false;
@@ -45,7 +51,15 @@ struct ZombieTemplateProfile {
     bool Has(ZombieTemplate value) const;
 };
 
+class ZombieTempoPolicy;
+
 ZombieTemplateProfile DetectZombieTemplateProfile(const VSGameState &state);
+bool IsZombieTemplatePhaseSeed(const ZombieTemplateProfile &profile, SeedType seed, ZombieTemplatePhase phase);
+bool IsZombieTemplatePhaseAvailable(const ZombieTemplateProfile &profile, const ZombieTempoPolicy &tempo, SeedType seed,
+    int actualEconomyCount, int activePressureRows, int rows, ZombieTemplatePhase phase);
+bool HasReadyZombieTemplateCommit(const VSGameState &state, int actualEconomyCount, int activePressureRows);
+int ZombieTemplatePhaseBonus(const ZombieTemplateProfile &profile, const ZombieTempoPolicy &tempo, SeedType seed,
+    int actualEconomyCount, int activePressureRows, int zombiesInRow, int rows);
 
 class ZombieTempoPolicy {
 public:
@@ -53,8 +67,12 @@ public:
 
     bool IsEnhanced() const;
     int EffectiveEconomyCount(int actualCount) const;
+    int EconomyTarget(int baseline, int rows) const;
+    int OpeningEconomyFloor(int baseline) const;
+    int OpeningEconomyCeiling(int baseline) const;
     int OpeningPressureRowTarget(int baseline, int rows) const;
     int HeavyBankEconomyThreshold(int rows, int heavyEconomyThreshold) const;
+    std::uint8_t LaneAttackCooldown(SeedType seed) const;
 
 private:
     bool mEnhanced;

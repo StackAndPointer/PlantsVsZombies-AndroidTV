@@ -39,7 +39,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const ZombieTempoPolicy tempo = GetZombieTempoPolicy();
     const int economyCount = tempo.EffectiveEconomyCount(actualEconomyCount);
     const int economyTarget = state.isSuddenDeath ? economyCount
-        : std::max(state.rows * 2, state.rows * 3);
+        : tempo.EconomyTarget(std::max(state.rows * 2, state.rows * 3), state.rows);
     const int economyDeficit = std::max(0, economyTarget - economyCount);
     int targetMarkersOnBoard = 0;
     int zeroHealthTargetMarkers = 0;
@@ -115,7 +115,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const bool bankForHeavy = heavyZombieReserve >= 100
         && economyCount >= tempo.HeavyBankEconomyThreshold(state.rows, heavyEconomyThreshold)
         && activePressureRows >= 2 && CountLivePlants(state) >= state.rows && graveDefenseScore < 100;
-    const int minimumOpeningEconomy = std::min(2, std::max(1, state.rows));
+    const int minimumOpeningEconomy = tempo.OpeningEconomyFloor(std::min(2, std::max(1, state.rows)));
     const int desiredOpeningRows = tempo.OpeningPressureRowTarget(std::min(3, state.rows), state.rows);
     const bool hasReadyFrontlineProbe = ZombieAIPlanning::HasReadyFrontlineProbe(state);
     const bool hasReadyEarlyHeavyCommit = ZombieAIPlanning::HasReadyEarlyHeavyCommit(state, economyCount, activePressureRows);
@@ -141,7 +141,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     // Imp/Zomboni probe. Two graves give neither the later Sunday release
     // nor a returned Zomboni enough economy to stay on the board.
     const int openingPressureEconomyFloor = (impPailSundayTemplate || zamboniPoleOpeningTemplate)
-        ? std::min(3, state.rows)
+        ? tempo.OpeningEconomyFloor(std::min(3, state.rows))
         : minimumOpeningEconomy;
     const bool firstGraveProbe = armoredNormalRushTemplate && actualEconomyCount == 1 && activePressureRows == 0
         && hasReadyFrontlineProbe && mLastPressureEconomyCount < actualEconomyCount;
@@ -161,9 +161,10 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     const bool restorationCanProceed = !graveDefenseReinforcement || hasGraveGuard;
     const bool restorationOutweighsFront = economyDeficit >= 2 || graveDefenseScore < 100 || hasGraveGuard;
     const bool economyRepairIsUrgent = economyCount < minimumOpeningEconomy || economyDeficit >= 3;
+    const bool hasReadyTemplateCommit = HasReadyZombieTemplateCommit(state, actualEconomyCount, activePressureRows);
     if (economyDeficit > 0 && restorationCanProceed && !forceOpeningPressure
         && (!canConvertMowerlessTargetRoute || !hasReadyFrontlineProbe)
-        && !hasReadyEarlyHeavyCommit && !bankForHeavy
+        && !hasReadyEarlyHeavyCommit && !hasReadyTemplateCommit && !bankForHeavy
         && (economyRepairIsUrgent || !preservePressureDuringRepair) && (!preserveSurvivingFront || restorationOutweighsFront)) {
         if (std::optional<VSAction> action = ZombieAIPlanning::TryBuildEconomy(state, economicRow)) {
             return action;
@@ -353,8 +354,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // This keeps 100/200-brain finishers reachable without
                 // leaving every grave route unprotected.
                 if (!isProtectedGuard) {
-                    const int lowCostPenalty = tempo.IsEnhanced() ? -90 : -45;
-                    const int mediumCostPenalty = tempo.IsEnhanced() ? -285 : -190;
+                    const int lowCostPenalty = tempo.IsEnhanced() ? -120 : -45;
+                    const int mediumCostPenalty = tempo.IsEnhanced() ? -330 : -190;
                     score += card.cost <= std::max(50, heavyZombieReserve / 4) ? lowCostPenalty : mediumCostPenalty;
                 }
             }
@@ -399,8 +400,8 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     if (!IsZombieEconomySeed(chosenSeed) && !IsZombieTargetedSeed(chosenSeed)) {
         mLastAttackRow = targetRow;
         if (targetRow >= 0 && targetRow < static_cast<int>(mLaneAttackCooldown.size())
-            && !(IsZombieGraveGuardSeed(chosenSeed) && graveDefenseUrgent)) {
-            mLaneAttackCooldown[static_cast<std::size_t>(targetRow)] = IsZombieFastAttackSeed(chosenSeed) ? 4 : 3;
+                    && !(IsZombieGraveGuardSeed(chosenSeed) && graveDefenseUrgent)) {
+            mLaneAttackCooldown[static_cast<std::size_t>(targetRow)] = tempo.LaneAttackCooldown(chosenSeed);
         }
     }
     return MakePlayAction(VSSide::Zombies, *bestCard, *target, state.boardTick);

@@ -130,9 +130,17 @@ std::optional<VSAction> ZombieAIPlanning::TryTemplateSundayRelease(const VSGameS
         return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
     }));
     const int maximumCounterExposure = impPailSledSundayTemplate || peaHeadSundayTemplate ? 145 : 150;
-    const bool releaseWindow = (normalNewsImpSundayTemplate && economyCount >= std::max(3, state.rows - 1))
-        || (impPailSledSundayTemplate && economyCount >= std::max(state.rows + 3, 8))
-        || (peaHeadSundayTemplate && economyCount >= state.rows + 2 && peaHeadCount >= 2);
+    const ZombieTempoPolicy tempo = GetZombieTempoPolicy();
+    const bool releaseWindow = (normalNewsImpSundayTemplate
+            && IsZombieTemplatePhaseAvailable(profile, tempo, SeedType::SEED_ZOMBIE_SUNDAY_EDITION,
+                economyCount, activePressureRows, state.rows, ZombieTemplatePhase::Finisher))
+        || (impPailSledSundayTemplate
+            && IsZombieTemplatePhaseAvailable(profile, tempo, SeedType::SEED_ZOMBIE_SUNDAY_EDITION,
+                economyCount, activePressureRows, state.rows, ZombieTemplatePhase::Finisher))
+        || (peaHeadSundayTemplate
+            && IsZombieTemplatePhaseAvailable(profile, tempo, SeedType::SEED_ZOMBIE_SUNDAY_EDITION,
+                economyCount, activePressureRows, state.rows, ZombieTemplatePhase::Finisher)
+            && peaHeadCount >= 2);
     const VSCardState *sundayEdition = FindReadyCard(state, SeedType::SEED_ZOMBIE_SUNDAY_EDITION);
     if (!releaseWindow || sundayEdition == nullptr) {
         return std::nullopt;

@@ -11,6 +11,58 @@ constexpr std::uint32_t TemplateMask(ZombieTemplate value) {
     return 1U << static_cast<std::uint8_t>(value);
 }
 
+struct ZombieTemplatePlan {
+    ZombieTemplate templateId;
+    SeedType openingSeed;
+    int openingEconomyFloor;
+    int openingEconomyCeiling;
+    int openingRowTarget;
+    SeedType conversionSeed;
+    int conversionEconomyFloor;
+    int conversionMinPressureRows;
+    SeedType finisherSeed;
+    int finisherEconomyFloor;
+    int finisherMinPressureRows;
+};
+
+constexpr ZombieTemplatePlan kZombieTemplatePlans[] = {
+    {ZombieTemplate::ZamboniPole, SeedType::SEED_ZOMBIE_IMP, 3, 6, 3, SeedType::SEED_ZOMBONI, 3, 1, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER, 4, 1},
+    {ZombieTemplate::PeaHeadGiant, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_TRASHCAN, 4, 1, SeedType::SEED_ZOMBIE_GARGANTUAR, 7, 2},
+    {ZombieTemplate::ImpSledSunday, SeedType::SEED_ZOMBIE_IMP, 3, 10, 3, SeedType::SEED_ZOMBIE_PAIL, 3, 1, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, 8, 2},
+    {ZombieTemplate::ArmoredNormalRush, SeedType::SEED_ZOMBIE_NORMAL, 1, 7, 3, SeedType::SEED_ZOMBIE_TRASHCAN, 3, 1, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR, 8, 2},
+    {ZombieTemplate::NewspaperSledDiggerGiga, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 7, 3, SeedType::SEED_ZOMBIE_BOBSLED, 5, 2, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR, 9, 2},
+    {ZombieTemplate::NewspaperDiggerGiga, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 7, 3, SeedType::SEED_ZOMBIE_DIGGER, 5, 1, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR, 9, 2},
+    {ZombieTemplate::ConeImpFootballGiant, SeedType::SEED_ZOMBIE_IMP, 2, 7, 3, SeedType::SEED_ZOMBIE_PAIL, 3, 1, SeedType::SEED_ZOMBIE_FOOTBALL, 5, 2},
+    {ZombieTemplate::NormalNewsSled, SeedType::SEED_ZOMBIE_NORMAL, 1, 7, 3, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 1, SeedType::SEED_ZOMBONI, 3, 2},
+    {ZombieTemplate::NormalNewsImpSunday, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 5, 3, SeedType::SEED_ZOMBIE_IMP, 3, 1, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, 4, 2},
+    {ZombieTemplate::LadderPole, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 5, 2, SeedType::SEED_ZOMBIE_TRAFFIC_CONE, 2, 1, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER, 2, 1},
+    {ZombieTemplate::NewspaperFanPole, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 6, 3, SeedType::SEED_ZOMBIE_SUPER_FAN_IMP, 2, 1, SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER, 3, 2},
+    {ZombieTemplate::PeaHeadSunday, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_IMP, 3, 1, SeedType::SEED_ZOMBIE_SUNDAY_EDITION, 7, 2},
+    {ZombieTemplate::PeaHeadZamboni, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_PAIL, 4, 1, SeedType::SEED_ZOMBONI, 4, 1},
+    {ZombieTemplate::PeaHeadFlagBungee, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 8, 3, SeedType::SEED_ZOMBIE_TRAFFIC_CONE, 3, 1, SeedType::SEED_ZOMBIE_FLAG, 8, 2},
+    {ZombieTemplate::MoundSkirmish, SeedType::SEED_ZOMBIE_NORMAL, 2, 7, 3, SeedType::SEED_ZOMBIE_MOUND, 3, 0, SeedType::SEED_ZOMBONI, 4, 1},
+    {ZombieTemplate::FlagSquash, SeedType::SEED_ZOMBIE_TRAFFIC_CONE, 2, 7, 3, SeedType::SEED_ZOMBIE_SQUASH_HEAD, 3, 1, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR, 8, 2},
+    {ZombieTemplate::FanImp, SeedType::SEED_ZOMBIE_SUPER_FAN_IMP, 2, 7, 3, SeedType::SEED_ZOMBIE_SQUASH_HEAD, 3, 1, SeedType::SEED_ZOMBIE_SCREEN_DOOR, 4, 1},
+    {ZombieTemplate::MoundTallnutSled, SeedType::SEED_ZOMBIE_MOUND, 2, 7, 1, SeedType::SEED_ZOMBIE_TRASHCAN, 4, 0, SeedType::SEED_ZOMBIE_BOBSLED, 5, 1},
+    {ZombieTemplate::ImpLadderFootball, SeedType::SEED_ZOMBIE_IMP, 2, 7, 3, SeedType::SEED_ZOMBIE_LADDER, 4, 1, SeedType::SEED_ZOMBIE_FOOTBALL, 5, 2},
+    {ZombieTemplate::SledDogHeavy, SeedType::SEED_ZOMBIE_DOGWALKER, 2, 7, 3, SeedType::SEED_ZOMBIE_BOBSLED, 5, 2, SeedType::SEED_ZOMBIE_GARGANTUAR, 7, 2},
+    {ZombieTemplate::DogSledPea, SeedType::SEED_ZOMBIE_DOGWALKER, 2, 7, 3, SeedType::SEED_ZOMBIE_PEA_HEAD, 3, 1, SeedType::SEED_ZOMBIE_BOBSLED, 5, 2},
+    {ZombieTemplate::LadderBalloonZamboni, SeedType::SEED_ZOMBIE_BALLOON, 2, 7, 3, SeedType::SEED_ZOMBIE_LADDER, 4, 1, SeedType::SEED_ZOMBONI, 6, 1},
+    {ZombieTemplate::MoundBungeeFootball, SeedType::SEED_ZOMBIE_MOUND, 2, 7, 1, SeedType::SEED_ZOMBIE_TRASHCAN, 3, 1, SeedType::SEED_ZOMBIE_GIGA_FOOTBALL, 5, 2},
+    {ZombieTemplate::NewspaperImpFootballGiant, SeedType::SEED_ZOMBIE_NEWSPAPER, 2, 7, 3, SeedType::SEED_ZOMBIE_IMP, 3, 1, SeedType::SEED_ZOMBIE_FOOTBALL, 5, 2},
+    {ZombieTemplate::PeaHeadZomblobGiant, SeedType::SEED_ZOMBIE_PEA_HEAD, 2, 7, 3, SeedType::SEED_ZOMBIE_ZOMBLOB, 5, 2, SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR, 8, 2},
+    {ZombieTemplate::ImpPailSledFootball, SeedType::SEED_ZOMBIE_IMP, 2, 7, 3, SeedType::SEED_ZOMBIE_PAIL, 3, 1, SeedType::SEED_ZOMBIE_FOOTBALL, 4, 2},
+};
+
+const ZombieTemplatePlan *FindZombieTemplatePlan(const ZombieTemplateProfile &profile) {
+    for (const ZombieTemplatePlan &plan : kZombieTemplatePlans) {
+        if (profile.Has(plan.templateId)) {
+            return &plan;
+        }
+    }
+    return nullptr;
+}
+
 } // namespace
 
 bool ZombieTemplateProfile::Has(ZombieTemplate value) const {
@@ -104,6 +156,85 @@ ZombieTemplateProfile DetectZombieTemplateProfile(const VSGameState &state) {
     return profile;
 }
 
+bool IsZombieTemplatePhaseSeed(const ZombieTemplateProfile &profile, SeedType seed, ZombieTemplatePhase phase) {
+    const ZombieTemplatePlan *plan = FindZombieTemplatePlan(profile);
+    if (plan == nullptr) {
+        return false;
+    }
+    switch (phase) {
+        case ZombieTemplatePhase::Opening:
+            return plan->openingSeed == seed;
+        case ZombieTemplatePhase::Conversion:
+            return plan->conversionSeed == seed;
+        case ZombieTemplatePhase::Finisher:
+            return plan->finisherSeed == seed;
+        default:
+            return false;
+    }
+}
+
+bool IsZombieTemplatePhaseAvailable(const ZombieTemplateProfile &profile, const ZombieTempoPolicy &tempo, SeedType seed,
+    int actualEconomyCount, int activePressureRows, int rows, ZombieTemplatePhase phase) {
+    const ZombieTemplatePlan *plan = FindZombieTemplatePlan(profile);
+    if (plan == nullptr) {
+        return false;
+    }
+    const int economyCount = tempo.EffectiveEconomyCount(actualEconomyCount);
+    switch (phase) {
+        case ZombieTemplatePhase::Opening:
+            return plan->openingSeed == seed
+                && economyCount >= tempo.OpeningEconomyFloor(plan->openingEconomyFloor)
+                && economyCount <= tempo.OpeningEconomyCeiling(plan->openingEconomyCeiling)
+                && activePressureRows < tempo.OpeningPressureRowTarget(std::min(plan->openingRowTarget, rows), rows);
+        case ZombieTemplatePhase::Conversion:
+            return plan->conversionSeed == seed
+                && economyCount >= plan->conversionEconomyFloor - (tempo.IsEnhanced() ? 1 : 0)
+                && activePressureRows >= std::max(0, plan->conversionMinPressureRows - (tempo.IsEnhanced() ? 1 : 0));
+        case ZombieTemplatePhase::Finisher:
+            return plan->finisherSeed == seed
+                && economyCount >= plan->finisherEconomyFloor - (tempo.IsEnhanced() ? 1 : 0)
+                && activePressureRows >= std::max(1, plan->finisherMinPressureRows - (tempo.IsEnhanced() ? 1 : 0));
+        default:
+            return false;
+    }
+}
+
+bool HasReadyZombieTemplateCommit(const VSGameState &state, int actualEconomyCount, int activePressureRows) {
+    const ZombieTemplateProfile profile = DetectZombieTemplateProfile(state);
+    const ZombieTempoPolicy tempo = GetZombieTempoPolicy();
+    for (const VSCardState &card : state.seedBanks[1]) {
+        if (!card.active || card.matchRestricted || card.refreshing || card.refreshCounter > 0
+            || !IsReadyCard(card, state.zombieBrains)) {
+            continue;
+        }
+        const SeedType seed = static_cast<SeedType>(card.seedType);
+        if (IsZombieTemplatePhaseAvailable(profile, tempo, seed, actualEconomyCount, activePressureRows, state.rows, ZombieTemplatePhase::Conversion)
+            || IsZombieTemplatePhaseAvailable(profile, tempo, seed, actualEconomyCount, activePressureRows, state.rows, ZombieTemplatePhase::Finisher)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+int ZombieTemplatePhaseBonus(const ZombieTemplateProfile &profile, const ZombieTempoPolicy &tempo, SeedType seed,
+    int actualEconomyCount, int activePressureRows, int zombiesInRow, int rows) {
+    const ZombieTemplatePlan *plan = FindZombieTemplatePlan(profile);
+    if (plan == nullptr) {
+        return 0;
+    }
+    int bonus = 0;
+    if (IsZombieTemplatePhaseAvailable(profile, tempo, seed, actualEconomyCount, activePressureRows, rows, ZombieTemplatePhase::Opening)) {
+        bonus += zombiesInRow == 0 ? 165 : -185;
+    }
+    if (IsZombieTemplatePhaseAvailable(profile, tempo, seed, actualEconomyCount, activePressureRows, rows, ZombieTemplatePhase::Conversion)) {
+        bonus += zombiesInRow == 0 ? 180 : -150;
+    }
+    if (IsZombieTemplatePhaseAvailable(profile, tempo, seed, actualEconomyCount, activePressureRows, rows, ZombieTemplatePhase::Finisher)) {
+        bonus += zombiesInRow == 0 ? 210 : -120;
+    }
+    return bonus;
+}
+
 bool ZombieTempoPolicy::IsEnhanced() const {
     return mEnhanced;
 }
@@ -112,12 +243,29 @@ int ZombieTempoPolicy::EffectiveEconomyCount(int actualCount) const {
     return mEnhanced ? EffectiveAIEconomyCount(VSSide::Zombies, actualCount) : actualCount;
 }
 
+int ZombieTempoPolicy::EconomyTarget(int baseline, int rows) const {
+    return std::max(rows, baseline - (mEnhanced ? 1 : 0));
+}
+
+int ZombieTempoPolicy::OpeningEconomyFloor(int baseline) const {
+    return std::max(1, baseline - (mEnhanced ? 1 : 0));
+}
+
+int ZombieTempoPolicy::OpeningEconomyCeiling(int baseline) const {
+    return std::max(1, baseline + (mEnhanced ? 1 : 0));
+}
+
 int ZombieTempoPolicy::OpeningPressureRowTarget(int baseline, int rows) const {
     return mEnhanced ? std::min(rows, baseline + 1) : baseline;
 }
 
 int ZombieTempoPolicy::HeavyBankEconomyThreshold(int rows, int heavyEconomyThreshold) const {
     return std::max(rows + (mEnhanced ? 1 : 2), heavyEconomyThreshold - (mEnhanced ? 3 : 2));
+}
+
+std::uint8_t ZombieTempoPolicy::LaneAttackCooldown(SeedType seed) const {
+    const std::uint8_t baseline = IsZombieFastAttackSeed(seed) ? 4 : 3;
+    return mEnhanced && baseline > 1 ? static_cast<std::uint8_t>(baseline - 1) : baseline;
 }
 
 ZombieTempoPolicy GetZombieTempoPolicy() {
