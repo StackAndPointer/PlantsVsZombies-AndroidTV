@@ -11,6 +11,8 @@
 
 #include "VSActionAIThreat.h"
 
+#include "VSActionAILanePolicy.h"
+
 #include "VSActionAIStrategy.h"
 
 #include <algorithm>
@@ -400,12 +402,13 @@ int EconomyPlantsInRow(const VSGameState &state, int row) {
 }
 
 int ZombieLaneAttackScore(const VSGameState &state, int row) {
-    if (IsMowerInMotion(state, row) || HasZombieInHomeColumn(state, row) || IsMowerAboutToTrigger(state, row)) {
-        // A triggered mower or an intruder already in column zero makes this
-        // row a guaranteed whole-lane clear, not an attack opportunity.
-        return std::numeric_limits<int>::min() / 4;
-    }
-    if (!HasLiveZombieTargetInRow(state, row)) {
+    const ZombieLanePolicy policy = EvaluateZombieLanePolicy(state, row);
+    // Lane scoring is also consumed by special grave-defense actions. A
+    // strong mowerless plant lane suppresses ordinary bodies through
+    // `allowsAttack`, but it must retain a finite score so a valid guard can
+    // still be evaluated there. Only a lost target or a hard deployment stop
+    // makes the entire row unusable.
+    if (policy.deploymentBlocked || !policy.hasLiveTarget) {
         return std::numeric_limits<int>::min() / 4;
     }
     const PlantLaneAssessment assessment = AssessPlantLane(state, row);
@@ -429,27 +432,14 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
     score += firepower.deficit * 5;
     score += !firepower.canHold && firepower.nearHealth > 0 ? 80 : 0;
 
-    const bool mowerGone = row < static_cast<int>(state.mowerAvailable.size())
-        && !state.mowerAvailable[static_cast<std::size_t>(row)];
-    const bool allMowersSpent = AllMowersSpent(state);
-    if (mowerGone) {
-        // A spent mower means this route can now win by reaching the house.
-        // Reopen it even after the mower cleared the first probe; otherwise
-        // the AI keeps spending attacks merely to trigger every remaining
-        // mower instead of converting the first opening into a victory.
-        score += zombieCount > 0 ? 1420 : 1280;
-        score += allMowersSpent ? 240 : 0;
-    }
-
-    // Spread the opening across lanes. A single zombie is useful as a probe;
-    // additional zombies in that lane receive a progressively larger penalty.
-    const bool pursuingMowerlessLane = mowerGone && !IsMowerInMotion(state, row);
+    score += MowerlessLaneAttackScoreBonus(state, policy, zombieCount);
     if (zombieCount == 0) {
-        score += mowerGone ? 620 : 150;
+        score += policy.conversionRoute ? MowerlessLaneDistributionAdjustment(policy, zombieCount) : 150;
     } else if (zombieCount == 1) {
-        score += pursuingMowerlessLane ? 180 : -115;
+        score += policy.conversionRoute ? MowerlessLaneDistributionAdjustment(policy, zombieCount) : -115;
     } else {
-        score -= (pursuingMowerlessLane ? 15 : 95) + (zombieCount - 1) * (pursuingMowerlessLane ? 45 : 175);
+        score += policy.conversionRoute ? MowerlessLaneDistributionAdjustment(policy, zombieCount)
+                                       : -95 - (zombieCount - 1) * 175;
     }
     score -= ZombiePressureInRow(state, row) / 3;
     return score;

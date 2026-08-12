@@ -1,5 +1,7 @@
 #include "ZombieAI.h"
 
+#include "../VSActionAILanePolicy.h"
+
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -46,8 +48,9 @@ int ZombieAIPlanning::GraveGuardPriority(SeedType seed) {
 }
 
 std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &state, int row, bool force) {
-    if (row < 0 || row >= state.rows || IsMowerInMotion(state, row) || HasZombieInHomeColumn(state, row) || IsMowerAboutToTrigger(state, row)
-        || (!force && IsMowerlessStrongPlantLane(state, row) && CountZombiesInRow(state, row) == 0
+    const ZombieLanePolicy lane = EvaluateZombieLanePolicy(state, row);
+    if (!lane.hasLiveTarget || lane.deploymentBlocked
+        || (!force && lane.strongMowerlessPlantLane && CountZombiesInRow(state, row) == 0
             && !AllMowersSpent(state))) {
         return std::nullopt;
     }
@@ -120,7 +123,8 @@ std::optional<VSAction> ZombieAIPlanning::TryProtectEconomy(const VSGameState &s
 
 std::optional<VSAction> ZombieAIPlanning::TryCounterLobbedGravePressure(const VSGameState &state, int row) {
     const VSCardState *catapult = FindReadyCard(state, SeedType::SEED_ZOMBIE_CATAPULT);
-    if (catapult == nullptr || EffectiveAIEconomyCount(VSSide::Zombies, CountZombieEconomy(state)) < state.rows || HasMindControlledZombieInRow(state, row)
+    if (catapult == nullptr || !EvaluateZombieLanePolicy(state, row).allowsAttack
+        || EffectiveAIEconomyCount(VSSide::Zombies, CountZombieEconomy(state)) < state.rows || HasMindControlledZombieInRow(state, row)
         || LobbedProjectileThreatScore(state, row) < 70) {
         return std::nullopt;
     }

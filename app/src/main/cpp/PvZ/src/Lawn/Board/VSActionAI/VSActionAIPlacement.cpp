@@ -11,6 +11,8 @@
 
 #include "VSActionAIPlacement.h"
 
+#include "VSActionAILanePolicy.h"
+
 #include "PvZ/Lawn/Board/GridItem.h"
 #include "PvZ/Lawn/Common/GameConstants.h"
 
@@ -437,38 +439,14 @@ int ZombiePlacementColumn(SeedType seed) {
 
 VSGridPosition FindZombieCell(const VSGameState &state, SeedType seed, int row) {
     row = std::clamp(row, 0, std::max(0, state.rows - 1));
-    if (HasZombieInHomeColumn(state, row)) {
+    if (EvaluateZombieLanePolicy(state, row).deploymentBlocked) {
         return {};
     }
     return {static_cast<std::int8_t>(ZombiePlacementColumn(seed)), static_cast<std::int8_t>(row)};
 }
 
 bool CanInvestZombieEconomyInRow(const VSGameState &state, int row) {
-    if (IsMowerInMotion(state, row) || HasZombieInHomeColumn(state, row) || IsMowerAboutToTrigger(state, row)) {
-        return false;
-    }
-    // Once a mower is gone, a developed/high-DPS plant lane is usually the
-    // plant player's conversion route. Do not rebuild graves directly in
-    // front of that firing line; prefer an intact target lane instead. When
-    // every mower is already spent there is no intact safety route left, so
-    // the surviving target lanes must remain investable.
-    if (IsMowerlessStrongPlantLane(state, row) && !AllMowersSpent(state)) {
-        return false;
-    }
-    bool hasTargetMarker = false;
-    for (const VSGridItemState &item : state.gridItems) {
-        if (item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)) {
-            continue;
-        }
-        hasTargetMarker = true;
-        if (!item.dead && item.health > 0 && item.position.row == row) {
-            return true;
-        }
-    }
-    // Some non-standard VS boards do not expose target markers. Preserve the
-    // normal economy path there, while never reinvesting into a confirmed lost
-    // target lane on standard VS boards.
-    return !hasTargetMarker;
+    return EvaluateZombieLanePolicy(state, row).allowsEconomy;
 }
 
 VSGridPosition FindZombieEconomyCell(const VSGameState &state, int preferredRow) {
