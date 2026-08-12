@@ -19,7 +19,7 @@ using namespace Sexy;
 
 namespace {
 constexpr int kPanelWidth = 540;
-constexpr int kPanelHeight = 450;
+constexpr int kPanelHeight = 470;
 constexpr int kCheckboxX = 58;
 constexpr int kFirstCheckboxY = 86;
 constexpr int kCheckboxStep = 54;
@@ -40,6 +40,8 @@ AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
         "",
         "",
         0);
+    // Dialog::Draw stretches the component image. Avoid the extra LawnDialog background pass.
+    mDrawStandardBack = false;
 
     static void *sVTable[122];
     static std::once_flag vtableInitFlag;
@@ -54,7 +56,7 @@ AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
     });
     this->Sexy::Widget::vTable = sVTable;
 
-    LawnDialog::Resize(370, 120, kPanelWidth, kPanelHeight);
+    LawnDialog::Resize(370, 110, kPanelWidth, kPanelHeight);
     mClip = true;
 
     mPlantAICheckbox = MakeNewCheckbox(VSSetupAddonWidget::VSSetupAddonWidget_PlantAI, owner, this, false);
