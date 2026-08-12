@@ -12,6 +12,8 @@ bool IsLobbedOutputSeed(SeedType seed);
 
 class PlantAIPlanning : public BuiltinVSAgent {
 protected:
+    bool mOpeningEconomyPlaced = false;
+
     struct AshTarget {
         VSGridPosition position{-1, -1};
         int hitCount = 0;
@@ -107,6 +109,21 @@ protected:
     std::optional<VSAction> TryImpactDistraction(const VSGameState &state, int row, int protectedSun);
     int AreaCounterReserve(const VSGameState &state) const;
     std::optional<VSAction> TryFallbackPlant(const VSGameState &state, const PlantLaneAssessment &danger, int buildRow);
+
+public:
+    void Reset() override {
+        BuiltinVSAgent::Reset();
+        mOpeningEconomyPlaced = false;
+    }
+
+    void OnActionResult(const VSAction &action, VSActionResult result) override {
+        BuiltinVSAgent::OnActionResult(action, result);
+        if (result == VSActionResult::Applied && action.side == VSSide::Plants && action.kind == VSActionKind::PlaySeed
+            && (action.expectedSeedType == static_cast<std::uint16_t>(SeedType::SEED_SUNFLOWER)
+                || action.expectedSeedType == static_cast<std::uint16_t>(SeedType::SEED_SUNSHROOM))) {
+            mOpeningEconomyPlaced = true;
+        }
+    }
 };
 
 } // namespace vsai::detail

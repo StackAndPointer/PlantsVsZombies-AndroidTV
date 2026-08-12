@@ -16,6 +16,7 @@ protected:
     int mLastAttackRow = -1;
     int mLastPressureEconomyCount = -1;
     std::array<std::uint8_t, 6> mLaneAttackCooldown{};
+    bool mOpeningEconomyPlaced = false;
 
     int HeavyZombieReserve(const VSGameState &state) const;
     bool HasReadyFrontlineProbe(const VSGameState &state) const;
@@ -33,6 +34,7 @@ protected:
 
 public:
     void Reset() override;
+    void OnActionResult(const VSAction &action, VSActionResult result) override;
 };
 
 } // namespace vsai::detail

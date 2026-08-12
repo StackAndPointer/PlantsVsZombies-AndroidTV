@@ -12,7 +12,6 @@ bool IsPlantCarrySeed(SeedType seed) {
     }
     switch (seed) {
         case SeedType::SEED_PEASHOOTER:
-        case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:
         case SeedType::SEED_THREEPEATER:
         case SeedType::SEED_SPLITPEA:
@@ -34,7 +33,6 @@ bool IsPlantCarrySeed(SeedType seed) {
 bool IsPeaMainDamageSeed(SeedType seed) {
     switch (seed) {
         case SeedType::SEED_PEASHOOTER:
-        case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:
         case SeedType::SEED_THREEPEATER:
         case SeedType::SEED_SPLITPEA:

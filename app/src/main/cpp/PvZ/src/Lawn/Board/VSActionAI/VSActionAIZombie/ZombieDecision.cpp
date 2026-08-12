@@ -14,10 +14,28 @@ void ZombieAIPlanning::Reset() {
     mLastAttackRow = -1;
     mLastPressureEconomyCount = -1;
     mLaneAttackCooldown.fill(0);
+    mOpeningEconomyPlaced = false;
+}
+
+void ZombieAIPlanning::OnActionResult(const VSAction &action, VSActionResult result) {
+    BuiltinVSAgent::OnActionResult(action, result);
+    if (result == VSActionResult::Applied && action.side == VSSide::Zombies && action.kind == VSActionKind::PlaySeed
+        && action.expectedSeedType == static_cast<std::uint16_t>(SeedType::SEED_ZOMBIE_GRAVESTONE)) {
+        mOpeningEconomyPlaced = true;
+    }
 }
 
 std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     AdvanceBlockedSlots();
+    // Keep the first zombie action independent from the current grave count:
+    // target markers and replay state must not let a template open with a
+    // body before its first Gravestone is actually on the board.
+    if (!state.isSuddenDeath && !mOpeningEconomyPlaced) {
+        if (std::optional<VSAction> action = ZombieAIPlanning::TryBuildEconomy(state, ZombieAIPlanning::LeastCommittedZombieRow(state))) {
+            return action;
+        }
+        return std::nullopt;
+    }
     for (std::uint8_t &cooldown : mLaneAttackCooldown) {
         if (cooldown > 0) {
             --cooldown;
@@ -31,13 +49,6 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
 
     const ZombieDecisionContext context = BuildZombieDecisionContext(state);
     const int actualEconomyCount = context.actualEconomyCount;
-    // The first zombie turn establishes a grave before any replay template
-    // or pressure branch can spend brains on a unit.
-    if (!state.isSuddenDeath && actualEconomyCount == 0) {
-        if (std::optional<VSAction> action = ZombieAIPlanning::TryBuildEconomy(state, ZombieAIPlanning::LeastCommittedZombieRow(state))) {
-            return action;
-        }
-    }
     if (mLastPressureEconomyCount > actualEconomyCount) {
         // A destroyed grave re-opens the pressure cadence. Rebuilding
         // from a smaller base should not force a full 15-grave rebuild

@@ -934,7 +934,6 @@ SeedType PlannedBuiltinAIPlantMainDamageSeed(SeedChooserScreen *screen) {
 static constexpr SeedType kBuiltinAIPlantMainFallbacks[] = {
     SeedType::SEED_PEASHOOTER,
     SeedType::SEED_REPEATER,
-    SeedType::SEED_SNOWPEA,
     SeedType::SEED_SCAREDYSHROOM,
     SeedType::SEED_MELONPULT,
     SeedType::SEED_BLOOMERANG,
@@ -951,7 +950,6 @@ static constexpr SeedType kBuiltinAIPlantMainFallbacks[] = {
 static constexpr SeedType kBuiltinAIRulePlantMainFallbacks[] = {
     SeedType::SEED_PEASHOOTER,
     SeedType::SEED_REPEATER,
-    SeedType::SEED_SNOWPEA,
     SeedType::SEED_SCAREDYSHROOM,
     SeedType::SEED_MELONPULT,
     SeedType::SEED_BLOOMERANG,

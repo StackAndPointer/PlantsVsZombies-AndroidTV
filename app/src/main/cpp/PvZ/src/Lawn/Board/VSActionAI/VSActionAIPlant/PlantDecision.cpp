@@ -10,6 +10,18 @@ namespace vsai::detail {
 
 std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     AdvanceBlockedSlots();
+    // This is an action-order invariant, not an empty-board heuristic. The
+    // first plant-side card must establish income before collection or any
+    // replay/template branch is allowed to issue another PlaySeed.
+    if (!state.isSuddenDeath && !mOpeningEconomyPlaced) {
+        const SeedType openingSeed = state.isNight ? SeedType::SEED_SUNSHROOM : SeedType::SEED_SUNFLOWER;
+        const VSCardState *card = PlantAIPlanning::FindReadyCard(state, openingSeed);
+        const VSGridPosition target = FindSafeIncomeCell(state, LeastDevelopedPlantRow(state));
+        if (card != nullptr && target.col >= 0 && target.row >= 0 && state.plantSun >= card->cost) {
+            return MakePlayAction(VSSide::Plants, *card, target, state.boardTick);
+        }
+        return std::nullopt;
+    }
     // A Jalapeno Head turns its first chew collision into a whole-row burn.
     // Moving the contacted front plant has to outrank resource collection.
     if (std::optional<VSAction> action = PlantAIPlanning::TryEvadeJalapenoHead(state)) {
@@ -19,24 +31,6 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         if (resource.side == VSSide::Plants && !resource.dead && !resource.beingCollected) {
             return VSAction{.side = VSSide::Plants, .kind = VSActionKind::CollectResource, .objectId = resource.id, .sequence = ++mSequence};
         }
-    }
-
-    // A pressure template must never spend the first planting turn on a
-    // shooter. Establish the map-appropriate income producer before any
-    // formation, output, or grave-pressure branch is allowed to run.
-    if (!state.isSuddenDeath && CountLivePlants(state) == 0) {
-        // Opening pressure must start from an actual income producer. Prefer
-        // Sunflower on every map; a night-only Sun-shroom deck falls back to
-        // its available income producer instead of stalling its first turn.
-        const VSCardState *card = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SUNFLOWER);
-        if (card == nullptr && state.isNight) {
-            card = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SUNSHROOM);
-        }
-        const VSGridPosition target = FindSafeIncomeCell(state, LeastDevelopedPlantRow(state));
-        if (card != nullptr && target.col >= 0 && target.row >= 0 && state.plantSun >= card->cost) {
-            return MakePlayAction(VSSide::Plants, *card, target, state.boardTick);
-        }
-        return std::nullopt;
     }
 
     // A single Blover is the full-board answer to live Balloon Zombies.
