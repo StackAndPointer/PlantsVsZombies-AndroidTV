@@ -606,6 +606,7 @@ VSGameState BuildGameState(Board *board) {
             .shieldHealth = zombie->mShieldHealth,
             .eating = zombie->mIsEating,
             .mindControlled = zombie->mMindControlled,
+            .canBeFrozen = zombie->CanBeFrozen(),
             .jalapenoContactPlantId = jalapenoContactPlant == nullptr ? 0U
                                                                        : board->mPlants.DataArrayGetID(jalapenoContactPlant),
             .bungeeAtTarget = zombie->mZombieType == ZombieType::ZOMBIE_BUNGEE

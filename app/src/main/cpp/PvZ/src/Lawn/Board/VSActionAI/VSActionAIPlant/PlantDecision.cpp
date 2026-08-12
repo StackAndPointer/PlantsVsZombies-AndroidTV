@@ -259,10 +259,13 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_JALAPENO, protectedSun)) {
             return action;
         }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_CHILLY_PEPPER, protectedSun)) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_SQUASH, protectedSun)) {
             return action;
         }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_SQUASH, protectedSun)) {
+        // Chilly Pepper needs one second before it damages its row. Resolve
+        // a legal immediate Squash first; otherwise Squash can clear the
+        // exact cluster Chilly selected and leave its delayed blast empty.
+        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_CHILLY_PEPPER, protectedSun)) {
             return action;
         }
     }

@@ -35,6 +35,12 @@ std::optional<VSAction> PlantAIPlanning::TryPumpkinShell(const VSGameState &stat
     for (const VSPlantState &plant : state.plants) {
         if (IsDeadOrOutside(plant) || plant.position.row != row || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_PUMPKINSHELL)
             || (!IsPlantCombatSeed(plant.seedType) && !IsPlantEconomySeed(state, plant.seedType))
+            // Ground traps are disposable lane triggers, not investments to
+            // shell. A Pumpkin on either Spikeweed variant or Potato Mine
+            // wastes sun and can obstruct the intended counter placement.
+            || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_SPIKEWEED)
+            || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_SPIKEROCK)
+            || plant.seedType == static_cast<std::uint16_t>(SeedType::SEED_POTATOMINE)
             || plant.position.col < 3 || HasPlantTypeAt(state, SeedType::SEED_PUMPKINSHELL, plant.position)) {
             continue;
         }
@@ -240,7 +246,7 @@ std::optional<VSAction> PlantAIPlanning::TryFallbackPlant(const VSGameState &sta
             || seed == SeedType::SEED_INSTANT_COFFEE || seed == SeedType::SEED_PUMPKINSHELL || seed == SeedType::SEED_ICEBERG_LETTUCE
             || seed == SeedType::SEED_TORCHWOOD || seed == SeedType::SEED_GARLIC || seed == SeedType::SEED_HYPNOSHROOM
             || seed == SeedType::SEED_POTATOMINE || seed == SeedType::SEED_SWEET_POTATO || seed == SeedType::SEED_SPIKEWEED
-            || seed == SeedType::SEED_SPIKEROCK) {
+            || seed == SeedType::SEED_SPIKEROCK || seed == SeedType::SEED_CHILLY_PEPPER) {
             continue;
         }
         const bool emergencySeed = seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO

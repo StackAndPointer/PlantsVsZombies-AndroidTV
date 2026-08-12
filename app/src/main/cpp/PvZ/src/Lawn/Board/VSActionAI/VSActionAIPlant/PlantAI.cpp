@@ -310,9 +310,12 @@ int PlantAIPlanning::PotatoMineArmingLead(const VSZombieState &zombie) {
 bool PlantAIPlanning::IsSquashTargetZombie(const VSZombieState &zombie) {
     // Bobsled and Zomboni have dedicated answers. A Squash is saved for a
     // genuine same-cell stack or a hard body that is otherwise costly to
-    // clear, rather than being thrown at a whole vehicle card.
+    // clear, rather than being thrown at a whole vehicle card. A fleeing
+    // Yeti and a Digger are also bad trades: neither is a stable frontline
+    // target worth consuming the plant side's emergency answer.
     const ZombieType type = static_cast<ZombieType>(zombie.zombieType);
-    return type != ZombieType::ZOMBIE_BOBSLED && type != ZombieType::ZOMBIE_ZAMBONI;
+    return type != ZombieType::ZOMBIE_BOBSLED && type != ZombieType::ZOMBIE_ZAMBONI
+        && type != ZombieType::ZOMBIE_YETI && type != ZombieType::ZOMBIE_DIGGER;
 }
 
 PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState &state, SeedType seedType) const {
@@ -363,12 +366,11 @@ PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState 
                 if (seedType == SeedType::SEED_SQUASH && !IsSquashTargetZombie(zombie)) {
                     continue;
                 }
-                if (seedType == SeedType::SEED_CHILLY_PEPPER
-                    && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_ZAMBONI)) {
-                    // Chilly Pepper does not damage a Zomboni.  Do not let
-                    // its large health score turn a lone vehicle into a
-                    // fake Ash target after another answer has cleared the
-                    // actual zombies in that row.
+                if (seedType == SeedType::SEED_CHILLY_PEPPER && !zombie.canBeFrozen) {
+                    // Chilly Pepper only damages zombies which the engine
+                    // can freeze at this instant. This excludes Zomboni,
+                    // intact Bobsleds, airborne units and transient phases
+                    // such as a tunneling Digger, preventing fake row hits.
                     continue;
                 }
 
@@ -434,8 +436,21 @@ bool PlantAIPlanning::IsAshTargetWorthPlaying(const VSGameState &state, SeedType
         case SeedType::SEED_CHERRYBOMB:
             return target.hitCount >= (panic ? 1 : 2) && target.totalHealth >= (panic ? 320 : 500);
         case SeedType::SEED_JALAPENO:
-        case SeedType::SEED_CHILLY_PEPPER:
             return target.hitCount >= (panic ? 1 : 3) && target.totalHealth >= (panic ? 360 : 650);
+        case SeedType::SEED_CHILLY_PEPPER: {
+            // Chilly Pepper has a 100-tick wind-up.  A current snapshot can
+            // contain valid targets which the existing firing line will
+            // remove before its row blast occurs, so do not spend it on an
+            // already-resolved fight unless this is the mowerless last call.
+            if (target.mowerlessHomeColumn) {
+                return true;
+            }
+            constexpr int kChillyWindupSeconds = 2;
+            const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, target.position.row);
+            const int survivingHealth = target.totalHealth - firepower.dps * kChillyWindupSeconds;
+            return survivingHealth > 0 && target.hitCount >= (panic ? 1 : 3)
+                && survivingHealth >= (panic ? 360 : 650);
+        }
         case SeedType::SEED_DOOMSHROOM:
             return target.hitCount >= (panic ? 2 : 4) && target.totalHealth >= (panic ? 600 : 1100);
         default:

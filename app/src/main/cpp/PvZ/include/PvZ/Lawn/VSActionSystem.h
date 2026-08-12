@@ -110,6 +110,10 @@ struct VSZombieState {
     int shieldHealth = 0;
     bool eating = false;
     bool mindControlled = false;
+    // Snapshot the engine's current freeze eligibility. Chilly Pepper has a
+    // wind-up before its row hit, so planning must not value units such as a
+    // sled team or a tunneling Digger that the engine cannot freeze or harm.
+    bool canBeFrozen = false;
     // The exact plant currently intersecting a Jalapeno Head's chew rect.
     // It lets the detached plant AI evacuate that plant before the row burn
     // is armed, without approximating engine collision geometry.
