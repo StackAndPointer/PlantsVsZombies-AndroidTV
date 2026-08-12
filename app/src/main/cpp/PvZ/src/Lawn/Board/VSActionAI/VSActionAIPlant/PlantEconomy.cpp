@@ -363,11 +363,37 @@ bool PlantAIPlanning::HasEconomyPressurePlan(const VSGameState &state) const {
     });
 }
 
+int PlantAIPlanning::PrimaryOutputCost(const VSGameState &state) const {
+    int primaryOutputCost = 0;
+    for (const VSCardState &card : state.seedBanks[0]) {
+        if (card.matchRestricted || !card.active) {
+            continue;
+        }
+        const SeedType seed = static_cast<SeedType>(card.seedType);
+        if (!IsSustainedOutputSeed(seed)) {
+            continue;
+        }
+        int outputCost = std::max(0, card.cost);
+        if (!state.isNight && PlantAIPlanning::IsDaytimeCoffeeMushroom(seed)) {
+            const auto coffee = std::find_if(state.seedBanks[0].begin(), state.seedBanks[0].end(), [](const VSCardState &candidate) {
+                return !candidate.matchRestricted && candidate.active
+                    && candidate.seedType == static_cast<std::uint16_t>(SeedType::SEED_INSTANT_COFFEE);
+            });
+            if (coffee == state.seedBanks[0].end()) {
+                continue;
+            }
+            outputCost += std::max(0, coffee->cost);
+        }
+        primaryOutputCost = std::max(primaryOutputCost, outputCost);
+    }
+    return primaryOutputCost;
+}
+
 int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const {
     bool hasGraveBuster = false;
     bool hasCrossLaneOutput = false;
     int cheapestOutputCost = std::numeric_limits<int>::max();
-    int primaryOutputCost = 0;
+    const int primaryOutputCost = PlantAIPlanning::PrimaryOutputCost(state);
     for (const VSCardState &card : state.seedBanks[0]) {
         if (card.matchRestricted || !card.active) {
             continue;
@@ -392,7 +418,6 @@ int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const
             outputCost += std::max(0, coffee->cost);
         }
         cheapestOutputCost = std::min(cheapestOutputCost, outputCost);
-        primaryOutputCost = std::max(primaryOutputCost, outputCost);
         hasCrossLaneOutput = hasCrossLaneOutput || seed == SeedType::SEED_STARFRUIT || seed == SeedType::SEED_THREEPEATER;
     }
 
@@ -439,7 +464,10 @@ int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const
     if (cheapestOutputCost == std::numeric_limits<int>::max()) {
         ++target;
     }
-    return std::clamp(target, std::max(3, compactTarget - 1), compactTarget + 1);
+    // A 225+ carry should be funded by a real extra producer, including
+    // under enhanced AI. The old +1 cap quietly erased that costly-carry
+    // branch and made Melon-pult/coffee mains stall just below their timing.
+    return std::clamp(target, std::max(3, compactTarget - 1), compactTarget + (primaryOutputCost >= 225 ? 2 : 1));
 }
 
 } // namespace vsai::detail

@@ -51,7 +51,14 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         ? std::max(3, baseOpeningIncomeTarget - 1)
         : baseOpeningIncomeTarget;
     const int minimumIncomeBeforeOutput = std::max(2, deckNeedsEarlyFirepower ? 3 : (state.rows >= 6 ? 4 : 3));
-    const int incomePlantCount = EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state));
+    const int actualIncomePlantCount = CountPlantIncome(state);
+    const int primaryOutputCost = PlantAIPlanning::PrimaryOutputCost(state);
+    // Enhanced AI advances cheap pressure by one economy step. A costly main
+    // still needs its physical producers: treating five real Sunflowers as
+    // six for a Melon/Coffee timing strands the AI below its first carry.
+    const bool enhancedCheapCarry = vsai::IsEnhancedAIEnabled() && vsai::IsSideEnabled(VSSide::Plants)
+        && primaryOutputCost > 0 && primaryOutputCost < 150;
+    const int incomePlantCount = actualIncomePlantCount + (enhancedCheapCarry ? 1 : 0);
     const int sustainedOutputCount = CountSustainedOutputPlants(state);
     const bool hasIncomeSeed = PlantAIPlanning::HasIncomeSeed(state);
     const bool hasSunshroomFiller = PlantAIPlanning::HasSunshroomSeed(state);
