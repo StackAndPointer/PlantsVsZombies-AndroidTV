@@ -11,6 +11,7 @@
 
 #include "VSActionAIStrategy.h"
 #include "VSActionAIPolicy.h"
+#include "VSActionAICardRules.h"
 
 #include "PvZ/Lawn/VSActionSystem.h"
 #include "PvZ/SexyAppFramework/Buffer.h"
@@ -569,23 +570,11 @@ int PlantAreaCounterExposure(const VSGameState &state, int row) {
 }
 
 bool IsAreaCounterSeed(SeedType seed) {
-    return seed == SeedType::SEED_SQUASH || seed == SeedType::SEED_CHERRYBOMB || seed == SeedType::SEED_JALAPENO
-        || seed == SeedType::SEED_CHILLY_PEPPER || seed == SeedType::SEED_ICESHROOM || seed == SeedType::SEED_DOOMSHROOM;
+    return HasPlantCardRole(seed, VSCardRole::PlantAreaCounter);
 }
 
 bool IsZombieBreakthroughSeed(SeedType seed) {
-    switch (seed) {
-        case SeedType::SEED_ZOMBIE_BOBSLED:
-        case SeedType::SEED_ZOMBONI:
-        case SeedType::SEED_ZOMBIE_FOOTBALL:
-        case SeedType::SEED_ZOMBIE_GARGANTUAR:
-        case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
-        case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
-        case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
-            return true;
-        default:
-            return false;
-    }
+    return HasZombieCardRole(seed, VSCardRole::ZombieBreakthrough);
 }
 
 bool HasReadyZombieBreakthroughCard(const VSGameState &state) {
@@ -595,24 +584,11 @@ bool HasReadyZombieBreakthroughCard(const VSGameState &state) {
 }
 
 bool IsHeavyZombieSeed(SeedType seed) {
-    return seed == SeedType::SEED_ZOMBIE_GARGANTUAR || seed == SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR
-        || seed == SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER;
+    return HasZombieCardRole(seed, VSCardRole::ZombieHeavy);
 }
 
 bool IsZombieGraveGuardSeed(SeedType seed) {
-    switch (seed) {
-        case SeedType::SEED_ZOMBIE_TRASHCAN:
-        case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
-        case SeedType::SEED_ZOMBIE_WALLNUT_HEAD:
-        case SeedType::SEED_ZOMBIE_TALLNUT_HEAD:
-        case SeedType::SEED_ZOMBIE_PAIL:
-        case SeedType::SEED_ZOMBIE_NEWSPAPER:
-        case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
-        case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
-            return true;
-        default:
-            return false;
-    }
+    return HasZombieCardRole(seed, VSCardRole::ZombieGraveGuard);
 }
 
 bool HasZombieGraveGuardInRow(const VSGameState &state, int row) {

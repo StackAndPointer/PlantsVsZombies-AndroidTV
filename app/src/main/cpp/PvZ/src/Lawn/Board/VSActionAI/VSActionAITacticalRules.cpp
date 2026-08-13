@@ -1,4 +1,5 @@
 #include "VSActionAITacticalRules.h"
+#include "VSActionAICardRules.h"
 
 #include <algorithm>
 
@@ -7,41 +8,11 @@
 namespace vsai::detail {
 
 bool IsPlantOneShotSeed(SeedType seed) {
-    switch (seed) {
-        case SeedType::SEED_POTATOMINE:
-        case SeedType::SEED_SQUASH:
-        case SeedType::SEED_CHERRYBOMB:
-        case SeedType::SEED_JALAPENO:
-        case SeedType::SEED_CHILLY_PEPPER:
-        case SeedType::SEED_ICESHROOM:
-        case SeedType::SEED_DOOMSHROOM:
-        case SeedType::SEED_ICEBERG_LETTUCE:
-        case SeedType::SEED_HYPNOSHROOM:
-        case SeedType::SEED_GRAVEBUSTER:
-        case SeedType::SEED_BLOVER:
-        case SeedType::SEED_TANGLEKELP:
-            return true;
-        default:
-            return false;
-    }
+    return HasPlantCardRole(seed, VSCardRole::PlantOneShot);
 }
 
 bool IsPlantImmediateCounterSeed(SeedType seed) {
-    switch (seed) {
-        case SeedType::SEED_ICEBERG_LETTUCE:
-        case SeedType::SEED_IMP_PEAR:
-        case SeedType::SEED_POTATOMINE:
-        case SeedType::SEED_SQUASH:
-        case SeedType::SEED_CHERRYBOMB:
-        case SeedType::SEED_JALAPENO:
-        case SeedType::SEED_CHILLY_PEPPER:
-        case SeedType::SEED_ICESHROOM:
-        case SeedType::SEED_DOOMSHROOM:
-        case SeedType::SEED_HYPNOSHROOM:
-            return true;
-        default:
-            return false;
-    }
+    return seed == SeedType::SEED_IMP_PEAR || HasPlantCardRole(seed, VSCardRole::PlantImmediateCounter);
 }
 
 bool CanPumpkinShellTarget(SeedType seed) {

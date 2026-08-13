@@ -1,5 +1,6 @@
 #include "ZombieCardRules.h"
 #include "../VSActionAIPolicy.h"
+#include "../VSActionAICardRules.h"
 
 #include <algorithm>
 #include <initializer_list>
@@ -392,11 +393,11 @@ ZombieTempoPolicy GetZombieTempoPolicy() {
 }
 
 bool IsZombieTargetedSeed(SeedType seed) {
-    return seed == SeedType::SEED_ZOMBIE_BUNGEE;
+    return HasZombieCardRole(seed, VSCardRole::ZombieTargeted);
 }
 
 bool IsZombieEconomySeed(SeedType seed) {
-    return seed == SeedType::SEED_ZOMBIE_GRAVESTONE || seed == SeedType::SEED_ZOMBIE_MOUND;
+    return HasZombieCardRole(seed, VSCardRole::ZombieEconomy);
 }
 
 bool IsZombieFrontlineProbeSeed(SeedType seed) {
@@ -408,17 +409,7 @@ bool IsZombieFrontlineProbeSeed(SeedType seed) {
 }
 
 bool IsZombieFastAttackSeed(SeedType seed) {
-    switch (seed) {
-        case SeedType::SEED_ZOMBIE_NORMAL:
-        case SeedType::SEED_ZOMBIE_IMP:
-        case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
-        case SeedType::SEED_ZOMBIE_DOGWALKER:
-        case SeedType::SEED_ZOMBIE_FLAG:
-        case SeedType::SEED_ZOMBIE_TRAFFIC_CONE:
-            return true;
-        default:
-            return false;
-    }
+    return HasZombieCardRole(seed, VSCardRole::ZombieFastAttack);
 }
 
 bool IsZombieMetalGraveGuard(SeedType seed) {
@@ -427,8 +418,7 @@ bool IsZombieMetalGraveGuard(SeedType seed) {
 }
 
 bool IsZombieLobbedScreenDonation(SeedType seed) {
-    return seed == SeedType::SEED_ZOMBIE_TRASHCAN || seed == SeedType::SEED_ZOMBIE_SCREEN_DOOR
-        || seed == SeedType::SEED_ZOMBIE_NEWSPAPER;
+    return HasZombieCardRole(seed, VSCardRole::ZombieLobbedScreen);
 }
 
 int ZombieGraveGuardPriority(SeedType seed) {

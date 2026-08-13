@@ -10,6 +10,7 @@
  */
 
 #include "VSActionAIThreat.h"
+#include "VSActionAICardRules.h"
 
 #include <algorithm>
 #include <cmath>
@@ -618,59 +619,11 @@ bool IsPlantEconomySeed(const VSGameState &state, std::uint16_t seedType) {
 }
 
 bool IsPlantCombatSeed(std::uint16_t seedType) {
-    switch (static_cast<SeedType>(seedType)) {
-        case SeedType::SEED_SNOWPEA:
-        case SeedType::SEED_PUFFSHROOM:
-        case SeedType::SEED_SCAREDYSHROOM:
-        case SeedType::SEED_BONK_CHOY:
-        case SeedType::SEED_CELERY_STALKER:
-        case SeedType::SEED_CHOMPER:
-        case SeedType::SEED_STARFRUIT:
-        case SeedType::SEED_REPEATER:
-        case SeedType::SEED_PEASHOOTER:
-        case SeedType::SEED_SPLITPEA:
-        case SeedType::SEED_THREEPEATER:
-        case SeedType::SEED_CACTUS:
-        case SeedType::SEED_FUMESHROOM:
-        case SeedType::SEED_GLOOMSHROOM:
-        case SeedType::SEED_SPORESHROOM:
-        case SeedType::SEED_BLOOMERANG:
-        case SeedType::SEED_CABBAGEPULT:
-        case SeedType::SEED_KERNELPULT:
-        case SeedType::SEED_MELONPULT:
-        case SeedType::SEED_WINTERMELON:
-        case SeedType::SEED_GATLINGPEA:
-        case SeedType::SEED_COBCANNON:
-        case SeedType::SEED_SPIKEWEED:
-        case SeedType::SEED_SPIKEROCK:
-            return true;
-        default:
-            return false;
-    }
+    return HasPlantCardRole(static_cast<SeedType>(seedType), VSCardRole::PlantCombat);
 }
 
 bool IsSustainedOutputSeed(SeedType seedType) {
-    switch (seedType) {
-        case SeedType::SEED_PEASHOOTER:
-        case SeedType::SEED_SNOWPEA:
-        case SeedType::SEED_REPEATER:
-        case SeedType::SEED_FUMESHROOM:
-        case SeedType::SEED_BLOOMERANG:
-        case SeedType::SEED_THREEPEATER:
-        case SeedType::SEED_CACTUS:
-        case SeedType::SEED_SPLITPEA:
-        case SeedType::SEED_STARFRUIT:
-        case SeedType::SEED_CABBAGEPULT:
-        case SeedType::SEED_KERNELPULT:
-        case SeedType::SEED_MELONPULT:
-        case SeedType::SEED_SPORESHROOM:
-        case SeedType::SEED_GATLINGPEA:
-        case SeedType::SEED_WINTERMELON:
-        case SeedType::SEED_GLOOMSHROOM:
-            return true;
-        default:
-            return false;
-    }
+    return HasPlantCardRole(seedType, VSCardRole::PlantSustainedOutput);
 }
 
 int SustainedOutputValue(SeedType seedType) {
