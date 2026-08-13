@@ -21,6 +21,7 @@ protected:
     int HeavyZombieReserve(const VSGameState &state) const;
     bool HasReadyFrontlineProbe(const VSGameState &state) const;
     bool HasReadyEarlyHeavyCommit(const VSGameState &state, const ZombieDecisionContext &context) const;
+    ZombieDecisionContext BuildDecisionContext(const VSGameState &state) const;
     std::optional<VSAction> TryTemplateSundayRelease(const VSGameState &state, const ZombieDecisionContext &context);
     bool IsEarlyHeavyCommitCard(const VSGameState &state, SeedType seed, const ZombieDecisionContext &context) const;
     std::optional<VSAction> TryBuildEconomy(const VSGameState &state, int row);

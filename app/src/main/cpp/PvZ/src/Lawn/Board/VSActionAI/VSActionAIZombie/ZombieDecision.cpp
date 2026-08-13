@@ -47,67 +47,22 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         }
     }
 
-    const ZombieDecisionContext context = BuildZombieDecisionContext(state);
-    const int actualEconomyCount = context.actualEconomyCount;
+    const int actualEconomyCount = CountZombieEconomy(state);
     if (mLastPressureEconomyCount > actualEconomyCount) {
         // A destroyed grave re-opens the pressure cadence. Rebuilding
         // from a smaller base should not force a full 15-grave rebuild
         // before the next low-cost probe is allowed.
         mLastPressureEconomyCount = actualEconomyCount - 1;
     }
+    const ZombieDecisionContext context = BuildDecisionContext(state);
     const ZombieTempoPolicy &tempo = context.tempo;
-    const int economyCount = context.economyCount;
     const int economyDeficit = context.economyDeficit;
-    int targetMarkersOnBoard = 0;
-    int zeroHealthTargetMarkers = 0;
-    for (const VSGridItemState &item : state.gridItems) {
-        if (item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)) {
-            continue;
-        }
-        ++targetMarkersOnBoard;
-        // A target which has reached zero health remains on the board for a
-        // death animation. A mDead item has already been removed from the
-        // board-owned live count, so do not count it a second time here.
-        zeroHealthTargetMarkers += !item.dead && item.health <= 0 ? 1 : 0;
-    }
-    // A third destroyed target loses VS outright. Once two are gone, the
-    // remaining live target lanes take priority over normal economy tempo.
-    // A target stays in a zero-health death animation before GridItemDie, so
-    // combine that immediate signal with Board's count after old markers have
-    // already been released from the grid-item array.
-    const int historicalTargetLosses = std::max(0, state.rows - state.liveZombieTargetCount);
-    const bool targetDefenseEmergency = targetMarkersOnBoard > 0
-        && historicalTargetLosses + zeroHealthTargetMarkers >= 2;
-    int criticalTargetRow = -1;
-    if (targetDefenseEmergency) {
-        int finalTargetThreat = std::numeric_limits<int>::min();
-        for (const VSGridItemState &item : state.gridItems) {
-            if (item.gridItemType != static_cast<std::uint16_t>(GridItemType::GRIDITEM_MP_TARGET_ZOMBIE)
-                || item.dead || item.health <= 0 || item.position.row < 0 || item.position.row >= state.rows) {
-                continue;
-            }
-            const int row = item.position.row;
-            const int threat = ProtectableGraveThreatScore(state, row) * 3
-                + ZombieGraveScreenDeficit(state, row) * 2 + ZombieFrontlineValueInRow(state, row);
-            if (criticalTargetRow < 0 || threat > finalTargetThreat) {
-                criticalTargetRow = row;
-                finalTargetThreat = threat;
-            }
-        }
-    }
-    // After two targets fall, losing any further live target ends the match.
-    // Defend the most threatened remaining target route before ordinary
-    // economy tempo, without treating the other live target routes as lost.
-    const int graveDefenseRow = criticalTargetRow >= 0 ? criticalTargetRow : MostThreatenedEconomyRow(state);
-    const int graveDefenseScore = ProtectableGraveThreatScore(state, graveDefenseRow);
-    const int graveStraightThreat = StraightProjectileThreatScore(state, graveDefenseRow);
-    const int graveLobbedThreat = LobbedProjectileThreatScore(state, graveDefenseRow);
-    const int graveScreenDeficit = ZombieGraveScreenDeficit(state, graveDefenseRow);
-    const bool hasGraveGuard = HasZombieGraveGuardInRow(state, graveDefenseRow);
-    const bool proactiveGraveScreen = NeedsProactiveGraveScreen(state, graveDefenseRow);
-    const bool graveDefenseUrgent = targetDefenseEmergency || graveDefenseScore >= 50 || graveStraightThreat >= 55
-        || graveLobbedThreat >= 70 || graveScreenDeficit >= 55 || proactiveGraveScreen;
-    const bool graveDefenseReinforcement = graveDefenseUrgent && (targetDefenseEmergency || !hasGraveGuard || graveScreenDeficit >= 55);
+    const bool targetDefenseEmergency = context.targetDefenseEmergency;
+    const int graveDefenseRow = context.graveDefenseRow;
+    const int graveStraightThreat = context.graveStraightThreat;
+    const int graveLobbedThreat = context.graveLobbedThreat;
+    const bool graveDefenseUrgent = context.graveDefenseUrgent;
+    const bool graveDefenseReinforcement = context.graveDefenseReinforcement;
     if (targetDefenseEmergency) {
         if (std::optional<VSAction> action = ZombieAIPlanning::TryProtectEconomy(state, graveDefenseRow, true)) {
             return action;
@@ -124,73 +79,26 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         }
     }
     const int activePressureRows = context.activePressureRows;
-    const int heavyZombieReserve = ZombieAIPlanning::HeavyZombieReserve(state);
-    const int heavyEconomyThreshold = context.heavyEconomyThreshold;
-    // High-cost cards are a deliberate conversion of a developed grave
-    // economy, not an opening all-in.  Start banking before the final two
-    // graves only when multiple routes already tax the plant player.
-    const bool bankForHeavy = heavyZombieReserve >= 100
-        && economyCount >= tempo.HeavyBankEconomyThreshold(state.rows, heavyEconomyThreshold)
-        && tempo.HasAttackCommitPressure(activePressureRows, 2, state.rows)
-        && CountLivePlants(state) >= state.rows && graveDefenseScore < 100;
-    const int minimumOpeningEconomy = tempo.OpeningEconomyFloor(std::min(2, std::max(1, state.rows)));
-    const int desiredOpeningRows = tempo.OpeningPressureRowTarget(std::min(3, state.rows), state.rows);
-    const bool hasReadyFrontlineProbe = ZombieAIPlanning::HasReadyFrontlineProbe(state);
-    const bool hasReadyEarlyHeavyCommit = ZombieAIPlanning::HasReadyEarlyHeavyCommit(state, context);
+    const int heavyZombieReserve = context.heavyZombieReserve;
+    const bool bankForHeavy = context.bankForHeavy;
+    const bool hasReadyFrontlineProbe = context.hasReadyFrontlineProbe;
+    const bool hasReadyEarlyHeavyCommit = context.hasReadyEarlyHeavyCommit;
+    const int desiredOpeningRows = context.desiredOpeningRows;
+    const int criticalTargetRow = context.criticalTargetRow;
     if (std::optional<VSAction> action = ZombieAIPlanning::TryTemplateSundayRelease(state, context)) {
         return action;
     }
-    bool canConvertMowerlessTargetRoute = false;
-    for (int row = 0; row < state.rows; ++row) {
-        if (EvaluateZombieLanePolicy(state, row).conversionRoute) {
-            canConvertMowerlessTargetRoute = true;
-            break;
-        }
-    }
-    // The Normal/Trashcan/Dog/Football/Giant replay opens with a single
-    // Normal immediately after its first grave. That cheap probe forces a
-    // response while the later Trashcan still has an economy worth guarding;
-    // it is not the same as a generic all-in after one grave.
-    const ZombieTemplateProfile &profile = context.templateProfile;
-    const bool armoredNormalRushTemplate = profile.Has(ZombieTemplate::ArmoredNormalRush);
-    const bool impPailSundayTemplate = profile.Has(ZombieTemplate::ImpSledSunday);
-    const bool zamboniPoleOpeningTemplate = profile.Has(ZombieTemplate::ZamboniPole);
-    // Both recorded lines establish three rear graves before their first
-    // Imp/Zomboni probe. Two graves give neither the later Sunday release
-    // nor a returned Zomboni enough economy to stay on the board.
-    const int openingPressureEconomyFloor = (impPailSundayTemplate || zamboniPoleOpeningTemplate)
-        ? tempo.OpeningEconomyFloor(std::min(3, state.rows))
-        : minimumOpeningEconomy;
-    const bool firstGraveProbe = armoredNormalRushTemplate && actualEconomyCount == 1 && activePressureRows == 0
-        && hasReadyFrontlineProbe && mLastPressureEconomyCount < actualEconomyCount;
-    // Winning zombie replays establish a few rear graves, then alternate
-    // a probe with another grave. One uninterrupted build to 15 gives the
-    // plant side a free economic opening and never creates a threat lane.
-    const int openingPressureEconomyCeiling = tempo.OpeningEconomyCeiling(state.rows + 1);
-    const bool openingPressureCadence = economyCount >= openingPressureEconomyFloor
-        && economyCount <= openingPressureEconomyCeiling && activePressureRows < desiredOpeningRows
-        && mLastPressureEconomyCount < actualEconomyCount;
-    const bool enhancedPressureRecovery = tempo.ShouldExtendPressure(economyCount, activePressureRows, state.rows);
-    const bool forceOpeningPressure = firstGraveProbe || (hasReadyFrontlineProbe
-        && (openingPressureCadence || enhancedPressureRecovery));
-    const bool preservePressureDuringRepair = economyCount >= minimumOpeningEconomy
-        && economyDeficit <= tempo.PressureRepairDeficitTolerance()
-        && activePressureRows > 0 && hasReadyFrontlineProbe;
-    const int survivingFrontRow = criticalTargetRow >= 0 ? criticalTargetRow : MostValuableZombieFrontRow(state);
-    const int survivingFrontValue = ZombieFrontlineValueInRow(state, survivingFrontRow);
-    const bool preserveSurvivingFront = criticalTargetRow >= 0
-        || (economyCount >= state.rows && activePressureRows == 1 && survivingFrontValue >= 90);
-    const bool survivingFrontGuarded = HasZombieGraveGuardInRow(state, survivingFrontRow);
-    const int economicRow = economyCount < state.rows * 2 ? ZombieAIPlanning::LeastCommittedZombieRow(state) : LeastThreatenedEconomyRow(state);
-    const bool restorationCanProceed = !graveDefenseReinforcement || hasGraveGuard;
-    const bool restorationOutweighsFront = economyDeficit >= 2 || graveDefenseScore < 100 || hasGraveGuard;
-    const bool economyRepairIsUrgent = economyCount < minimumOpeningEconomy
-        || economyDeficit >= tempo.EconomyRepairDeficitThreshold()
-        // Enhanced AI must restore a cleared midgame grave line instead of
-        // permanently preferring pressure once it has a nominal lead.
-        || (tempo.IsEnhanced() && economyDeficit > 0 && activePressureRows >= std::min(2, state.rows));
-    const bool hasReadyTemplateCommit = HasReadyZombieTemplateCommit(state, context.templateProfile, context.tempo,
-        context.actualEconomyCount, context.activePressureRows);
+    const bool canConvertMowerlessTargetRoute = context.canConvertMowerlessTargetRoute;
+    const bool forceOpeningPressure = context.forceOpeningPressure;
+    const bool preservePressureDuringRepair = context.preservePressureDuringRepair;
+    const int survivingFrontRow = context.survivingFrontRow;
+    const bool preserveSurvivingFront = context.preserveSurvivingFront;
+    const bool survivingFrontGuarded = context.survivingFrontGuarded;
+    const int economicRow = context.economicRow;
+    const bool restorationCanProceed = context.restorationCanProceed;
+    const bool restorationOutweighsFront = context.restorationOutweighsFront;
+    const bool economyRepairIsUrgent = context.economyRepairIsUrgent;
+    const bool hasReadyTemplateCommit = context.hasReadyTemplateCommit;
     if (economyDeficit > 0 && restorationCanProceed && !forceOpeningPressure
         && (!canConvertMowerlessTargetRoute || !hasReadyFrontlineProbe)
         && !hasReadyEarlyHeavyCommit && !hasReadyTemplateCommit
