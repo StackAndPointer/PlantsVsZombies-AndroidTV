@@ -16,41 +16,19 @@ std::optional<VSAction> PlantAIPlanning::TryPeaDoomTempoPressure(const VSGameSta
         return std::nullopt;
     }
 
-    const VSCardState *pea = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_PEASHOOTER);
-    if (pea == nullptr || state.plantSun - pea->cost < protectedSun) {
-        return std::nullopt;
-    }
     const int peaTarget = EffectivePlantEconomyCount(state) < 4 ? 1 : std::min(state.rows, EffectivePlantEconomyCount(state) - 2);
-    if (CountPlantType(state, SeedType::SEED_PEASHOOTER) >= peaTarget) {
-        return std::nullopt;
-    }
-
-    VSGridPosition bestTarget{};
-    int bestScore = std::numeric_limits<int>::min();
-    for (int offset = 0; offset < state.rows; ++offset) {
-        const int row = (preferredRow + offset) % state.rows;
-        if (HasPlantTypeInRow(state, SeedType::SEED_PEASHOOTER, row) || PlantAIPlanning::ShouldYieldLaneToMower(state, row)
-            || IsRangedOutputTradeUnfavorable(state, row)) {
-            continue;
-        }
-        const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_PEASHOOTER, row);
-        if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_PEASHOOTER, target)) {
-            continue;
-        }
-        const VSZombieState *closest = FindClosestZombie(state, row);
-        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
-        int score = SeedEconomyPressureOpportunity(state, SeedType::SEED_PEASHOOTER, row) * 8;
-        score += PlantEconomyValueInRow(state, row) * 2 + firepower.deficit * 13;
-        score += closest == nullptr ? 70 : (closest->positionX > 640.0f ? 80 : -120);
-        score += row == preferredRow ? 35 : 0;
-        score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_PEASHOOTER, row);
-        if (bestTarget.col < 0 || score > bestScore) {
-            bestTarget = target;
-            bestScore = score;
-        }
-    }
-    return bestTarget.col < 0 ? std::nullopt
-                              : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *pea, bestTarget, state.boardTick));
+    return TryTemplateSustainedOutput(state, preferredRow, protectedSun, {
+        .seed = SeedType::SEED_PEASHOOTER,
+        .targetCount = peaTarget,
+        .economyPressureWeight = 8,
+        .firepowerDeficitWeight = 13,
+        .noZombieScore = 70,
+        .distantZombieThreshold = 640.0f,
+        .distantZombieScore = 80,
+        .closeZombieScore = -120,
+        .preferredRowBonus = 35,
+        .requireFavorableRangedTrade = true,
+    });
 }
 
 std::optional<VSAction> PlantAIPlanning::TryStarfruitCrossfireFormation(const VSGameState &state, int preferredRow, int protectedSun) {
@@ -109,41 +87,19 @@ std::optional<VSAction> PlantAIPlanning::TryCactusSpikeweedCore(const VSGameStat
     if (!cactusSpikeweedTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
-    const VSCardState *cactus = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_CACTUS);
-    if (cactus == nullptr || state.plantSun - cactus->cost < protectedSun) {
-        return std::nullopt;
-    }
     const int cactusTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 3));
-    if (CountPlantType(state, SeedType::SEED_CACTUS) >= cactusTarget) {
-        return std::nullopt;
-    }
-
-    VSGridPosition bestTarget{};
-    int bestScore = std::numeric_limits<int>::min();
-    for (int offset = 0; offset < state.rows; ++offset) {
-        const int row = (preferredRow + offset) % state.rows;
-        if (HasPlantTypeInRow(state, SeedType::SEED_CACTUS, row) || PlantAIPlanning::ShouldYieldLaneToMower(state, row)
-            || IsRangedOutputTradeUnfavorable(state, row)) {
-            continue;
-        }
-        const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_CACTUS, row);
-        if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_CACTUS, target)) {
-            continue;
-        }
-        const VSZombieState *closest = FindClosestZombie(state, row);
-        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
-        int score = SeedEconomyPressureOpportunity(state, SeedType::SEED_CACTUS, row) * 7;
-        score += PlantEconomyValueInRow(state, row) * 2 + firepower.deficit * 13;
-        score += closest == nullptr ? 60 : (closest->positionX > 640.0f ? 75 : -125);
-        score += row == preferredRow ? 30 : 0;
-        score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_CACTUS, row);
-        if (bestTarget.col < 0 || score > bestScore) {
-            bestTarget = target;
-            bestScore = score;
-        }
-    }
-    return bestTarget.col < 0 ? std::nullopt
-                              : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *cactus, bestTarget, state.boardTick));
+    return TryTemplateSustainedOutput(state, preferredRow, protectedSun, {
+        .seed = SeedType::SEED_CACTUS,
+        .targetCount = cactusTarget,
+        .economyPressureWeight = 7,
+        .firepowerDeficitWeight = 13,
+        .noZombieScore = 60,
+        .distantZombieThreshold = 640.0f,
+        .distantZombieScore = 75,
+        .closeZombieScore = -125,
+        .preferredRowBonus = 30,
+        .requireFavorableRangedTrade = true,
+    });
 }
 
 std::optional<VSAction> PlantAIPlanning::TryKernelCeleryFormation(const VSGameState &state, int preferredRow, int protectedSun) {
@@ -154,40 +110,18 @@ std::optional<VSAction> PlantAIPlanning::TryKernelCeleryFormation(const VSGameSt
     if (!kernelCeleryTemplate || EffectivePlantEconomyCount(state) < 6 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
-    const VSCardState *kernel = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_KERNELPULT);
-    if (kernel == nullptr || state.plantSun - kernel->cost < protectedSun) {
-        return std::nullopt;
-    }
     const int kernelTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 5));
-    if (CountPlantType(state, SeedType::SEED_KERNELPULT) >= kernelTarget) {
-        return std::nullopt;
-    }
-
-    VSGridPosition bestTarget{};
-    int bestScore = std::numeric_limits<int>::min();
-    for (int offset = 0; offset < state.rows; ++offset) {
-        const int row = (preferredRow + offset) % state.rows;
-        if (HasPlantTypeInRow(state, SeedType::SEED_KERNELPULT, row) || PlantAIPlanning::ShouldYieldLaneToMower(state, row)) {
-            continue;
-        }
-        const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_KERNELPULT, row);
-        if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_KERNELPULT, target)) {
-            continue;
-        }
-        const VSZombieState *closest = FindClosestZombie(state, row);
-        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
-        int score = SeedEconomyPressureOpportunity(state, SeedType::SEED_KERNELPULT, row) * 8;
-        score += PlantEconomyValueInRow(state, row) * 2 + firepower.deficit * 12;
-        score += closest == nullptr ? 55 : (closest->positionX > 620.0f ? 70 : -85);
-        score += row == preferredRow ? 30 : 0;
-        score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_KERNELPULT, row);
-        if (bestTarget.col < 0 || score > bestScore) {
-            bestTarget = target;
-            bestScore = score;
-        }
-    }
-    return bestTarget.col < 0 ? std::nullopt
-                              : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *kernel, bestTarget, state.boardTick));
+    return TryTemplateSustainedOutput(state, preferredRow, protectedSun, {
+        .seed = SeedType::SEED_KERNELPULT,
+        .targetCount = kernelTarget,
+        .economyPressureWeight = 8,
+        .firepowerDeficitWeight = 12,
+        .noZombieScore = 55,
+        .distantZombieThreshold = 620.0f,
+        .distantZombieScore = 70,
+        .closeZombieScore = -85,
+        .preferredRowBonus = 30,
+    });
 }
 
 std::optional<VSAction> PlantAIPlanning::TryRepeaterCeleryTempo(const VSGameState &state, int preferredRow, int protectedSun) {
@@ -200,42 +134,20 @@ std::optional<VSAction> PlantAIPlanning::TryRepeaterCeleryTempo(const VSGameStat
         return std::nullopt;
     }
 
-    const VSCardState *repeater = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_REPEATER);
-    const int totalCost = repeater == nullptr ? std::numeric_limits<int>::max() : PlantAIPlanning::EffectivePlantPlayCost(state, *repeater);
-    if (repeater == nullptr || totalCost == std::numeric_limits<int>::max() || state.plantSun - totalCost < protectedSun) {
-        return std::nullopt;
-    }
     const int firingLineTarget = std::min(state.rows, std::max(2, EffectivePlantEconomyCount(state) - 1));
-    if (CountPlantType(state, SeedType::SEED_REPEATER) >= firingLineTarget) {
-        return std::nullopt;
-    }
-
-    VSGridPosition bestTarget{};
-    int bestScore = std::numeric_limits<int>::min();
-    for (int offset = 0; offset < state.rows; ++offset) {
-        const int row = (preferredRow + offset) % state.rows;
-        if (HasPlantTypeInRow(state, SeedType::SEED_REPEATER, row) || PlantAIPlanning::ShouldYieldLaneToMower(state, row)
-            || IsRangedOutputTradeUnfavorable(state, row)) {
-            continue;
-        }
-        const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_REPEATER, row);
-        if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_REPEATER, target)) {
-            continue;
-        }
-        const VSZombieState *closest = FindClosestZombie(state, row);
-        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
-        int score = SeedEconomyPressureOpportunity(state, SeedType::SEED_REPEATER, row) * 8;
-        score += PlantEconomyValueInRow(state, row) * 2 + firepower.deficit * 13;
-        score += closest == nullptr ? 70 : (closest->positionX > 640.0f ? 80 : -135);
-        score += row == preferredRow ? 35 : 0;
-        score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_REPEATER, row);
-        if (bestTarget.col < 0 || score > bestScore) {
-            bestTarget = target;
-            bestScore = score;
-        }
-    }
-    return bestTarget.col < 0 ? std::nullopt
-                              : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *repeater, bestTarget, state.boardTick));
+    return TryTemplateSustainedOutput(state, preferredRow, protectedSun, {
+        .seed = SeedType::SEED_REPEATER,
+        .targetCount = firingLineTarget,
+        .economyPressureWeight = 8,
+        .firepowerDeficitWeight = 13,
+        .noZombieScore = 70,
+        .distantZombieThreshold = 640.0f,
+        .distantZombieScore = 80,
+        .closeZombieScore = -135,
+        .preferredRowBonus = 35,
+        .requireFavorableRangedTrade = true,
+        .useEffectiveCost = true,
+    });
 }
 
 std::optional<VSAction> PlantAIPlanning::TryMelonMineTempo(const VSGameState &state, int preferredRow, int protectedSun) {
@@ -247,41 +159,19 @@ std::optional<VSAction> PlantAIPlanning::TryMelonMineTempo(const VSGameState &st
         return std::nullopt;
     }
 
-    const VSCardState *melon = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_MELONPULT);
-    const int totalCost = melon == nullptr ? std::numeric_limits<int>::max() : PlantAIPlanning::EffectivePlantPlayCost(state, *melon);
-    if (melon == nullptr || totalCost == std::numeric_limits<int>::max() || state.plantSun - totalCost < protectedSun) {
-        return std::nullopt;
-    }
     const int firingLineTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 2));
-    if (CountPlantType(state, SeedType::SEED_MELONPULT) >= firingLineTarget) {
-        return std::nullopt;
-    }
-
-    VSGridPosition bestTarget{};
-    int bestScore = std::numeric_limits<int>::min();
-    for (int offset = 0; offset < state.rows; ++offset) {
-        const int row = (preferredRow + offset) % state.rows;
-        if (HasPlantTypeInRow(state, SeedType::SEED_MELONPULT, row) || PlantAIPlanning::ShouldYieldLaneToMower(state, row)) {
-            continue;
-        }
-        const VSGridPosition target = PlantAIPlanning::FindSustainedOutputCell(state, SeedType::SEED_MELONPULT, row);
-        if (target.col < 0 || target.row < 0 || !IsPlantPlacementSafe(state, SeedType::SEED_MELONPULT, target)) {
-            continue;
-        }
-        const VSZombieState *closest = FindClosestZombie(state, row);
-        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
-        int score = SeedEconomyPressureOpportunity(state, SeedType::SEED_MELONPULT, row) * 9;
-        score += PlantEconomyValueInRow(state, row) * 2 + firepower.deficit * 12;
-        score += closest == nullptr ? 60 : (closest->positionX > 620.0f ? 70 : -80);
-        score += row == preferredRow ? 35 : 0;
-        score += StrategyBonus(state, VSSide::Plants, SeedType::SEED_MELONPULT, row);
-        if (bestTarget.col < 0 || score > bestScore) {
-            bestTarget = target;
-            bestScore = score;
-        }
-    }
-    return bestTarget.col < 0 ? std::nullopt
-                              : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *melon, bestTarget, state.boardTick));
+    return TryTemplateSustainedOutput(state, preferredRow, protectedSun, {
+        .seed = SeedType::SEED_MELONPULT,
+        .targetCount = firingLineTarget,
+        .economyPressureWeight = 9,
+        .firepowerDeficitWeight = 12,
+        .noZombieScore = 60,
+        .distantZombieThreshold = 620.0f,
+        .distantZombieScore = 70,
+        .closeZombieScore = -80,
+        .preferredRowBonus = 35,
+        .useEffectiveCost = true,
+    });
 }
 
 std::optional<VSAction> PlantAIPlanning::TryRepeaterTempoPressure(const VSGameState &state, int preferredRow, int protectedSun) {

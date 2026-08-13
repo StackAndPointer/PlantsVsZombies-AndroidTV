@@ -47,7 +47,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     }
     for (const VSResourceState &resource : state.resources) {
         if (resource.side == VSSide::Zombies && !resource.dead && !resource.beingCollected) {
-            return VSAction{.side = VSSide::Zombies, .kind = VSActionKind::CollectResource, .objectId = resource.id, .sequence = ++mSequence};
+            return MakeCollectResourceAction(VSSide::Zombies, resource.id);
         }
     }
 

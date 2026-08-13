@@ -27,6 +27,23 @@ protected:
         bool requireExactRow = false;
     };
 
+    // Shared policy for template tactics that differ only in their carry
+    // card, economy gate, and score coefficients. Deck-specific gates remain
+    // in their tactics so this cannot replace formation-specific behavior.
+    struct TemplateOutputPolicy {
+        SeedType seed = SeedType::SEED_NONE;
+        int targetCount = 0;
+        int economyPressureWeight = 0;
+        int firepowerDeficitWeight = 0;
+        int noZombieScore = 0;
+        float distantZombieThreshold = 0.0f;
+        int distantZombieScore = 0;
+        int closeZombieScore = 0;
+        int preferredRowBonus = 0;
+        bool requireFavorableRangedTrade = false;
+        bool useEffectiveCost = false;
+    };
+
     // Match-local memory: Reset clears the opening gate and the short ash
     // history; OnActionResult advances each only after an applied action.
     bool mOpeningEconomyPlaced = false;
@@ -92,6 +109,8 @@ protected:
     bool HasReadySustainedOutputCard(const VSGameState &state, int protectedSun) const;
     std::optional<VSAction> TryRecycleIncomeForOutput(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TrySustainedOutputPlant(const VSGameState &state, int row, SustainedOutputPolicy policy);
+    std::optional<VSAction> TryTemplateSustainedOutput(const VSGameState &state, int preferredRow, int protectedSun,
+        TemplateOutputPolicy policy);
     bool HasIncomeSeed(const VSGameState &state) const;
     bool HasSunshroomSeed(const VSGameState &state) const;
     static int EffectivePlantEconomyCount(const VSGameState &state);

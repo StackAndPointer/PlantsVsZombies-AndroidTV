@@ -24,7 +24,7 @@ std::optional<VSAction> PlantAI::TryImmediateMaintenancePhase(const VSGameState 
     }
     for (const VSResourceState &resource : state.resources) {
         if (resource.side == VSSide::Plants && !resource.dead && !resource.beingCollected) {
-            return VSAction{.side = VSSide::Plants, .kind = VSActionKind::CollectResource, .objectId = resource.id, .sequence = ++mSequence};
+            return MakeCollectResourceAction(VSSide::Plants, resource.id);
         }
     }
     if (std::optional<VSAction> action = TryBlover(state, MostUrgentCounterRow(state))) {
@@ -51,6 +51,17 @@ PlantDecisionResult PlantAI::TryOpeningOutputPhase(const VSGameState &state, con
     return {};
 }
 
+std::optional<VSAction> PlantAI::TryFirstTemplateTactic(const VSGameState &state, const PlantDecisionContext &context,
+    std::initializer_list<TemplateTacticStep> tactics) {
+    for (const TemplateTacticStep step : tactics) {
+        const int preferredRow = step.useFirepowerRow ? context.firepowerRow : context.zombieEconomyStrikeRow;
+        if (std::optional<VSAction> action = (this->*step.tactic)(state, preferredRow, context.protectedSun)) {
+            return action;
+        }
+    }
+    return std::nullopt;
+}
+
 PlantDecisionResult PlantAI::TryTemplatePressurePhase(const VSGameState &state, const PlantDecisionContext &context) {
     const bool mustFundMainCarry = context.hasIncomeSeed && context.actualIncomePlantCount < context.openingIncomeTarget
         && !context.immediateCounterThreat && !context.openingNeedsFirepower && !context.pressureOutrunsFirepower
@@ -67,82 +78,44 @@ PlantDecisionResult PlantAI::TryTemplatePressurePhase(const VSGameState &state, 
                 return {.handled = true, .action = action};
             }
         }
-        if (std::optional<VSAction> action = TryMelonScaredySupport(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryScaredyCoffeeTempo(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryPeaPuffTempoOpening(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryPeaCeleryAshTempo(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TrySporePuffTempoPressure(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryPeaCabbageTorchTempo(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
+        if (std::optional<VSAction> action = TryFirstTemplateTactic(state, context, {
+                {&PlantAI::TryMelonScaredySupport, false},
+                {&PlantAI::TryScaredyCoffeeTempo, false},
+                {&PlantAI::TryPeaPuffTempoOpening, false},
+                {&PlantAI::TryPeaCeleryAshTempo, false},
+                {&PlantAI::TrySporePuffTempoPressure, false},
+                {&PlantAI::TryPeaCabbageTorchTempo, false},
+            })) {
             return {.handled = true, .action = action};
         }
     }
     if (!context.immediateCounterThreat && !context.openingNeedsFirepower) {
-        if (std::optional<VSAction> action = TryFumeDoomPressure(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TrySporeShellPressure(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryBoomerangControlPressure(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryBoomerangGarlicFormation(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryThreepeaterPuffFormation(state, context.firepowerRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TrySnowpeaPuffMagnetPressure(state, context.firepowerRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TrySnowpeaBonkFormation(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryPeaDoomTempoPressure(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryStarfruitCrossfireFormation(state, context.firepowerRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryCactusSpikeweedCore(state, context.firepowerRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryKernelCeleryFormation(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryRepeaterCeleryTempo(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryMelonMineTempo(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryRepeaterTempoPressure(state, context.zombieEconomyStrikeRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryMagnetShroom(state, context.firepowerRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryScaredyMelonSupport(state, context.firepowerRow, context.protectedSun)) {
-            return {.handled = true, .action = action};
-        }
-        if (std::optional<VSAction> action = TryScaredyPuffDoomPressure(state, context.firepowerRow, context.protectedSun)) {
+        if (std::optional<VSAction> action = TryFirstTemplateTactic(state, context, {
+                {&PlantAI::TryFumeDoomPressure, false},
+                {&PlantAI::TrySporeShellPressure, false},
+                {&PlantAI::TryBoomerangControlPressure, false},
+                {&PlantAI::TryBoomerangGarlicFormation, false},
+                {&PlantAI::TryThreepeaterPuffFormation, true},
+                {&PlantAI::TrySnowpeaPuffMagnetPressure, true},
+                {&PlantAI::TrySnowpeaBonkFormation, false},
+                {&PlantAI::TryPeaDoomTempoPressure, false},
+                {&PlantAI::TryStarfruitCrossfireFormation, true},
+                {&PlantAI::TryCactusSpikeweedCore, true},
+                {&PlantAI::TryKernelCeleryFormation, false},
+                {&PlantAI::TryRepeaterCeleryTempo, false},
+                {&PlantAI::TryMelonMineTempo, false},
+                {&PlantAI::TryRepeaterTempoPressure, false},
+                {&PlantAI::TryMagnetShroom, true},
+                {&PlantAI::TryScaredyMelonSupport, true},
+                {&PlantAI::TryScaredyPuffDoomPressure, true},
+            })) {
             return {.handled = true, .action = action};
         }
         if (context.hasActiveZombie) {
-            if (std::optional<VSAction> action = TryStarfruitPuffPressure(state, context.firepowerRow, context.protectedSun)) {
-                return {.handled = true, .action = action};
-            }
-            if (std::optional<VSAction> action = TryPeaPuffPressure(state, context.firepowerRow, context.protectedSun)) {
+            if (std::optional<VSAction> action = TryFirstTemplateTactic(state, context, {
+                    {&PlantAI::TryStarfruitPuffPressure, true},
+                    {&PlantAI::TryPeaPuffPressure, true},
+                })) {
                 return {.handled = true, .action = action};
             }
         }

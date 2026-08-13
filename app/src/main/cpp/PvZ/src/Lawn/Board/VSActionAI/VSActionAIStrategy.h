@@ -98,6 +98,15 @@ protected:
         };
     }
 
+    VSAction MakeCollectResourceAction(VSSide side, std::uint32_t objectId) {
+        return {
+            .side = side,
+            .kind = VSActionKind::CollectResource,
+            .objectId = objectId,
+            .sequence = ++mSequence,
+        };
+    }
+
 public:
     void Reset() override {
         mSequence = 0;
