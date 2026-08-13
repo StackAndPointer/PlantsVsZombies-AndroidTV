@@ -148,6 +148,101 @@ void ResetBuiltinAIDraftSession() {
     GetBuiltinAIDraftSession() = {};
 }
 
+int BanBaseThreat(bool targetsZombies, SeedType seed) {
+    if (targetsZombies) {
+        switch (seed) {
+            case SeedType::SEED_ZOMBIE_GARGANTUAR:
+            case SeedType::SEED_ZOMBIE_GIGA_GARGANTUAR:
+            case SeedType::SEED_ZOMBIE_GIGA_FOOTBALL:
+                return 560;
+            case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER:
+                return 525;
+            case SeedType::SEED_ZOMBIE_DANCER:
+            case SeedType::SEED_ZOMBIE_BUNGEE:
+            case SeedType::SEED_ZOMBIE_DIGGER:
+                return 470;
+            case SeedType::SEED_ZOMBIE_NORMAL:
+                return 430;
+            case SeedType::SEED_ZOMBIE_DOGWALKER:
+                return 545;
+            case SeedType::SEED_ZOMBONI:
+            case SeedType::SEED_ZOMBIE_BOBSLED:
+            case SeedType::SEED_ZOMBIE_PEA_HEAD:
+            case SeedType::SEED_ZOMBIE_NEWSPAPER:
+                return 390;
+            case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
+            case SeedType::SEED_ZOMBIE_PAIL:
+            case SeedType::SEED_ZOMBIE_TRASHCAN:
+            case SeedType::SEED_ZOMBIE_FOOTBALL:
+                return 305;
+            case SeedType::SEED_ZOMBIE_IMP:
+            case SeedType::SEED_ZOMBIE_SUPER_FAN_IMP:
+            case SeedType::SEED_ZOMBIE_SQUASH_HEAD:
+                return 240;
+            default:
+                return 90;
+        }
+    }
+
+    switch (seed) {
+        case SeedType::SEED_PEASHOOTER:
+        case SeedType::SEED_REPEATER:
+            return 560;
+        case SeedType::SEED_POTATOMINE:
+        case SeedType::SEED_SQUASH:
+        case SeedType::SEED_CHERRYBOMB:
+            return 535;
+        case SeedType::SEED_SNOWPEA:
+        case SeedType::SEED_SCAREDYSHROOM:
+        case SeedType::SEED_MELONPULT:
+            return 435;
+        case SeedType::SEED_JALAPENO:
+        case SeedType::SEED_CELERY_STALKER:
+            return 405;
+        case SeedType::SEED_STARFRUIT:
+            return 400;
+        case SeedType::SEED_BLOOMERANG:
+        case SeedType::SEED_CABBAGEPULT:
+        case SeedType::SEED_SPORESHROOM:
+            return 295;
+        case SeedType::SEED_ICESHROOM:
+        case SeedType::SEED_HYPNOSHROOM:
+        case SeedType::SEED_DOOMSHROOM:
+        case SeedType::SEED_CHOMPER:
+            return 270;
+        case SeedType::SEED_KERNELPULT:
+            return 185;
+        case SeedType::SEED_WALLNUT:
+        case SeedType::SEED_SUNSHROOM:
+        case SeedType::SEED_ICEBERG_LETTUCE:
+        case SeedType::SEED_PUMPKINSHELL:
+            return 145;
+        default:
+            return 75;
+    }
+}
+
+std::span<const SeedType> PlantBanPriority() {
+    static constexpr SeedType kPriority[] = {
+        SeedType::SEED_ZOMBIE_DOGWALKER, SeedType::SEED_ZOMBIE_NORMAL, SeedType::SEED_ZOMBIE_DANCER,
+        SeedType::SEED_ZOMBIE_PEA_HEAD, SeedType::SEED_ZOMBIE_NEWSPAPER, SeedType::SEED_ZOMBIE_IMP,
+        SeedType::SEED_ZOMBIE_SCREEN_DOOR, SeedType::SEED_ZOMBIE_BUNGEE, SeedType::SEED_ZOMBIE_DIGGER,
+        SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER, SeedType::SEED_ZOMBIE_SUNDAY_EDITION,
+        SeedType::SEED_ZOMBIE_GARGANTUAR, SeedType::SEED_ZOMBIE_POGO,
+    };
+    return kPriority;
+}
+
+std::span<const SeedType> ZombieBanPriority() {
+    static constexpr SeedType kPriority[] = {
+        SeedType::SEED_STARFRUIT, SeedType::SEED_REPEATER, SeedType::SEED_POTATOMINE,
+        SeedType::SEED_CELERY_STALKER, SeedType::SEED_CHERRYBOMB, SeedType::SEED_JALAPENO,
+        SeedType::SEED_SQUASH, SeedType::SEED_COBCANNON, SeedType::SEED_SNOWPEA,
+        SeedType::SEED_PUMPKINSHELL, SeedType::SEED_ICEBERG_LETTUCE, SeedType::SEED_TORCHWOOD,
+    };
+    return kPriority;
+}
+
 bool IsPlantTempoMushroom(SeedType seed) {
     return seed == SeedType::SEED_PUFFSHROOM;
 }

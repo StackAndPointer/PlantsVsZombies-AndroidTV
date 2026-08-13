@@ -24,6 +24,12 @@ int BanDatabasePriority(bool targetsZombies, SeedType seed, std::uint32_t tick);
 BanDatabaseLoadState GetBanDatabaseLoadState();
 void ResetBanDatabase();
 
+// Draft roles and Ban priorities rank selectable cards before the chooser
+// applies its live engine legality and UI state checks.
+int BanBaseThreat(bool targetsZombies, SeedType seed);
+std::span<const SeedType> PlantBanPriority();
+std::span<const SeedType> ZombieBanPriority();
+
 // This session owns only cross-chooser template selection. The chooser owns
 // engine legality, input routing, animations, and applying the selected seed.
 struct BuiltinAIDraftSession {
@@ -40,6 +46,8 @@ int &LastBuiltinAIPlantProfile();
 int &LastBuiltinAIZombieProfile();
 void ResetBuiltinAIDraftSession();
 
+// These are draft composition rules, not runtime plant roles or replay deck
+// archetypes. See VSActionAICardRules and VSActionAIStrategy respectively.
 bool IsPlantTempoMushroom(SeedType seed);
 bool IsPlantCarrySeed(SeedType seed);
 bool IsPeaMainDamageSeed(SeedType seed);
