@@ -28,6 +28,7 @@ protected:
     std::optional<VSAction> TryProtectEconomy(const VSGameState &state, int row, bool force = false);
     std::optional<VSAction> TryCounterLobbedGravePressure(const VSGameState &state,
         const ZombieDecisionContext &context, int row);
+    std::optional<VSGridPosition> FindTargetForCard(const VSGameState &state, const VSCardState &card, int row) const;
     int LeastCommittedZombieRow(const VSGameState &state) const;
     static int BungeeTargetScore(const VSGameState &state, const VSPlantState &plant, int row);
     static int CardScore(const VSCardState &card, const VSGameState &state, const ZombieDecisionContext &context,

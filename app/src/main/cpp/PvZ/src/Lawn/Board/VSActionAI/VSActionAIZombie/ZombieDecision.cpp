@@ -111,60 +111,6 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
 
     const bool saveForHeavy = bankForHeavy && state.zombieBrains < heavyZombieReserve;
 
-    auto FindTarget = [&](const VSCardState &card, int row) -> std::optional<VSGridPosition> {
-        const SeedType seed = static_cast<SeedType>(card.seedType);
-        if (seed == SeedType::SEED_ZOMBIE_GRAVESTONE) {
-            const VSGridPosition target = FindZombieEconomyCell(state, row);
-            return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
-        }
-        if (seed == SeedType::SEED_ZOMBIE_MOUND) {
-            const VSGridPosition target = FindZombieMoundCell(state, row);
-            return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
-        }
-        if (seed == SeedType::SEED_ZOMBIE_CATAPULT && HasMindControlledZombieInRow(state, row)) {
-            // A hypnotized zombie turns the catapult lane into friendly
-            // fire. Let that lane resolve before adding a ranged unit.
-            return std::nullopt;
-        }
-        // A thrown projectile passes a slow metal screen rather than
-        // trading into it. Spore-shroom uses the same trajectory class.
-        const bool hasLobbedPlant = ZombieAIPlanning::HasLobbedPlantInRow(state, row);
-        if (hasLobbedPlant && IsZombieLobbedScreenDonation(seed)) {
-            return std::nullopt;
-        }
-        if (seed == SeedType::SEED_ZOMBIE_TRASHCAN || seed == SeedType::SEED_ZOMBIE_TALLNUT_HEAD) {
-            // Trashcan advances too slowly to be an attacking probe. Its
-            // job is to absorb direct fire before it reaches a grave;
-            // Tall-nut Head takes the same role in mound decks.
-            const int screenDeficit = ZombieGraveScreenDeficit(state, row);
-            if ((!NeedsProactiveGraveScreen(state, row) && ProtectableGraveThreatScore(state, row) < 100
-                 && StraightProjectileThreatScore(state, row) < 100 && screenDeficit < 120)
-                || (HasZombieGraveGuardInRow(state, row) && screenDeficit < 120)) {
-                return std::nullopt;
-            }
-        }
-        if (IsZombieTargetedSeed(seed)) {
-            const VSPlantState *targetPlant = nullptr;
-            int targetScore = std::numeric_limits<int>::min();
-            for (const VSPlantState &plant : state.plants) {
-                if (IsDeadOrOutside(plant) || plant.position.row != row) {
-                    continue;
-                }
-                const int plantScore = ZombieAIPlanning::BungeeTargetScore(state, plant, row);
-                if (plantScore == std::numeric_limits<int>::min()) {
-                    continue;
-                }
-                if (targetPlant == nullptr || plantScore > targetScore) {
-                    targetPlant = &plant;
-                    targetScore = plantScore;
-                }
-            }
-            return targetPlant == nullptr ? std::nullopt : std::optional<VSGridPosition>(targetPlant->position);
-        }
-        const VSGridPosition target = FindZombieCell(state, seed, row);
-        return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
-    };
-
     const VSCardState *bestCard = nullptr;
     int targetRow = graveDefenseUrgent ? graveDefenseRow : MostVulnerablePlantRow(state);
     int bestScore = std::numeric_limits<int>::min();
@@ -192,7 +138,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         }
         for (int row = 0; row < state.rows; ++row) {
             const ZombieLanePolicy lane = EvaluateZombieLanePolicy(state, row);
-            const std::optional<VSGridPosition> target = FindTarget(card, row);
+            const std::optional<VSGridPosition> target = FindTargetForCard(state, card, row);
             if (!target.has_value() || !IsCardReadyForZombieTarget(card, state, *target)) {
                 continue;
             }
@@ -327,7 +273,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
         return std::nullopt;
     }
 
-    const std::optional<VSGridPosition> target = FindTarget(*bestCard, targetRow);
+    const std::optional<VSGridPosition> target = FindTargetForCard(state, *bestCard, targetRow);
     if (!target.has_value()) {
         return std::nullopt;
     }

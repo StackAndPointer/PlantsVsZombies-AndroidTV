@@ -47,4 +47,50 @@ int ZombieAIPlanning::BungeeTargetScore(const VSGameState &state, const VSPlantS
     return score;
 }
 
+std::optional<VSGridPosition> ZombieAIPlanning::FindTargetForCard(const VSGameState &state, const VSCardState &card, int row) const {
+    const SeedType seed = static_cast<SeedType>(card.seedType);
+    if (seed == SeedType::SEED_ZOMBIE_GRAVESTONE) {
+        const VSGridPosition target = FindZombieEconomyCell(state, row);
+        return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
+    }
+    if (seed == SeedType::SEED_ZOMBIE_MOUND) {
+        const VSGridPosition target = FindZombieMoundCell(state, row);
+        return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
+    }
+    if (seed == SeedType::SEED_ZOMBIE_CATAPULT && HasMindControlledZombieInRow(state, row)) {
+        return std::nullopt;
+    }
+    if (HasLobbedPlantInRow(state, row) && IsZombieLobbedScreenDonation(seed)) {
+        return std::nullopt;
+    }
+    if (seed == SeedType::SEED_ZOMBIE_TRASHCAN || seed == SeedType::SEED_ZOMBIE_TALLNUT_HEAD) {
+        const int screenDeficit = ZombieGraveScreenDeficit(state, row);
+        if ((!NeedsProactiveGraveScreen(state, row) && ProtectableGraveThreatScore(state, row) < 100
+             && StraightProjectileThreatScore(state, row) < 100 && screenDeficit < 120)
+            || (HasZombieGraveGuardInRow(state, row) && screenDeficit < 120)) {
+            return std::nullopt;
+        }
+    }
+    if (IsZombieTargetedSeed(seed)) {
+        const VSPlantState *targetPlant = nullptr;
+        int targetScore = std::numeric_limits<int>::min();
+        for (const VSPlantState &plant : state.plants) {
+            if (IsDeadOrOutside(plant) || plant.position.row != row) {
+                continue;
+            }
+            const int plantScore = BungeeTargetScore(state, plant, row);
+            if (plantScore == std::numeric_limits<int>::min()) {
+                continue;
+            }
+            if (targetPlant == nullptr || plantScore > targetScore) {
+                targetPlant = &plant;
+                targetScore = plantScore;
+            }
+        }
+        return targetPlant == nullptr ? std::nullopt : std::optional<VSGridPosition>(targetPlant->position);
+    }
+    const VSGridPosition target = FindZombieCell(state, seed, row);
+    return target.col >= 0 && target.row >= 0 ? std::optional<VSGridPosition>(target) : std::nullopt;
+}
+
 } // namespace vsai::detail
