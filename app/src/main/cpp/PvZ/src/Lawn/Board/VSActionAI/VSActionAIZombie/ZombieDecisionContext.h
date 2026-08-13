@@ -3,7 +3,27 @@
 
 #include "ZombieCardRules.h"
 
+#include <array>
+
 namespace vsai::detail {
+
+struct ZombieRowScoreFacts {
+    PlantLaneAssessment lane;
+    int plantCount = 0;
+    int zombieCount = 0;
+    int graveProjectileThreat = 0;
+    int lobbedProjectileThreat = 0;
+    int graveScreenDeficit = 0;
+    int sustainedOutput = 0;
+    int economyValue = 0;
+    int areaCounterExposure = 0;
+    bool hasSnowPea = false;
+    bool hasBonkChoy = false;
+    bool hasWallnut = false;
+    bool hasPumpkinShell = false;
+    bool hasLobbedPlant = false;
+    bool hasGraveGuard = false;
+};
 
 struct ZombieDecisionContext {
     ZombieTempoPolicy tempo;
@@ -30,6 +50,16 @@ struct ZombieDecisionContext {
     int survivingFrontRow = -1;
     int survivingFrontValue = 0;
     int economicRow = -1;
+    int livePlantCount = 0;
+    int peaHeadCount = 0;
+    std::array<ZombieRowScoreFacts, 6> rowScoreFacts{};
+    bool hasPlants = false;
+    bool plantHasMagnet = false;
+    bool plantHasPeaCarry = false;
+    bool plantHasShortPult = false;
+    bool plantHasLobbedCard = false;
+    bool plantHasNutCard = false;
+    bool plantHasHighValueCarryCard = false;
     bool targetDefenseEmergency = false;
     bool graveDefenseUrgent = false;
     bool graveDefenseReinforcement = false;

@@ -12,43 +12,33 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
     const SeedType seed = static_cast<SeedType>(card.seedType);
     const ZombieTempoPolicy &tempo = context.tempo;
     const int economyCount = context.economyCount;
-    const bool hasPlants = std::any_of(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) { return !IsDeadOrOutside(plant); });
-    const bool hasSnowPea = HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, targetRow);
-    const bool hasBonkChoy = HasPlantTypeInRow(state, SeedType::SEED_BONK_CHOY, targetRow);
-    const bool hasWallnut = HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, targetRow) || HasPlantTypeInRow(state, SeedType::SEED_TALLNUT, targetRow);
-    const bool hasPumpkinShell = HasPlantTypeInRow(state, SeedType::SEED_PUMPKINSHELL, targetRow);
-    const int plantCount = CountPlantsInRow(state, targetRow);
-    const int zombieCount = CountZombiesInRow(state, targetRow);
-    const int graveProjectileThreat = StraightProjectileThreatScore(state, targetRow);
-    const int lobbedProjectileThreat = LobbedProjectileThreatScore(state, targetRow);
-    const bool hasLobbedPlant = ZombieAIPlanning::HasLobbedPlantInRow(state, targetRow);
-    const int graveScreenDeficit = ZombieGraveScreenDeficit(state, targetRow);
-    const bool hasGraveGuard = HasZombieGraveGuardInRow(state, targetRow);
+    const ZombieRowScoreFacts &rowFacts = context.rowScoreFacts[static_cast<std::size_t>(targetRow)];
+    const bool hasPlants = context.hasPlants;
+    const bool hasSnowPea = rowFacts.hasSnowPea;
+    const bool hasBonkChoy = rowFacts.hasBonkChoy;
+    const bool hasWallnut = rowFacts.hasWallnut;
+    const bool hasPumpkinShell = rowFacts.hasPumpkinShell;
+    const int plantCount = rowFacts.plantCount;
+    const int zombieCount = rowFacts.zombieCount;
+    const int graveProjectileThreat = rowFacts.graveProjectileThreat;
+    const int lobbedProjectileThreat = rowFacts.lobbedProjectileThreat;
+    const bool hasLobbedPlant = rowFacts.hasLobbedPlant;
+    const int graveScreenDeficit = rowFacts.graveScreenDeficit;
+    const bool hasGraveGuard = rowFacts.hasGraveGuard;
     const int economyTarget = context.economyTarget;
     const int heavyEconomyThreshold = context.heavyEconomyThreshold;
-    const int sustainedOutput = SustainedOutputScoreInRow(state, targetRow);
-    const int economyValue = PlantEconomyValueInRow(state, targetRow);
-    const PlantLaneAssessment targetLane = AssessPlantLane(state, targetRow);
-    const int areaCounterExposure = PlantAreaCounterExposure(state, targetRow);
-    const bool plantHasMagnet = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MAGNETSHROOM)
-        || CountPlantType(state, SeedType::SEED_MAGNETSHROOM) > 0;
-    const bool plantHasPeaCarry = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
-        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
-    const bool plantHasShortPult = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM)
-        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
-    const bool plantHasLobbedCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CABBAGEPULT)
-        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_KERNELPULT) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
-        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WINTERMELON) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
-        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
-    const bool plantHasNutCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
-        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL);
-    const bool plantHasHighValueCarryCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
-        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT)
-        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
+    const int sustainedOutput = rowFacts.sustainedOutput;
+    const int economyValue = rowFacts.economyValue;
+    const PlantLaneAssessment &targetLane = rowFacts.lane;
+    const int areaCounterExposure = rowFacts.areaCounterExposure;
+    const bool plantHasMagnet = context.plantHasMagnet;
+    const bool plantHasPeaCarry = context.plantHasPeaCarry;
+    const bool plantHasShortPult = context.plantHasShortPult;
+    const bool plantHasLobbedCard = context.plantHasLobbedCard;
+    const bool plantHasNutCard = context.plantHasNutCard;
+    const bool plantHasHighValueCarryCard = context.plantHasHighValueCarryCard;
     const ZombieTemplateProfile &profile = context.templateProfile;
-    const int peaHeadCount = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(), [](const VSZombieState &zombie) {
-        return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
-    }));
+    const int peaHeadCount = context.peaHeadCount;
     const int templatePhaseBonus = ZombieTemplatePhaseBonus(profile, tempo, seed, context.actualEconomyCount,
         context.activePressureRows, zombieCount, state.rows);
     const ZombieTemplateTacticalState templateState{
@@ -138,7 +128,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
                 const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || hasPumpkinShell || sustainedOutput >= 80 || economyValue >= 120;
                 const bool earlyHeavyCommit = economyCount >= tempo.HeavyCommitEconomyThreshold(state.rows, heavyEconomyThreshold)
                     && tempo.HasAttackCommitPressure(context.activePressureRows, 2, state.rows)
-                    && CountLivePlants(state) >= state.rows && areaCounterExposure < 120;
+                    && context.livePlantCount >= state.rows && areaCounterExposure < 120;
                 // This exact ladder/pole recording releases a Giga Pole
                 // notably earlier than the generic finisher plan, but only
                 // after two low-cost lanes are live and a nut line gives it
@@ -161,7 +151,7 @@ int ZombieAIPlanning::CardScore(const VSCardState &card, const VSGameState &stat
             // Ash cluster merely because friendly zombies are already there.
             {
                 const bool hasBreakthroughTarget = plantCount >= 3 || hasWallnut || sustainedOutput >= 100 || economyValue >= 150;
-                const bool hasBoardInvestment = CountLivePlants(state) >= state.rows;
+                const bool hasBoardInvestment = context.livePlantCount >= state.rows;
                 const int earlyEconomyFloor = seed == SeedType::SEED_ZOMBIE_GARGANTUAR
                     ? state.rows
                     : std::max(state.rows * 2, state.rows + 3);

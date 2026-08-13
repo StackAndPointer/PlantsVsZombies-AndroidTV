@@ -45,6 +45,7 @@
 
 #include <climits>
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <iterator>
 #include <limits>
@@ -348,6 +349,53 @@ static constexpr SeedType kBuiltinAINightPlantDecks[][kBuiltinAIMaxDeckSize] = {
 };
 static_assert(std::size(kBuiltinAINightPlantDecks) == std::size(kBuiltinAIPlantDecks));
 
+constexpr int kBuiltinAIPlantProfileWeights[] = {
+    5, 5, 4, 3, 3, 2, 2, 2, 1, 2, 3, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1,
+    1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 1, 1, 1, 2, 1, 2,
+};
+static_assert(std::size(kBuiltinAIPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
+
+struct BuiltinAIPlantProfile {
+    int id = -1;
+    const SeedType *dayDeck = nullptr;
+    const SeedType *nightDeck = nullptr;
+    int weight = 0;
+    SeedType mainCarry = SeedType::SEED_NONE;
+
+    const SeedType *Deck(bool isNight) const {
+        return isNight ? nightDeck : dayDeck;
+    }
+};
+
+SeedType FindBuiltinAIPlantCarry(const SeedType *deck) {
+    for (std::size_t index = 0; index < kBuiltinAIMaxDeckSize; ++index) {
+        if (vsai::draft::IsPlantCarrySeed(deck[index])) {
+            return deck[index];
+        }
+    }
+    return SeedType::SEED_NONE;
+}
+
+const std::array<BuiltinAIPlantProfile, std::size(kBuiltinAIPlantDecks)> kBuiltinAIPlantProfiles = [] {
+    std::array<BuiltinAIPlantProfile, std::size(kBuiltinAIPlantDecks)> profiles{};
+    for (std::size_t index = 0; index < profiles.size(); ++index) {
+        profiles[index] = {
+            .id = static_cast<int>(index),
+            .dayDeck = kBuiltinAIPlantDecks[index],
+            .nightDeck = kBuiltinAINightPlantDecks[index],
+            .weight = kBuiltinAIPlantProfileWeights[index],
+            .mainCarry = FindBuiltinAIPlantCarry(kBuiltinAIPlantDecks[index]),
+        };
+    }
+    return profiles;
+}();
+
+const BuiltinAIPlantProfile *GetBuiltinAIPlantProfile(int profile) {
+    return profile >= 0 && profile < static_cast<int>(kBuiltinAIPlantProfiles.size())
+        ? &kBuiltinAIPlantProfiles[static_cast<std::size_t>(profile)]
+        : nullptr;
+}
+
 static constexpr SeedType kBuiltinAIZombieDecks[][kBuiltinAIMaxDeckSize] = {
     {SEED_ZOMBIE_BOBSLED, SEED_ZOMBIE_SCREEN_DOOR, SEED_ZOMBIE_PAIL, SEED_ZOMBIE_GARGANTUAR, SEED_ZOMBIE_GIGA_FOOTBALL, SEED_ZOMBIE_GRAVESTONE},
     {SEED_ZOMBIE_NEWSPAPER, SEED_ZOMBIE_IMP, SEED_ZOMBONI, SEED_ZOMBIE_SCREEN_DOOR, SEED_ZOMBIE_MOUND, SEED_ZOMBIE_TRASHCAN},
@@ -431,21 +479,18 @@ int PickBuiltinAIPlantProfile() {
     // The strongest replay-compatible templates use a tier-one carry and
     // the Potato/Squash/Cherry answer package. Lower-tier carries still
     // occur, but do not drown out those reliable opening plans.
-    static constexpr int kPlantProfileWeights[] = {5, 5, 4, 3, 3, 2, 2, 2, 1, 2, 3, 2, 1, 2, 1, 2, 1, 2, 1, 1, 1, 1, 1, 2, 2, 2, 2, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 1, 1, 1, 2, 1, 2};
-    static_assert(std::size(kPlantProfileWeights) == std::size(kBuiltinAIPlantDecks));
-
     int totalWeight = 0;
-    for (const int weight : kPlantProfileWeights) {
-        totalWeight += weight;
+    for (const BuiltinAIPlantProfile &profile : kBuiltinAIPlantProfiles) {
+        totalWeight += profile.weight;
     }
     int ticket = Sexy::Rand(totalWeight);
-    for (int profile = 0; profile < static_cast<int>(std::size(kPlantProfileWeights)); ++profile) {
-        ticket -= kPlantProfileWeights[profile];
+    for (const BuiltinAIPlantProfile &profile : kBuiltinAIPlantProfiles) {
+        ticket -= profile.weight;
         if (ticket < 0) {
-            return profile;
+            return profile.id;
         }
     }
-    return static_cast<int>(std::size(kPlantProfileWeights) - 1);
+    return kBuiltinAIPlantProfiles.back().id;
 }
 
 void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
@@ -469,10 +514,10 @@ void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
     // A new chooser is a new match plan. Avoid repeating the same archetype
     // when the engine's deterministic RNG starts consecutive local matches
     // from the same seed.
-    if (std::size(kBuiltinAIPlantDecks) > 1 && gBuiltinAIDeckPlans.plantProfile == gLastBuiltinAIPlantProfile) {
+    if (kBuiltinAIPlantProfiles.size() > 1 && gBuiltinAIDeckPlans.plantProfile == gLastBuiltinAIPlantProfile) {
         gBuiltinAIDeckPlans.plantProfile = PickBuiltinAIPlantProfile();
         if (gBuiltinAIDeckPlans.plantProfile == gLastBuiltinAIPlantProfile) {
-            gBuiltinAIDeckPlans.plantProfile = (gBuiltinAIDeckPlans.plantProfile + 1) % static_cast<int>(std::size(kBuiltinAIPlantDecks));
+            gBuiltinAIDeckPlans.plantProfile = (gBuiltinAIDeckPlans.plantProfile + 1) % static_cast<int>(kBuiltinAIPlantProfiles.size());
         }
     }
     if (std::size(kBuiltinAIZombieDecks) > 1 && gBuiltinAIDeckPlans.zombieProfile == gLastBuiltinAIZombieProfile) {
@@ -515,10 +560,8 @@ const SeedType *GetBuiltinAIDeckPriority(SeedChooserScreen *screen) {
     if (screen->mIsZombieChooser) {
         return kBuiltinAIZombieDecks[gBuiltinAIDeckPlans.zombieProfile];
     }
-    if (screen->mBoard != nullptr && screen->mBoard->StageIsNight()) {
-        return kBuiltinAINightPlantDecks[gBuiltinAIDeckPlans.plantProfile];
-    }
-    return kBuiltinAIPlantDecks[gBuiltinAIDeckPlans.plantProfile];
+    const BuiltinAIPlantProfile *profile = GetBuiltinAIPlantProfile(gBuiltinAIDeckPlans.plantProfile);
+    return profile == nullptr ? nullptr : profile->Deck(screen->mBoard != nullptr && screen->mBoard->StageIsNight());
 }
 
 void TryAutoStartBuiltinVSMatch(SeedChooserScreen *screen) {
@@ -1353,12 +1396,15 @@ SeedType FindBuiltinAILegalProgressCandidate(SeedChooserScreen *screen) {
 }
 
 SeedType PlantTemplateMainSeed(SeedChooserScreen *screen, int profile) {
-    if (screen == nullptr || profile < 0 || profile >= static_cast<int>(std::size(kBuiltinAIPlantDecks))) {
+    const BuiltinAIPlantProfile *templateProfile = GetBuiltinAIPlantProfile(profile);
+    if (screen == nullptr || templateProfile == nullptr) {
         return SeedType::SEED_NONE;
     }
-    const SeedType *deck = screen->mBoard != nullptr && screen->mBoard->StageIsNight()
-        ? kBuiltinAINightPlantDecks[profile]
-        : kBuiltinAIPlantDecks[profile];
+    const SeedType *deck = templateProfile->Deck(screen->mBoard != nullptr && screen->mBoard->StageIsNight());
+    if (templateProfile->mainCarry != SeedType::SEED_NONE
+        && std::find(deck, deck + GetBuiltinAIPlanSize(screen), templateProfile->mainCarry) != deck + GetBuiltinAIPlanSize(screen)) {
+        return templateProfile->mainCarry;
+    }
     for (std::size_t index = 0; index < GetBuiltinAIPlanSize(screen); ++index) {
         if (vsai::draft::IsPlantCarrySeed(deck[index])) {
             return deck[index];
@@ -1386,7 +1432,7 @@ void ReplaceBuiltinAIPlantTemplateAfterOpeningBan(SeedChooserScreen *screen) {
 
     int bestProfile = -1;
     int bestScore = std::numeric_limits<int>::min();
-    for (int offset = 0; offset < static_cast<int>(std::size(kBuiltinAIPlantDecks)); ++offset) {
+    for (int offset = 0; offset < static_cast<int>(kBuiltinAIPlantProfiles.size()); ++offset) {
         const int candidateProfile = offset;
         const SeedType candidateMain = PlantTemplateMainSeed(screen, candidateProfile);
         if (candidateProfile == currentProfile || candidateMain == SeedType::SEED_NONE || candidateMain == bannedMain

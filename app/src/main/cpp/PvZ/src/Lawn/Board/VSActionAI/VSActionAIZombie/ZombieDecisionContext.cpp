@@ -7,6 +7,52 @@ namespace vsai::detail {
 
 ZombieDecisionContext ZombieAIPlanning::BuildDecisionContext(const VSGameState &state) const {
     ZombieDecisionContext context{.tempo = GetZombieTempoPolicy()};
+    context.livePlantCount = CountLivePlants(state);
+    context.hasPlants = context.livePlantCount > 0;
+    context.plantHasMagnet = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MAGNETSHROOM)
+        || CountPlantType(state, SeedType::SEED_MAGNETSHROOM) > 0;
+    context.plantHasPeaCarry = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
+    context.plantHasShortPult = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
+    context.plantHasLobbedCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CABBAGEPULT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_KERNELPULT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WINTERMELON)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
+    context.plantHasNutCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL);
+    context.plantHasHighValueCarryCard = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER)
+        || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
+    context.peaHeadCount = static_cast<int>(std::count_if(state.zombies.begin(), state.zombies.end(), [](const VSZombieState &zombie) {
+        return !zombie.dead && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PEA_HEAD);
+    }));
+    for (int row = 0; row < state.rows && row < static_cast<int>(context.rowScoreFacts.size()); ++row) {
+        ZombieRowScoreFacts &facts = context.rowScoreFacts[static_cast<std::size_t>(row)];
+        facts.hasSnowPea = HasPlantTypeInRow(state, SeedType::SEED_SNOWPEA, row);
+        facts.hasBonkChoy = HasPlantTypeInRow(state, SeedType::SEED_BONK_CHOY, row);
+        facts.hasWallnut = HasPlantTypeInRow(state, SeedType::SEED_WALLNUT, row)
+            || HasPlantTypeInRow(state, SeedType::SEED_TALLNUT, row);
+        facts.hasPumpkinShell = HasPlantTypeInRow(state, SeedType::SEED_PUMPKINSHELL, row);
+        facts.plantCount = CountPlantsInRow(state, row);
+        facts.zombieCount = CountZombiesInRow(state, row);
+        facts.graveProjectileThreat = StraightProjectileThreatScore(state, row);
+        facts.lobbedProjectileThreat = LobbedProjectileThreatScore(state, row);
+        facts.hasLobbedPlant = HasLobbedPlantInRow(state, row);
+        facts.graveScreenDeficit = ZombieGraveScreenDeficit(state, row);
+        facts.hasGraveGuard = HasZombieGraveGuardInRow(state, row);
+        facts.sustainedOutput = SustainedOutputScoreInRow(state, row);
+        facts.economyValue = PlantEconomyValueInRow(state, row);
+        facts.lane = AssessPlantLane(state, row);
+        facts.areaCounterExposure = PlantAreaCounterExposure(state, row);
+    }
     context.actualEconomyCount = CountZombieEconomy(state);
     context.economyCount = context.tempo.EffectiveEconomyCount(context.actualEconomyCount);
     context.activePressureRows = CountActiveZombieRows(state);
