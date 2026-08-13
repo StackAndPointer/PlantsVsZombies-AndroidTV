@@ -1317,6 +1317,10 @@ void Plant::DoRowAreaDamage(int theDamage, unsigned int theDamageFlags) {
 
     Zombie *aZombie = nullptr;
     while (mBoard->IterateZombies(aZombie)) {
+        if (IsSpiky() && aZombie->IsFlying()) {
+            continue;
+        }
+
         int aDiffY = (aZombie->mZombieType == ZombieType::ZOMBIE_BOSS) ? 0 : (aZombie->mRow - mRow);
         if (mSeedType == SeedType::SEED_GLOOMSHROOM) {
             if (aDiffY < -1 || aDiffY > 1)

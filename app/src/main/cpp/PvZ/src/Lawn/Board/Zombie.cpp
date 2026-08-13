@@ -121,16 +121,6 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     mPoisoned = false;
     mPoisonedCounter = 0;
 
-    if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineServerModeActive() && !gIsReplayMode) {
-        mScaleZombie = 0.2f * zombieSetScale;
-        UpdateAnimSpeed();
-        float theRatio = mScaleZombie * mScaleZombie;
-        mBodyHealth *= theRatio;
-        mHelmHealth *= theRatio;
-        mShieldHealth *= theRatio;
-        mFlyingHealth *= theRatio;
-    }
-
     if (IsZombatarZombie(theType) && theFromWave != -3) {
         SetZombatarReanim();
     }
@@ -361,6 +351,16 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     mHelmMaxHealth = mHelmHealth;
     mShieldMaxHealth = mShieldHealth;
     mFlyingMaxHealth = mFlyingHealth;
+
+    if (zombieSetScale != 0 && mZombieType != ZombieType::ZOMBIE_BOSS && !IsOnlineServerModeActive() && !gIsReplayMode) {
+        mScaleZombie = 0.2f * zombieSetScale;
+        UpdateAnimSpeed();
+        float aRatio = mScaleZombie * mScaleZombie;
+        mBodyHealth *= aRatio;
+        mHelmHealth *= aRatio;
+        mShieldHealth *= aRatio;
+        mFlyingHealth *= aRatio;
+    }
 }
 
 void Zombie::CheckIfPreyCaught() {
@@ -1617,6 +1617,9 @@ void Zombie::UpdateZombieJackInTheBox() {
                                 int aPosY = mY + mHeight / 2;
                                 Plant *aPlant = nullptr;
                                 while (mBoard->IteratePlants(aPlant)) {
+                                    if (aPlant->NotOnGround()) {
+                                        continue;
+                                    }
                                     if (GetCircleRectOverlap(aPosX, aPosY, JackInTheBoxPlantRadius, aPlant->GetPlantRect())) {
                                         doPop = true;
                                     }
@@ -2500,7 +2503,7 @@ void Zombie::UpdateGigaGargantuar() {
 
         Plant *aPlant = nullptr;
         while (mBoard->IteratePlants(aPlant)) {
-            if (aPlant->mDead || aPlant->NotOnGround()) {
+            if (aPlant->NotOnGround()) {
                 continue;
             }
 
@@ -2568,7 +2571,7 @@ void Zombie::UpdateGigaGargantuar() {
 
         Plant *aPlant = nullptr;
         while (mBoard->IteratePlants(aPlant)) {
-            if (aPlant->mDead || aPlant->NotOnGround() || aPlant->mRow != mRow) {
+            if (aPlant->NotOnGround() || aPlant->mRow != mRow) {
                 continue;
             }
 
@@ -2702,7 +2705,7 @@ void Zombie::UpdateGigaGargantuar() {
 
         Plant *aPlant = nullptr;
         while (mBoard->IteratePlants(aPlant)) {
-            if (aPlant->mDead || aPlant->NotOnGround()) {
+            if (aPlant->NotOnGround()) {
                 continue;
             }
 
@@ -2730,7 +2733,7 @@ void Zombie::UpdateGigaGargantuar() {
 
         for (const GigaLightningHit &aHit : aHits) {
             Plant *aHitPlant = mBoard->mPlants.DataArrayTryToGet(aHit.mPlantID);
-            if (aHitPlant == nullptr || aHitPlant->mDead || aHitPlant->NotOnGround()) {
+            if (aHitPlant == nullptr || aHitPlant->NotOnGround()) {
                 continue;
             }
 

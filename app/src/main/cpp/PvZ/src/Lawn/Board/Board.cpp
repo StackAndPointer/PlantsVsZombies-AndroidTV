@@ -84,6 +84,20 @@ IdMap serverCoinIDMap;
 IdMap serverGridItemIDMap;
 constexpr uintptr_t kBoardButtonListenerVtableOffset = 0x1FC;
 constexpr uintptr_t kBoardButtonListenerVTableOffset2 = 0x228;
+constexpr uint8_t kNoSelectedSeedIndex = UINT8_MAX;
+
+int DecodeSelectedSeedIndex(uint8_t encodedIndex, const SeedBank *seedBank) {
+    if (encodedIndex == kNoSelectedSeedIndex) {
+        return -1;
+    }
+
+    const int selectedIndex = encodedIndex;
+    if (seedBank == nullptr || selectedIndex >= seedBank->mNumPackets || selectedIndex >= 10) {
+        LOG_WARN("[NETPLAY] ignore invalid selected seed index={} packetCount={}", selectedIndex, seedBank ? seedBank->mNumPackets : -1);
+        return -1;
+    }
+    return selectedIndex;
+}
 
 // 新增：远端暂停同步保护
 bool gPauseSyncFromRemote = false;
@@ -1966,9 +1980,12 @@ void Board::processServerEvent(const BaseEvent *event) {
             auto *event1 = static_cast<const U8U8I16I16_Event *>(event);
             GamepadControls *clientGamepadControls = mGamepadControls[(mGamepadControls[1]->mGamepadIndex == 1) ? 1 : 0];
             SeedBank *clientSeedBank = mGamepadControls[1]->mGamepadIndex == 1 ? mSeedBank[1] : mSeedBank[0];
-            if (clientGamepadControls->mSelectedSeedIndex != event1->data1) {
-                clientGamepadControls->mSelectedSeedIndex = event1->data1;
-                clientSeedBank->mSeedPackets[event1->data1].mLastSelectedTime = 0.0f; // 动画效果专用
+            const int selectedSeedIndex = DecodeSelectedSeedIndex(event1->data1, clientSeedBank);
+            if (clientGamepadControls->mSelectedSeedIndex != selectedSeedIndex) {
+                clientGamepadControls->mSelectedSeedIndex = selectedSeedIndex;
+                if (selectedSeedIndex >= 0) {
+                    clientSeedBank->mSeedPackets[selectedSeedIndex].mLastSelectedTime = 0.0f; // 动画效果专用
+                }
             }
             clientGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data2);
             //            clientGamepadControls->mCursorPositionX = event1->data5;
@@ -1991,9 +2008,12 @@ void Board::processServerEvent(const BaseEvent *event) {
             auto *event1 = static_cast<const U8U8I16I16_Event *>(event);
             GamepadControls *serverGamepadControls = mGamepadControls[0]->mGamepadIndex == 0 ? mGamepadControls[0] : mGamepadControls[1];
             SeedBank *serverSeedBank = mGamepadControls[0]->mGamepadIndex == 0 ? mSeedBank[0] : mSeedBank[1];
-            if (serverGamepadControls->mSelectedSeedIndex != event1->data1) {
-                serverGamepadControls->mSelectedSeedIndex = event1->data1;
-                serverSeedBank->mSeedPackets[event1->data1].mLastSelectedTime = 0.0f; // 动画效果专用
+            const int selectedSeedIndex = DecodeSelectedSeedIndex(event1->data1, serverSeedBank);
+            if (serverGamepadControls->mSelectedSeedIndex != selectedSeedIndex) {
+                serverGamepadControls->mSelectedSeedIndex = selectedSeedIndex;
+                if (selectedSeedIndex >= 0) {
+                    serverSeedBank->mSeedPackets[selectedSeedIndex].mLastSelectedTime = 0.0f; // 动画效果专用
+                }
             }
             serverGamepadControls->mGamepadState = BaseGamepadControls::MovementState(event1->data2);
             serverGamepadControls->mCursorPositionX = event1->data3;
@@ -6311,7 +6331,7 @@ void Board::UpdateButtons() {
 
 void Board::ButtonDepress(int theId) {
     if (theId == 1000) {
-        if (gIsServerModeSpectator && mBoardFadeOutCounter >= 0) {
+        if (gIsServerModeSpectator && mBoardFadeOutCounter > 0) {
             return; // 修复观战在 FadeOut 界面返回会导致 NewOptionsDialog 卡死
         }
 

@@ -53,10 +53,11 @@ public:
     bool mUpsellHideBoard;                   // 64【推销隐藏关卡界面】
     ChallengeScreen *mUpsellChallengeScreen; // 17【推销插入的小游戏界面】
     bool mPreUpdatingBoard;                  // 72【场景布置阶段的关卡预更新】
-    ReanimationID mPlantsWonReanim;
-    Zombie *mZombieWonZombie;
-    int mMPZombieWonPosition;
-    float mMPZombieWonPositions[2];
+    ReanimationID mPlantsWonReanimID;        // 76
+    Zombie *mZombieWonZombie;                // 80
+    int mMPZombieWonPosition;                // 84
+    float mMPWonPosX;                        // 88
+    float mMPWonPosY;                        // 92
     int unk[6];
     // 大小30个整数
 
