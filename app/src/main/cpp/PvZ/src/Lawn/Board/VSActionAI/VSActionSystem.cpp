@@ -14,6 +14,7 @@
 #include "VSActionAIExecutor.h"
 #include "VSActionAIGameState.h"
 #include "VSActionAIPolicy.h"
+#include "VSActionAIQueue.h"
 #include "VSActionAIStrategy.h"
 
 #include "PvZ/GlobalVariable.h"
@@ -24,7 +25,6 @@
 #include <algorithm>
 #include <array>
 #include <cstddef>
-#include <deque>
 #include <optional>
 #include <utility>
 
@@ -32,13 +32,7 @@ namespace vsai {
 namespace {
 
 constexpr std::size_t kSideCount = 2;
-constexpr std::size_t kMaxQueuedActions = 64;
 constexpr std::uint32_t kDefaultThinkIntervalTicks = 10;
-
-struct QueuedAction {
-    VSAction action;
-    std::optional<VSSide> sourceSide;
-};
 
 struct RuntimeState {
     Board *board = nullptr;
@@ -46,7 +40,7 @@ struct RuntimeState {
     std::array<bool, kSideCount> builtinAgents = {false, false};
     std::array<std::uint32_t, kSideCount> thinkIntervals = {kDefaultThinkIntervalTicks, kDefaultThinkIntervalTicks};
     std::array<std::uint32_t, kSideCount> nextThinkTicks = {0, 0};
-    std::deque<QueuedAction> queuedActions;
+    detail::VSActionQueue queuedActions;
     bool matchActive = false;
 };
 
@@ -132,7 +126,7 @@ void NotifySide(std::optional<VSSide> side, const VSAction &action, VSActionResu
 }
 
 void ResetMatchRuntime(bool resetStrategyDatabase = false) {
-    gRuntime.queuedActions.clear();
+    gRuntime.queuedActions.Clear();
     gRuntime.nextThinkTicks = {0, 0};
     gRuntime.matchActive = false;
     if (resetStrategyDatabase) {
@@ -154,7 +148,7 @@ void ResetForBoard(Board *board) {
     ResetMatchRuntime();
 }
 
-void ExecuteQueuedAction(Board *board, const QueuedAction &queuedAction) {
+void ExecuteQueuedAction(Board *board, const detail::QueuedVSAction &queuedAction) {
     if (queuedAction.sourceSide.has_value() && !IsSideEnabled(*queuedAction.sourceSide)) {
         NotifySide(queuedAction.sourceSide, queuedAction.action, VSActionResult::RejectedDisabled);
         return;
@@ -192,11 +186,10 @@ void RunAgent(Board *board, VSSide side, const VSGameState &state) {
         return;
     }
     if (IsActionDeferred(*action, tick)) {
-        if (gRuntime.queuedActions.size() >= kMaxQueuedActions) {
+        if (!gRuntime.queuedActions.Enqueue(*action, side)) {
             Notify(agent, *action, VSActionResult::RejectedUnsupported);
             return;
         }
-        gRuntime.queuedActions.push_back({*action, side});
         Notify(agent, *action, VSActionResult::Queued);
         return;
     }
@@ -236,9 +229,7 @@ void SetAgent(VSSide side, std::unique_ptr<IVSAgent> agent) {
     }
 
     const std::size_t index = SideIndex(side);
-    std::erase_if(gRuntime.queuedActions, [side](const QueuedAction &queuedAction) {
-        return queuedAction.sourceSide == side;
-    });
+    gRuntime.queuedActions.RemoveActionsFrom(side);
     gRuntime.agents[index] = std::move(agent);
     gRuntime.builtinAgents[index] = false;
     gRuntime.nextThinkTicks[index] = 0;
@@ -293,11 +284,10 @@ VSGameState BuildGameState(Board *board) {
 }
 
 bool EnqueueAction(const VSAction &action) {
-    if (!IsValidSide(action.side) || gRuntime.queuedActions.size() >= kMaxQueuedActions) {
+    if (!IsValidSide(action.side)) {
         return false;
     }
-    gRuntime.queuedActions.push_back({action, std::nullopt});
-    return true;
+    return gRuntime.queuedActions.Enqueue(action, std::nullopt);
 }
 
 VSActionResult ExecuteActionNow(Board *board, const VSAction &action) {
@@ -331,20 +321,13 @@ void Update(Board *board) {
 
     const std::uint32_t tick = static_cast<std::uint32_t>(board->mMainCounter);
     std::optional<VSSide> actionProcessedForSide;
-    for (auto iterator = gRuntime.queuedActions.begin(); iterator != gRuntime.queuedActions.end();) {
-        if (IsActionExpired(iterator->action, tick)) {
-            NotifySide(iterator->sourceSide, iterator->action, VSActionResult::RejectedStale);
-            iterator = gRuntime.queuedActions.erase(iterator);
-            continue;
-        }
-        if (!IsActionDeferred(iterator->action, tick)) {
-            const QueuedAction queuedAction = *iterator;
-            gRuntime.queuedActions.erase(iterator);
-            ExecuteQueuedAction(board, queuedAction);
-            actionProcessedForSide = queuedAction.action.side;
-            break;
-        }
-        ++iterator;
+    detail::VSActionQueuePoll queuePoll = gRuntime.queuedActions.TakeNextReady(tick);
+    for (const detail::QueuedVSAction &expiredAction : queuePoll.expired) {
+        NotifySide(expiredAction.sourceSide, expiredAction.action, VSActionResult::RejectedStale);
+    }
+    if (queuePoll.ready.has_value()) {
+        ExecuteQueuedAction(board, *queuePoll.ready);
+        actionProcessedForSide = queuePoll.ready->action.side;
     }
 
     if (actionProcessedForSide != VSSide::Plants) {
