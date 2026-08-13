@@ -1,4 +1,5 @@
 #include "ZombieCardRules.h"
+#include "../VSActionAIPolicy.h"
 
 #include <algorithm>
 #include <initializer_list>
@@ -310,7 +311,7 @@ bool ZombieTempoPolicy::IsEnhanced() const {
 }
 
 int ZombieTempoPolicy::EffectiveEconomyCount(int actualCount) const {
-    return mEnhanced ? EffectiveAIEconomyCount(VSSide::Zombies, actualCount) : actualCount;
+    return GetAIEnhancementPolicy(VSSide::Zombies).EffectiveEconomyCount(actualCount);
 }
 
 int ZombieTempoPolicy::EconomyTarget(int baseline, int rows, int activePressureRows) const {

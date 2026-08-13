@@ -11,6 +11,7 @@
 
 #include "PvZ/Lawn/VSActionSystem.h"
 #include "PvZ/Lawn/VSActionAIDecision.h"
+#include "VSActionAIPolicy.h"
 
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
@@ -513,9 +514,7 @@ bool HasEnhancedAIProduction(Board *board, VSSide side) {
 }
 
 int ScaleEnhancedAIProductionCooldown(int cooldown) {
-    constexpr int kEnhancedCooldownNumerator = 7;
-    constexpr int kEnhancedCooldownDenominator = 10;
-    return cooldown > 0 ? std::max(1, (cooldown * kEnhancedCooldownNumerator + kEnhancedCooldownDenominator - 1) / kEnhancedCooldownDenominator) : cooldown;
+    return detail::AIEnhancementPolicy{.enabled = IsEnhancedAIEnabled()}.ScaleProductionCooldown(cooldown);
 }
 
 VSGameState BuildGameState(Board *board) {

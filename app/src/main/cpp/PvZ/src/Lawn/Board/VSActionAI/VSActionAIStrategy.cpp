@@ -10,6 +10,7 @@
  */
 
 #include "VSActionAIStrategy.h"
+#include "VSActionAIPolicy.h"
 
 #include "PvZ/Lawn/VSActionSystem.h"
 #include "PvZ/SexyAppFramework/Buffer.h"
@@ -24,11 +25,7 @@
 namespace vsai::detail {
 
 int EffectiveAIEconomyCount(VSSide side, int actualCount) {
-    constexpr int kEnhancedStrategyEconomyLead = 1;
-    if (actualCount <= 0 || !vsai::IsEnhancedAIEnabled() || !vsai::IsSideEnabled(side)) {
-        return actualCount;
-    }
-    return actualCount + kEnhancedStrategyEconomyLead;
+    return GetAIEnhancementPolicy(side).EffectiveEconomyCount(actualCount);
 }
 
 struct StrategyRule {
