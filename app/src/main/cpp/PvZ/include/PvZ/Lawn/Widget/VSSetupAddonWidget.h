@@ -113,6 +113,21 @@ public:
     void OpenAISettings();
     void CloseAISettings();
 
+    // Builtin AI preferences belong to the local VS overlay and never enter
+    // the network setup event stream.
+    static constexpr bool IsLocalAIOption(int theId) {
+        switch (theId) {
+            case VSSetupAddonWidget_PlantAI:
+            case VSSetupAddonWidget_ZombieAI:
+            case VSSetupAddonWidget_AIEnhancement:
+            case VSSetupAddonWidget_AIDraftDisabled:
+            case VSSetupAddonWidget_AITemplateDeckDisabled:
+                return true;
+            default:
+                return false;
+        }
+    }
+
 private:
     static inline const Sexy::ButtonListener::VTable sButtonListenerVtable{
         .ButtonDepress = (void *)&VSSetupAddonWidget::ButtonDepress,

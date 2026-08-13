@@ -231,7 +231,7 @@ void VSSetupAddonWidget::CheckboxChecked(int theId, bool checked) {
     }
     // AI settings are intentionally local-only. They configure the local
     // builtin agents and must not change an online opponent's chooser.
-    if (theId >= VSSetupAddonWidget_PlantAI && theId <= VSSetupAddonWidget_AITemplateDeckDisabled) {
+    if (IsLocalAIOption(theId)) {
         mApp->PlaySample(Sexy::SOUND_BUTTONCLICK);
         SetAddonMode(theId, checked, true);
         return;
@@ -252,7 +252,7 @@ void VSSetupAddonWidget::CheckboxChecked(int theId, bool checked) {
         gVSSetupRequestState = 0;
     }
 
-    if (gTcpClientSocket >= 0) {
+    if (gTcpClientSocket >= 0 && !IsLocalAIOption(theId)) {
         U8U8_Event event = {{EventType::EVENT_SERVER_VSSETUP_ADDON_CHECKBOX_CHECKED}, uint8_t(theId), uint8_t(checked)};
         netplay::PutEvent(event);
     }

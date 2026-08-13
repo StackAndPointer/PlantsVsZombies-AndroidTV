@@ -750,6 +750,9 @@ void VSSetupMenu::processClientEvent(const BaseEvent *event) {
         } break;
         case EVENT_CLIENT_VSSETUP_ADDON_CHECKBOX_CHECKED: {
             auto *eventCheckbox = static_cast<const U8_Event *>(event);
+            if (VSSetupAddonWidget::IsLocalAIOption(eventCheckbox->data)) {
+                break;
+            }
             gVSSetupRequestState = eventCheckbox->data;
         } break;
         case EVENT_CLIENT_VSSETUP_SEND_NAME_STATE: {
@@ -1053,8 +1056,6 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_ExtendedSeeds, eventButtonInit->data2, false);
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_BanMode, eventButtonInit->data3, false);
             mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_BalancePatch, eventButtonInit->data4, false);
-            mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_PlantAI, eventButtonInit->data5, false);
-            mAddonWidget->SetAddonMode(VSSetupAddonWidget::VSSetupAddonWidget_ZombieAI, eventButtonInit->data6, false);
             U8_Event eventState = {{EventType::EVENT_CLIENT_VSSETUP_SEND_NAME_STATE}, mApp->mPlayerInfo->mVSResultsSendPlayerName};
             netplay::PutEvent(eventState);
         } break;
@@ -1077,6 +1078,9 @@ void VSSetupMenu::processServerEvent(const BaseEvent *event) {
             auto *eventCheckbox = static_cast<const U8U8_Event *>(event);
             int id = eventCheckbox->data1;
             bool checked = eventCheckbox->data2 != 0;
+            if (VSSetupAddonWidget::IsLocalAIOption(id)) {
+                break;
+            }
             mAddonWidget->SetAddonMode(id, checked, false);
             if (gVSSetupRequestState == id) {
                 gVSSetupRequestState = 0;
@@ -1131,8 +1135,8 @@ void VSSetupMenu::OnStateEnter(VSSetupState theState) {
                 mAddonWidget->mExtendedSeedsMode,
                 mAddonWidget->mBanMode,
                 mAddonWidget->mBalancePatchMode,
-                mAddonWidget->mPlantAIMode,
-                mAddonWidget->mZombieAIMode,
+                // Keep the B1x8 payload layout compatible. Builtin AI
+                // preferences are local-only and intentionally stay zero.
             };
             netplay::PutEvent(event);
 
