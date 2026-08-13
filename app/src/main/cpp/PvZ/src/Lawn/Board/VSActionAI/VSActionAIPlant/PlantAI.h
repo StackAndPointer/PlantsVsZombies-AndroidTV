@@ -6,6 +6,14 @@
 namespace vsai::detail {
 
 class PlantAI final : public PlantAIPlanning {
+    PlantDecisionResult TryOpeningEconomyPhase(const VSGameState &state);
+    std::optional<VSAction> TryImmediateMaintenancePhase(const VSGameState &state);
+    PlantDecisionResult TryOpeningOutputPhase(const VSGameState &state, const PlantDecisionContext &context);
+    PlantDecisionResult TryTemplatePressurePhase(const VSGameState &state, const PlantDecisionContext &context);
+    PlantDecisionResult TryEconomyConversionPhase(const VSGameState &state, const PlantDecisionContext &context);
+    PlantDecisionResult TryLaneDefensePhase(const VSGameState &state, const PlantDecisionContext &context);
+    PlantDecisionResult TryFallbackPhase(const VSGameState &state, const PlantDecisionContext &context);
+
 public:
     std::optional<VSAction> Decide(const VSGameState &state) override;
 };
