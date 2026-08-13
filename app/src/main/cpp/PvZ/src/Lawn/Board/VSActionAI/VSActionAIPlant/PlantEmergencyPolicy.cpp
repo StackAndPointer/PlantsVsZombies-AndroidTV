@@ -88,7 +88,7 @@ PlantDecisionResult PlantAIPlanning::TryEmergencyPolicy(const VSGameState &state
     if (std::optional<VSAction> action = TryPumpkinShell(state, context.counterRow, context.protectedSun)) {
         return {.handled = true, .action = action};
     }
-    if (std::optional<VSAction> action = TrySustainedOutputPlant(state, context.counterRow, context.protectedSun, true, true, true)) {
+    if (std::optional<VSAction> action = TrySustainedOutputPlant(state, context.counterRow, {.protectedSun = context.protectedSun, .allowLowCostCombat = true, .requirePreferredRow = true, .allowEmergencyTrade = true})) {
         return {.handled = true, .action = action};
     }
     return {.handled = true};

@@ -139,8 +139,11 @@ std::optional<VSAction> PlantAIPlanning::TryRecycleIncomeForOutput(const VSGameS
     return bestPlant == nullptr ? std::nullopt : std::optional<VSAction>(MakeShovelAction(bestPlant->position, state.boardTick));
 }
 
-std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameState &state, int row, int protectedSun, bool allowLowCostCombat,
-    bool requirePreferredRow, bool allowEmergencyTrade) {
+std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameState &state, int row, SustainedOutputPolicy policy) {
+    const int protectedSun = policy.protectedSun;
+    const bool allowLowCostCombat = policy.allowLowCostCombat;
+    const bool requirePreferredRow = policy.requirePreferredRow;
+    const bool allowEmergencyTrade = policy.allowEmergencyTrade;
     const VSCardState *bestCard = nullptr;
     VSGridPosition bestTarget{};
     int bestScore = std::numeric_limits<int>::min();

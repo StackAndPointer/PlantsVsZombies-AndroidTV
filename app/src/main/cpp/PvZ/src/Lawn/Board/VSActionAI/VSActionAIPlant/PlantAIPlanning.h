@@ -13,6 +13,13 @@ bool IsLobbedOutputSeed(SeedType seed);
 
 class PlantAIPlanning : public BuiltinVSAgent {
 protected:
+    struct SustainedOutputPolicy {
+        int protectedSun = 0;
+        bool allowLowCostCombat = false;
+        bool requirePreferredRow = false;
+        bool allowEmergencyTrade = false;
+    };
+
     bool mOpeningEconomyPlaced = false;
     VSGridPosition mRecentAshTarget{-1, -1};
     std::uint32_t mRecentAshTick = 0;
@@ -76,8 +83,7 @@ protected:
     VSGridPosition FindSustainedOutputCell(const VSGameState &state, SeedType seed, int row) const;
     bool HasReadySustainedOutputCard(const VSGameState &state, int protectedSun) const;
     std::optional<VSAction> TryRecycleIncomeForOutput(const VSGameState &state, int preferredRow, int protectedSun);
-    std::optional<VSAction> TrySustainedOutputPlant(const VSGameState &state, int row, int protectedSun, bool allowLowCostCombat = false,
-        bool requirePreferredRow = false, bool allowEmergencyTrade = false);
+    std::optional<VSAction> TrySustainedOutputPlant(const VSGameState &state, int row, SustainedOutputPolicy policy);
     bool HasIncomeSeed(const VSGameState &state) const;
     bool HasSunshroomSeed(const VSGameState &state) const;
     static int EffectivePlantEconomyCount(const VSGameState &state);

@@ -84,7 +84,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     }
     if (openingNeedsFirepower) {
         if (hasSustainedOutputSeed) {
-            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun, true, true, true)) {
+            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, {.protectedSun = protectedSun, .allowLowCostCombat = true, .requirePreferredRow = true, .allowEmergencyTrade = true})) {
                 return action;
             }
         }
@@ -215,7 +215,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     }
 
     if (highSunCombatPressure && !immediateCounterThreat) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun, true)) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, {.protectedSun = protectedSun, .allowLowCostCombat = true})) {
             return action;
         }
     }
@@ -226,7 +226,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     // trade; immediate placement safety is still enforced by the helper.
     if (hasActiveZombie && !immediateCounterThreat && hasSustainedOutputSeed
         && state.plantSun - protectedSun >= 200 && (danger.danger >= 80 || largestFirepowerDeficit > 0)) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun, true, false, true)) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, {.protectedSun = protectedSun, .allowLowCostCombat = true, .allowEmergencyTrade = true})) {
             return action;
         }
     }
@@ -239,7 +239,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             return action;
         }
         if (hasSustainedOutputSeed) {
-            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, zombieEconomyStrikeRow, protectedSun)) {
+            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, zombieEconomyStrikeRow, {.protectedSun = protectedSun})) {
                 return action;
             }
         }
@@ -270,7 +270,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     if (hasIncomeSeed && incomePlantCount < openingIncomeTarget && danger.danger < 150
         && (!highSunCombatPressure || safeIncomeShortfall)) {
         if (incomePlantCount >= minimumIncomeBeforeOutput && needsSustainedOutput) {
-            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
+            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state), {.protectedSun = protectedSun})) {
                 return action;
             }
         }
@@ -293,7 +293,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     if (hasIncomeSeed && hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && canExpandIncome
         && (!highSunCombatPressure || (midGame && incomePlantCount < incomeExpansionTarget)) && !outputTempoHasPriority) {
         if (needsSustainedOutput) {
-            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun)) {
+            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, {.protectedSun = protectedSun})) {
                 return action;
             }
         }
@@ -310,7 +310,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             }
         }
         if (needsSustainedOutput) {
-            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, buildRow, protectedSun)) {
+            if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, buildRow, {.protectedSun = protectedSun})) {
                 return action;
             }
         }
@@ -328,7 +328,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         }
         // Once the replay-like economy is established, pre-build only a
         // combat plant. Nuts and instant counters wait for a visible lane.
-        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, buildRow, protectedSun)) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, buildRow, {.protectedSun = protectedSun})) {
             return action;
         }
         return PlantAIPlanning::TryFallbackPlant(state, danger, buildRow);
@@ -373,7 +373,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             return action;
         }
     }
-    if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, buildRow, protectedSun)) {
+    if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, buildRow, {.protectedSun = protectedSun})) {
         return action;
     }
     if (hasActiveZombie && !ShouldYieldLaneToMower(state, buildRow)
@@ -402,7 +402,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     // counter reserve, but it must get one last chance before this turn
     // becomes an unexplained no-op.
     if (hasActiveZombie && state.plantSun - protectedSun >= 125) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun, true, false, true)) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, {.protectedSun = protectedSun, .allowLowCostCombat = true, .allowEmergencyTrade = true})) {
             return action;
         }
     }
