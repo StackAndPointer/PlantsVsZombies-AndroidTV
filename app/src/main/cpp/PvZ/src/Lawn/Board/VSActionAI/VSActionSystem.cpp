@@ -369,20 +369,27 @@ void NotifySide(std::optional<VSSide> side, const VSAction &action, VSActionResu
     }
 }
 
+void ResetMatchRuntime(bool resetStrategyDatabase = false) {
+    gRuntime.queuedActions.clear();
+    gRuntime.nextThinkTicks = {0, 0};
+    gRuntime.matchActive = false;
+    if (resetStrategyDatabase) {
+        detail::ResetStrategyDatabase();
+    }
+    for (const std::unique_ptr<IVSAgent> &agent : gRuntime.agents) {
+        if (agent != nullptr) {
+            agent->Reset();
+        }
+    }
+}
+
 void ResetForBoard(Board *board) {
     if (gRuntime.board == board) {
         return;
     }
 
     gRuntime.board = board;
-    gRuntime.queuedActions.clear();
-    gRuntime.nextThinkTicks = {0, 0};
-    gRuntime.matchActive = false;
-    for (const std::unique_ptr<IVSAgent> &agent : gRuntime.agents) {
-        if (agent != nullptr) {
-            agent->Reset();
-        }
-    }
+    ResetMatchRuntime();
 }
 
 void ExecuteQueuedAction(Board *board, const QueuedAction &queuedAction) {
@@ -544,26 +551,13 @@ void Update(Board *board) {
     SyncBuiltinAgents();
     if (!IsLocalVSMatch(board) || !IsMatchPlaying(board)) {
         if (gRuntime.matchActive) {
-            gRuntime.queuedActions.clear();
-            gRuntime.nextThinkTicks = {0, 0};
-            for (const std::unique_ptr<IVSAgent> &agent : gRuntime.agents) {
-                if (agent != nullptr) {
-                    agent->Reset();
-                }
-            }
-            gRuntime.matchActive = false;
+            ResetMatchRuntime();
         }
         return;
     }
 
     if (!gRuntime.matchActive) {
-        gRuntime.queuedActions.clear();
-        gRuntime.nextThinkTicks = {0, 0};
-        for (const std::unique_ptr<IVSAgent> &agent : gRuntime.agents) {
-            if (agent != nullptr) {
-                agent->Reset();
-            }
-        }
+        ResetMatchRuntime();
         gRuntime.matchActive = true;
     }
 
@@ -601,15 +595,7 @@ void Update(Board *board) {
 
 void Reset() {
     gRuntime.board = nullptr;
-    gRuntime.queuedActions.clear();
-    gRuntime.nextThinkTicks = {0, 0};
-    gRuntime.matchActive = false;
-    detail::ResetStrategyDatabase();
-    for (const std::unique_ptr<IVSAgent> &agent : gRuntime.agents) {
-        if (agent != nullptr) {
-            agent->Reset();
-        }
-    }
+    ResetMatchRuntime(true);
 }
 
 void ExecuteReplayAction(Board *board, const VSLocalActionReplayEvent &event) {
