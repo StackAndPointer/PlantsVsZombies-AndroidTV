@@ -12,6 +12,7 @@
 #include "PvZ/Lawn/VSActionSystem.h"
 #include "PvZ/Lawn/VSActionAIDecision.h"
 #include "VSActionAIPolicy.h"
+#include "VSActionAIStrategy.h"
 
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"
@@ -730,6 +731,7 @@ void Reset() {
     gRuntime.queuedActions.clear();
     gRuntime.nextThinkTicks = {0, 0};
     gRuntime.matchActive = false;
+    detail::ResetStrategyDatabase();
     for (const std::unique_ptr<IVSAgent> &agent : gRuntime.agents) {
         if (agent != nullptr) {
             agent->Reset();

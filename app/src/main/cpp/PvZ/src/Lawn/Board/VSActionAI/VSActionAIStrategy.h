@@ -9,8 +9,17 @@
 
 namespace vsai::detail {
 
+enum class StrategyDatabaseLoadState : std::uint8_t {
+    Uninitialized,
+    Unavailable,
+    Invalid,
+    Loaded,
+};
+
 int StrategyBucket(int value);
 int StrategyBonus(const VSGameState &state, VSSide side, SeedType seed, int targetRow);
+StrategyDatabaseLoadState GetStrategyDatabaseLoadState();
+void ResetStrategyDatabase();
 
 // Strategy thresholds use this instead of raw producer/grave counts. Enhanced
 // local AI treats an established economy as one step further developed while

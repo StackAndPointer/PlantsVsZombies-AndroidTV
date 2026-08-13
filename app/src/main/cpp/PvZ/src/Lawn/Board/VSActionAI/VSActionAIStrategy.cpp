@@ -48,6 +48,7 @@ constexpr std::size_t kStrategyDatabaseHeaderSize = 12;
 constexpr std::size_t kLegacyStrategyDatabaseRuleSize = 12;
 constexpr std::size_t kPreviousStrategyDatabaseRuleSize = 16;
 constexpr std::size_t kStrategyDatabaseRuleSize = 18;
+constexpr std::uint32_t kStrategyDatabaseRetryIntervalTicks = 300;
 
 std::uint16_t ReadStrategyU16(const std::vector<unsigned char> &data, std::size_t offset) {
     return static_cast<std::uint16_t>(data[offset]) | (static_cast<std::uint16_t>(data[offset + 1]) << 8);
@@ -395,27 +396,44 @@ int ZombieDeckCounterBonus(const VSGameState &state, SeedType seed, int targetRo
 
 class StrategyDatabase {
     std::vector<StrategyRule> mRules;
-    bool mLoaded = false;
+    StrategyDatabaseLoadState mLoadState = StrategyDatabaseLoadState::Uninitialized;
+    std::uint32_t mNextRetryTick = 0;
 
-    void Load() {
-        if (mLoaded || Sexy::gSexyAppBase == nullptr) {
+    bool ShouldRetryAt(std::uint32_t tick) const {
+        return static_cast<std::int32_t>(tick - mNextRetryTick) >= 0;
+    }
+
+    void MarkUnavailable(std::uint32_t tick) {
+        mLoadState = StrategyDatabaseLoadState::Unavailable;
+        mNextRetryTick = tick + kStrategyDatabaseRetryIntervalTicks;
+    }
+
+    void Load(std::uint32_t tick) {
+        if (mLoadState == StrategyDatabaseLoadState::Loaded || mLoadState == StrategyDatabaseLoadState::Invalid
+            || (mLoadState == StrategyDatabaseLoadState::Unavailable && !ShouldRetryAt(tick))) {
             return;
         }
-        mLoaded = true;
+        if (Sexy::gSexyAppBase == nullptr) {
+            MarkUnavailable(tick);
+            return;
+        }
 
         Sexy::Buffer buffer;
         if (!Sexy::gSexyAppBase->ReadBufferFromFile("addonFiles/data/vs_ai_strategy_db.bin", &buffer, false)) {
+            MarkUnavailable(tick);
             return;
         }
 
         const auto &data = buffer.mData;
         if (data.size() < kStrategyDatabaseHeaderSize || !std::equal(kStrategyDatabaseMagic.begin(), kStrategyDatabaseMagic.end(), data.begin())) {
+            mLoadState = StrategyDatabaseLoadState::Invalid;
             return;
         }
         const std::uint16_t version = ReadStrategyU16(data, 8);
         const bool legacyDatabase = version == kLegacyStrategyDatabaseVersion;
         const bool previousDatabase = version == kPreviousStrategyDatabaseVersion;
         if (!legacyDatabase && !previousDatabase && version != kStrategyDatabaseVersion) {
+            mLoadState = StrategyDatabaseLoadState::Invalid;
             return;
         }
         const std::size_t ruleCount = ReadStrategyU16(data, 10);
@@ -423,9 +441,11 @@ class StrategyDatabase {
             : (previousDatabase ? kPreviousStrategyDatabaseRuleSize : kStrategyDatabaseRuleSize);
         if (ruleCount > (data.size() - kStrategyDatabaseHeaderSize) / ruleSize
             || kStrategyDatabaseHeaderSize + ruleCount * ruleSize != data.size()) {
+            mLoadState = StrategyDatabaseLoadState::Invalid;
             return;
         }
 
+        mRules.clear();
         for (std::size_t index = 0; index < ruleCount; ++index) {
             const std::size_t offset = kStrategyDatabaseHeaderSize + index * ruleSize;
             const unsigned char sideCode = data[offset];
@@ -459,11 +479,22 @@ class StrategyDatabase {
             rule.samples = ReadStrategyU16(data, offset + samplesOffset);
             mRules.push_back(rule);
         }
+        mLoadState = StrategyDatabaseLoadState::Loaded;
     }
 
 public:
+    StrategyDatabaseLoadState LoadState() const {
+        return mLoadState;
+    }
+
+    void Reset() {
+        mRules.clear();
+        mLoadState = StrategyDatabaseLoadState::Uninitialized;
+        mNextRetryTick = 0;
+    }
+
     int Bonus(const VSGameState &state, VSSide side, SeedType seed, int targetRow) {
-        Load();
+        Load(state.boardTick);
         if (mRules.empty() || targetRow < 0 || targetRow >= state.rows) {
             return 0;
         }
@@ -529,9 +560,21 @@ public:
     }
 };
 
-int StrategyBonus(const VSGameState &state, VSSide side, SeedType seed, int targetRow) {
+StrategyDatabase &GetStrategyDatabase() {
     static StrategyDatabase database;
-    return database.Bonus(state, side, seed, targetRow);
+    return database;
+}
+
+int StrategyBonus(const VSGameState &state, VSSide side, SeedType seed, int targetRow) {
+    return GetStrategyDatabase().Bonus(state, side, seed, targetRow);
+}
+
+StrategyDatabaseLoadState GetStrategyDatabaseLoadState() {
+    return GetStrategyDatabase().LoadState();
+}
+
+void ResetStrategyDatabase() {
+    GetStrategyDatabase().Reset();
 }
 
 bool IsReadyCard(const VSCardState &card, int resource) {
