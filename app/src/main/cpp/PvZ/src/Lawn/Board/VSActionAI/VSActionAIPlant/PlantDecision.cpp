@@ -46,175 +46,48 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         return action;
     }
 
-    const PlantLaneAssessment danger = MostThreatenedPlantLane(state);
-    const std::uint16_t zombieDeckArchetype = DeckArchetype(state, VSSide::Zombies);
-    const bool fastZombieDeck = (zombieDeckArchetype & kZombieDeckFastPressure) != 0;
-    const bool metalZombieDeck = (zombieDeckArchetype & kZombieDeckMetalScreen) != 0;
-    const bool vehicleZombieDeck = (zombieDeckArchetype & kZombieDeckVehicle) != 0;
-    const bool economyZombieDeck = (zombieDeckArchetype & kZombieDeckEconomy) != 0;
-    const bool rangedZombieDeck = (zombieDeckArchetype & kZombieDeckRangedSiege) != 0;
-    const bool heavyZombieDeck = (zombieDeckArchetype & kZombieDeckHeavy) != 0;
-    const bool swarmZombieDeck = (zombieDeckArchetype & kZombieDeckSwarm) != 0;
-    const bool deckNeedsEarlyFirepower = fastZombieDeck || vehicleZombieDeck || rangedZombieDeck || heavyZombieDeck || swarmZombieDeck;
-    const int actualIncomePlantCount = CountPlantIncome(state);
-    const int openingIncomeTarget = PlantAIPlanning::MainCarryIncomeTarget(state);
-    // Main-C timing is always based on planted producers. Enhanced mode
-    // accelerates their production cooldown, but must not count a fictitious
-    // extra Sunflower and begin a 125-Sun carry at only four real plants.
-    const int incomePlantCount = actualIncomePlantCount;
-    const int minimumIncomeBeforeOutput = openingIncomeTarget;
-    const int sustainedOutputCount = CountSustainedOutputPlants(state);
-    const bool hasIncomeSeed = PlantAIPlanning::HasIncomeSeed(state);
-    const bool hasSunshroomFiller = PlantAIPlanning::HasSunshroomSeed(state);
-    const bool hasSustainedOutputSeed = HasSustainedOutputSeed(state);
-    const bool hasActiveZombie = CountActiveZombies(state) > 0;
-    const int counterRow = MostUrgentCounterRow(state);
-    const bool mowerlessThirdColumnEmergency = IsMowerlessThirdColumnEmergency(state, counterRow);
-    const VSZombieState *counterClosest = FindClosestZombie(state, counterRow);
-    const int counterZombieCount = CountZombiesInRow(state, counterRow);
-    const int counterStackCount = PlantAIPlanning::LargestSquashTargetStackInRow(state, counterRow);
-    const PlantLaneAssessment counterLane = AssessPlantLane(state, counterRow);
-    const PlantLaneFirepower counterFirepower = AssessPlantLaneFirepower(state, counterRow);
-    int firepowerRow = counterRow;
-    int largestFirepowerDeficit = counterFirepower.deficit;
-    int contestedZombieRows = 0;
-    int unholdableZombieRows = 0;
-    int incomingZombieHealth = 0;
-    int damageBeforeZombieContact = 0;
-    for (int row = 0; row < state.rows; ++row) {
-        const PlantLaneFirepower firepower = AssessPlantLaneFirepower(state, row);
-        if (firepower.deficit > largestFirepowerDeficit
-            || (firepower.deficit == largestFirepowerDeficit && !firepower.canHold && row != counterRow)) {
-            firepowerRow = row;
-            largestFirepowerDeficit = firepower.deficit;
-        }
-        if (firepower.incomingHealth <= 0) {
-            continue;
-        }
-        ++contestedZombieRows;
-        incomingZombieHealth += firepower.incomingHealth;
-        damageBeforeZombieContact += firepower.damageBeforeContact;
-        if (!firepower.canHold || firepower.deficit > 0) {
-            ++unholdableZombieRows;
-        }
-    }
-    const PlantLaneFirepower weakestFirepower = AssessPlantLaneFirepower(state, firepowerRow);
-    const int counterCombatPlants = static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [counterRow](const VSPlantState &plant) {
-        return !IsDeadOrOutside(plant) && plant.position.row == counterRow && IsPlantCombatSeed(plant.seedType);
-    }));
-    const int combatPlantCount = static_cast<int>(std::count_if(state.plants.begin(), state.plants.end(), [](const VSPlantState &plant) {
-        return !IsDeadOrOutside(plant) && IsPlantCombatSeed(plant.seedType);
-    }));
-    const bool hasCombatSeed = std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [](const VSCardState &card) {
-        return card.active && !card.matchRestricted && IsPlantCombatSeed(card.seedType);
-    });
-    const bool hasGargantuar = HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GARGANTUAR)
-        || HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_GARGANTUAR);
-    const bool hasGigaPoleVaulter = HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_GIGA_POLEVAULTER);
-    int zamboniRow = -1;
-    int impactThreatRow = -1;
-    float closestZamboniX = std::numeric_limits<float>::max();
-    float closestImpactThreatX = std::numeric_limits<float>::max();
-    for (const VSZombieState &zombie : state.zombies) {
-        if (zombie.dead) {
-            continue;
-        }
-        if (zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_ZAMBONI) && zombie.positionX < closestZamboniX) {
-            zamboniRow = zombie.row;
-            closestZamboniX = zombie.positionX;
-        }
-        const ZombieType zombieType = static_cast<ZombieType>(zombie.zombieType);
-        if ((zombieType == ZombieType::ZOMBIE_SQUASH_HEAD || zombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL)
-            && zombie.positionX < closestImpactThreatX) {
-            impactThreatRow = zombie.row;
-            closestImpactThreatX = zombie.positionX;
-        }
-    }
-    const bool earlySingleBucket = state.boardTick < 32000 && counterZombieCount == 1
-        && HasZombieTypeInRow(state, counterRow, ZombieType::ZOMBIE_PAIL) && counterCombatPlants == 0 && counterLane.plantCount <= 2
-        && counterClosest != nullptr && counterClosest->positionX < 700.0f && !counterFirepower.canHold;
-    // Squash is an area/tempo card. The full-board target evaluator below
-    // owns its normal cluster and durable-body decisions; retain only the
-    // early isolated Pail exception here.
-    const bool zombieCluster = hasActiveZombie && counterStackCount >= 2;
-    const bool squashThreat = earlySingleBucket;
-    const bool impPearThreat = (hasGargantuar || hasGigaPoleVaulter) && counterClosest != nullptr
-        && (counterClosest->eating || counterClosest->positionX < 780.0f || counterLane.danger >= 160);
-    const int counterFirstColumn = mowerlessThirdColumnEmergency ? 0 : 4;
-    const int areaCounterReserve = PlantAIPlanning::AreaCounterReserve(state);
-    const bool hasEconomyPressurePlan = PlantAIPlanning::HasEconomyPressurePlan(state);
-    const bool midGame = state.boardTick >= 16000 || CountZombieEconomy(state) >= std::max(2, (state.rows + 1) / 2);
-    const int lateIncomeRecoveryTarget = !state.isSuddenDeath && midGame && actualIncomePlantCount < openingIncomeTarget
-        ? openingIncomeTarget
-        : 0;
-    const int economyPressureIncomeTarget = PlantAIPlanning::EconomyPressureIncomeTarget(state);
-    const int incomeExpansionTarget = state.isSuddenDeath ? 0
-        : std::max(economyPressureIncomeTarget, lateIncomeRecoveryTarget);
-    const bool pressureOutrunsFirepower = hasActiveZombie && (unholdableZombieRows > 0
-        || (contestedZombieRows >= 2 && damageBeforeZombieContact < incomingZombieHealth));
-    const bool immediateCounterThreat = squashThreat || impPearThreat || mowerlessThirdColumnEmergency;
-    const bool mustHoldCounterReserve = areaCounterReserve > 0 && state.plantSun >= areaCounterReserve
-        && (HasReadyZombieBreakthroughCard(state) || ((heavyZombieDeck || swarmZombieDeck) && hasActiveZombie));
-    const int protectedSun = mustHoldCounterReserve ? areaCounterReserve : 0;
-    const int zombieEconomyStrikeRow = MostVulnerableZombieEconomyRow(state);
-    const int economyStrikeIncomeFloor = economyZombieDeck ? std::max(2, minimumIncomeBeforeOutput - 1) : minimumIncomeBeforeOutput;
-    const bool canStrikeZombieEconomy = (state.isSuddenDeath || incomePlantCount >= economyStrikeIncomeFloor) && hasEconomyPressurePlan
-        && CountZombieEconomy(state) > 0 && danger.danger < 150 && !immediateCounterThreat;
-    const bool hasSporeCarry = std::any_of(state.seedBanks[0].begin(), state.seedBanks[0].end(), [](const VSCardState &card) {
-        return card.active && !card.matchRestricted && card.seedType == static_cast<std::uint16_t>(SeedType::SEED_SPORESHROOM);
-    });
-    // Winning replay boards do not stop at one attacker per lane. They
-    // first establish a compact sun base, then turn surplus sun into a
-    // second firing layer on the lanes that can hold it.
-    const int maximumOutputCount = std::max(1, state.rows * (hasSporeCarry ? 3 : 2));
-    int desiredOutputCount = state.isSuddenDeath
-        ? maximumOutputCount
-        : std::min(maximumOutputCount, std::max(1, (incomePlantCount + 1) / 2));
-    if (!state.isSuddenDeath && incomePlantCount >= openingIncomeTarget) {
-        desiredOutputCount = std::max(desiredOutputCount, std::min(maximumOutputCount, state.rows + 1));
-    }
-    if (!state.isSuddenDeath && state.plantSun >= 125) {
-        const int reserveOutputTarget = state.rows + (state.plantSun >= 350 ? 2 : 1);
-        desiredOutputCount = std::max(desiredOutputCount, std::min(maximumOutputCount, reserveOutputTarget));
-    }
-    if (!state.isSuddenDeath && deckNeedsEarlyFirepower && incomePlantCount >= minimumIncomeBeforeOutput) {
-        // A fast/vehicle/ranged/giant deck gets a firing layer one producer
-        // earlier than the neutral replay prior. This is the main matchup
-        // distinction that the old template-only policy was missing.
-        desiredOutputCount = std::max(desiredOutputCount, std::min(maximumOutputCount, state.rows));
-    }
-    if (!state.isSuddenDeath && hasSporeCarry) {
-        // The Spore/Puff/Coffee replay wins by adding layers of the same
-        // lobbed carry after its compact sun opening. It is still one
-        // main damage card, but it needs a deeper firing band than an
-        // expensive Melon-pult or Repeater deck.
-        const int sporeLayerTarget = state.plantSun >= 500 ? maximumOutputCount
-            : (state.plantSun >= 350 ? state.rows * 2 + 2 : state.rows + (state.plantSun >= 200 ? 3 : 1));
-        desiredOutputCount = std::max(desiredOutputCount, std::min(maximumOutputCount, sporeLayerTarget));
-    }
-    const bool needsSustainedOutput = hasSustainedOutputSeed
-        && (sustainedOutputCount < desiredOutputCount || (hasActiveZombie && largestFirepowerDeficit > 0));
-    const int highSunCombatTarget = std::min(maximumOutputCount, state.rows + (state.plantSun >= 350 ? 2 : 1));
-    const bool highSunCombatPressure = !state.isSuddenDeath && state.plantSun >= 125
-        && incomePlantCount >= minimumIncomeBeforeOutput && (hasCombatSeed || hasSustainedOutputSeed)
-        && (combatPlantCount < highSunCombatTarget || needsSustainedOutput || largestFirepowerDeficit > 0);
-    const bool readySustainedOutput = PlantAIPlanning::HasReadySustainedOutputCard(state, protectedSun);
-    // A replay-style grave pressure opening still has to stop the first
-    // live route. Do not turn a firepower deficit into an economy strike.
-    const bool deckOpeningPressure = deckNeedsEarlyFirepower && !hasActiveZombie
-        && incomePlantCount >= minimumIncomeBeforeOutput && state.plantSun >= 100;
-    const bool openingNeedsFirepower = deckOpeningPressure || (hasActiveZombie && (counterFirepower.deficit > 0 || !counterFirepower.canHold
-        || (counterClosest != nullptr && counterClosest->positionX < 720.0f && counterCombatPlants == 0)));
-    // Five Sunflowers are a compact opening base, not a permanent command to
-    // stop farming.  Once the match is in its grave-economy phase, however,
-    // every contested lane must be able to remove its incoming health before
-    // contact before another Sunflower is considered.  This keeps the
-    // decision tied to real lane DPS and zombie health rather than a fixed
-    // producer count.
-    const bool outputTempoHasPriority = incomePlantCount >= openingIncomeTarget && needsSustainedOutput
-        && readySustainedOutput && (pressureOutrunsFirepower || (midGame && incomePlantCount >= incomeExpansionTarget));
-    const bool mayExpandIncomePastOpening = incomePlantCount < openingIncomeTarget || !midGame
-        || (!pressureOutrunsFirepower && (!needsSustainedOutput || !readySustainedOutput || incomePlantCount < incomeExpansionTarget));
+    const PlantDecisionContext context = BuildDecisionContext(state);
+    const PlantLaneAssessment &danger = context.danger;
+    const PlantLaneAssessment &counterLane = context.counterLane;
+    const PlantLaneFirepower &counterFirepower = context.counterFirepower;
+    const PlantLaneFirepower &weakestFirepower = context.weakestFirepower;
+    const int actualIncomePlantCount = context.actualIncomePlantCount;
+    const int incomePlantCount = context.incomePlantCount;
+    const int openingIncomeTarget = context.openingIncomeTarget;
+    const int minimumIncomeBeforeOutput = context.minimumIncomeBeforeOutput;
+    const int sustainedOutputCount = context.sustainedOutputCount;
+    const int counterRow = context.counterRow;
+    const int firepowerRow = context.firepowerRow;
+    const int counterFirstColumn = context.counterFirstColumn;
+    const int areaCounterReserve = context.areaCounterReserve;
+    const int incomeExpansionTarget = context.incomeExpansionTarget;
+    const int largestFirepowerDeficit = context.largestFirepowerDeficit;
+    const int counterCombatPlants = context.counterCombatPlants;
+    const int protectedSun = context.protectedSun;
+    const int zombieEconomyStrikeRow = context.zombieEconomyStrikeRow;
+    const bool metalZombieDeck = context.metalZombieDeck;
+    const bool economyZombieDeck = context.economyZombieDeck;
+    const bool rangedZombieDeck = context.rangedZombieDeck;
+    const bool hasIncomeSeed = context.hasIncomeSeed;
+    const bool hasSunshroomFiller = context.hasSunshroomFiller;
+    const bool hasSustainedOutputSeed = context.hasSustainedOutputSeed;
+    const bool hasActiveZombie = context.hasActiveZombie;
+    const bool mowerlessThirdColumnEmergency = context.mowerlessThirdColumnEmergency;
+    const bool zombieCluster = context.zombieCluster;
+    const bool squashThreat = context.squashThreat;
+    const bool impPearThreat = context.impPearThreat;
+    const bool midGame = context.midGame;
+    const bool pressureOutrunsFirepower = context.pressureOutrunsFirepower;
+    const bool immediateCounterThreat = context.immediateCounterThreat;
+    const bool canStrikeZombieEconomy = context.canStrikeZombieEconomy;
+    const bool needsSustainedOutput = context.needsSustainedOutput;
+    const bool highSunCombatPressure = context.highSunCombatPressure;
+    const bool openingNeedsFirepower = context.openingNeedsFirepower;
+    const bool outputTempoHasPriority = context.outputTempoHasPriority;
+    const bool mayExpandIncomePastOpening = context.mayExpandIncomePastOpening;
+    const VSZombieState *counterClosest = context.counterClosest;
+    const int zamboniRow = context.zamboniRow;
+    const int impactThreatRow = context.impactThreatRow;
     // Enhanced AI still needs a real late economy. Once every live lane can
     // hold its current wave, recover missing producers even when a high-sun
     // output branch is available; otherwise a cheap early push leaves it at

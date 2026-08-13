@@ -1,6 +1,7 @@
 #ifndef PVZ_LAWN_BOARD_VS_ACTION_AI_PLANT_AI_PLANNING_H
 #define PVZ_LAWN_BOARD_VS_ACTION_AI_PLANT_AI_PLANNING_H
 
+#include "PlantDecisionContext.h"
 #include "../VSActionAIStrategy.h"
 
 #include <limits>
@@ -34,6 +35,7 @@ protected:
     static bool IsSquashClusterZombie(std::uint16_t zombieType);
     static bool IsSquashHighValueZombie(std::uint16_t zombieType);
     static int LargestSquashTargetStackInRow(const VSGameState &state, int row);
+    PlantDecisionContext BuildDecisionContext(const VSGameState &state) const;
     const VSCardState *FindReadyCard(const VSGameState &state, SeedType seedType) const;
     std::optional<VSAction> TryBlover(const VSGameState &state, int preferredRow);
     std::optional<VSAction> TryEvadeJalapenoHead(const VSGameState &state);
