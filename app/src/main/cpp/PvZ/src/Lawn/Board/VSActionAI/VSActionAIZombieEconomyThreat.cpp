@@ -438,7 +438,7 @@ int ZombieLaneAttackScore(const VSGameState &state, int row) {
     score += firepower.deficit * 5;
     score += !firepower.canHold && firepower.nearHealth > 0 ? 80 : 0;
 
-    score += MowerlessLaneAttackScoreBonus(state, policy, zombieCount);
+    score += MowerlessLaneAttackScoreBonus(state, policy, row, zombieCount);
     if (zombieCount == 0) {
         score += policy.conversionRoute ? MowerlessLaneDistributionAdjustment(policy, zombieCount) : 150;
     } else if (zombieCount == 1) {

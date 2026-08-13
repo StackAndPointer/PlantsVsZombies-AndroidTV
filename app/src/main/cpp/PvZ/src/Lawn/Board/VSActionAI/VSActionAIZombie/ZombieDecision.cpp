@@ -406,7 +406,7 @@ std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
                 // overcome the ordinary multi-lane spreading bias: that
                 // bias is correct before a mower falls, but not when the
                 // next successful push wins through this still-live target.
-                score += MowerlessLaneCommitmentBonus(lane, zombiesInRow);
+                score += MowerlessLaneCommitmentBonus(state, lane, row, zombiesInRow);
             }
             if (bestCard == nullptr || score > bestScore) {
                 bestCard = &card;

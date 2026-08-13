@@ -1,5 +1,7 @@
 #include "VSActionAILanePolicy.h"
 
+#include <algorithm>
+
 namespace vsai::detail {
 
 ZombieLanePolicy EvaluateZombieLanePolicy(const VSGameState &state, int row) {
@@ -21,9 +23,19 @@ ZombieLanePolicy EvaluateZombieLanePolicy(const VSGameState &state, int row) {
     return policy;
 }
 
-int MowerlessLaneAttackScoreBonus(const VSGameState &state, const ZombieLanePolicy &policy, int zombieCount) {
+int MowerlessLaneAttackScoreBonus(const VSGameState &state, const ZombieLanePolicy &policy, int row, int zombieCount) {
     if (!policy.conversionRoute) {
         return 0;
+    }
+    const bool hasAttackPlant = std::any_of(state.plants.begin(), state.plants.end(), [row](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.position.row == row && IsPlantCombatSeed(plant.seedType);
+    });
+    if (!hasAttackPlant) {
+        // A live target behind a spent mower and a row containing only
+        // Sunflowers/support has no practical recovery. This must beat the
+        // normal lane cooldown, while the separate Ash stack rules still
+        // prevent feeding several ordinary bodies into one blast cell.
+        return zombieCount == 0 ? 2860 : 2360;
     }
     return (zombieCount > 0 ? 1420 : 1280) + (AllMowersSpent(state) ? 240 : 0);
 }
@@ -41,9 +53,15 @@ int MowerlessLaneDistributionAdjustment(const ZombieLanePolicy &policy, int zomb
     return -15 - (zombieCount - 1) * 45;
 }
 
-int MowerlessLaneCommitmentBonus(const ZombieLanePolicy &policy, int zombieCount) {
+int MowerlessLaneCommitmentBonus(const VSGameState &state, const ZombieLanePolicy &policy, int row, int zombieCount) {
     if (!policy.conversionRoute) {
         return 0;
+    }
+    const bool hasAttackPlant = std::any_of(state.plants.begin(), state.plants.end(), [row](const VSPlantState &plant) {
+        return !IsDeadOrOutside(plant) && plant.position.row == row && IsPlantCombatSeed(plant.seedType);
+    });
+    if (!hasAttackPlant) {
+        return zombieCount == 0 ? 3020 : 2640;
     }
     return zombieCount == 0 ? 1450 : 1700;
 }

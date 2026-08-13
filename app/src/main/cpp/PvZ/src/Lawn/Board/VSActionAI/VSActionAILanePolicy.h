@@ -16,9 +16,9 @@ struct ZombieLanePolicy {
 };
 
 ZombieLanePolicy EvaluateZombieLanePolicy(const VSGameState &state, int row);
-int MowerlessLaneAttackScoreBonus(const VSGameState &state, const ZombieLanePolicy &policy, int zombieCount);
+int MowerlessLaneAttackScoreBonus(const VSGameState &state, const ZombieLanePolicy &policy, int row, int zombieCount);
 int MowerlessLaneDistributionAdjustment(const ZombieLanePolicy &policy, int zombieCount);
-int MowerlessLaneCommitmentBonus(const ZombieLanePolicy &policy, int zombieCount);
+int MowerlessLaneCommitmentBonus(const VSGameState &state, const ZombieLanePolicy &policy, int row, int zombieCount);
 
 } // namespace vsai::detail
 
