@@ -27,6 +27,10 @@ void ZombieAIPlanning::OnActionResult(const VSAction &action, VSActionResult res
 
 std::optional<VSAction> ZombieAI::Decide(const VSGameState &state) {
     AdvanceBlockedSlots();
+    // Priority is fixed for one board snapshot: opening economy, resources,
+    // target and grave safety, template commitments, economy recovery, then
+    // per-card lane scoring. Earlier safety decisions intentionally preempt
+    // pressure so a local match cannot lose its final target to a score tie.
     // Keep the first zombie action independent from the current grave count:
     // target markers and replay state must not let a template open with a
     // body before its first Gravestone is actually on the board.

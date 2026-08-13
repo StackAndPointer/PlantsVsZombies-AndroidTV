@@ -26,7 +26,9 @@ void ResetStrategyDatabase();
 // leaving physical board state and zero-economy openings unchanged.
 int EffectiveAIEconomyCount(VSSide side, int actualCount);
 
-// These masks are the stable tactical features used by the replay extractor.
+// These masks are replay/deck archetype features, not live tactical card
+// roles or draft carry eligibility. They are stable features used by the
+// replay extractor.
 // They intentionally describe counterable plans rather than exact six-card
 // deck hashes, so a Ban replacement still selects the correct response.
 constexpr std::uint16_t kZombieDeckFastPressure = 1U << 0;

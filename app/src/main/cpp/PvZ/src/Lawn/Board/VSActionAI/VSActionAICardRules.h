@@ -7,6 +7,8 @@
 
 namespace vsai::detail {
 
+// Live tactical roles used after a card is in the active deck. Draft carry
+// eligibility and replay deck archetypes intentionally use separate rules.
 enum class VSCardRole : std::uint32_t {
     None = 0,
     PlantOneShot = 1U << 0,

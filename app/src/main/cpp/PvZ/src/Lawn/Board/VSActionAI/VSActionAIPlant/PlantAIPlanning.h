@@ -27,6 +27,8 @@ protected:
         bool requireExactRow = false;
     };
 
+    // Match-local memory: Reset clears the opening gate and the short ash
+    // history; OnActionResult advances each only after an applied action.
     bool mOpeningEconomyPlaced = false;
     VSGridPosition mRecentAshTarget{-1, -1};
     std::uint32_t mRecentAshTick = 0;

@@ -13,6 +13,8 @@ protected:
     static bool HasLobbedPlantInRow(const VSGameState &state, int row);
     const VSCardState *FindReadyCard(const VSGameState &state, SeedType seedType) const;
 
+    // Match-local pressure cadence. Reset starts a fresh opening; applied
+    // actions update attack rows, grave progress, and lane cooldowns.
     int mLastAttackRow = -1;
     int mLastPressureEconomyCount = -1;
     std::array<std::uint8_t, 6> mLaneAttackCooldown{};
