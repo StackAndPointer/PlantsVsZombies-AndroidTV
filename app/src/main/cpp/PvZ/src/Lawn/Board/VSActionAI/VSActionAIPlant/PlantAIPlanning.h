@@ -77,6 +77,7 @@ protected:
         bool requirePreferredRow = false, bool allowEmergencyTrade = false);
     bool HasIncomeSeed(const VSGameState &state) const;
     bool HasSunshroomSeed(const VSGameState &state) const;
+    static int EffectivePlantEconomyCount(const VSGameState &state);
     bool HasEconomyPressurePlan(const VSGameState &state) const;
     int PrimaryOutputCost(const VSGameState &state) const;
     int MainCarryIncomeTarget(const VSGameState &state) const;

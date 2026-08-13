@@ -14,7 +14,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaDoomTempoPressure(const VSGameSta
     const bool peaDoomTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM);
-    if (!peaDoomTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 1 || CountZombieEconomy(state) == 0) {
+    if (!peaDoomTemplate || EffectivePlantEconomyCount(state) < 1 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -22,7 +22,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaDoomTempoPressure(const VSGameSta
     if (pea == nullptr || state.plantSun - pea->cost < protectedSun) {
         return std::nullopt;
     }
-    const int peaTarget = EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4 ? 1 : std::min(state.rows, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 2);
+    const int peaTarget = EffectivePlantEconomyCount(state) < 4 ? 1 : std::min(state.rows, EffectivePlantEconomyCount(state) - 2);
     if (CountPlantType(state, SeedType::SEED_PEASHOOTER) >= peaTarget) {
         return std::nullopt;
     }
@@ -61,14 +61,14 @@ std::optional<VSAction> PlantAIPlanning::TryStarfruitCrossfireFormation(const VS
     // postpone that central pressure formation.
     const bool starfruitTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT)
         && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHOMPER));
-    if (!starfruitTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4 || CountZombieEconomy(state) == 0) {
+    if (!starfruitTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
     const VSCardState *starfruit = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_STARFRUIT);
     if (starfruit == nullptr || state.plantSun - starfruit->cost < protectedSun) {
         return std::nullopt;
     }
-    const int crossfireTarget = std::min(state.rows, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 3));
+    const int crossfireTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 3));
     if (CountPlantType(state, SeedType::SEED_STARFRUIT) >= crossfireTarget) {
         return std::nullopt;
     }
@@ -109,14 +109,14 @@ std::optional<VSAction> PlantAIPlanning::TryStarfruitCrossfireFormation(const VS
 std::optional<VSAction> PlantAIPlanning::TryCactusSpikeweedCore(const VSGameState &state, int preferredRow, int protectedSun) {
     const bool cactusSpikeweedTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CACTUS) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPIKEWEED)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE);
-    if (!cactusSpikeweedTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4 || CountZombieEconomy(state) == 0) {
+    if (!cactusSpikeweedTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
     const VSCardState *cactus = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_CACTUS);
     if (cactus == nullptr || state.plantSun - cactus->cost < protectedSun) {
         return std::nullopt;
     }
-    const int cactusTarget = std::min(state.rows, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 3));
+    const int cactusTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 3));
     if (CountPlantType(state, SeedType::SEED_CACTUS) >= cactusTarget) {
         return std::nullopt;
     }
@@ -154,14 +154,14 @@ std::optional<VSAction> PlantAIPlanning::TryKernelCeleryFormation(const VSGameSt
     // Celery reacts at the front only after this lobbed firing core exists.
     const bool kernelCeleryTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_KERNELPULT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE);
-    if (!kernelCeleryTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 6 || CountZombieEconomy(state) == 0) {
+    if (!kernelCeleryTemplate || EffectivePlantEconomyCount(state) < 6 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
     const VSCardState *kernel = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_KERNELPULT);
     if (kernel == nullptr || state.plantSun - kernel->cost < protectedSun) {
         return std::nullopt;
     }
-    const int kernelTarget = std::min(state.rows, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 5));
+    const int kernelTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 5));
     if (CountPlantType(state, SeedType::SEED_KERNELPULT) >= kernelTarget) {
         return std::nullopt;
     }
@@ -200,7 +200,7 @@ std::optional<VSAction> PlantAIPlanning::TryRepeaterCeleryTempo(const VSGameStat
     const bool repeaterCeleryTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_JALAPENO)
         && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_TALLNUT));
-    if (!repeaterCeleryTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 3 || CountZombieEconomy(state) == 0) {
+    if (!repeaterCeleryTemplate || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -209,7 +209,7 @@ std::optional<VSAction> PlantAIPlanning::TryRepeaterCeleryTempo(const VSGameStat
     if (repeater == nullptr || totalCost == std::numeric_limits<int>::max() || state.plantSun - totalCost < protectedSun) {
         return std::nullopt;
     }
-    const int firingLineTarget = std::min(state.rows, std::max(2, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 1));
+    const int firingLineTarget = std::min(state.rows, std::max(2, EffectivePlantEconomyCount(state) - 1));
     if (CountPlantType(state, SeedType::SEED_REPEATER) >= firingLineTarget) {
         return std::nullopt;
     }
@@ -249,7 +249,7 @@ std::optional<VSAction> PlantAIPlanning::TryMelonMineTempo(const VSGameState &st
     const bool melonMineTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE) && !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM)
         && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER));
-    if (!melonMineTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 3 || CountZombieEconomy(state) == 0) {
+    if (!melonMineTemplate || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -258,7 +258,7 @@ std::optional<VSAction> PlantAIPlanning::TryMelonMineTempo(const VSGameState &st
     if (melon == nullptr || totalCost == std::numeric_limits<int>::max() || state.plantSun - totalCost < protectedSun) {
         return std::nullopt;
     }
-    const int firingLineTarget = std::min(state.rows, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 2));
+    const int firingLineTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 2));
     if (CountPlantType(state, SeedType::SEED_MELONPULT) >= firingLineTarget) {
         return std::nullopt;
     }
@@ -299,7 +299,7 @@ std::optional<VSAction> PlantAIPlanning::TryRepeaterTempoPressure(const VSGameSt
     const bool repeaterTempoTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SUNSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
         && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER));
-    const int incomeCount = EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state));
+    const int incomeCount = EffectivePlantEconomyCount(state);
     const bool hasSunshroomPad = CountPlantType(state, SeedType::SEED_SUNSHROOM) > 0;
     if (!repeaterTempoTemplate || incomeCount < (hasSunshroomPad ? 2 : 3) || CountZombieEconomy(state) == 0) {
         return std::nullopt;
@@ -361,7 +361,7 @@ std::optional<VSAction> PlantAIPlanning::TrySporeShellPressure(const VSGameState
     const bool sporeShellTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL)
         && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHERRYBOMB));
-    if (!sporeShellTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4 || CountZombieEconomy(state) == 0) {
+    if (!sporeShellTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -371,7 +371,7 @@ std::optional<VSAction> PlantAIPlanning::TrySporeShellPressure(const VSGameState
         return std::nullopt;
     }
 
-    const int openingTarget = std::min(3, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 3));
+    const int openingTarget = std::min(3, std::max(1, EffectivePlantEconomyCount(state) - 3));
     if (CountPlantType(state, SeedType::SEED_SPORESHROOM) >= openingTarget) {
         return std::nullopt;
     }
@@ -417,7 +417,7 @@ std::optional<VSAction> PlantAIPlanning::TryFumeDoomPressure(const VSGameState &
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SUNSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER);
-    if (!fumeDoomTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 6 || CountZombieEconomy(state) == 0) {
+    if (!fumeDoomTemplate || EffectivePlantEconomyCount(state) < 6 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -427,7 +427,7 @@ std::optional<VSAction> PlantAIPlanning::TryFumeDoomPressure(const VSGameState &
         return std::nullopt;
     }
 
-    const int firingLineTarget = std::min(state.rows, std::max(2, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 5));
+    const int firingLineTarget = std::min(state.rows, std::max(2, EffectivePlantEconomyCount(state) - 5));
     if (CountPlantType(state, SeedType::SEED_FUMESHROOM) >= firingLineTarget) {
         return std::nullopt;
     }

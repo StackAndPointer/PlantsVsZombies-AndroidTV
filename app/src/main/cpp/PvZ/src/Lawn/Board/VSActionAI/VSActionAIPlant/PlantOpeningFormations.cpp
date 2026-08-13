@@ -14,7 +14,7 @@ std::optional<VSAction> PlantAIPlanning::TryBoomerangControlPressure(const VSGam
     const bool boomerangControlTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE);
-    if (!boomerangControlTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4 || CountZombieEconomy(state) == 0) {
+    if (!boomerangControlTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -24,7 +24,7 @@ std::optional<VSAction> PlantAIPlanning::TryBoomerangControlPressure(const VSGam
         return std::nullopt;
     }
 
-    const int firingLineTarget = std::min(state.rows, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 3));
+    const int firingLineTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 3));
     if (CountPlantType(state, SeedType::SEED_BLOOMERANG) >= firingLineTarget) {
         return std::nullopt;
     }
@@ -71,7 +71,7 @@ std::optional<VSAction> PlantAIPlanning::TryBoomerangGarlicFormation(const VSGam
         return std::nullopt;
     }
 
-    const int income = EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state));
+    const int income = EffectivePlantEconomyCount(state);
     const VSCardState *boomerang = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_BLOOMERANG);
     const int boomerangCost = boomerang == nullptr ? std::numeric_limits<int>::max()
                                                     : PlantAIPlanning::EffectivePlantPlayCost(state, *boomerang);
@@ -159,7 +159,7 @@ std::optional<VSAction> PlantAIPlanning::TryThreepeaterPuffFormation(const VSGam
     // three shots cover live economy routes instead of becoming an edge gun.
     const bool threepeaterPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE);
-    if (!threepeaterPuffTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 4 || CountZombieEconomy(state) == 0) {
+    if (!threepeaterPuffTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -169,7 +169,7 @@ std::optional<VSAction> PlantAIPlanning::TryThreepeaterPuffFormation(const VSGam
         return std::nullopt;
     }
 
-    const int formationTarget = std::min(3, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 3));
+    const int formationTarget = std::min(3, std::max(1, EffectivePlantEconomyCount(state) - 3));
     if (CountPlantType(state, SeedType::SEED_THREEPEATER) >= formationTarget) {
         return std::nullopt;
     }
@@ -225,7 +225,7 @@ std::optional<VSAction> PlantAIPlanning::TrySnowpeaPuffMagnetPressure(const VSGa
     const VSCardState *puff = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_PUFFSHROOM);
     const VSCardState *coffee = state.isNight ? nullptr : PlantAIPlanning::FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
     const int puffCost = puff == nullptr ? std::numeric_limits<int>::max() : puff->cost + (coffee == nullptr ? 0 : coffee->cost);
-    if (EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) >= 1 && EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 3 && puff != nullptr
+    if (EffectivePlantEconomyCount(state) >= 1 && EffectivePlantEconomyCount(state) < 3 && puff != nullptr
         && (state.isNight || coffee != nullptr) && CountPlantType(state, SeedType::SEED_PUFFSHROOM) < 2
         && state.plantSun - puffCost >= protectedSun) {
         VSGridPosition openingTarget{};
@@ -291,7 +291,7 @@ std::optional<VSAction> PlantAIPlanning::TrySnowpeaPuffMagnetPressure(const VSGa
         }
     }
 
-    if (EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 3) {
+    if (EffectivePlantEconomyCount(state) < 3) {
         return std::nullopt;
     }
     const VSCardState *snowpea = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SNOWPEA);
@@ -299,7 +299,7 @@ std::optional<VSAction> PlantAIPlanning::TrySnowpeaPuffMagnetPressure(const VSGa
     if (snowpea == nullptr || snowpeaCost == std::numeric_limits<int>::max() || state.plantSun - snowpeaCost < protectedSun) {
         return std::nullopt;
     }
-    const int snowpeaTarget = std::min(state.rows, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 2));
+    const int snowpeaTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 2));
     if (snowpeaCount >= snowpeaTarget) {
         return std::nullopt;
     }
@@ -337,7 +337,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaPuffTempoOpening(const VSGameStat
     const bool peaPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SUNSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE);
-    if (!peaPuffTemplate || state.isSuddenDeath || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 1 || CountZombieEconomy(state) == 0) {
+    if (!peaPuffTemplate || state.isSuddenDeath || EffectivePlantEconomyCount(state) < 1 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -421,7 +421,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaCeleryAshTempo(const VSGameState 
     const bool peaCeleryAshTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHERRYBOMB) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER);
-    if (!peaCeleryAshTemplate || state.isSuddenDeath || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 3 || CountZombieEconomy(state) == 0) {
+    if (!peaCeleryAshTemplate || state.isSuddenDeath || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -513,7 +513,7 @@ std::optional<VSAction> PlantAIPlanning::TrySporePuffTempoPressure(const VSGameS
     const bool sporePuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPIKEWEED);
-    const int incomeCount = EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state));
+    const int incomeCount = EffectivePlantEconomyCount(state);
     if (!sporePuffTemplate || state.isSuddenDeath || incomeCount < 1 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -598,11 +598,11 @@ std::optional<VSAction> PlantAIPlanning::TryPeaCabbageTorchTempo(const VSGameSta
     const bool peaCabbageTorchTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CABBAGEPULT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_TORCHWOOD)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL);
-    if (!peaCabbageTorchTemplate || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 3 || CountZombieEconomy(state) == 0) {
+    if (!peaCabbageTorchTemplate || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
-    const int incomeCount = EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state));
+    const int incomeCount = EffectivePlantEconomyCount(state);
     const int peaCount = CountPlantType(state, SeedType::SEED_PEASHOOTER);
     const int cabbageCount = CountPlantType(state, SeedType::SEED_CABBAGEPULT);
     // Peashooter remains this deck's main carry. The recording opens one
@@ -667,7 +667,7 @@ std::optional<VSAction> PlantAIPlanning::TrySnowpeaBonkFormation(const VSGameSta
     const bool snowpeaBonkTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SNOWPEA)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BONK_CHOY) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER);
-    if (!snowpeaBonkTemplate || state.isSuddenDeath || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < 3 || CountZombieEconomy(state) == 0) {
+    if (!snowpeaBonkTemplate || state.isSuddenDeath || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -748,7 +748,7 @@ std::optional<VSAction> PlantAIPlanning::TrySnowpeaBonkFormation(const VSGameSta
     }
 
     const VSCardState *snowpea = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_SNOWPEA);
-    const int snowpeaTarget = std::min(state.rows, std::max(1, EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) - 2));
+    const int snowpeaTarget = std::min(state.rows, std::max(1, EffectivePlantEconomyCount(state) - 2));
     if (!IsAffordable(snowpea) || CountPlantType(state, SeedType::SEED_SNOWPEA) >= snowpeaTarget) {
         return std::nullopt;
     }

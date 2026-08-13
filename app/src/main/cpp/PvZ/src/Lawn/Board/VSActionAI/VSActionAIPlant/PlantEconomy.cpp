@@ -8,6 +8,10 @@
 
 namespace vsai::detail {
 
+int PlantAIPlanning::EffectivePlantEconomyCount(const VSGameState &state) {
+    return EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state));
+}
+
 VSGridPosition PlantAIPlanning::FindSustainedOutputCell(const VSGameState &state, SeedType seed, int row) const {
     int lastOutputColumn = 3;
     for (const VSPlantState &plant : state.plants) {
@@ -72,7 +76,7 @@ std::optional<VSAction> PlantAIPlanning::TryRecycleIncomeForOutput(const VSGameS
     // front flower when it prevents a real firing line from being built.
     // Do not trade economy during the opening or merely to make space.
     const int compactIncomeBase = state.rows >= 6 ? 5 : 4;
-    if (state.isSuddenDeath || EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < compactIncomeBase || !HasReadySustainedOutputCard(state, protectedSun)) {
+    if (state.isSuddenDeath || EffectivePlantEconomyCount(state) < compactIncomeBase || !HasReadySustainedOutputCard(state, protectedSun)) {
         return std::nullopt;
     }
 
@@ -174,7 +178,7 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
             && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BONK_CHOY)
             && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM);
         if (seed == SeedType::SEED_SCAREDYSHROOM
-            && EffectiveAIEconomyCount(VSSide::Plants, CountPlantIncome(state)) < (scaredyCoffeeTempoDeck ? 2 : 4)) {
+            && EffectivePlantEconomyCount(state) < (scaredyCoffeeTempoDeck ? 2 : 4)) {
             continue;
         }
         const bool lowCostCombat = allowLowCostCombat && card.cost <= 100
