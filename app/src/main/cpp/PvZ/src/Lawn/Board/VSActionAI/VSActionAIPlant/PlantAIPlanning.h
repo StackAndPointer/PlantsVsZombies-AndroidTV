@@ -20,6 +20,13 @@ protected:
         bool allowEmergencyTrade = false;
     };
 
+    struct PlantPlacementRange {
+        int preferredRow = -1;
+        int firstColumn = 0;
+        int lastColumn = 5;
+        bool requireExactRow = false;
+    };
+
     bool mOpeningEconomyPlaced = false;
     VSGridPosition mRecentAshTarget{-1, -1};
     std::uint32_t mRecentAshTick = 0;
@@ -48,10 +55,9 @@ protected:
     std::optional<VSAction> TryBlover(const VSGameState &state, int preferredRow);
     std::optional<VSAction> TryEvadeJalapenoHead(const VSGameState &state);
     int EffectivePlantPlayCost(const VSGameState &state, const VSCardState &card) const;
-    std::optional<VSAction> TryClearDaytimeSunshroomForPlanting(const VSGameState &state, SeedType replacementSeed, int row,
-        int firstColumn, int lastColumn, bool requireExactRow);
-    std::optional<VSAction> TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,
-        bool requireExactRow);
+    std::optional<VSAction> TryClearDaytimeSunshroomForPlanting(const VSGameState &state, SeedType replacementSeed,
+        PlantPlacementRange range);
+    std::optional<VSAction> TryPlantInRange(const VSGameState &state, SeedType seedType, PlantPlacementRange range);
     std::optional<VSAction> TryPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn);
     std::optional<VSAction> TryPlantExactRow(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn);
     std::optional<VSAction> TryRemoveLadderedNut(const VSGameState &state);

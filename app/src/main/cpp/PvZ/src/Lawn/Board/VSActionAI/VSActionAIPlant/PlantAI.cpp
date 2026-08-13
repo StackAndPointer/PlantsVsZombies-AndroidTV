@@ -172,25 +172,25 @@ int PlantAIPlanning::EffectivePlantPlayCost(const VSGameState &state, const VSCa
     return coffee == nullptr ? std::numeric_limits<int>::max() : card.cost + coffee->cost;
 }
 
-std::optional<VSAction> PlantAIPlanning::TryClearDaytimeSunshroomForPlanting(const VSGameState &state, SeedType replacementSeed, int row,
-    int firstColumn, int lastColumn, bool requireExactRow) {
+std::optional<VSAction> PlantAIPlanning::TryClearDaytimeSunshroomForPlanting(const VSGameState &state, SeedType replacementSeed,
+    PlantPlacementRange range) {
     if (state.isNight || replacementSeed == SeedType::SEED_SUNSHROOM) {
         return std::nullopt;
     }
-    firstColumn = std::clamp(firstColumn, 0, 5);
-    lastColumn = std::clamp(lastColumn, firstColumn, 5);
+    range.firstColumn = std::clamp(range.firstColumn, 0, 5);
+    range.lastColumn = std::clamp(range.lastColumn, range.firstColumn, 5);
 
     const VSPlantState *bestPad = nullptr;
     int bestScore = std::numeric_limits<int>::min();
-    for (int rowOffset = 0; rowOffset < (requireExactRow ? 1 : state.rows); ++rowOffset) {
-        const int targetRow = requireExactRow ? row : (row + rowOffset) % state.rows;
+    for (int rowOffset = 0; rowOffset < (range.requireExactRow ? 1 : state.rows); ++rowOffset) {
+        const int targetRow = range.requireExactRow ? range.preferredRow : (range.preferredRow + rowOffset) % state.rows;
         if (targetRow < 0 || targetRow >= state.rows || IsMowerInMotion(state, targetRow)) {
             continue;
         }
         for (const VSPlantState &plant : state.plants) {
             if (IsDeadOrOutside(plant) || plant.position.row != targetRow
                 || plant.seedType != static_cast<std::uint16_t>(SeedType::SEED_SUNSHROOM)
-                || plant.position.col < firstColumn || plant.position.col > lastColumn) {
+                || plant.position.col < range.firstColumn || plant.position.col > range.lastColumn) {
                 continue;
             }
             // Do not clear a pad for a projectile plant that would still be
@@ -199,7 +199,7 @@ std::optional<VSAction> PlantAIPlanning::TryClearDaytimeSunshroomForPlanting(con
                 && !IsPlantPlacementSafe(state, replacementSeed, plant.position)) {
                 continue;
             }
-            const int score = static_cast<int>(plant.position.col) * 100 + (targetRow == row ? 25 : 0) - rowOffset;
+            const int score = static_cast<int>(plant.position.col) * 100 + (targetRow == range.preferredRow ? 25 : 0) - rowOffset;
             if (bestPad == nullptr || score > bestScore) {
                 bestPad = &plant;
                 bestScore = score;
@@ -209,27 +209,26 @@ std::optional<VSAction> PlantAIPlanning::TryClearDaytimeSunshroomForPlanting(con
     return bestPad == nullptr ? std::nullopt : std::optional<VSAction>(MakeShovelAction(bestPad->position, state.boardTick));
 }
 
-std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn,
-    bool requireExactRow) {
+std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &state, SeedType seedType, PlantPlacementRange range) {
     const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seedType);
     const int totalCost = card == nullptr ? std::numeric_limits<int>::max() : PlantAIPlanning::EffectivePlantPlayCost(state, *card);
     if (card == nullptr || totalCost == std::numeric_limits<int>::max() || state.plantSun < totalCost) {
         return std::nullopt;
     }
     if ((seedType == SeedType::SEED_WALLNUT || seedType == SeedType::SEED_TALLNUT || seedType == SeedType::SEED_PUMPKINSHELL)
-        && IsNutBypassZombieApproaching(state, row)) {
+        && IsNutBypassZombieApproaching(state, range.preferredRow)) {
         return std::nullopt;
     }
     const VSGridPosition target = seedType == SeedType::SEED_WALLNUT || seedType == SeedType::SEED_TALLNUT
-        ? FindWallnutCell(state, row, firstColumn, lastColumn)
-        : (requireExactRow ? FindPlantCellInExactRow(state, row, firstColumn, lastColumn)
-                           : FindPlantCellInColumns(state, row, firstColumn, lastColumn));
+        ? FindWallnutCell(state, range.preferredRow, range.firstColumn, range.lastColumn)
+        : (range.requireExactRow ? FindPlantCellInExactRow(state, range.preferredRow, range.firstColumn, range.lastColumn)
+                                 : FindPlantCellInColumns(state, range.preferredRow, range.firstColumn, range.lastColumn));
     if (target.col < 0 || target.row < 0) {
-        return TryClearDaytimeSunshroomForPlanting(state, seedType, row, firstColumn, lastColumn, requireExactRow);
+        return TryClearDaytimeSunshroomForPlanting(state, seedType, range);
     }
     if (target.col < 0 || target.row < 0
         || (IsMowerInMotion(state, target.row) && IsPlantImmediateCounterSeed(seedType))
-        || (ShouldYieldLaneToMower(state, target.row) && (!requireExactRow || !IsPlantImmediateCounterSeed(seedType)))) {
+        || (ShouldYieldLaneToMower(state, target.row) && (!range.requireExactRow || !IsPlantImmediateCounterSeed(seedType)))) {
         return std::nullopt;
     }
     if (IsPlantCombatSeed(static_cast<std::uint16_t>(seedType)) && !IsPlantPlacementSafe(state, seedType, target)) {
@@ -239,11 +238,12 @@ std::optional<VSAction> PlantAIPlanning::TryPlantInRange(const VSGameState &stat
 }
 
 std::optional<VSAction> PlantAIPlanning::TryPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn) {
-    return PlantAIPlanning::TryPlantInRange(state, seedType, row, firstColumn, lastColumn, false);
+    return PlantAIPlanning::TryPlantInRange(state, seedType, {.preferredRow = row, .firstColumn = firstColumn, .lastColumn = lastColumn});
 }
 
 std::optional<VSAction> PlantAIPlanning::TryPlantExactRow(const VSGameState &state, SeedType seedType, int row, int firstColumn, int lastColumn) {
-    return PlantAIPlanning::TryPlantInRange(state, seedType, row, firstColumn, lastColumn, true);
+    return PlantAIPlanning::TryPlantInRange(state, seedType,
+        {.preferredRow = row, .firstColumn = firstColumn, .lastColumn = lastColumn, .requireExactRow = true});
 }
 
 std::optional<VSAction> PlantAIPlanning::TryRemoveLadderedNut(const VSGameState &state) {

@@ -381,8 +381,8 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
             default:
                 break;
         }
-        if (std::optional<VSAction> action = TryClearDaytimeSunshroomForPlanting(state, seed, row, firstColumn, lastColumn,
-                requirePreferredRow)) {
+        if (std::optional<VSAction> action = TryClearDaytimeSunshroomForPlanting(state, seed,
+                {.preferredRow = row, .firstColumn = firstColumn, .lastColumn = lastColumn, .requireExactRow = requirePreferredRow})) {
             return action;
         }
     }
