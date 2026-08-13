@@ -3,6 +3,8 @@
 
 #include "../VSActionAIThreat.h"
 
+#include <optional>
+
 namespace vsai::detail {
 
 // All values are derived from one VSGameState snapshot before action
@@ -52,6 +54,11 @@ struct PlantDecisionContext {
     const VSZombieState *counterClosest = nullptr;
     int zamboniRow = -1;
     int impactThreatRow = -1;
+};
+
+struct PlantDecisionResult {
+    bool handled = false;
+    std::optional<VSAction> action;
 };
 
 } // namespace vsai::detail

@@ -36,6 +36,7 @@ protected:
     static bool IsSquashHighValueZombie(std::uint16_t zombieType);
     static int LargestSquashTargetStackInRow(const VSGameState &state, int row);
     PlantDecisionContext BuildDecisionContext(const VSGameState &state) const;
+    PlantDecisionResult TryEmergencyPolicy(const VSGameState &state, const PlantDecisionContext &context);
     const VSCardState *FindReadyCard(const VSGameState &state, SeedType seedType) const;
     std::optional<VSAction> TryBlover(const VSGameState &state, int preferredRow);
     std::optional<VSAction> TryEvadeJalapenoHead(const VSGameState &state);

@@ -56,26 +56,19 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const int openingIncomeTarget = context.openingIncomeTarget;
     const int minimumIncomeBeforeOutput = context.minimumIncomeBeforeOutput;
     const int sustainedOutputCount = context.sustainedOutputCount;
-    const int counterRow = context.counterRow;
     const int firepowerRow = context.firepowerRow;
-    const int counterFirstColumn = context.counterFirstColumn;
     const int areaCounterReserve = context.areaCounterReserve;
     const int incomeExpansionTarget = context.incomeExpansionTarget;
     const int largestFirepowerDeficit = context.largestFirepowerDeficit;
     const int counterCombatPlants = context.counterCombatPlants;
     const int protectedSun = context.protectedSun;
     const int zombieEconomyStrikeRow = context.zombieEconomyStrikeRow;
-    const bool metalZombieDeck = context.metalZombieDeck;
     const bool economyZombieDeck = context.economyZombieDeck;
-    const bool rangedZombieDeck = context.rangedZombieDeck;
     const bool hasIncomeSeed = context.hasIncomeSeed;
     const bool hasSunshroomFiller = context.hasSunshroomFiller;
     const bool hasSustainedOutputSeed = context.hasSustainedOutputSeed;
     const bool hasActiveZombie = context.hasActiveZombie;
-    const bool mowerlessThirdColumnEmergency = context.mowerlessThirdColumnEmergency;
     const bool zombieCluster = context.zombieCluster;
-    const bool squashThreat = context.squashThreat;
-    const bool impPearThreat = context.impPearThreat;
     const bool midGame = context.midGame;
     const bool pressureOutrunsFirepower = context.pressureOutrunsFirepower;
     const bool immediateCounterThreat = context.immediateCounterThreat;
@@ -85,118 +78,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const bool openingNeedsFirepower = context.openingNeedsFirepower;
     const bool outputTempoHasPriority = context.outputTempoHasPriority;
     const bool mayExpandIncomePastOpening = context.mayExpandIncomePastOpening;
-    const VSZombieState *counterClosest = context.counterClosest;
-    const int zamboniRow = context.zamboniRow;
-    const int impactThreatRow = context.impactThreatRow;
-    // Enhanced AI still needs a real late economy. Once every live lane can
-    // hold its current wave, recover missing producers even when a high-sun
-    // output branch is available; otherwise a cheap early push leaves it at
-    // three or four producers for the remainder of the match.
-    // The recorded plant side builds its sun base first, then answers a real
-    // heavy/fast push with Squash. It is never an opening filler card.
-    // Against Gargantuars the replay preserves Imp Pear for the first
-    // answer; Squash is the follow-up when the giant reaches the line.
-    if (zamboniRow >= 0) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TrySpikeweed(state, zamboniRow, protectedSun)) {
-            return action;
-        }
-    }
-    if (impactThreatRow >= 0) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TryImpactDistraction(state, impactThreatRow, protectedSun)) {
-            return action;
-        }
-    }
-    if (hasActiveZombie) {
-        // Every Ash card chooses its own full-board best legal target.
-        // This is deliberately before normal economy/output spending: a
-        // genuine kill cluster must not lose its timing to a filler move.
-        if (std::optional<VSAction> action = PlantAIPlanning::TryWakeSleepingDoomshroom(state)) {
-            return action;
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryBestAshCounter(state, protectedSun)) {
-            return action;
-        }
-    }
-    if (std::optional<VSAction> action = PlantAIPlanning::TryUmbrellaDefense(state, protectedSun)) {
-        return action;
-    }
-    if (hasActiveZombie && !mowerlessThirdColumnEmergency) {
-        // Hypno-shroom is a conversion card, not generic mushroom filler:
-        // feed it a durable threat that can walk back into nearby zombies.
-        if (std::optional<VSAction> action = PlantAIPlanning::TryHypnoshroom(state, counterRow, protectedSun)) {
-            return action;
-        }
-        // Mines are only deployed while their target has enough runway to
-        // arm. Immediate pressure is handled by Ash, Iceberg, or a wall.
-        if (std::optional<VSAction> action = PlantAIPlanning::TryPotatoMine(state, firepowerRow, protectedSun)) {
-            return action;
-        }
-        if (metalZombieDeck) {
-            // Magnet is a matchup answer, not a late template ornament. Once
-            // an actual metal screen enters a lane, resolve it before adding
-            // another direct-fire plant that the screen hard-counters.
-            if (std::optional<VSAction> action = PlantAIPlanning::TryMagnetShroom(state, firepowerRow, protectedSun)) {
-                return action;
-            }
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TrySnowpeaBonkPressure(state, firepowerRow, protectedSun)) {
-            return action;
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryStarfruitChomperPressure(state, firepowerRow, protectedSun)) {
-            return action;
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryKernelCeleryPressure(state, firepowerRow, protectedSun)) {
-            return action;
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryCactusSpikeweedPressure(state, firepowerRow, protectedSun)) {
-            return action;
-        }
-    }
-    if (hasActiveZombie && impPearThreat && !HasPlantTypeInRow(state, SeedType::SEED_IMP_PEAR, counterRow)) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TryCounterPlant(state, SeedType::SEED_IMP_PEAR, counterRow, counterFirstColumn)) {
-            return action;
-        }
-    }
-    if (squashThreat && counterClosest != nullptr && !HasPlantTypeInRow(state, SeedType::SEED_SQUASH, counterRow)) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TryCounterPlant(state, SeedType::SEED_SQUASH, counterRow, counterFirstColumn)) {
-            return action;
-        }
-    }
-    if (hasActiveZombie) {
-        if (std::optional<VSAction> action = PlantAIPlanning::TryIcebergLettuce(state, counterRow, protectedSun, mowerlessThirdColumnEmergency)) {
-            return action;
-        }
-        if (rangedZombieDeck) {
-            if (std::optional<VSAction> action = PlantAIPlanning::TryPumpkinShell(state, counterRow, protectedSun)) {
-                return action;
-            }
-        }
-        // Iceberg Lettuce is deliberately played at the zombie's feet.
-        // Once it has bought that time, a Wall-nut is the next defensive
-        // investment, ahead of another income or output decision.
-        if (HasPlantTypeInRow(state, SeedType::SEED_ICEBERG_LETTUCE, counterRow)
-            && PlantAIPlanning::ShouldDeployWallnut(state, counterRow)) {
-            if (std::optional<VSAction> action = PlantAIPlanning::TryPlant(state, SeedType::SEED_WALLNUT, counterRow, 3, 5)) {
-                return action;
-            }
-        }
-    }
-    if (mowerlessThirdColumnEmergency) {
-        // With no mower left, do not spend this turn on income, grave
-        // pressure, or another lane.  A nut may be planted in the
-        // zombie's current cell and is preferable to losing the row.
-        if (ShouldDeployWallnut(state, counterRow)) {
-            if (std::optional<VSAction> action = PlantAIPlanning::TryPlant(state, SeedType::SEED_WALLNUT, counterRow, 0, 5)) {
-                return action;
-            }
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryPumpkinShell(state, counterRow, protectedSun)) {
-            return action;
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, counterRow, protectedSun, true, true, true)) {
-            return action;
-        }
-        return std::nullopt;
+    const PlantDecisionResult emergency = TryEmergencyPolicy(state, context);
+    if (emergency.handled) {
+        return emergency.action;
     }
     if (openingNeedsFirepower) {
         if (hasSustainedOutputSeed) {
