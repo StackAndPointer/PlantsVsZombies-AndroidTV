@@ -313,22 +313,23 @@ void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
     // matchup filters below.
     plans.usePlantTemplate = Sexy::Rand(100) < 80;
     plans.useZombieTemplate = Sexy::Rand(100) < 80;
+    vsai::draft::BuiltinAIDraftHistory &history = vsai::draft::GetBuiltinAIDraftHistory();
     // A new chooser is a new match plan. Avoid repeating the same archetype
     // when the engine's deterministic RNG starts consecutive local matches
     // from the same seed.
-    if (kBuiltinAIPlantProfiles.size() > 1 && plans.plantProfile == vsai::draft::LastBuiltinAIPlantProfile()) {
+    if (kBuiltinAIPlantProfiles.size() > 1 && plans.plantProfile == history.lastPlantProfile) {
         plans.plantProfile = PickBuiltinAIPlantProfile();
-        if (plans.plantProfile == vsai::draft::LastBuiltinAIPlantProfile()) {
+        if (plans.plantProfile == history.lastPlantProfile) {
             plans.plantProfile = (plans.plantProfile + 1) % static_cast<int>(kBuiltinAIPlantProfiles.size());
         }
     }
-    if (std::size(kBuiltinAIZombieDecks) > 1 && plans.zombieProfile == vsai::draft::LastBuiltinAIZombieProfile()) {
+    if (std::size(kBuiltinAIZombieDecks) > 1 && plans.zombieProfile == history.lastZombieProfile) {
         plans.zombieProfile = (plans.zombieProfile + 1
                                              + Sexy::Rand(static_cast<int>(std::size(kBuiltinAIZombieDecks) - 1)))
             % static_cast<int>(std::size(kBuiltinAIZombieDecks));
     }
-    vsai::draft::LastBuiltinAIPlantProfile() = plans.plantProfile;
-    vsai::draft::LastBuiltinAIZombieProfile() = plans.zombieProfile;
+    history.lastPlantProfile = plans.plantProfile;
+    history.lastZombieProfile = plans.zombieProfile;
 }
 
 bool UsesBuiltinAITemplate(SeedChooserScreen *screen) {
@@ -1249,7 +1250,7 @@ void ReplaceBuiltinAIPlantTemplateAfterOpeningBan(SeedChooserScreen *screen) {
     }
     if (bestProfile >= 0) {
         BuiltinAIPlans().plantProfile = bestProfile;
-        vsai::draft::LastBuiltinAIPlantProfile() = bestProfile;
+        vsai::draft::GetBuiltinAIDraftHistory().lastPlantProfile = bestProfile;
         BuiltinAIPlans().plantMainPickSlot = -1;
         return;
     }

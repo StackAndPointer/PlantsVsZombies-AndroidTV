@@ -134,18 +134,13 @@ BuiltinAIDraftSession &GetBuiltinAIDraftSession() {
     return session;
 }
 
-int &LastBuiltinAIPlantProfile() {
-    static int profile = -1;
-    return profile;
-}
-
-int &LastBuiltinAIZombieProfile() {
-    static int profile = -1;
-    return profile;
-}
-
 void ResetBuiltinAIDraftSession() {
     GetBuiltinAIDraftSession() = {};
+}
+
+BuiltinAIDraftHistory &GetBuiltinAIDraftHistory() {
+    static BuiltinAIDraftHistory history;
+    return history;
 }
 
 int BanBaseThreat(bool targetsZombies, SeedType seed) {

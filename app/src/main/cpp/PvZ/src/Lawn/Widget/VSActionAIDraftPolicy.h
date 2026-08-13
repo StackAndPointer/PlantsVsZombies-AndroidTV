@@ -42,9 +42,17 @@ struct BuiltinAIDraftSession {
 };
 
 BuiltinAIDraftSession &GetBuiltinAIDraftSession();
-int &LastBuiltinAIPlantProfile();
-int &LastBuiltinAIZombieProfile();
 void ResetBuiltinAIDraftSession();
+
+// This optional history intentionally survives one chooser session so
+// consecutive local matches do not repeat an archetype when RNG is seeded
+// identically. It is not current-match draft state.
+struct BuiltinAIDraftHistory {
+    int lastPlantProfile = -1;
+    int lastZombieProfile = -1;
+};
+
+BuiltinAIDraftHistory &GetBuiltinAIDraftHistory();
 
 // These are draft composition rules, not runtime plant roles or replay deck
 // archetypes. See VSActionAICardRules and VSActionAIStrategy respectively.
