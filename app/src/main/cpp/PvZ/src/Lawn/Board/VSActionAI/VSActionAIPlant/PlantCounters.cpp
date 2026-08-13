@@ -11,6 +11,9 @@ namespace vsai::detail {
 namespace {
 
 bool CanUseSunshroomFootPad(const VSZombieState &zombie) {
+    if (static_cast<ZombieType>(zombie.zombieType) == ZombieType::ZOMBIE_EXPLORER && zombie.explorerTorchLit) {
+        return false;
+    }
     switch (static_cast<ZombieType>(zombie.zombieType)) {
         case ZombieType::ZOMBIE_GARGANTUAR:
         case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
@@ -579,9 +582,30 @@ std::optional<VSAction> PlantAIPlanning::TryStarfruitGarlicFormation(const VSGam
 
 std::optional<VSAction> PlantAIPlanning::TryIcebergLettuce(const VSGameState &state, int row, int protectedSun, bool forceEmergencyControl) {
     const VSCardState *card = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_ICEBERG_LETTUCE);
-    const VSZombieState *closest = FindClosestZombie(state, row);
-    if (card == nullptr || closest == nullptr || IsMowerInMotion(state, row) || state.plantSun - card->cost < protectedSun
+    if (card == nullptr || IsMowerInMotion(state, row) || state.plantSun - card->cost < protectedSun
         || HasPlantTypeInRow(state, SeedType::SEED_ICEBERG_LETTUCE, row)) {
+        return std::nullopt;
+    }
+
+    const VSZombieState *litExplorer = nullptr;
+    for (const VSZombieState &zombie : state.zombies) {
+        if (zombie.dead || zombie.mindControlled || zombie.row != row
+            || zombie.zombieType != static_cast<std::uint16_t>(ZombieType::ZOMBIE_EXPLORER) || !zombie.explorerTorchLit) {
+            continue;
+        }
+        if (litExplorer == nullptr || zombie.positionX < litExplorer->positionX) {
+            litExplorer = &zombie;
+        }
+    }
+    if (litExplorer != nullptr) {
+        const VSGridPosition torchTarget{static_cast<std::int8_t>(ZombieColumn(*litExplorer)), static_cast<std::int8_t>(row)};
+        if (IsPlantableVSTile(state, torchTarget) && !HasPlantAt(state, torchTarget) && !HasGridItemAt(state, torchTarget)) {
+            return MakePlayAction(VSSide::Plants, *card, torchTarget, state.boardTick);
+        }
+    }
+
+    const VSZombieState *closest = FindClosestZombie(state, row);
+    if (closest == nullptr) {
         return std::nullopt;
     }
 

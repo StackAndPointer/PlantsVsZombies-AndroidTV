@@ -1,5 +1,7 @@
 #include "PlantAI.h"
 
+#include <algorithm>
+
 namespace vsai::detail {
 
 PlantDecisionResult PlantAIPlanning::TryEmergencyPolicy(const VSGameState &state, const PlantDecisionContext &context) {
@@ -11,6 +13,20 @@ PlantDecisionResult PlantAIPlanning::TryEmergencyPolicy(const VSGameState &state
     if (context.impactThreatRow >= 0) {
         if (std::optional<VSAction> action = TryImpactDistraction(state, context.impactThreatRow, context.protectedSun)) {
             return {.handled = true, .action = action};
+        }
+    }
+    // A lit Explorer immediately burns a plant it reaches. Iceberg Lettuce
+    // is its direct counter, so check every threatened row before spending
+    // a broader ash answer elsewhere.
+    for (int row = 0; row < state.rows; ++row) {
+        const bool hasLitExplorer = std::any_of(state.zombies.begin(), state.zombies.end(), [row](const VSZombieState &zombie) {
+            return !zombie.dead && !zombie.mindControlled && zombie.row == row
+                && zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_EXPLORER) && zombie.explorerTorchLit;
+        });
+        if (hasLitExplorer) {
+            if (std::optional<VSAction> action = TryIcebergLettuce(state, row, context.protectedSun)) {
+                return {.handled = true, .action = action};
+            }
         }
     }
     if (context.hasActiveZombie) {

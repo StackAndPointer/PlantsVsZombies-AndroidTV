@@ -125,7 +125,8 @@ std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState 
             if (IsDeadOrOutside(plant) || plant.position.row != zombie.row) {
                 continue;
             }
-            if (plant.id == zombie.jalapenoContactPlantId) {
+            if (plant.id == zombie.jalapenoContactPlantId
+                || (zombie.jalapenoContactPlantId == 0U && plant.id == zombie.jalapenoPreContactPlantId)) {
                 contactPlant = &plant;
             }
         }
@@ -142,14 +143,14 @@ std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState 
             || candidateSeed == SeedType::SEED_CHERRYBOMB || candidateSeed == SeedType::SEED_JALAPENO
             || candidateSeed == SeedType::SEED_CHILLY_PEPPER || candidateSeed == SeedType::SEED_DOOMSHROOM
             || candidateSeed == SeedType::SEED_ICESHROOM;
-        if (candidateSeed == SeedType::SEED_GARLIC || (candidateSeed == SeedType::SEED_HYPNOSHROOM && !contactPlant->asleep) || isAshPlant) {
+        if (candidateSeed == SeedType::SEED_GARLIC || candidateSeed == SeedType::SEED_ICEBERG_LETTUCE
+            || (candidateSeed == SeedType::SEED_HYPNOSHROOM && !contactPlant->asleep) || isAshPlant) {
             continue;
         }
 
-        // BuildGameState obtains this exact target from
-        // FindPlantTarget(ATTACKTYPE_CHEW). The engine requires 20 pixels of
-        // attack-rect overlap before a Jalapeno Head begins its burn trigger,
-        // so never shovel a merely approaching front plant.
+        // BuildGameState uses the engine's exact target first, then a
+        // five-pixel AI-only warning overlap. The engine keeps its normal
+        // 20-pixel burn trigger; the smaller value only buys shoveling time.
         const int score = PlantValueScore(*contactPlant) + static_cast<int>(contactPlant->position.col) * 10;
         if (bestPlant == nullptr || score > bestScore) {
             bestPlant = contactPlant;

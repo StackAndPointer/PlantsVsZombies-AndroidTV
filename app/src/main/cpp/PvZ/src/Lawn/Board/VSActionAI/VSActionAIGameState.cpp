@@ -106,6 +106,20 @@ VSGameState BuildGameStateSnapshot(Board *board) {
         Plant *jalapenoContactPlant = zombie->mZombieType == ZombieType::ZOMBIE_JALAPENO_HEAD
             ? zombie->FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)
             : nullptr;
+        Plant *jalapenoPreContactPlant = nullptr;
+        if (zombie->mZombieType == ZombieType::ZOMBIE_JALAPENO_HEAD && !zombie->mMindControlled) {
+            constexpr int kJalapenoHeadAiWarningOverlap = 5;
+            const Sexy::Rect attackRect = zombie->GetZombieAttackRect();
+            for (Plant *plant = nullptr; board->mPlants.IterateNext(plant);) {
+                if (plant->mDead || plant->mRow != zombie->mRow
+                    || !zombie->CanTargetPlant(plant, ZombieAttackType::ATTACKTYPE_CHEW)
+                    || GetRectOverlap(attackRect, plant->GetPlantRect()) < kJalapenoHeadAiWarningOverlap) {
+                    continue;
+                }
+                jalapenoPreContactPlant = plant;
+                break;
+            }
+        }
         state.zombies.push_back({
             .id = board->mZombies.DataArrayGetID(zombie),
             .zombieType = static_cast<std::uint16_t>(zombie->mZombieType),
@@ -120,6 +134,9 @@ VSGameState BuildGameStateSnapshot(Board *board) {
             .canBeFrozen = zombie->CanBeFrozen(),
             .jalapenoContactPlantId = jalapenoContactPlant == nullptr ? 0U
                                                                        : board->mPlants.DataArrayGetID(jalapenoContactPlant),
+            .jalapenoPreContactPlantId = jalapenoPreContactPlant == nullptr ? 0U
+                                                                             : board->mPlants.DataArrayGetID(jalapenoPreContactPlant),
+            .explorerTorchLit = zombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && zombie->mHasObject,
             .bungeeAtTarget = zombie->mZombieType == ZombieType::ZOMBIE_BUNGEE
                 && (zombie->mZombiePhase == ZombiePhase::PHASE_BUNGEE_AT_BOTTOM
                     || zombie->mZombiePhase == ZombiePhase::PHASE_BUNGEE_GRABBING),
