@@ -118,8 +118,8 @@ struct VSZombieState {
     // It lets the detached plant AI evacuate that plant before the row burn
     // is armed, without approximating engine collision geometry.
     std::uint32_t jalapenoContactPlantId = 0;
-    // The first chewable plant within the AI's earlier, five-pixel warning
-    // overlap. The engine retains its normal 20-pixel burn trigger.
+    // The first chewable plant within the AI's five-pixel earlier warning
+    // window. The engine retains its normal 20-pixel burn trigger.
     std::uint32_t jalapenoPreContactPlantId = 0;
     // Explorer carries an active torch while this is true. Iceberg Lettuce
     // can safely extinguish it; disposable Sun-shrooms must not be fed into it.

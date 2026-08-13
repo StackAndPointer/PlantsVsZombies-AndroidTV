@@ -108,7 +108,12 @@ VSGameState BuildGameStateSnapshot(Board *board) {
             : nullptr;
         Plant *jalapenoPreContactPlant = nullptr;
         if (zombie->mZombieType == ZombieType::ZOMBIE_JALAPENO_HEAD && !zombie->mMindControlled) {
-            constexpr int kJalapenoHeadAiWarningOverlap = 5;
+            // The engine starts the burn at 20 pixels of overlap. Give the
+            // AI an additional five-pixel reaction window, without changing
+            // the engine collision rule.
+            constexpr int kJalapenoHeadEngineOverlap = 20;
+            constexpr int kJalapenoHeadExtraWarning = 5;
+            constexpr int kJalapenoHeadAiWarningOverlap = kJalapenoHeadEngineOverlap - kJalapenoHeadExtraWarning;
             const Sexy::Rect attackRect = zombie->GetZombieAttackRect();
             for (Plant *plant = nullptr; board->mPlants.IterateNext(plant);) {
                 if (plant->mDead || plant->mRow != zombie->mRow

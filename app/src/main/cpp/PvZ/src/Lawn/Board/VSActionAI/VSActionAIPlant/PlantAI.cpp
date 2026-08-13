@@ -149,8 +149,9 @@ std::optional<VSAction> PlantAIPlanning::TryEvadeJalapenoHead(const VSGameState 
         }
 
         // BuildGameState uses the engine's exact target first, then a
-        // five-pixel AI-only warning overlap. The engine keeps its normal
-        // 20-pixel burn trigger; the smaller value only buys shoveling time.
+        // five-pixel AI-only warning window. The engine keeps its normal
+        // 20-pixel burn trigger; the 15-pixel AI threshold only buys that
+        // additional five pixels of shoveling time.
         const int score = PlantValueScore(*contactPlant) + static_cast<int>(contactPlant->position.col) * 10;
         if (bestPlant == nullptr || score > bestScore) {
             bestPlant = contactPlant;
