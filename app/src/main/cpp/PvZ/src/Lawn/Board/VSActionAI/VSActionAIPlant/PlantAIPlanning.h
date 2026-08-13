@@ -13,12 +13,16 @@ bool IsLobbedOutputSeed(SeedType seed);
 class PlantAIPlanning : public BuiltinVSAgent {
 protected:
     bool mOpeningEconomyPlaced = false;
+    VSGridPosition mRecentAshTarget{-1, -1};
+    std::uint32_t mRecentAshTick = 0;
+    bool mHasRecentAsh = false;
 
     struct AshTarget {
         VSGridPosition position{-1, -1};
         int hitCount = 0;
         int totalHealth = 0;
         int highValueCount = 0;
+        int giantCount = 0;
         int pailCount = 0;
         float frontMostX = std::numeric_limits<float>::max();
         bool mowerlessThirdColumn = false;
@@ -50,6 +54,7 @@ protected:
     AshTarget FindBestAshTarget(const VSGameState &state, SeedType seedType) const;
     static bool IsAshTargetWorthPlaying(const VSGameState &state, SeedType seedType, const AshTarget &target);
     std::optional<VSAction> TryAshCounter(const VSGameState &state, SeedType seedType, int protectedSun);
+    std::optional<VSAction> TryBestAshCounter(const VSGameState &state, int protectedSun);
     std::optional<VSAction> TryPotatoMine(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TrySnowpeaBonkPressure(const VSGameState &state, int preferredRow, int protectedSun);
     std::optional<VSAction> TryStarfruitChomperPressure(const VSGameState &state, int preferredRow, int protectedSun);
@@ -117,6 +122,9 @@ public:
     void Reset() override {
         BuiltinVSAgent::Reset();
         mOpeningEconomyPlaced = false;
+        mRecentAshTarget = {};
+        mRecentAshTick = 0;
+        mHasRecentAsh = false;
     }
 
     void OnActionResult(const VSAction &action, VSActionResult result) override {
@@ -125,6 +133,21 @@ public:
             && (action.expectedSeedType == static_cast<std::uint16_t>(SeedType::SEED_SUNFLOWER)
                 || action.expectedSeedType == static_cast<std::uint16_t>(SeedType::SEED_SUNSHROOM))) {
             mOpeningEconomyPlaced = true;
+        }
+        if (result == VSActionResult::Applied && action.side == VSSide::Plants && action.kind == VSActionKind::PlaySeed) {
+            switch (static_cast<SeedType>(action.expectedSeedType)) {
+                case SeedType::SEED_SQUASH:
+                case SeedType::SEED_CHERRYBOMB:
+                case SeedType::SEED_JALAPENO:
+                case SeedType::SEED_CHILLY_PEPPER:
+                case SeedType::SEED_DOOMSHROOM:
+                    mRecentAshTarget = action.target;
+                    mRecentAshTick = action.notBeforeTick;
+                    mHasRecentAsh = true;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 };

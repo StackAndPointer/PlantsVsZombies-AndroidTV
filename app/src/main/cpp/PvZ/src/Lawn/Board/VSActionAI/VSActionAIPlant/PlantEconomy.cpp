@@ -515,7 +515,11 @@ int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const
     int target = mainCarryTarget;
     const int graveCount = CountZombieEconomy(state);
     const int phase = static_cast<int>(state.boardTick / 16000);
-    const bool midGame = phase >= 2 || graveCount >= state.rows;
+    // Recorded VS openings start rebuilding Sunflower income once the first
+    // firing layer exists and the zombie side has established a few graves;
+    // waiting for a fully developed grave board leaves expensive carries
+    // permanently underfunded.
+    const bool midGame = phase >= 1 || graveCount >= std::max(2, (state.rows + 1) / 2);
     const bool pressureOutrunsFirepower = unholdableZombieRows > 0
         || (contestedZombieRows >= 2 && damageBeforeZombieContact < incomingZombieHealth);
     const bool boardCanSafelyGrow = contestedZombieRows == 0 || !pressureOutrunsFirepower;
@@ -528,6 +532,9 @@ int PlantAIPlanning::EconomyPressureIncomeTarget(const VSGameState &state) const
         ++target;
     }
     if (boardCanSafelyGrow && !midGame && primaryOutputCost >= 225 && state.plantSun < primaryOutputCost) {
+        ++target;
+    }
+    if (boardCanSafelyGrow && midGame && outputCount > 0 && !pressureOutrunsFirepower) {
         ++target;
     }
     if (cheapestOutputCost == std::numeric_limits<int>::max() && !hasGraveBuster && !hasCrossLaneOutput && graveCount <= state.rows

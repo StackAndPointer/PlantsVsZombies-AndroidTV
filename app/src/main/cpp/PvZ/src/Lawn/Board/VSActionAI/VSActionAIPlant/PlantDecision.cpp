@@ -143,7 +143,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     const int counterFirstColumn = mowerlessThirdColumnEmergency ? 0 : 4;
     const int areaCounterReserve = PlantAIPlanning::AreaCounterReserve(state);
     const bool hasEconomyPressurePlan = PlantAIPlanning::HasEconomyPressurePlan(state);
-    const bool midGame = state.boardTick >= 32000 || CountZombieEconomy(state) >= state.rows;
+    const bool midGame = state.boardTick >= 16000 || CountZombieEconomy(state) >= std::max(2, (state.rows + 1) / 2);
     const int lateIncomeRecoveryTarget = !state.isSuddenDeath && midGame && actualIncomePlantCount < openingIncomeTarget
         ? openingIncomeTarget
         : 0;
@@ -212,9 +212,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
     // decision tied to real lane DPS and zombie health rather than a fixed
     // producer count.
     const bool outputTempoHasPriority = incomePlantCount >= openingIncomeTarget && needsSustainedOutput
-        && readySustainedOutput && (pressureOutrunsFirepower || midGame);
+        && readySustainedOutput && (pressureOutrunsFirepower || (midGame && incomePlantCount >= incomeExpansionTarget));
     const bool mayExpandIncomePastOpening = incomePlantCount < openingIncomeTarget || !midGame
-        || (!pressureOutrunsFirepower && (!needsSustainedOutput || !readySustainedOutput));
+        || (!pressureOutrunsFirepower && (!needsSustainedOutput || !readySustainedOutput || incomePlantCount < incomeExpansionTarget));
     // Enhanced AI still needs a real late economy. Once every live lane can
     // hold its current wave, recover missing producers even when a high-sun
     // output branch is available; otherwise a cheap early push leaves it at
@@ -240,22 +240,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         if (std::optional<VSAction> action = PlantAIPlanning::TryWakeSleepingDoomshroom(state)) {
             return action;
         }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_DOOMSHROOM, protectedSun)) {
-            return action;
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_CHERRYBOMB, protectedSun)) {
-            return action;
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_JALAPENO, protectedSun)) {
-            return action;
-        }
-        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_SQUASH, protectedSun)) {
-            return action;
-        }
-        // Chilly Pepper needs one second before it damages its row. Resolve
-        // a legal immediate Squash first; otherwise Squash can clear the
-        // exact cluster Chilly selected and leave its delayed blast empty.
-        if (std::optional<VSAction> action = PlantAIPlanning::TryAshCounter(state, SeedType::SEED_CHILLY_PEPPER, protectedSun)) {
+        if (std::optional<VSAction> action = PlantAIPlanning::TryBestAshCounter(state, protectedSun)) {
             return action;
         }
     }
@@ -524,7 +509,9 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         }
     }
 
-    if (hasIncomeSeed && incomePlantCount < openingIncomeTarget && danger.danger < 150 && !highSunCombatPressure) {
+    const bool safeIncomeShortfall = incomePlantCount < openingIncomeTarget && danger.danger < 105 && !pressureOutrunsFirepower;
+    if (hasIncomeSeed && incomePlantCount < openingIncomeTarget && danger.danger < 150
+        && (!highSunCombatPressure || safeIncomeShortfall)) {
         if (incomePlantCount >= minimumIncomeBeforeOutput && needsSustainedOutput) {
             if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, LeastDevelopedPlantRow(state), protectedSun)) {
                 return action;
@@ -547,7 +534,7 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
         && (danger.danger < 105 || (counterCombatPlants > 0 && danger.danger < 140))
         && (counterFirepower.canHold || weakestFirepower.closestDistance > 760);
     if (hasIncomeSeed && hasActiveZombie && incomePlantCount < incomeExpansionTarget && !immediateCounterThreat && canExpandIncome
-        && !highSunCombatPressure && !outputTempoHasPriority) {
+        && (!highSunCombatPressure || (midGame && incomePlantCount < incomeExpansionTarget)) && !outputTempoHasPriority) {
         if (needsSustainedOutput) {
             if (std::optional<VSAction> action = PlantAIPlanning::TrySustainedOutputPlant(state, firepowerRow, protectedSun)) {
                 return action;
@@ -570,7 +557,8 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
                 return action;
             }
         }
-        if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget && !highSunCombatPressure
+        if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget
+            && (!highSunCombatPressure || (midGame && incomePlantCount < incomeExpansionTarget))
             && !outputTempoHasPriority && mayExpandIncomePastOpening) {
             if (std::optional<VSAction> action = PlantAIPlanning::TryIncomePlant(state, buildRow, protectedSun)) {
                 return action;
@@ -647,7 +635,8 @@ std::optional<VSAction> PlantAI::Decide(const VSGameState &state) {
             return action;
         }
     }
-    if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget && !highSunCombatPressure
+    if (hasIncomeSeed && incomePlantCount < incomeExpansionTarget
+        && (!highSunCombatPressure || (midGame && incomePlantCount < incomeExpansionTarget))
         && !outputTempoHasPriority && mayExpandIncomePastOpening) {
         return PlantAIPlanning::TryIncomePlant(state, buildRow, protectedSun);
     }

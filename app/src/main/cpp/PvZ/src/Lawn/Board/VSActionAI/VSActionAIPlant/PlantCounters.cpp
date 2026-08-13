@@ -41,7 +41,8 @@ std::optional<VSAction> PlantAIPlanning::TryAshCounter(const VSGameState &state,
         return std::nullopt;
     }
     const AshTarget target = PlantAIPlanning::FindBestAshTarget(state, seedType);
-    if (target.position.row < 0 || IsMowerInMotion(state, target.position.row)) {
+    if (target.position.row < 0 || IsMowerInMotion(state, target.position.row)
+        || (ShouldYieldLaneToMower(state, target.position.row) && !target.mowerlessHomeColumn)) {
         return std::nullopt;
     }
     // A protected reserve exists to keep an answer ready, not to prevent
@@ -51,6 +52,87 @@ std::optional<VSAction> PlantAIPlanning::TryAshCounter(const VSGameState &state,
         return std::nullopt;
     }
     return MakePlayAction(VSSide::Plants, *card, target.position, state.boardTick);
+}
+
+std::optional<VSAction> PlantAIPlanning::TryBestAshCounter(const VSGameState &state, int protectedSun) {
+    const SeedType candidates[] = {
+        SeedType::SEED_DOOMSHROOM,
+        SeedType::SEED_CHERRYBOMB,
+        SeedType::SEED_JALAPENO,
+        SeedType::SEED_CHILLY_PEPPER,
+        SeedType::SEED_SQUASH,
+    };
+    const VSCardState *bestCard = nullptr;
+    AshTarget bestTarget;
+    int bestScore = std::numeric_limits<int>::min();
+    for (const SeedType seed : candidates) {
+        const VSCardState *card = PlantAIPlanning::FindReadyCard(state, seed);
+        if (card == nullptr) {
+            continue;
+        }
+        int requiredSun = card->cost;
+        if (seed == SeedType::SEED_DOOMSHROOM && !state.isNight) {
+            const VSCardState *coffee = PlantAIPlanning::FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
+            if (coffee == nullptr) {
+                continue;
+            }
+            requiredSun += coffee->cost;
+        }
+        if (state.plantSun < requiredSun) {
+            continue;
+        }
+        const AshTarget target = PlantAIPlanning::FindBestAshTarget(state, seed);
+        if (target.position.row < 0 || IsMowerInMotion(state, target.position.row)
+            || (ShouldYieldLaneToMower(state, target.position.row) && !target.mowerlessHomeColumn)
+            || (!target.mowerlessHomeColumn && state.plantSun - requiredSun < protectedSun)
+            || !IsAshTargetWorthPlaying(state, seed, target)) {
+            continue;
+        }
+
+        // A prior blast gets time to resolve. Repeated Ash on the same
+        // local fight is a waste unless a Gargantuar still demands another
+        // answer; separated rows remain independently eligible.
+        const bool overlapsRecentBlast = mHasRecentAsh && state.boardTick >= mRecentAshTick
+            && state.boardTick - mRecentAshTick < 180
+            && target.position.row == mRecentAshTarget.row
+            && std::abs(static_cast<int>(target.position.col) - static_cast<int>(mRecentAshTarget.col)) <= 2;
+        if (overlapsRecentBlast && target.giantCount == 0) {
+            continue;
+        }
+
+        int score = target.totalHealth + target.hitCount * 210 + target.highValueCount * 300 + target.giantCount * 1800;
+        score += target.mowerlessThirdColumn ? 1400 : 0;
+        score += target.mowerlessHomeColumn ? 4600 : 0;
+        // Damage radius decides which card is the better answer. A row or
+        // area counter that covers a real multi-body/health cluster should
+        // win over Squash, leaving Squash available for the other lane.
+        switch (seed) {
+            case SeedType::SEED_DOOMSHROOM:
+                score += target.hitCount * 180 + target.highValueCount * 220 - requiredSun / 2;
+                break;
+            case SeedType::SEED_CHERRYBOMB:
+                score += target.hitCount * 130 + target.highValueCount * 140 - requiredSun / 3;
+                break;
+            case SeedType::SEED_JALAPENO:
+                score += target.hitCount * 170 + target.highValueCount * 130 - requiredSun / 3;
+                break;
+            case SeedType::SEED_CHILLY_PEPPER:
+                score += target.hitCount * 90 - requiredSun / 4;
+                break;
+            case SeedType::SEED_SQUASH:
+                score += target.highValueCount * 180 + target.giantCount * 420 - 260;
+                break;
+            default:
+                break;
+        }
+        if (bestCard == nullptr || score > bestScore) {
+            bestCard = card;
+            bestTarget = target;
+            bestScore = score;
+        }
+    }
+    return bestCard == nullptr ? std::nullopt
+                               : std::optional<VSAction>(MakePlayAction(VSSide::Plants, *bestCard, bestTarget.position, state.boardTick));
 }
 
 std::optional<VSAction> PlantAIPlanning::TryPotatoMine(const VSGameState &state, int preferredRow, int protectedSun) {

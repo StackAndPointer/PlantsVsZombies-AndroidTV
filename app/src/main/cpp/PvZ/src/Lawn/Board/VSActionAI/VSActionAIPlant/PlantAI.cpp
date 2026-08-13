@@ -276,6 +276,12 @@ std::optional<VSAction> PlantAIPlanning::TryRemoveLadderedNut(const VSGameState 
 }
 
 std::optional<VSAction> PlantAIPlanning::TryCounterPlant(const VSGameState &state, SeedType seedType, int row, int firstColumn) {
+    // Once the planner has deliberately yielded a ready-mower lane, an
+    // immediate one-shot in that route cannot recover the sunk investment.
+    // Keep Squash/Imp Pear for a lane that still needs to be held.
+    if (ShouldYieldLaneToMower(state, row)) {
+        return std::nullopt;
+    }
     const VSZombieState *closest = FindClosestZombie(state, row);
     if (closest == nullptr) {
         return std::nullopt;
@@ -392,6 +398,9 @@ PlantAIPlanning::AshTarget PlantAIPlanning::FindBestAshTarget(const VSGameState 
                 ++candidate.hitCount;
                 candidate.totalHealth += health;
                 candidate.highValueCount += PlantAIPlanning::IsSquashHighValueZombie(zombie.zombieType) ? 1 : 0;
+                const ZombieType zombieType = static_cast<ZombieType>(zombie.zombieType);
+                candidate.giantCount += zombieType == ZombieType::ZOMBIE_GARGANTUAR
+                    || zombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR;
                 candidate.pailCount += zombie.zombieType == static_cast<std::uint16_t>(ZombieType::ZOMBIE_PAIL) ? 1 : 0;
                 candidate.frontMostX = std::min(candidate.frontMostX, zombie.positionX);
                 candidate.mowerlessHomeColumn = candidate.mowerlessHomeColumn
