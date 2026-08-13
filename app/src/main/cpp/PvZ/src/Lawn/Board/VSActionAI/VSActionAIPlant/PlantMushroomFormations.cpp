@@ -59,13 +59,9 @@ std::optional<VSAction> PlantAIPlanning::TryMelonScaredySupport(const VSGameStat
 }
 
 std::optional<VSAction> PlantAIPlanning::TryScaredyCoffeeTempo(const VSGameState &state, int preferredRow, int protectedSun) {
-    const bool isRecordedDeck = !state.isNight
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BONK_CHOY)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM);
-    if (!isRecordedDeck || CountZombieEconomy(state) == 0
+    const bool scaredyCoffeeTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM)
+        && (state.isNight || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE));
+    if (!scaredyCoffeeTemplate || CountZombieEconomy(state) == 0
         || EffectivePlantEconomyCount(state) < 2
         || CountPlantType(state, SeedType::SEED_SCAREDYSHROOM) >= state.rows) {
         return std::nullopt;
@@ -166,8 +162,9 @@ std::optional<VSAction> PlantAIPlanning::TryScaredyPuffDoomPressure(const VSGame
     // This replay family has Scaredy-shroom as the only durable carry. Puff
     // is a short-range Coffee-backed layer and Doom is reserved for the
     // real multi-zombie break, not an excuse to omit the firing core.
-    if (!HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM) || !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
-        || !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
+    if (!HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM)
+        || !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
+        || (!state.isNight && !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE))
         || EffectivePlantEconomyCount(state) < 4) {
         return std::nullopt;
     }
@@ -409,7 +406,7 @@ std::optional<VSAction> PlantAIPlanning::TrySporePuffPressure(const VSGameState 
 
 std::optional<VSAction> PlantAIPlanning::TryWakeableMushroomOutput(const VSGameState &state, int preferredRow, int protectedSun) {
     const VSCardState *coffee = state.isNight ? nullptr : PlantAIPlanning::FindReadyCard(state, SeedType::SEED_INSTANT_COFFEE);
-    const bool fumeDoomTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM);
+    const bool fumeDoomTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM);
     const bool starfruitPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
     const VSCardState *bestCard = nullptr;
     VSGridPosition bestTarget{};

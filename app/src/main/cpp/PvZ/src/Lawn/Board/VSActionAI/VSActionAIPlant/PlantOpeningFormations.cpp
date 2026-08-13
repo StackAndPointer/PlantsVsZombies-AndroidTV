@@ -8,12 +8,10 @@
 
 namespace vsai::detail {
 std::optional<VSAction> PlantAIPlanning::TryBoomerangControlPressure(const VSGameState &state, int preferredRow, int protectedSun) {
-    // The Boomerang/Doom/Hypno replay spends its first four producers on a
-    // single safe boomerang lane, then fans that same carry across the grave
-    // field. Doom and Hypno remain held as conversions, not opening damage.
-    const bool boomerangControlTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE);
+    // Replay tactics match the cards that define their formation, rather
+    // than a full recorded deck. Counter and economy slots may be Ban
+    // replacements without disabling the carry's normal opening.
+    const bool boomerangControlTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG);
     if (!boomerangControlTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -62,12 +60,9 @@ std::optional<VSAction> PlantAIPlanning::TryBoomerangControlPressure(const VSGam
 }
 
 std::optional<VSAction> PlantAIPlanning::TryBoomerangGarlicFormation(const VSGameState &state, int preferredRow, int protectedSun) {
-    const bool isRecordedDeck = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_GARLIC)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SUNSHROOM)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH);
-    if (!isRecordedDeck || CountZombieEconomy(state) == 0) {
+    const bool boomerangGarlicTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_GARLIC);
+    if (!boomerangGarlicTemplate || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
 
@@ -157,8 +152,7 @@ std::optional<VSAction> PlantAIPlanning::TryThreepeaterPuffFormation(const VSGam
     // Puff and Potato Mine buy the early runway in this recording. At four
     // producers the first Threepeater belongs in an inner row, where all
     // three shots cover live economy routes instead of becoming an edge gun.
-    const bool threepeaterPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE);
+    const bool threepeaterPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER);
     if (!threepeaterPuffTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -211,8 +205,7 @@ std::optional<VSAction> PlantAIPlanning::TryThreepeaterPuffFormation(const VSGam
 
 std::optional<VSAction> PlantAIPlanning::TrySnowpeaPuffMagnetPressure(const VSGameState &state, int preferredRow, int protectedSun) {
     const bool snowpeaMagnetTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SNOWPEA)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MAGNETSHROOM)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
         && (state.isNight || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE));
     if (!snowpeaMagnetTemplate) {
         return std::nullopt;
@@ -335,8 +328,8 @@ std::optional<VSAction> PlantAIPlanning::TrySnowpeaPuffMagnetPressure(const VSGa
 
 std::optional<VSAction> PlantAIPlanning::TryPeaPuffTempoOpening(const VSGameState &state, int preferredRow, int protectedSun) {
     const bool peaPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SUNSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE);
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
+        && (state.isNight || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE));
     if (!peaPuffTemplate || state.isSuddenDeath || EffectivePlantEconomyCount(state) < 1 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -419,8 +412,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaCeleryAshTempo(const VSGameState 
     // line after three producers. Celery is a close-range relief card; the
     // three Ash cards remain available to the normal counter planner.
     const bool peaCeleryAshTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHERRYBOMB) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER);
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER);
     if (!peaCeleryAshTemplate || state.isSuddenDeath || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -511,8 +503,8 @@ std::optional<VSAction> PlantAIPlanning::TrySporePuffTempoPressure(const VSGameS
     // temporary Puffs cannot become a second carry or consume the slots
     // that the pult needs to threaten the zombie grave economy.
     const bool sporePuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPIKEWEED);
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM)
+        && (state.isNight || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE));
     const int incomeCount = EffectivePlantEconomyCount(state);
     if (!sporePuffTemplate || state.isSuddenDeath || incomeCount < 1 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
@@ -596,8 +588,8 @@ std::optional<VSAction> PlantAIPlanning::TryPeaCabbageTorchTempo(const VSGameSta
     // route. Torchwood and Pumpkin are held for a formed firing lane, not
     // spent before either pressure line exists.
     const bool peaCabbageTorchTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CABBAGEPULT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_TORCHWOOD)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL);
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CABBAGEPULT)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_TORCHWOOD);
     if (!peaCabbageTorchTemplate || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -665,8 +657,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaCabbageTorchTempo(const VSGameSta
 
 std::optional<VSAction> PlantAIPlanning::TrySnowpeaBonkFormation(const VSGameState &state, int preferredRow, int protectedSun) {
     const bool snowpeaBonkTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SNOWPEA)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BONK_CHOY) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER);
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BONK_CHOY);
     if (!snowpeaBonkTemplate || state.isSuddenDeath || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }

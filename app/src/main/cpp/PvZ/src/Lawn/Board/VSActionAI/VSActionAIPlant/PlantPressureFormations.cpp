@@ -11,9 +11,7 @@ std::optional<VSAction> PlantAIPlanning::TryPeaDoomTempoPressure(const VSGameSta
     // This recording's Peashooter is an early economic threat. Doom and
     // Chilly are held to answer a later swarm; they must not make the AI
     // wait for four flowers before its first low-cost firing lane exists.
-    const bool peaDoomTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM);
+    const bool peaDoomTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PEASHOOTER);
     if (!peaDoomTemplate || EffectivePlantEconomyCount(state) < 1 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -59,8 +57,7 @@ std::optional<VSAction> PlantAIPlanning::TryStarfruitCrossfireFormation(const VS
     // Starfruit recordings build from the inner rows so each plant applies
     // crossfire to three lanes. Puff/Chomper are local answers and must not
     // postpone that central pressure formation.
-    const bool starfruitTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT)
-        && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHOMPER));
+    const bool starfruitTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_STARFRUIT);
     if (!starfruitTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -107,8 +104,8 @@ std::optional<VSAction> PlantAIPlanning::TryStarfruitCrossfireFormation(const VS
 }
 
 std::optional<VSAction> PlantAIPlanning::TryCactusSpikeweedCore(const VSGameState &state, int preferredRow, int protectedSun) {
-    const bool cactusSpikeweedTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CACTUS) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPIKEWEED)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE);
+    const bool cactusSpikeweedTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CACTUS)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPIKEWEED);
     if (!cactusSpikeweedTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -152,8 +149,8 @@ std::optional<VSAction> PlantAIPlanning::TryCactusSpikeweedCore(const VSGameStat
 std::optional<VSAction> PlantAIPlanning::TryKernelCeleryFormation(const VSGameState &state, int preferredRow, int protectedSun) {
     // Kernel-pult is the durable lane pressure in the Kernel/Celery replay.
     // Celery reacts at the front only after this lobbed firing core exists.
-    const bool kernelCeleryTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_KERNELPULT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE);
+    const bool kernelCeleryTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_KERNELPULT)
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER);
     if (!kernelCeleryTemplate || EffectivePlantEconomyCount(state) < 6 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -198,8 +195,7 @@ std::optional<VSAction> PlantAIPlanning::TryRepeaterCeleryTempo(const VSGameStat
     // core. Celery is a close-range response only; letting it consume the
     // early firing budget turns the deck into a fragile melee opening.
     const bool repeaterCeleryTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_JALAPENO)
-        && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_TALLNUT));
+        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CELERY_STALKER);
     if (!repeaterCeleryTemplate || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -246,9 +242,7 @@ std::optional<VSAction> PlantAIPlanning::TryMelonMineTempo(const VSGameState &st
     // In the pure Melon-pult recording, Potato Mine and Wall-nut buy the
     // first firing window. There is no Scaredy-shroom support layer: once
     // the saved sun reaches Melon cost, pressure the grave economy directly.
-    const bool melonMineTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE) && !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM)
-        && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER));
+    const bool melonMineTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT);
     if (!melonMineTemplate || EffectivePlantEconomyCount(state) < 3 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -296,9 +290,7 @@ std::optional<VSAction> PlantAIPlanning::TryRepeaterTempoPressure(const VSGameSt
     // 200 sun into a rear firing lane. Daytime Sun-shrooms do not count as
     // income, but they do make the two-producer breakpoint safe enough to
     // start grave pressure before the generic filler can spend it.
-    const bool repeaterTempoTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SUNSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
-        && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER));
+    const bool repeaterTempoTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_REPEATER);
     const int incomeCount = EffectivePlantEconomyCount(state);
     const bool hasSunshroomPad = CountPlantType(state, SeedType::SEED_SUNSHROOM) > 0;
     if (!repeaterTempoTemplate || incomeCount < (hasSunshroomPad ? 2 : 3) || CountZombieEconomy(state) == 0) {
@@ -358,9 +350,7 @@ std::optional<VSAction> PlantAIPlanning::TrySporeShellPressure(const VSGameState
     // developed carry and Squash clears a real breakthrough; neither is an
     // opening substitute for the lobbed pressure that can damage graves
     // through a slow zombie screen.
-    const bool sporeShellTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL)
-        && (HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH) || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHERRYBOMB));
+    const bool sporeShellTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM);
     if (!sporeShellTemplate || EffectivePlantEconomyCount(state) < 4 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }
@@ -414,9 +404,7 @@ std::optional<VSAction> PlantAIPlanning::TryFumeDoomPressure(const VSGameState &
     // line in columns two and three, built immediately after the initial
     // sun base instead of treating Sun-shroom padding as another producer.
     const bool fumeDoomTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_FUMESHROOM)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SUNSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_WALLNUT)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CHILLY_PEPPER);
+        && (state.isNight || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE));
     if (!fumeDoomTemplate || EffectivePlantEconomyCount(state) < 6 || CountZombieEconomy(state) == 0) {
         return std::nullopt;
     }

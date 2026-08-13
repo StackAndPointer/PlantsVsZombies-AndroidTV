@@ -445,8 +445,7 @@ std::optional<VSAction> PlantAIPlanning::TryHypnoshroom(const VSGameState &state
         || state.plantSun - card->cost - (coffee == nullptr ? 0 : coffee->cost) < protectedSun) {
         return std::nullopt;
     }
-    const bool boomerangControlTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM);
+    const bool boomerangControlTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG);
     const bool controlLineReady = CountPlantType(state, SeedType::SEED_BLOOMERANG) >= std::min(2, state.rows);
 
     const VSZombieState *bestZombie = nullptr;

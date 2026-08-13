@@ -151,12 +151,9 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CABBAGEPULT) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_TORCHWOOD);
     const bool threepeaterPuffTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_THREEPEATER)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUFFSHROOM);
-    const bool boomerangControlTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_DOOMSHROOM);
-    const bool sporeShellTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_PUMPKINSHELL) && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SQUASH);
-    const bool melonMineTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT)
-        && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_POTATOMINE) && !HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM);
+    const bool boomerangControlTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BLOOMERANG);
+    const bool sporeShellTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPORESHROOM);
+    const bool melonMineTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_MELONPULT);
     const bool cactusSpikeTemplate = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_CACTUS)
         && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SPIKEWEED);
     const int threepeaterCount = CountPlantType(state, SeedType::SEED_THREEPEATER);
@@ -176,10 +173,7 @@ std::optional<VSAction> PlantAIPlanning::TrySustainedOutputPlant(const VSGameSta
         // layer after two producers. Other decks retain the four-producer
         // guard so generic fallback never turns it into opening padding.
         const bool scaredyCoffeeTempoDeck = HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_SCAREDYSHROOM)
-            && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE)
-            && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_ICEBERG_LETTUCE)
-            && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_BONK_CHOY)
-            && HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_HYPNOSHROOM);
+            && (state.isNight || HasActiveDeckCard(state, VSSide::Plants, SeedType::SEED_INSTANT_COFFEE));
         if (seed == SeedType::SEED_SCAREDYSHROOM
             && EffectivePlantEconomyCount(state) < (scaredyCoffeeTempoDeck ? 2 : 4)) {
             continue;
