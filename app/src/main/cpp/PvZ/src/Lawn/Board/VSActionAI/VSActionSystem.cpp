@@ -35,6 +35,8 @@ constexpr std::size_t kSideCount = 2;
 constexpr std::uint32_t kDefaultThinkIntervalTicks = 10;
 
 struct RuntimeState {
+    // This is the single local-match owner for a Board, its agents, timers,
+    // and queued actions. Draft state remains in the chooser layer.
     Board *board = nullptr;
     std::array<std::unique_ptr<IVSAgent>, kSideCount> agents;
     std::array<bool, kSideCount> builtinAgents = {false, false};

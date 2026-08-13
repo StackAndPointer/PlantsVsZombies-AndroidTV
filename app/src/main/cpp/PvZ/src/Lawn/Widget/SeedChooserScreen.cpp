@@ -35,7 +35,6 @@
 #include "PvZ/Lawn/Widget/StoreScreen.h"
 #include "VSActionAIDraftPolicy.h"
 #include "PvZ/NetPlay.h"
-#include "PvZ/SexyAppFramework/Buffer.h"
 #include "PvZ/SexyAppFramework/SexyAppBase.h"
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/SexyAppFramework/Misc/MTRand.h"
@@ -60,76 +59,8 @@ constexpr uintptr_t kSeedChooserButtonListenerVtableOffset = 0x20C;
 SeedType gLastDragSyncSeedType[2][2] = {{SeedType::SEED_NONE, SeedType::SEED_NONE}, {SeedType::SEED_NONE, SeedType::SEED_NONE}};
 uint32_t gLastDragSyncTickMs[2][2] = {{0, 0}, {0, 0}};
 
-struct BuiltinAIBanRule {
-    bool targetsZombies = false;
-    SeedType seed = SeedType::SEED_NONE;
-    int priority = 0;
-};
-
-constexpr unsigned char kBuiltinAIBanDatabaseMagic[] = {'P', 'V', 'Z', 'V', 'B', 'A', 'N', '\0'};
-constexpr std::uint16_t kBuiltinAIBanDatabaseVersion = 1;
-constexpr std::size_t kBuiltinAIBanDatabaseHeaderSize = 12;
-constexpr std::size_t kBuiltinAIBanDatabaseRuleSize = 7;
-
-std::uint16_t ReadBuiltinAIBanU16(const std::vector<unsigned char> &data, std::size_t offset) {
-    return static_cast<std::uint16_t>(data[offset]) | (static_cast<std::uint16_t>(data[offset + 1]) << 8);
-}
-
-class BuiltinAIBanDatabase {
-    std::vector<BuiltinAIBanRule> mRules;
-    bool mLoaded = false;
-
-    void Load() {
-        if (mLoaded || Sexy::gSexyAppBase == nullptr) {
-            return;
-        }
-        mLoaded = true;
-
-        Sexy::Buffer buffer;
-        if (!Sexy::gSexyAppBase->ReadBufferFromFile("addonFiles/data/vs_ai_ban_db.bin", &buffer, false)) {
-            return;
-        }
-
-        const auto &data = buffer.mData;
-        if (data.size() < kBuiltinAIBanDatabaseHeaderSize
-            || !std::equal(std::begin(kBuiltinAIBanDatabaseMagic), std::end(kBuiltinAIBanDatabaseMagic), data.begin())
-            || ReadBuiltinAIBanU16(data, 8) != kBuiltinAIBanDatabaseVersion) {
-            return;
-        }
-        const std::size_t ruleCount = ReadBuiltinAIBanU16(data, 10);
-        if (ruleCount > (data.size() - kBuiltinAIBanDatabaseHeaderSize) / kBuiltinAIBanDatabaseRuleSize
-            || kBuiltinAIBanDatabaseHeaderSize + ruleCount * kBuiltinAIBanDatabaseRuleSize != data.size()) {
-            return;
-        }
-
-        for (std::size_t index = 0; index < ruleCount; ++index) {
-            const std::size_t offset = kBuiltinAIBanDatabaseHeaderSize + index * kBuiltinAIBanDatabaseRuleSize;
-            const unsigned char sideCode = data[offset];
-            const int averageOrder = data[offset + 3];
-            const int samples = data[offset + 4];
-            const int priority = ReadBuiltinAIBanU16(data, offset + 5);
-            if (sideCode > 1 || averageOrder > 15 || samples <= 0 || priority <= 0 || priority > 1000) {
-                continue;
-            }
-            mRules.push_back({sideCode == 1, static_cast<SeedType>(ReadBuiltinAIBanU16(data, offset + 1)), priority});
-        }
-    }
-
-public:
-    int Priority(bool targetsZombies, SeedType seed) {
-        Load();
-        for (const BuiltinAIBanRule &rule : mRules) {
-            if (rule.targetsZombies == targetsZombies && rule.seed == seed) {
-                return rule.priority;
-            }
-        }
-        return 0;
-    }
-};
-
-int BuiltinAIBanPriority(bool targetsZombies, SeedType seed) {
-    static BuiltinAIBanDatabase database;
-    return database.Priority(targetsZombies, seed);
+int BuiltinAIBanPriority(bool targetsZombies, SeedType seed, std::uint32_t tick) {
+    return vsai::draft::BanDatabasePriority(targetsZombies, seed, tick);
 }
 
 bool HasBuiltinAIOpponentLobbedPressure(SeedChooserScreen *screen);
@@ -1513,7 +1444,8 @@ SeedType FindBuiltinAIBanCandidate(SeedChooserScreen *screen, const SeedType *fa
         // Keep the replay database and matchup-specific priority as additive
         // evidence. A baseline tier-one threat cannot be eclipsed solely by
         // sample frequency from a narrow replay set.
-        const int score = baseThreat * 2 + fallbackScore + BuiltinAIBanPriority(screen->mIsZombieChooser, seedType);
+        const int score = baseThreat * 2 + fallbackScore
+            + BuiltinAIBanPriority(screen->mIsZombieChooser, seedType, static_cast<std::uint32_t>(Sexy::GetTickCount()));
         if (bestSeed == SeedType::SEED_NONE || score > bestScore || (score == bestScore && seedType < bestSeed)) {
             bestSeed = seedType;
             bestScore = score;
@@ -1624,6 +1556,7 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
         // old plan here gives a fresh random archetype even when a human
         // performs the opening pick before the local AI gets its turn.
         gBuiltinAIDeckPlans = {};
+        vsai::draft::ResetBanDatabase();
     }
 
     if (mBoard->mCutScene->IsSurvivalRepick() && !mApp->IsCoopMode()) {

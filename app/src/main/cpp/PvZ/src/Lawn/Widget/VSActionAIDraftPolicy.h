@@ -4,9 +4,23 @@
 #include "PvZ/Lawn/Common/ConstEnums.h"
 
 #include <cstddef>
+#include <cstdint>
 #include <span>
 
 namespace vsai::draft {
+
+enum class BanDatabaseLoadState : std::uint8_t {
+    Uninitialized,
+    Unavailable,
+    Invalid,
+    Loaded,
+};
+
+// Replay Ban data is advisory. Callers retain their own baseline and matchup
+// scores, while this loader only exposes a validated priority for one seed.
+int BanDatabasePriority(bool targetsZombies, SeedType seed, std::uint32_t tick);
+BanDatabaseLoadState GetBanDatabaseLoadState();
+void ResetBanDatabase();
 
 bool IsPlantTempoMushroom(SeedType seed);
 bool IsPlantCarrySeed(SeedType seed);
