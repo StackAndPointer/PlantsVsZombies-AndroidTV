@@ -462,18 +462,11 @@ std::size_t GetBuiltinAIPlanSize(const SeedChooserScreen *screen) {
                                         : screen->mSeedBank1->mNumPackets);
 }
 
-struct BuiltinAIDeckPlans {
-    LawnApp *app = nullptr;
-    int plantProfile = -1;
-    int zombieProfile = -1;
-    int plantMainPickSlot = -1;
-    bool usePlantTemplate = true;
-    bool useZombieTemplate = true;
-};
+using BuiltinAIDeckPlans = vsai::draft::BuiltinAIDraftSession;
 
-BuiltinAIDeckPlans gBuiltinAIDeckPlans;
-int gLastBuiltinAIPlantProfile = -1;
-int gLastBuiltinAIZombieProfile = -1;
+BuiltinAIDeckPlans &BuiltinAIPlans() {
+    return vsai::draft::GetBuiltinAIDraftSession();
+}
 
 int PickBuiltinAIPlantProfile() {
     // The strongest replay-compatible templates use a tier-one carry and
@@ -498,35 +491,36 @@ void EnsureBuiltinAIDeckPlans(SeedChooserScreen *screen) {
         return;
     }
 
-    if (gBuiltinAIDeckPlans.app == screen->mApp && gBuiltinAIDeckPlans.plantProfile >= 0 && gBuiltinAIDeckPlans.zombieProfile >= 0) {
+    BuiltinAIDeckPlans &plans = BuiltinAIPlans();
+    if (plans.app == screen->mApp && plans.plantProfile >= 0 && plans.zombieProfile >= 0) {
         return;
     }
 
-    gBuiltinAIDeckPlans.app = screen->mApp;
-    gBuiltinAIDeckPlans.plantProfile = PickBuiltinAIPlantProfile();
-    gBuiltinAIDeckPlans.zombieProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIZombieDecks)));
+    plans.app = screen->mApp;
+    plans.plantProfile = PickBuiltinAIPlantProfile();
+    plans.zombieProfile = Sexy::Rand(static_cast<int>(std::size(kBuiltinAIZombieDecks)));
     // Replay templates are the default human-like opening. Keep a smaller
     // constrained-random path so local AI matches do not repeat a recorded
     // line every game; both paths still pass through the same legality and
     // matchup filters below.
-    gBuiltinAIDeckPlans.usePlantTemplate = Sexy::Rand(100) < 80;
-    gBuiltinAIDeckPlans.useZombieTemplate = Sexy::Rand(100) < 80;
+    plans.usePlantTemplate = Sexy::Rand(100) < 80;
+    plans.useZombieTemplate = Sexy::Rand(100) < 80;
     // A new chooser is a new match plan. Avoid repeating the same archetype
     // when the engine's deterministic RNG starts consecutive local matches
     // from the same seed.
-    if (kBuiltinAIPlantProfiles.size() > 1 && gBuiltinAIDeckPlans.plantProfile == gLastBuiltinAIPlantProfile) {
-        gBuiltinAIDeckPlans.plantProfile = PickBuiltinAIPlantProfile();
-        if (gBuiltinAIDeckPlans.plantProfile == gLastBuiltinAIPlantProfile) {
-            gBuiltinAIDeckPlans.plantProfile = (gBuiltinAIDeckPlans.plantProfile + 1) % static_cast<int>(kBuiltinAIPlantProfiles.size());
+    if (kBuiltinAIPlantProfiles.size() > 1 && plans.plantProfile == vsai::draft::LastBuiltinAIPlantProfile()) {
+        plans.plantProfile = PickBuiltinAIPlantProfile();
+        if (plans.plantProfile == vsai::draft::LastBuiltinAIPlantProfile()) {
+            plans.plantProfile = (plans.plantProfile + 1) % static_cast<int>(kBuiltinAIPlantProfiles.size());
         }
     }
-    if (std::size(kBuiltinAIZombieDecks) > 1 && gBuiltinAIDeckPlans.zombieProfile == gLastBuiltinAIZombieProfile) {
-        gBuiltinAIDeckPlans.zombieProfile = (gBuiltinAIDeckPlans.zombieProfile + 1
+    if (std::size(kBuiltinAIZombieDecks) > 1 && plans.zombieProfile == vsai::draft::LastBuiltinAIZombieProfile()) {
+        plans.zombieProfile = (plans.zombieProfile + 1
                                              + Sexy::Rand(static_cast<int>(std::size(kBuiltinAIZombieDecks) - 1)))
             % static_cast<int>(std::size(kBuiltinAIZombieDecks));
     }
-    gLastBuiltinAIPlantProfile = gBuiltinAIDeckPlans.plantProfile;
-    gLastBuiltinAIZombieProfile = gBuiltinAIDeckPlans.zombieProfile;
+    vsai::draft::LastBuiltinAIPlantProfile() = plans.plantProfile;
+    vsai::draft::LastBuiltinAIZombieProfile() = plans.zombieProfile;
 }
 
 bool UsesBuiltinAITemplate(SeedChooserScreen *screen) {
@@ -534,33 +528,33 @@ bool UsesBuiltinAITemplate(SeedChooserScreen *screen) {
     if (VSSetupAddonWidget::msAITemplateDeckDisabledMode) {
         return false;
     }
-    return screen != nullptr && (screen->mIsZombieChooser ? gBuiltinAIDeckPlans.useZombieTemplate
-                                                            : gBuiltinAIDeckPlans.usePlantTemplate);
+    return screen != nullptr && (screen->mIsZombieChooser ? BuiltinAIPlans().useZombieTemplate
+                                                            : BuiltinAIPlans().usePlantTemplate);
 }
 
 int BuiltinAIPlantMainPickSlot(SeedChooserScreen *screen) {
     if (screen == nullptr) {
         return kBuiltinAIBaseDeckSize;
     }
-    if (gBuiltinAIDeckPlans.plantMainPickSlot < 0) {
+    if (BuiltinAIPlans().plantMainPickSlot < 0) {
         const int planSize = static_cast<int>(GetBuiltinAIPlanSize(screen));
         // Preserve one final packet for a response/support card. This keeps
         // the carry timing varied without ever revealing the main C as the
         // last pick in either six- or seven-slot VS selection.
         const int earliestSlot = std::min(3, std::max(1, planSize - 1));
         const int latestSlot = std::max(earliestSlot, planSize - 1);
-        gBuiltinAIDeckPlans.plantMainPickSlot = earliestSlot
+        BuiltinAIPlans().plantMainPickSlot = earliestSlot
             + Sexy::Rand(std::max(1, latestSlot - earliestSlot + 1));
     }
-    return gBuiltinAIDeckPlans.plantMainPickSlot;
+    return BuiltinAIPlans().plantMainPickSlot;
 }
 
 const SeedType *GetBuiltinAIDeckPriority(SeedChooserScreen *screen) {
     EnsureBuiltinAIDeckPlans(screen);
     if (screen->mIsZombieChooser) {
-        return kBuiltinAIZombieDecks[gBuiltinAIDeckPlans.zombieProfile];
+        return kBuiltinAIZombieDecks[BuiltinAIPlans().zombieProfile];
     }
-    const BuiltinAIPlantProfile *profile = GetBuiltinAIPlantProfile(gBuiltinAIDeckPlans.plantProfile);
+    const BuiltinAIPlantProfile *profile = GetBuiltinAIPlantProfile(BuiltinAIPlans().plantProfile);
     return profile == nullptr ? nullptr : profile->Deck(screen->mBoard != nullptr && screen->mBoard->StageIsNight());
 }
 
@@ -1424,7 +1418,7 @@ void ReplaceBuiltinAIPlantTemplateAfterOpeningBan(SeedChooserScreen *screen) {
         return;
     }
 
-    const int currentProfile = gBuiltinAIDeckPlans.plantProfile;
+    const int currentProfile = BuiltinAIPlans().plantProfile;
     const SeedType bannedMain = PlantTemplateMainSeed(screen, currentProfile);
     if (!IsBuiltinAIPlantSeedBanned(screen, bannedMain)) {
         return;
@@ -1446,15 +1440,15 @@ void ReplaceBuiltinAIPlantTemplateAfterOpeningBan(SeedChooserScreen *screen) {
         }
     }
     if (bestProfile >= 0) {
-        gBuiltinAIDeckPlans.plantProfile = bestProfile;
-        gLastBuiltinAIPlantProfile = bestProfile;
-        gBuiltinAIDeckPlans.plantMainPickSlot = -1;
+        BuiltinAIPlans().plantProfile = bestProfile;
+        vsai::draft::LastBuiltinAIPlantProfile() = bestProfile;
+        BuiltinAIPlans().plantMainPickSlot = -1;
         return;
     }
 
     // If every template main has been removed by global/first-round bans,
     // retain the existing constrained fallback picker for the whole deck.
-    gBuiltinAIDeckPlans.usePlantTemplate = false;
+    BuiltinAIPlans().usePlantTemplate = false;
 }
 
 SeedType FindBuiltinAIBanCandidate(SeedChooserScreen *screen, const SeedType *fallbackSeeds, std::size_t fallbackCount) {
@@ -1601,7 +1595,7 @@ void SeedChooserScreen::_constructor(bool theIsZombieChooser) {
         // A VS match always constructs the plant chooser first.  Clearing the
         // old plan here gives a fresh random archetype even when a human
         // performs the opening pick before the local AI gets its turn.
-        gBuiltinAIDeckPlans = {};
+        vsai::draft::ResetBuiltinAIDraftSession();
         vsai::draft::ResetBanDatabase();
     }
 

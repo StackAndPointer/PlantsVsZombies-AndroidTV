@@ -7,6 +7,8 @@
 #include <cstdint>
 #include <span>
 
+class LawnApp;
+
 namespace vsai::draft {
 
 enum class BanDatabaseLoadState : std::uint8_t {
@@ -21,6 +23,22 @@ enum class BanDatabaseLoadState : std::uint8_t {
 int BanDatabasePriority(bool targetsZombies, SeedType seed, std::uint32_t tick);
 BanDatabaseLoadState GetBanDatabaseLoadState();
 void ResetBanDatabase();
+
+// This session owns only cross-chooser template selection. The chooser owns
+// engine legality, input routing, animations, and applying the selected seed.
+struct BuiltinAIDraftSession {
+    LawnApp *app = nullptr;
+    int plantProfile = -1;
+    int zombieProfile = -1;
+    int plantMainPickSlot = -1;
+    bool usePlantTemplate = true;
+    bool useZombieTemplate = true;
+};
+
+BuiltinAIDraftSession &GetBuiltinAIDraftSession();
+int &LastBuiltinAIPlantProfile();
+int &LastBuiltinAIZombieProfile();
+void ResetBuiltinAIDraftSession();
 
 bool IsPlantTempoMushroom(SeedType seed);
 bool IsPlantCarrySeed(SeedType seed);

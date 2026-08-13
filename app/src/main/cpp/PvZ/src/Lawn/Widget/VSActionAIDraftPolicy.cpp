@@ -129,6 +129,25 @@ void ResetBanDatabase() {
     GetBanDatabase().Reset();
 }
 
+BuiltinAIDraftSession &GetBuiltinAIDraftSession() {
+    static BuiltinAIDraftSession session;
+    return session;
+}
+
+int &LastBuiltinAIPlantProfile() {
+    static int profile = -1;
+    return profile;
+}
+
+int &LastBuiltinAIZombieProfile() {
+    static int profile = -1;
+    return profile;
+}
+
+void ResetBuiltinAIDraftSession() {
+    GetBuiltinAIDraftSession() = {};
+}
+
 bool IsPlantTempoMushroom(SeedType seed) {
     return seed == SeedType::SEED_PUFFSHROOM;
 }
