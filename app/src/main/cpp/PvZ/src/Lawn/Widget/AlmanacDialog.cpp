@@ -256,11 +256,11 @@ void AlmanacDialog::DrawPlants_Unmodified(Sexy::Graphics *g) {
     g->DrawImage(Sexy::IMAGE_ALMANAC_PLANTCARD, 459, 80);
 
     Color color = {213, 159, 43, 255};
-    TodDrawString(g, mNameString, 617, 108, Sexy::FONT_DWARVENTODCRAFT18, color, DrawStringJustification::DS_ALIGN_CENTER);
+    TodDrawString(g, *mNameString, 617, 108, Sexy::FONT_DWARVENTODCRAFT18, color, DrawStringJustification::DS_ALIGN_CENTER);
 
     if (mSelectedSeed != SeedType::SEED_IMITATER) {
-        TodDrawStringWrapped(g, mCostString, mCostRect, Sexy::FONT_BRIANNETOD16, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
-        TodDrawStringWrapped(g, mWaitTimeString, mWaitTimeRect, Sexy::FONT_BRIANNETOD16, gColorWhite, DrawStringJustification::DS_ALIGN_RIGHT, false);
+        TodDrawStringWrapped(g, *mCostString, mCostRect, Sexy::FONT_BRIANNETOD16, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
+        TodDrawStringWrapped(g, *mWaitTimeString, mWaitTimeRect, Sexy::FONT_BRIANNETOD16, gColorWhite, DrawStringJustification::DS_ALIGN_RIGHT, false);
     }
 
     g->PushState();
@@ -270,7 +270,7 @@ void AlmanacDialog::DrawPlants_Unmodified(Sexy::Graphics *g) {
     *(float *)unk2 = -v22;
     g->mTransY = v23;
     Color v39 = {143, 67, 27, 255};
-    TodDrawStringWrappedHelper(g, mDescriptionString, mDescriptionRect, Sexy::FONT_BRIANNETOD16, v39, DrawStringJustification::DS_ALIGN_LEFT, true, true);
+    TodDrawStringWrappedHelper(g, *mDescriptionString, mDescriptionRect, Sexy::FONT_BRIANNETOD16, v39, DrawStringJustification::DS_ALIGN_LEFT, true, true);
     g->PopState();
 }
 
@@ -350,11 +350,11 @@ void AlmanacDialog::DrawPlants(Sexy::Graphics *g) {
     }
 
     g->DrawImage(Sexy::IMAGE_ALMANAC_PLANTCARD, 459, 80);
-    TodDrawString(g, mNameString, 617, 108, Sexy::FONT_DWARVENTODCRAFT18, Color(213, 159, 43, 255), DrawStringJustification::DS_ALIGN_CENTER);
+    TodDrawString(g, *mNameString, 617, 108, Sexy::FONT_DWARVENTODCRAFT18, Color(213, 159, 43, 255), DrawStringJustification::DS_ALIGN_CENTER);
 
     if (mSelectedSeed != SeedType::SEED_IMITATER) {
-        TodDrawStringWrapped(g, mCostString, mCostRect, Sexy::FONT_BRIANNETOD16, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
-        TodDrawStringWrapped(g, mWaitTimeString, mWaitTimeRect, Sexy::FONT_BRIANNETOD16, gColorWhite, DrawStringJustification::DS_ALIGN_RIGHT, false);
+        TodDrawStringWrapped(g, *mCostString, mCostRect, Sexy::FONT_BRIANNETOD16, gColorWhite, DrawStringJustification::DS_ALIGN_LEFT, false);
+        TodDrawStringWrapped(g, *mWaitTimeString, mWaitTimeRect, Sexy::FONT_BRIANNETOD16, gColorWhite, DrawStringJustification::DS_ALIGN_RIGHT, false);
     }
 
     g->PushState();
@@ -363,7 +363,7 @@ void AlmanacDialog::DrawPlants(Sexy::Graphics *g) {
     float v23 = g->mTransY + 2.0f - v22;
     *(float *)unk2 = -v22;
     g->mTransY = v23;
-    TodDrawStringWrappedHelper(g, mDescriptionString, mDescriptionRect, Sexy::FONT_BRIANNETOD16, Color(143, 67, 27, 255), DrawStringJustification::DS_ALIGN_LEFT, true, true);
+    TodDrawStringWrappedHelper(g, *mDescriptionString, mDescriptionRect, Sexy::FONT_BRIANNETOD16, Color(143, 67, 27, 255), DrawStringJustification::DS_ALIGN_LEFT, true, true);
     g->PopState();
 }
 
@@ -602,7 +602,7 @@ void AlmanacDialog::DrawZombies(Graphics *g) {
     }
 
     g->DrawImage(Sexy::IMAGE_ALMANAC_ZOMBIECARD, 455, 78);
-    TodDrawString(g, mNameString, 613, 112, Sexy::FONT_DWARVENTODCRAFT18, Color(213, 159, 43, 255), DrawStringJustification::DS_ALIGN_CENTER);
+    TodDrawString(g, *mNameString, 613, 112, Sexy::FONT_DWARVENTODCRAFT18, Color(213, 159, 43, 255), DrawStringJustification::DS_ALIGN_CENTER);
     for (TodStringListFormat &aFormat : gLawnStringFormats) {
         if (TestBit(aFormat.mFormatFlags, TodStringFormatFlag::TOD_FORMAT_HIDE_UNTIL_MAGNETSHROOM)) {
             if (mApp->HasSeedType(SeedType::SEED_MAGNETSHROOM, false)) {
@@ -620,7 +620,7 @@ void AlmanacDialog::DrawZombies(Graphics *g) {
     float scrollY = mScrollTextView->mValue * 0.01f * unk2[1];
     g->mTransY -= scrollY;
     *(float *)unk2 = -scrollY;
-    unk2[1] = TodDrawStringWrappedHelper(g, mDescriptionString, mDescriptionRect, Sexy::FONT_BRIANNETOD16, Color(40, 50, 90), mJustification, true, true);
+    unk2[1] = TodDrawStringWrappedHelper(g, *mDescriptionString, mDescriptionRect, Sexy::FONT_BRIANNETOD16, Color(40, 50, 90), mJustification, true, true);
     g->PopState();
 }
 

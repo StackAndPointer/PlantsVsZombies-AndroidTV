@@ -20,6 +20,8 @@
 #ifndef PVZ_LAWN_WIDGET_ALMANAC_DIALOG_H
 #define PVZ_LAWN_WIDGET_ALMANAC_DIALOG_H
 
+#include "Homura/TypeUtils.h"
+#include "PvZ/STL/string.h"
 #include "PvZ/SexyAppFramework/Widget/CustomScrollbarWidget.h"
 #include "PvZ/Symbols.h"
 
@@ -51,33 +53,33 @@ private:
     };
 
 public:
-    int *mScrollListener;                           // 191
-    LawnApp *mApp;                                  // 192
-    GameButton *mPlantButton;                       // 193
-    GameButton *mZombieButton;                      // 194
-    Sexy::CustomScrollbarWidget *mScrollTextView;   // 195
-    AlmanacPage mOpenPage;                          // 196
-    SeedType mSelectedSeed;                         // 197
-    ZombieType mSelectedZombie;                     // 198
-    Plant *mPlant;                                  // 199
-    Zombie *mZombie;                                // 200
-    Sexy::Rect mUnkRect;                            // 201 ~ 204
-    Sexy::Rect mDescriptionRect;                    // 205 ~ 208
-    Sexy::Rect mCostRect;                           // 209 ~ 212
-    Sexy::Rect mWaitTimeRect;                       // 213 ~ 216
-    int unk2[2];                                    // 217 ~ 218
-    char *mNameString;                              // 219
-    char *mDescriptionHeaderString;                 // 220
-    char *mDescriptionStringTmp;                    // 221
-    char *mDescriptionString;                       // 222
-    char *mCostString;                              // 223
-    char *mWaitTimeString;                          // 224
-    DrawStringJustification mWaitTimeJustification; // 225
-    DrawStringJustification mJustification;         // 226
-    bool mSetupFinished;                            // 227 * 4
-    double unk3;                                    // 228 ~ 229
-    int *mHelpBarWidget;                            // 230
-    int unk4[11];                                   // 231 ~ 233
+    int *mScrollListener;                                     // 191
+    LawnApp *mApp;                                            // 192
+    GameButton *mPlantButton;                                 // 193
+    GameButton *mZombieButton;                                // 194
+    Sexy::CustomScrollbarWidget *mScrollTextView;             // 195
+    AlmanacPage mOpenPage;                                    // 196
+    SeedType mSelectedSeed;                                   // 197
+    ZombieType mSelectedZombie;                               // 198
+    Plant *mPlant;                                            // 199
+    Zombie *mZombie;                                          // 200
+    Sexy::Rect mUnkRect;                                      // 201 ~ 204
+    Sexy::Rect mDescriptionRect;                              // 205 ~ 208
+    Sexy::Rect mCostRect;                                     // 209 ~ 212
+    Sexy::Rect mWaitTimeRect;                                 // 213 ~ 216
+    int unk2[2];                                              // 217 ~ 218
+    homura::Storage<pvzstl::string> mNameString;              // 219
+    homura::Storage<pvzstl::string> mDescriptionHeaderString; // 220
+    homura::Storage<pvzstl::string> mDescriptionStringTmp;    // 221
+    homura::Storage<pvzstl::string> mDescriptionString;       // 222
+    homura::Storage<pvzstl::string> mCostString;              // 223
+    homura::Storage<pvzstl::string> mWaitTimeString;          // 224
+    DrawStringJustification mWaitTimeJustification;           // 225
+    DrawStringJustification mJustification;                   // 226
+    bool mSetupFinished;                                      // 227 * 4
+    double unk3;                                              // 228 ~ 229
+    int *mHelpBarWidget;                                      // 230
+    int unk4[11];                                             // 231 ~ 233
     // 115: 234, 111: 236
 
     void KeyDown(Sexy::KeyCode theKey) {
