@@ -40,8 +40,9 @@ AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
         "",
         "",
         0);
-    // Dialog::Draw stretches the component image. Avoid the extra LawnDialog background pass.
-    mDrawStandardBack = false;
+    // Keep the standard LawnDialog pass enabled so IMAGE_OPTIONS_MENUBACK is
+    // drawn behind the AI controls.
+    mDrawStandardBack = true;
 
     static void *sVTable[122];
     static std::once_flag vtableInitFlag;
