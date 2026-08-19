@@ -399,6 +399,7 @@ public:
     void UpdateGigaPolevaulter();
     void UpdateSundayEdition();
     void UpdateZombieExplorer();
+    void UpdateExplorerProjectiles();
     void ExplorerTorchConvert(bool theBurn);
     void UpdateGigaGargantuar();
     void InterruptLightning();

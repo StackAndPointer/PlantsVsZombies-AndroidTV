@@ -625,6 +625,10 @@ void Zombie::UpdatePlaying() {
         CheckDogPartnerDeath();
     }
 
+    if (mZombieType == ZombieType::ZOMBIE_EXPLORER) {
+        UpdateExplorerProjectiles();
+    }
+
     if (IsImmobilizied() && mZombieType == ZombieType::ZOMBIE_GIGA_GARGANTUAR) {
         InterruptLightning();
     }
@@ -2300,38 +2304,6 @@ void Zombie::UpdateZombieExplorer() {
         return;
     }
 
-    Rect aAttackRect = GetZombieAttackRect();
-    Projectile *aProjectile = nullptr;
-    while (mBoard->IterateProjectiles(aProjectile)) {
-        Rect aProjectileRect = aProjectile->GetProjectileRect();
-        if (aProjectile->mRow == mRow && GetRectOverlap(aAttackRect, aProjectileRect) >= 10) {
-            if (mMindControlled) {
-                int aGridX = mBoard->PixelToGridX(mX, mY);
-                if (mHasObject) {
-                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_PEA) {
-                        aProjectile->ConvertToFireball(aGridX);
-                    } else if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_SNOWPEA) {
-                        aProjectile->ConvertToPea(aGridX);
-                    }
-                } else {
-                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_FIREBALL) {
-                        ExplorerTorchConvert(true);
-                    }
-                }
-            } else {
-                if (mHasObject) {
-                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
-                        aProjectile->ConvertToZombieFireball();
-                    }
-                } else {
-                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
-                        ExplorerTorchConvert(true);
-                    }
-                }
-            }
-        }
-    }
-
     if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
         if (mHasObject) {
             if (aPlant->IsInvulnerable()) {
@@ -2377,6 +2349,44 @@ void Zombie::UpdateZombieExplorer() {
         if (Zombie *aZombie = FindFriendZombieTarget()) {
             if (aZombie->mZombieType == ZombieType::ZOMBIE_EXPLORER && aZombie->mHasObject) {
                 ExplorerTorchConvert(true);
+            }
+        }
+    }
+}
+
+void Zombie::UpdateExplorerProjectiles() {
+    if (!mHasHead || IsDeadOrDying()) {
+        return;
+    }
+
+    Rect aAttackRect = GetZombieAttackRect();
+    Projectile *aProjectile = nullptr;
+    while (mBoard->IterateProjectiles(aProjectile)) {
+        Rect aProjectileRect = aProjectile->GetProjectileRect();
+        if (aProjectile->mRow == mRow && GetRectOverlap(aAttackRect, aProjectileRect) >= 10) {
+            if (mMindControlled) {
+                int aGridX = mBoard->PixelToGridX(mX, mY);
+                if (mHasObject) {
+                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_PEA) {
+                        aProjectile->ConvertToFireball(aGridX);
+                    } else if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_SNOWPEA) {
+                        aProjectile->ConvertToPea(aGridX);
+                    }
+                } else {
+                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_FIREBALL) {
+                        ExplorerTorchConvert(true);
+                    }
+                }
+            } else {
+                if (mHasObject) {
+                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
+                        aProjectile->ConvertToZombieFireball();
+                    }
+                } else {
+                    if (aProjectile->mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
+                        ExplorerTorchConvert(true);
+                    }
+                }
             }
         }
     }
