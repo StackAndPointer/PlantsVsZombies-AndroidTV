@@ -2249,7 +2249,7 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aPlant->DoSpecial_Origin();
             }
         } break;
-        case EVENT_SERVER_BOARD_PLANT_ICEBERG_LETTUCE_DO_SPECIAL: {
+        case EVENT_SERVER_BOARD_PLANT_ICE_A_ZOMBIE: {
             auto *eventIcebergLettuceDoSpecial = static_cast<const U16U16_Event *>(event);
             uint16_t serverPlantID = eventIcebergLettuceDoSpecial->data1;
             uint16_t clientPlantID = 0;
@@ -2262,7 +2262,7 @@ void Board::processServerEvent(const BaseEvent *event) {
                         aZombie = mZombies.DataArrayGet(clientZombieID);
                     }
                 }
-                aPlant->IcebergLettuceDoSpecial(aZombie);
+                aPlant->IceAZombie(aZombie);
             }
         } break;
         case EVENT_SERVER_BOARD_PLANT_FINDTARGETANDFIRE: {

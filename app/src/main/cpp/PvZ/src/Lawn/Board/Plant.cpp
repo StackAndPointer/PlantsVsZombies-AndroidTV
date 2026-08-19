@@ -1092,27 +1092,12 @@ void Plant::DoSpecial() {
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
         if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
             return;
-
-        if (gTcpClientSocket >= 0) {
-            if (mSeedType == SeedType::SEED_ICEBERG_LETTUCE) {
-                Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY);
-                U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_PLANT_ICEBERG_LETTUCE_DO_SPECIAL},
-                                      uint16_t(mBoard->mPlants.DataArrayGetID(this)),
-                                      aZombie == nullptr ? NETPLAY_ZOMBIE_ID_NULL : uint16_t(mBoard->mZombies.DataArrayGetID(aZombie))};
-                netplay::PutEvent(event);
-                IcebergLettuceDoSpecial(aZombie);
-                return;
-            }
-
-            U16_Event event = {{EventType::EVENT_SERVER_BOARD_PLANT_DO_SPECIAL}, uint16_t(mBoard->mPlants.DataArrayGetID(this))};
-            netplay::PutEvent(event);
-        }
     }
 
     DoSpecial_Origin();
 }
 
-void Plant::IcebergLettuceDoSpecial(Zombie *theZombie) {
+void Plant::IceAZombie(Zombie *theZombie) {
     if (theZombie != nullptr && theZombie->CanBeFrozen()) {
         theZombie->mIceTrapCounter = 1000;
         theZombie->StopZombieSound();
@@ -1231,10 +1216,6 @@ void Plant::DoSpecial_Origin() {
             PlayBodyReanim("anim_crumble", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 22.0f);
             mApp->PlayFoley(FoleyType::FOLEY_COFFEE);
 
-            break;
-        }
-        case SeedType::SEED_ICEBERG_LETTUCE: {
-            IcebergLettuceDoSpecial(FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY));
             break;
         }
         case SeedType::SEED_CHILLY_PEPPER: {
@@ -3574,16 +3555,29 @@ void Plant::UpdateIcebergLettuce() {
         if (isRemoteClient) {
             return;
         }
-        if (FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY)) {
+        if (Zombie *aZombie = FindTargetZombie(mRow, PlantWeapon::WEAPON_PRIMARY)) {
             mApp->PlayFoley(FoleyType::FOLEY_ICEBERG);
             PlayBodyReanim("anim_explode", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 0, 12.0f);
             mState = PlantState::STATE_READY;
             mStateCountdown = 50;
+            mTargetZombieID = mBoard->ZombieGetID(aZombie);
             syncIcebergLettuceState();
         }
     } else if (mState == PlantState::STATE_READY) {
         if (mStateCountdown <= 0) {
-            DoSpecial();
+            if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
+                return;
+            }
+
+            Zombie *aZombie = mBoard->ZombieGet(mTargetZombieID);
+            IceAZombie(aZombie);
+
+            if (gTcpClientSocket >= 0) {
+                U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_PLANT_ICE_A_ZOMBIE},
+                                      uint16_t(mBoard->mPlants.DataArrayGetID(this)),
+                                      aZombie == nullptr ? NETPLAY_ZOMBIE_ID_NULL : uint16_t(mBoard->mZombies.DataArrayGetID(aZombie))};
+                netplay::PutEvent(event);
+            }
         }
     }
 }
