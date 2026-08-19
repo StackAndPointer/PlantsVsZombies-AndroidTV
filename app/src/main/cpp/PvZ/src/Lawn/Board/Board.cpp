@@ -6510,11 +6510,32 @@ void Board::DoPlantingAchievementCheck(SeedType theSeedType) {
 void Board::DrawUITop(Sexy::Graphics *g) {
     if (seedBankPin && !mApp->IsSlotMachineLevel()) {
         if (mApp->mGameScene != GameScenes::SCENE_PLANTS_WON && mApp->mGameScene != GameScenes::SCENE_ZOMBIES_WON) {
-            // 一路有巨人且种子栏处于选中种子状态时，置顶种子栏图层
-            Zombie *aGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_GARGANTUAR);
-            Zombie *aRedEyeGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_REDEYE_GARGANTUAR);
-            Zombie *aGigaGargantuar = GetLiveZombieByType(ZombieType::ZOMBIE_GIGA_GARGANTUAR);
-            if ((aGargantuar != nullptr && aGargantuar->mRow == 0) || (aRedEyeGargantuar != nullptr && aRedEyeGargantuar->mRow == 0) || (aGigaGargantuar != nullptr && aGigaGargantuar->mRow == 0)) {
+            // 第一路存在任意存活巨人时，置顶选中的种子栏
+            bool hasGargantuarInTopRow = false;
+
+            Zombie *aZombie = nullptr;
+            while (IterateZombies(aZombie)) {
+                if (aZombie->mDead || !aZombie->mHasHead || aZombie->IsDeadOrDying() || !aZombie->IsOnBoard() || aZombie->mRow != 0) {
+                    continue;
+                }
+
+                switch (aZombie->mZombieType) {
+                    case ZombieType::ZOMBIE_GARGANTUAR:
+                    case ZombieType::ZOMBIE_REDEYE_GARGANTUAR:
+                    case ZombieType::ZOMBIE_GIGA_GARGANTUAR:
+                        hasGargantuarInTopRow = true;
+                        break;
+
+                    default:
+                        break;
+                }
+
+                if (hasGargantuarInTopRow) {
+                    break;
+                }
+            }
+
+            if (hasGargantuarInTopRow) {
                 for (int i = 0; i < 2; ++i) {
                     SeedBank *aSeedBank = mGamepadControls[i]->GetSeedBank();
                     if (aSeedBank != nullptr && mGamepadControls[i]->mGamepadState == BaseGamepadControls::MOVEMENT_STATE_PLANT_CURSOR) {
