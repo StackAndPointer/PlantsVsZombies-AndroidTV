@@ -6216,7 +6216,14 @@ void Board::MouseUpSecond(int x, int y, int theClickCount) {
 
 
 void Board::StartLevel() {
-    if (mApp->mGameMode == GAMEMODE_MP_VS) {
+    if (mApp->IsVSMode()) {
+        const bool isGlobalBpFirstRound =
+            VSSetupAddonWidget::msGlobalBpMode != VSSetupAddonWidget::GLOBALBP_CLOSED && VSSetupAddonWidget::msGlobalBpWins[0] == 0 && VSSetupAddonWidget::msGlobalBpWins[1] == 0;
+
+        if (isGlobalBpFirstRound) {
+            VSResultsMenu::ClearPlayerRecords();
+        }
+
         if (gTcpClientSocket >= 0) {
 
             // 重置计时器，以与客户端同步舞王的舞步节奏

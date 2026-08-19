@@ -27,6 +27,8 @@
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/LawnApp.h"
+#include "PvZ/Lawn/Widget/VSResultsMenu.h"
+#include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/SexyAppFramework/Misc/Common.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
@@ -932,6 +934,8 @@ void WaitForSecondPlayerDialog::_constructor(LawnApp *theApp) {
     old_WaitForSecondPlayerDialog_WaitForSecondPlayerDialog(this, theApp);
     gWaitForSecondPlayerDialogInstance = this;
 
+    VSResultsMenu::ClearPlayerRecords();
+    VSSetupAddonWidget::ResetGlobalBpState();
 
     // 解决此Dialog显示时背景僵尸全部聚集、且草丛大块空缺的问题
     if (theApp->mBoard != nullptr) {

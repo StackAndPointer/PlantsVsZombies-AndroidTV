@@ -575,7 +575,7 @@ void InitHookFunction() {
     homura::HookFunc(VSResultsMenu_DrawInfoBoxAddr, &VSResultsMenu::DrawInfoBox, &old_VSResultsMenu_DrawInfoBox);
     homura::HookFunc(VSResultsMenu_ButtonDepressAddr, &VSResultsMenu::ButtonDepress, nullptr);
     homura::HookFunc(VSResultsMenu_InitFromBoardAddr, &VSResultsMenu::InitFromBoard, nullptr);
-    homura::HookFunc(VSResultsMenu_ClearPlayerRecordsAddr, &VSResultsMenu::ClearPlayerRecords, &old_VSResultsMenu_ClearPlayerRecords);
+    homura::HookFunc(VSResultsMenu_ClearPlayerRecordsAddr, &VSResultsMenu::ClearPlayerRecords, nullptr);
 
 
     homura::HookFunc(ImitaterDialog_ImitaterDialogAddr, &ImitaterDialog::_constructor, &old_ImitaterDialog_ImitaterDialog);

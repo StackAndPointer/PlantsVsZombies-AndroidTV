@@ -99,7 +99,7 @@ public:
 
     void AddedToManager(Sexy::WidgetManager *theWidgetManager);
     void RemovedFromManager(Sexy::WidgetManager *theWidgetManager);
-    void ClearPlayerRecords();
+    static void ClearPlayerRecords();
     void Update();
     void OnExit() const;
     void ButtonDepress(int theId);
@@ -213,7 +213,5 @@ inline void (*old_VSResultsMenu_AddedToManager)(VSResultsMenu *, Sexy::WidgetMan
 inline void (*old_VSResultsMenu_RemovedFromManager)(VSResultsMenu *, Sexy::WidgetManager *);
 
 inline void (*old_VSResultsMenu_Destructor)(VSResultsMenu *);
-
-inline void (*old_VSResultsMenu_ClearPlayerRecords)(VSResultsMenu *);
 
 #endif // PVZ_LAWN_WIDGET_VS_RESULTS_MENU_H

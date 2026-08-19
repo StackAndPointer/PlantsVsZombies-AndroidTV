@@ -179,9 +179,13 @@ void VSResultsMenu::RemovedFromManager(Sexy::WidgetManager *theWidgetManager) {
 }
 
 void VSResultsMenu::ClearPlayerRecords() {
-    old_VSResultsMenu_ClearPlayerRecords(this);
-
-    VSSetupAddonWidget::ResetGlobalBpState();
+    for (auto &record : msPlayerRecords) {
+        record[0] = -1;
+        record[1] = 0;
+        record[2] = 0;
+        record[3] = 0;
+        record[4] = -1;
+    }
 }
 
 void VSResultsMenu::processClientEvent(const BaseEvent *event) {
