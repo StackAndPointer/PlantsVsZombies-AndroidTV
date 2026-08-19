@@ -547,13 +547,24 @@ void Plant::UpdateSweetPotato() {
         return;
     }
 
+    auto IsPoolRow = [this](int theRow) -> bool { //
+        return theRow >= 0 && theRow < MAX_GRID_SIZE_Y && mBoard->mPlantRow[theRow] == PlantRowType::PLANTROW_POOL;
+    };
+
     // 为每个僵尸确定唯一的甜薯归属，防止相邻行的多个甜薯反复抢夺：
-    auto FindSweetPotatoOwner = [this](Zombie *theZombie) -> Plant * {
+    auto FindSweetPotatoOwner = [this, &IsPoolRow](Zombie *theZombie) -> Plant * {
         Plant *anOwner = nullptr;
         Plant *aSweetPotato = nullptr;
 
+        const bool aZombieIsPoolRow = IsPoolRow(theZombie->mRow);
+
         while (mBoard->IteratePlants(aSweetPotato)) {
             if (aSweetPotato->mSeedType != SeedType::SEED_SWEET_POTATO || aSweetPotato->mPlantCol != mPlantCol) {
+                continue;
+            }
+
+            // 水路和陆路之间不允许甜薯产生交互
+            if (IsPoolRow(aSweetPotato->mRow) != aZombieIsPoolRow) {
                 continue;
             }
 
@@ -587,6 +598,11 @@ void Plant::UpdateSweetPotato() {
         }
 
         if (std::abs(aZombie->mRow - mRow) != 1) {
+            continue;
+        }
+
+        // 甜薯和僵尸必须同为水路或同为非水路
+        if (IsPoolRow(aZombie->mRow) != IsPoolRow(mRow)) {
             continue;
         }
 
