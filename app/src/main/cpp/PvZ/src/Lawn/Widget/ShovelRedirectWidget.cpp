@@ -17,14 +17,21 @@
  * PlantsVsZombies-AndroidTV.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "PvZ/Lawn/Board/ShovelRedirectWidget.h"
+#include "PvZ/Lawn/Widget/ShovelRedirectWidget.h"
 #include "Homura/MemberUtils.h"
 #include "PvZ/Lawn/Board/Board.h"
+#include "PvZ/Lawn/LawnApp.h"
 #include "PvZ/Symbols.h"
 
 #include <cstring>
 
 #include <mutex>
+
+namespace {
+bool CanRedirectShovelInput(const Board *board) {
+    return board != nullptr && board->mApp != nullptr && board->mApp->mGameScene == GameScenes::SCENE_PLAYING;
+}
+} // namespace
 
 ShovelRedirectWidget::ShovelRedirectWidget(Board *board) {
     Widget::_constructor();
@@ -61,21 +68,21 @@ void ShovelRedirectWidget::_destructor2() {
 void ShovelRedirectWidget::Draw(Sexy::Graphics *g) {}
 
 void ShovelRedirectWidget::MouseDown(int x, int y, int theClickCount) {
-    if (mBoard == nullptr) {
+    if (!CanRedirectShovelInput(mBoard)) {
         return;
     }
     mBoard->MouseDown(x + mX - mBoard->mX, y + mY - mBoard->mY, theClickCount);
 }
 
 void ShovelRedirectWidget::MouseUp(int x, int y, int theClickCount) {
-    if (mBoard == nullptr) {
+    if (!CanRedirectShovelInput(mBoard)) {
         return;
     }
     mBoard->MouseUp(x + mX - mBoard->mX, y + mY - mBoard->mY, theClickCount);
 }
 
 void ShovelRedirectWidget::MouseDrag(int x, int y) {
-    if (mBoard == nullptr) {
+    if (!CanRedirectShovelInput(mBoard)) {
         return;
     }
     mBoard->MouseDrag(x + mX - mBoard->mX, y + mY - mBoard->mY);
