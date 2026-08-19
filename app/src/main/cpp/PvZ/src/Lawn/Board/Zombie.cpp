@@ -3725,16 +3725,22 @@ void Zombie::UpdateZombieRiseFromGrave() {
                 break;
         }
 
-        if (IsOnHighGround()) {
-            mAltitude = HIGH_GROUND_HEIGHT;
-        }
+        FinishZombieRiseFromGrave();
+    }
+}
 
-        if (mInPool) {
-            ReanimIgnoreClipRect("Zombie_duckytube", true);
-            ReanimIgnoreClipRect("Zombie_whitewater", true);
-            ReanimIgnoreClipRect("Zombie_outerarm_hand", true);
-            ReanimIgnoreClipRect("Zombie_innerarm3", true);
-        }
+void Zombie::FinishZombieRiseFromGrave() {
+    mAltitude = mInPool ? -40.0f * mScaleZombie : 0.0f;
+
+    if (IsOnHighGround()) {
+        mAltitude = HIGH_GROUND_HEIGHT;
+    }
+
+    if (mInPool) {
+        ReanimIgnoreClipRect("Zombie_duckytube", true);
+        ReanimIgnoreClipRect("Zombie_whitewater", true);
+        ReanimIgnoreClipRect("Zombie_outerarm_hand", true);
+        ReanimIgnoreClipRect("Zombie_innerarm3", true);
     }
 }
 

@@ -2774,6 +2774,9 @@ void Board::processServerEvent(const BaseEvent *event) {
             uint16_t clientZombieID = 0;
             if (homura::FindInMap(serverZombieIDMap, serverZombieID, clientZombieID)) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                if (aZombie->mZombiePhase == ZombiePhase::PHASE_RISING_FROM_GRAVE) {
+                    aZombie->FinishZombieRiseFromGrave();
+                }
                 aZombie->mX = event1->data2.i16x2.i16_1;
                 int aJumpDistance = event1->data2.i16x2.i16_2;
                 aZombie->mZombiePhase = PHASE_POLEVAULTER_IN_VAULT;

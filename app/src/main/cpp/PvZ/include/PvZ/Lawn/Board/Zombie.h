@@ -420,6 +420,7 @@ public:
     void UpdateZombieSquashHead();
     void UpdateZombieDancer();
     void UpdateZombieRiseFromGrave();
+    void FinishZombieRiseFromGrave();
     void UpdateDamageStates(unsigned int theDamageFlags);
     void BossDestroyIceballInRow(int theRow);
     void BossDestroyFireball();
