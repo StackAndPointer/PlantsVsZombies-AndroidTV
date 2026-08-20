@@ -107,6 +107,9 @@ public:
     static int GetCoinValue(CoinType coinType) {
         return reinterpret_cast<int (*)(CoinType)>(Coin_GetCoinValueAddr)(coinType);
     }
+    SeedType GetFinalSeedPacketType() {
+        return reinterpret_cast<SeedType (*)(Coin *)>(Coin_GetFinalSeedPacketTypeAddr)(this);
+    }
     const CoinVTable *GetVTable() {
         return (CoinVTable *)vTable;
     }
@@ -142,7 +145,5 @@ inline void (*old_Coin_Update)(Coin *coin);
 inline void (*old_Coin_UpdateFall)(Coin *coin);
 
 inline bool (*old_Coin_MouseHitTest)(Coin *coin, int a2, int a3, int **hitResult, int a5);
-
-inline void (*old_Coin_Draw)(Coin *, Sexy::Graphics *);
 
 #endif // PVZ_LAWN_BOARD_COIN_H

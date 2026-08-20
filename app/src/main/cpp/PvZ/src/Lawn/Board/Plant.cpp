@@ -110,6 +110,7 @@ PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_SPORESHROOM, nullptr, ReanimationType::REANIM_SPORE_SHROOM, 0, 125, 750, PlantSubClass::SUBCLASS_SHOOTER, 300, "SPORE_SHROOM"},
     {SeedType::SEED_SWEET_POTATO, nullptr, ReanimationType::REANIM_SWEET_POTATO, 0, 150, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "SWEET_POTATO"},
     {SeedType::SEED_CHILLY_PEPPER, nullptr, ReanimationType::REANIM_CHILLY_PEPPER, 0, 100, 5000, PlantSubClass::SUBCLASS_NORMAL, 0, "CHILLY_PEPPER"},
+    {SeedType::SEED_SUN_BEAN, nullptr, ReanimationType::REANIM_SUN_BEAN, 0, 50, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "SUN_BEAN"},
     {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
 
@@ -140,6 +141,9 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
             }
             break;
         }
+        case SeedType::SEED_SUN_BEAN:
+            mPlantMaxHealth = 150;
+            break;
         default:
             break;
     }
@@ -3089,7 +3093,7 @@ void Plant::IceZombies() {
 
 bool Plant::IsDisposable(SeedType theSeedType) {
     return theSeedType == SeedType::SEED_CHERRYBOMB || theSeedType == SeedType::SEED_JALAPENO || theSeedType == SeedType::SEED_HYPNOSHROOM || theSeedType == SeedType::SEED_ICESHROOM
-        || theSeedType == SeedType::SEED_CHILLY_PEPPER;
+        || theSeedType == SeedType::SEED_CHILLY_PEPPER || theSeedType == SeedType::SEED_SUN_BEAN;
 }
 
 bool Plant::IsInvulnerable() {

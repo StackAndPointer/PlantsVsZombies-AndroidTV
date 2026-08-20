@@ -663,6 +663,8 @@ inline void *Coin_TryAutoCollectAfterLevelAwardAddr;
 inline void *Coin_MouseDownAddr;
 inline void *Coin_DrawAddr;
 inline void *Coin_GetColorAddr;
+inline void *Coin_IsSunAddr;
+inline void *Coin_GetFinalSeedPacketTypeAddr;
 
 
 inline void *StoreScreen_UpdateAddr;
@@ -1100,6 +1102,7 @@ inline void *ZenGarden_OpenStoreAddr;
 inline void *ZenGarden_AdvanceCrazyDaveDialogAddr;
 inline void *ZenGarden_GetPottedPlantInWheelbarrowAddr;
 inline void *ZenGarden_DrawPottedPlantAddr;
+inline void *ZenGarden_DrawPottedPlantIconAddr;
 inline void *ZenGarden_MovePlantAddr;
 inline void *ZenGarden_MouseDownWithFullWheelBarrowAddr;
 inline void *PlantFlowerPotHeightOffsetAddr;

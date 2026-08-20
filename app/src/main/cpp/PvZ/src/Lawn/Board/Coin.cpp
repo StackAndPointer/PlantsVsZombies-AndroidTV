@@ -22,6 +22,8 @@
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Challenge.h"
 #include "PvZ/Lawn/Board/MessageWidget.h"
+#include "PvZ/Lawn/Board/SeedPacket.h"
+#include "PvZ/Lawn/Board/ZenGarden.h"
 #include "PvZ/Lawn/Common/GameConstants.h"
 #include "PvZ/Lawn/GamepadControls.h"
 #include "PvZ/Lawn/LawnApp.h"
@@ -30,6 +32,7 @@
 #include "PvZ/TodLib/Effect/Reanimator.h"
 
 #include <cmath>
+#include <algorithm>
 
 using namespace Sexy;
 
@@ -53,6 +56,9 @@ void Coin::CoinInitialize(int theX, int theY, CoinType theCoinType, CoinMotion t
         aReanim->mLoopType = ReanimLoopType::REANIM_LOOP;
         aReanim->SetAnimRate(6.0f);
         AttachReanim(mAttachmentID[0], aReanim, mWidth * 2.0f, mHeight * 2.0f);
+    }
+    if (mType == CoinType::COIN_MINISUN) {
+        mScale *= 0.25f;
     }
 }
 
@@ -88,7 +94,7 @@ void Coin::GamepadCursorOver(int thePlayerIndex) {
 }
 
 void Coin::Update() {
-    if (BanDropCoin && !IsOnlineServerModeActive() && !gIsReplayMode && (mType <= CoinType::COIN_LARGESUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || IsDeath())) {
+    if (BanDropCoin && !IsOnlineServerModeActive() && !gIsReplayMode && (IsMoney() || IsSun() || mType == CoinType::COIN_COOP_DOUBLE_SUN || IsDeath())) {
         // 开启了"禁止掉落阳光金币"时
         Die();
         return;
@@ -116,7 +122,7 @@ void Coin::Update() {
             Collect(0);
         }
     }
-    if (mApp->IsCoopMode() && (mType == CoinType::COIN_SUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || mType == CoinType::COIN_SMALLSUN || mType == CoinType::COIN_LARGESUN)) {
+    if (mApp->IsCoopMode() && (IsSun() || mType == CoinType::COIN_COOP_DOUBLE_SUN)) {
         // 在结盟模式关闭阳光自动拾取。
         mCoinAge = 0;
     }
@@ -473,6 +479,11 @@ void Coin::UpdateFallForAward() {
 }
 
 void Coin::UpdateFall() {
+    if (mType == CoinType::COIN_MINISUN && mCoinAge >= mAutoCollectAge) {
+        Collect(0);
+        return;
+    }
+
     // 去除关卡掉落物在关卡结束后的自动收集。
     if ((mType >= CoinType::COIN_AWARD_MONEY_BAG && mType <= CoinType::COIN_AWARD_GOLD_SUNFLOWER) || mType == CoinType::COIN_FINAL_SEED_PACKET) {
         UpdateFallForAward();
@@ -484,7 +495,7 @@ void Coin::UpdateFall() {
 
 bool Coin::MouseHitTest(int theX, int theY, int **theHitResult, int thePlayerIndex) {
     // 去除在玩家按A键时的阳光金币检测，以防止玩家种植、铲除、发射加农炮时的操作被阳光金币遮挡。
-    if (mType <= CoinType::COIN_LARGESUN || mType == CoinType::COIN_COOP_DOUBLE_SUN || IsDeath()) {
+    if (IsMoney() || IsSun() || mType == CoinType::COIN_COOP_DOUBLE_SUN || IsDeath()) {
         return false;
     }
 
@@ -492,7 +503,7 @@ bool Coin::MouseHitTest(int theX, int theY, int **theHitResult, int thePlayerInd
 }
 
 bool Coin::IsSun() const {
-    return mType == CoinType::COIN_SUN || mType == CoinType::COIN_SMALLSUN || mType == CoinType::COIN_LARGESUN;
+    return mType == CoinType::COIN_SUN || mType == CoinType::COIN_SMALLSUN || mType == CoinType::COIN_LARGESUN || mType == CoinType::COIN_MINISUN;
 }
 
 bool Coin::IsDeath() const {
@@ -505,6 +516,8 @@ int Coin::GetSunValue() {
     }
 
     switch (mType) {
+        case CoinType::COIN_MINISUN:
+            return 5;
         case CoinType::COIN_SMALLSUN:
         case CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN:
             return 15;
@@ -522,6 +535,8 @@ int Coin::GetSunValue() {
 
 float Coin::GetSunScale() {
     switch (mType) {
+        case CoinType::COIN_MINISUN:
+            return 0.25f;
         case CoinType::COIN_SMALLSUN:
         case CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN:
             return 0.5f;
@@ -534,26 +549,191 @@ float Coin::GetSunScale() {
 }
 
 void Coin::Draw(Graphics *g) {
-    if (mType == CoinType::COIN_SMALL_VS_ZOMBIE_BRAIN || mType == CoinType::COIN_LARGE_VS_ZOMBIE_BRAIN) {
-        Color aColor = GetColor();
-        g->SetColor(aColor);
+    g->SetColor(GetColor());
 
-        if (mAttachmentID[0]) {
-            g->PushState();
-            AttachmentDraw(mAttachmentID[0], g, 0);
-            g->PopState();
+    if (mType == CoinType::COIN_DIAMOND) {
+        g->SetColorizeImages(true);
+        g->DrawImage(IMAGE_AWARDPICKUPGLOW, static_cast<int>(mPosX - 56.0f), static_cast<int>(mPosY - 66.0f));
+        g->SetColorizeImages(false);
+    }
+    if (mType == CoinType::COIN_PRESENT_PLANT) {
+        g->SetColorizeImages(true);
+        g->DrawImage(IMAGE_AWARDPICKUPGLOW, static_cast<int>(mPosX - 50.0f), static_cast<int>(mPosY - 64.0f));
+        g->SetColorizeImages(false);
+    }
+    if (mType == CoinType::COIN_AWARD_PRESENT && mIsBeingCollected) {
+        g->SetColorizeImages(true);
+        g->DrawImage(IMAGE_AWARDPICKUPGLOW, static_cast<int>(mPosX - 50.0f), static_cast<int>(mPosY - 64.0f));
+        g->SetColorizeImages(false);
+    }
+    if (mType == CoinType::COIN_CHOCOLATE || mType == CoinType::COIN_AWARD_CHOCOLATE) {
+        g->SetColorizeImages(true);
+        g->DrawImage(IMAGE_AWARDPICKUPGLOW, static_cast<int>(mPosX - 56.0f), static_cast<int>(mPosY - 50.0f));
+        g->SetColorizeImages(false);
+    }
+
+    auto aDrawHighlight = [this, g](Image *theImage, float theCenterX, float theCenterY) {
+        const float aScale = std::sin(static_cast<float>(mCoinAge) * 0.02f) * 0.2f + 0.9f;
+        const float aOldScaleX = g->mScaleX;
+        const float aOldScaleY = g->mScaleY;
+        const float aOldScaleOrigX = g->mScaleOrigX;
+        const float aOldScaleOrigY = g->mScaleOrigY;
+        g->SetScale(aScale, aScale, theCenterX, theCenterY);
+        g->DrawImage(theImage, static_cast<int>(theCenterX - 65.0f), static_cast<int>(theCenterY - 65.0f));
+        g->mScaleX = aOldScaleX;
+        g->mScaleY = aOldScaleY;
+        g->mScaleOrigX = aOldScaleOrigX;
+        g->mScaleOrigY = aOldScaleOrigY;
+    };
+    if (unk7) {
+        aDrawHighlight(IMAGE_COOP_SUN_HIGHLIGHT_1, mPosX + mWidth * 0.5f, mPosY + mHeight * 0.5f);
+    }
+    if (unk8) {
+        aDrawHighlight(IMAGE_COOP_SUN_HIGHLIGHT_2, mPosX + 30.0f + mWidth * 0.5f, mPosY + 6.0f + mHeight * 0.5f);
+    }
+
+    auto aDrawAttachment = [this, g](AttachmentID theAttachmentID) {
+        if (theAttachmentID == AttachmentID::ATTACHMENTID_NULL) {
+            return;
         }
+        g->PushState();
+        MakeParentGraphicsFrame(g);
+        AttachmentDraw(theAttachmentID, g, false);
+        g->PopState();
+    };
+    aDrawAttachment(mAttachmentID[0]);
+    aDrawAttachment(mAttachmentID[1]);
 
-        if (mAttachmentID[1]) {
-            g->PushState();
-            AttachmentDraw(mAttachmentID[1], g, 0);
-            g->PopState();
-        }
-
+    if ((mType == CoinType::COIN_SILVER || mType == CoinType::COIN_GOLD) && mHitGround && !mIsBeingCollected) {
+        return;
+    }
+    if (mType == CoinType::COIN_DIAMOND) {
         return;
     }
 
-    old_Coin_Draw(this, g);
+    if (IsLevelAward() && !mIsBeingCollected) {
+        g->SetColor(GetFlashingColor(mCoinAge, 75));
+    }
+
+    if (mType == CoinType::COIN_SILVER || mType == CoinType::COIN_GOLD) {
+        g->SetColorizeImages(true);
+        TodDrawImageCenterScaledF(g, IMAGE_REANIM_COINGLOW, mPosX - 14.0f, mPosY - 12.0f, mScale, mScale);
+        g->SetColorizeImages(false);
+    }
+
+    Image *aImage = nullptr;
+    int aImageCelCol = 0;
+    float aDrawScale = mScale;
+    float aOffsetX = 0.0f;
+    float aOffsetY = 0.0f;
+
+    if (mType == CoinType::COIN_SILVER) {
+        aImage = IMAGE_REANIM_COIN_SILVER_DOLLAR;
+        aOffsetX = 8.0f;
+        aOffsetY = 10.0f;
+    } else if (mType == CoinType::COIN_GOLD) {
+        aImage = IMAGE_REANIM_COIN_GOLD_DOLLAR;
+        aOffsetX = 8.0f;
+        aOffsetY = 10.0f;
+    } else if (IsSun() || mType == CoinType::COIN_COOP_DOUBLE_SUN || IsDeath()) {
+        return;
+    } else if (mType == CoinType::COIN_FINAL_SEED_PACKET) {
+        const SeedType aSeedType = GetFinalSeedPacketType();
+        g->SetScale(mScale, mScale, 0.0f, 0.0f);
+        DrawSeedPacket(g, 0.5f * (mWidth - mScale * mWidth) + mPosX, 0.5f * (mHeight - mScale * mHeight) + mPosY, aSeedType, SeedType::SEED_NONE, 0.0f, 255, true, false, false, true);
+        g->SetScale(1.0f, 1.0f, 0.0f, 0.0f);
+        return;
+    } else if (mType == CoinType::COIN_PRESENT_PLANT || mType == CoinType::COIN_AWARD_PRESENT) {
+        if (mIsBeingCollected) {
+            mApp->mZenGarden->DrawPottedPlantIcon(g, mPosX + 10.0f, mPosY - 20.0f, &mPottedPlantSpec);
+            return;
+        }
+        aImage = IMAGE_PRESENT;
+        aOffsetY = -20.0f;
+    } else if (IsPresentWithAdvice()) {
+        if (mIsBeingCollected) {
+            aImage = IMAGE_PRESENTOPEN;
+            aOffsetX = -10.0f;
+            aOffsetY = -10.0f;
+        } else {
+            aImage = IMAGE_PRESENT;
+            aOffsetY = -20.0f;
+        }
+    } else if (mType == CoinType::COIN_AWARD_MONEY_BAG || mType == CoinType::COIN_AWARD_BAG_DIAMOND) {
+        aImage = IMAGE_MONEYBAG_HI_RES;
+        aOffsetX = -mWidth * 0.5f;
+        aOffsetY = -mHeight * 0.5f;
+        aDrawScale *= 0.5f;
+    } else if (mType == CoinType::COIN_CHOCOLATE || mType == CoinType::COIN_AWARD_CHOCOLATE) {
+        aImage = IMAGE_CHOCOLATE;
+    } else if (mType == CoinType::COIN_TROPHY) {
+        aImage = IMAGE_TROPHY_HI_RES;
+        aOffsetX = -mWidth * 0.5f;
+        aOffsetY = -mHeight * 0.5f;
+        aDrawScale *= 0.5f;
+    } else if (mType == CoinType::COIN_AWARD_SILVER_SUNFLOWER) {
+        aImage = IMAGE_SUNFLOWER_TROPHY;
+        aOffsetY = -5.0f;
+        aDrawScale *= 0.6f;
+    } else if (mType == CoinType::COIN_AWARD_GOLD_SUNFLOWER) {
+        aImage = IMAGE_SUNFLOWER_TROPHY;
+        aImageCelCol = 1;
+        aOffsetY = -5.0f;
+        aDrawScale *= 0.6f;
+    } else if (mType == CoinType::COIN_SHOVEL) {
+        aImage = IMAGE_SHOVEL_HI_RES;
+        aOffsetX = -20.0f;
+        aOffsetY = -20.0f;
+        aDrawScale *= 0.5f;
+    } else if (mType == CoinType::COIN_CARKEYS) {
+        aImage = IMAGE_CARKEYS;
+    } else if (mType == CoinType::COIN_ALMANAC) {
+        aImage = IMAGE_ALMANAC;
+    } else if (mType == CoinType::COIN_TACO) {
+        aImage = IMAGE_TACO;
+    } else if (mType == CoinType::COIN_VASE) {
+        aImage = IMAGE_SCARY_POT;
+    } else if (mType == CoinType::COIN_WATERING_CAN) {
+        aImage = IMAGE_WATERINGCAN;
+    } else if (mType == CoinType::COIN_NOTE) {
+        aImage = IMAGE_ZOMBIE_NOTE_SMALL;
+    } else if (mType == CoinType::COIN_VS_PLANT_TROPHY || mType == CoinType::COIN_VS_ZOMBIE_TROPHY) {
+        aImage = mType == CoinType::COIN_VS_PLANT_TROPHY ? IMAGE_MP_PLANT_TROPHY_HI_RES : IMAGE_MP_ZOMBIE_TROPHY_HI_RES;
+        aOffsetX = -mWidth * 0.5f;
+        aOffsetY = -mHeight * 0.5f;
+        aDrawScale *= 0.5f;
+    } else if (mType == CoinType::COIN_USABLE_SEED_PACKET) {
+        int aGrayness = 255;
+        if (mIsBeingCollected) {
+            aGrayness = 128;
+        } else {
+            const int aDisappearTime = GetDisappearTime();
+            if (mDisappearCounter > aDisappearTime - 300 && mDisappearCounter % 60 < 30) {
+                aGrayness = 192;
+            }
+        }
+
+        g->SetColorizeImages(true);
+        DrawSeedPacket(g, static_cast<int>(mPosX), static_cast<int>(mPosY), mUsableSeedType, SeedType::SEED_NONE, 0.0f, aGrayness, false, false, false, true);
+        g->SetColorizeImages(false);
+        return;
+    }
+
+    if (aImage == nullptr) {
+        return;
+    }
+
+    if ((mType == CoinType::COIN_VS_PLANT_TROPHY || mType == CoinType::COIN_VS_ZOMBIE_TROPHY) && !mIsBeingCollected) {
+        float aShadowScale = (mPosY - static_cast<float>(mGroundY)) * 0.01f + 1.0f;
+        aShadowScale = std::clamp(aShadowScale, 0.2f, 1.0f);
+        TodDrawImageCelCenterScaledF(g, IMAGE_PLANTSHADOW, mPosX + 18.0f, static_cast<float>(mGroundY + 96), 0, aShadowScale, aShadowScale);
+    }
+
+    g->SetColorizeImages(true);
+    TodDrawImageCelCenterScaledF(g, aImage, mPosX + aOffsetX, mPosY + aOffsetY, aImageCelCol, aDrawScale, aDrawScale);
+    g->SetColorizeImages(false);
+
+    aDrawAttachment(mAttachmentID[2]);
 }
 
 Color Coin::GetColor() {

@@ -254,10 +254,11 @@ void InitHookFunction() {
     homura::HookFunc(Coin_GamepadCursorOverAddr, &Coin::GamepadCursorOver, &old_Coin_GamepadCursorOver);
     homura::HookFunc(Coin_MouseHitTestAddr, &Coin::MouseHitTest, &old_Coin_MouseHitTest);
     homura::HookFunc(Coin_UpdateFallAddr, &Coin::UpdateFall, &old_Coin_UpdateFall);
-    homura::HookFunc(Coin_DrawAddr, &Coin::Draw, &old_Coin_Draw);
+    homura::HookFunc(Coin_DrawAddr, &Coin::Draw, nullptr);
     homura::HookFunc(Coin_PlayCollectSoundAddr, &Coin::PlayCollectSound, nullptr);
     homura::HookFunc(Coin_ScoreCoinAddr, &Coin::ScoreCoin, nullptr);
     homura::HookFunc(Coin_UpdateCollectedAddr, &Coin::UpdateCollected, nullptr);
+    homura::HookFunc(Coin_IsSunAddr, &Coin::IsSun, nullptr);
     homura::HookFunc(Coin_GetSunValueAddr, &Coin::GetSunValue, nullptr);
     homura::HookFunc(Coin_GetSunScaleAddr, &Coin::GetSunScale, nullptr);
     homura::HookFunc(Coin_GetColorAddr, &Coin::GetColor, nullptr);
@@ -506,6 +507,7 @@ void InitHookFunction() {
     homura::HookFunc(Zombie_BungeeDropZombieAddr, &Zombie::BungeeDropZombie, nullptr);
     homura::HookFunc(Zombie_PickRandomSpeedAddr, &Zombie::PickRandomSpeed, nullptr);
     homura::HookFunc(Zombie_UpdateAnimSpeedAddr, &Zombie::UpdateAnimSpeed, nullptr);
+    homura::HookFunc(Zombie_AnimateChewSoundAddr, &Zombie::AnimateChewSound, nullptr);
     homura::HookFunc(Zombie_AnimateAddr, &Zombie::Animate, nullptr);
     homura::HookFunc(Zombie_UpdateZombieWalkingAddr, &Zombie::UpdateZombieWalking, nullptr);
     homura::HookFunc(Zombie_UpdateDamageStatesAddr, &Zombie::UpdateDamageStates, nullptr);

@@ -2174,7 +2174,9 @@ void SeedChooserScreen::GetSeedPositionInChooser(int theIndex, int &x, int &y) {
                 theIndex -= zombieFirstPageSeedCount;
             }
         } else {
-            if (theIndex >= SEED_ICEBERG_LETTUCE && theIndex < NUM_SEEDS_IN_CHOOSER_EXTENDED) {
+            if (theIndex >= NUM_SEEDS_IN_CHOOSER && theIndex < GetSeedStorageCount()) {
+                theIndex -= NUM_SEEDS_IN_CHOOSER;
+            } else if (theIndex >= SEED_ICEBERG_LETTUCE && theIndex < NUM_SEEDS_IN_CHOOSER_EXTENDED) {
                 theIndex -= SEED_ICEBERG_LETTUCE;
             }
         }
@@ -2286,6 +2288,11 @@ void SeedChooserScreen::ShowToolTip(int thePlayerIndex) {
             int aSeedY = 0;
             GetSeedPositionInChooser(seedPacketIndex, aSeedX, aSeedY);
 
+            int pageSeedIndex = seedPacketIndex;
+            if (mPageIndex == 1) {
+                pageSeedIndex -= mIsZombieChooser ? GetZombieFirstPageSeedCount(this) : NUM_SEEDS_IN_CHOOSER;
+            }
+
             int toolTipX = mX + 14;
             const int centeredX = mX + aSeedX + (SEED_PACKET_WIDTH - aToolTip->mWidth) / 2;
             if (centeredX > mX + 14) {
@@ -2296,7 +2303,7 @@ void SeedChooserScreen::ShowToolTip(int thePlayerIndex) {
             }
 
             int toolTipY = aSeedY;
-            if (seedPacketIndex > 39) {
+            if (pageSeedIndex > 39) {
                 toolTipX = aSeedX + 53;
             } else {
                 toolTipY += 70;
@@ -2350,13 +2357,6 @@ void SeedChooserScreen::ShowToolTip(int thePlayerIndex) {
                 aToolTip->mVisible = false;
             }
         } else {
-            int aSeedX = 0, aSeedY = 0;
-            GetSeedPositionInChooser(GetSeedPacketIndex(aSeedType), aSeedX, aSeedY);
-            if (mSeedsInFlight <= 0 && mPageIndex == 1) {
-                aToolTip->mX = aSeedX - (SEED_PACKET_WIDTH + 3);
-                aToolTip->mY = aSeedY - 5 * (SEED_PACKET_HEIGHT + 3);
-            }
-
             if (mBanningPhase) {
                 if (GetChosenSeed(GetSeedPacketIndex(aSeedType)).mSeedState == ChosenSeedState::SEED_IN_CHOOSER) {
                     if (aToolTipSeed == SeedType::SEED_INSTANT_COFFEE || aToolTipSeed == SeedType::SEED_LILYPAD || aToolTipSeed == SeedType::SEED_FLOWERPOT) {

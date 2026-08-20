@@ -120,6 +120,8 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
     mButtered = false;
     mPoisoned = false;
     mPoisonedCounter = 0;
+    mSunBeanSun = 0;
+    mSunBeanDamageRemainder = 0;
 
     if (IsZombatarZombie(theType) && theFromWave != -3) {
         SetZombatarReanim();
@@ -5470,6 +5472,57 @@ bool Zombie::IsZombatarZombie(ZombieType theType) {
     return theType == ZombieType::ZOMBIE_FLAG;
 }
 
+int Zombie::GetSunBeanDamageCapacity(unsigned int theDamageFlags) {
+    int aDamageCapacity = std::max(0, mFlyingHealth);
+
+    if (mShieldType != ShieldType::SHIELDTYPE_NONE && !TestBit(theDamageFlags, int(DamageFlags::DAMAGE_BYPASSES_SHIELD)) && !TestBit(theDamageFlags, int(DamageFlags::DAMAGE_HITS_SHIELD_AND_BODY))) {
+        aDamageCapacity += std::max(0, mShieldHealth);
+    }
+
+    if (mHelmType != HelmType::HELMTYPE_NONE) {
+        aDamageCapacity += std::max(0, mHelmHealth);
+    }
+
+    int aBodyDamageCapacity = std::max(0, mBodyHealth);
+    if (mHasHead && CanLoseBodyParts()) {
+        aBodyDamageCapacity = std::max(0, mBodyHealth - mBodyMaxHealth / 3 + 1);
+    }
+    return aDamageCapacity + aBodyDamageCapacity;
+}
+
+void Zombie::SpawnSunBeanSun(int theSunValue) {
+    if (mBoard == nullptr || theSunValue <= 0) {
+        return;
+    }
+
+    const int aCoinX = mX + mWidth / 2;
+    const int aCoinY = mY + mHeight / 2;
+    while (theSunValue >= 50) {
+        mBoard->AddCoin(aCoinX, aCoinY, CoinType::COIN_LARGESUN, CoinMotion::COIN_MOTION_FROM_PLANT);
+        theSunValue -= 50;
+    }
+    while (theSunValue >= 25) {
+        mBoard->AddCoin(aCoinX, aCoinY, CoinType::COIN_SUN, CoinMotion::COIN_MOTION_FROM_PLANT);
+        theSunValue -= 25;
+    }
+    while (theSunValue >= 15) {
+        mBoard->AddCoin(aCoinX, aCoinY, CoinType::COIN_SMALLSUN, CoinMotion::COIN_MOTION_FROM_PLANT);
+        theSunValue -= 15;
+    }
+    while (theSunValue >= 5) {
+        mBoard->AddCoin(aCoinX, aCoinY, CoinType::COIN_MINISUN, CoinMotion::COIN_MOTION_FROM_PLANT);
+        theSunValue -= 5;
+    }
+}
+
+void Zombie::SettleSunBeanSun() {
+    const int aDamageCapacity = GetSunBeanDamageCapacity(0U) + mSunBeanDamageRemainder;
+    const int aSunValue = std::min(int(mSunBeanSun), aDamageCapacity / 25 * 5);
+    mSunBeanSun = 0;
+    mSunBeanDamageRemainder = 0;
+    SpawnSunBeanSun(aSunValue);
+}
+
 void Zombie::DieWithLoot() {
     DieNoLoot();
     DropLoot();
@@ -5518,6 +5571,8 @@ void Zombie::DieNoLoot() {
 }
 
 void Zombie::DieNoLoot_Origin() {
+    SettleSunBeanSun();
+
     if (mZombieType == ZombieType::ZOMBIE_DOGWALKER || mZombieType == ZombieType::ZOMBIE_DOG) {
         Zombie *aPartner = GetDogPartner();
         if (aPartner != nullptr && !aPartner->IsDeadOrDying()) {
@@ -5998,6 +6053,10 @@ void Zombie::DrawReanim(Sexy::Graphics *g, ZombieDrawPosition &theDrawPos, int t
         aColorOverride = Color(75, 75, 255, aFadeAlpha);
         aExtraAdditiveColor = aColorOverride;
         aEnableExtraAdditiveDraw = true;
+    } else if (mSunBeanSun > 0) {
+        aColorOverride = Color(255, 255, 75, aFadeAlpha);
+        aExtraAdditiveColor = aColorOverride;
+        aEnableExtraAdditiveDraw = true;
     } else if (mZombieHeight == ZombieHeight::HEIGHT_ZOMBIQUARIUM && mBodyHealth < 100) {
         aColorOverride = Color(100, 150, 25, aFadeAlpha);
         aExtraAdditiveColor = aColorOverride;
@@ -6148,6 +6207,11 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
             UpdateAnimSpeed();
         }
 
+        if (mSunBeanSun > 0) {
+            mSunBeanSun = 0;
+            mSunBeanDamageRemainder = 0;
+        }
+
         mHasHead = false;
         SetupReanimForLostHead();
         if (TestBit(theDamageFlags, DamageFlags::DAMAGE_DOESNT_LEAVE_BODY)) {
@@ -6238,6 +6302,8 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
     }
 
     mHasHead = false;
+    mSunBeanSun = 0;
+    mSunBeanDamageRemainder = 0;
     SetupReanimForLostHead();
     if (TestBit(theDamageFlags, DamageFlags::DAMAGE_DOESNT_LEAVE_BODY)) {
         return;
@@ -6980,6 +7046,19 @@ void Zombie::TakeDamage_Origin(int theDamage, unsigned int theDamageFlags) {
     if (mZombiePhase == ZombiePhase::PHASE_JACK_IN_THE_BOX_POPPING || IsDeadOrDying() || mZombiePhase == ZombiePhase::PHASE_IMP_POPPING)
         return;
 
+    if (mSunBeanSun > 0 && theDamage > 0) {
+        const int aDamageBeforeHeadDrop = std::min(theDamage, GetSunBeanDamageCapacity(theDamageFlags));
+        mSunBeanDamageRemainder += aDamageBeforeHeadDrop;
+        int aSunValue = std::min(int(mSunBeanSun), mSunBeanDamageRemainder / 25 * 5);
+        mSunBeanDamageRemainder -= aSunValue * 5;
+        mSunBeanSun -= aSunValue;
+        if (mSunBeanSun == 0) {
+            mSunBeanDamageRemainder = 0;
+        }
+
+        SpawnSunBeanSun(aSunValue);
+    }
+
     int aDamageRemaining = theDamage;
 
     if (IsFlying()) {
@@ -7365,6 +7444,8 @@ void Zombie::StartMindControlled() {
 }
 
 void Zombie::StartMindControlled_Origin() {
+    SettleSunBeanSun();
+
     mApp->PlaySample(SOUND_MINDCONTROLLED);
     mMindControlled = true;
     mLastPortalX = -1;
@@ -8558,6 +8639,65 @@ void Zombie::UpdateYuckyFace() {
         return;
     }
     return old_Zombie_UpdateYuckyFace(this);
+}
+
+void Zombie::AnimateChewSound() {
+    if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_UP_TO_EAT) {
+        return;
+    }
+
+    Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW);
+    if (aPlant == nullptr) {
+        mApp->PlayFoley(mMindControlled ? FoleyType::FOLEY_CHOMP_SOFT : FoleyType::FOLEY_CHOMP);
+        return;
+    }
+
+    if (aPlant->mSeedType == SeedType::SEED_HYPNOSHROOM && !aPlant->mIsAsleep) {
+        mApp->PlayFoley(FoleyType::FOLEY_FLOOP);
+        aPlant->Die();
+
+        StartMindControlled();
+        mApp->AddTodParticle(mPosX + 60.0f, mPosY + 40.0f, mRenderOrder + 1, ParticleEffect::PARTICLE_MIND_CONTROL);
+        TrySpawnLevelAward();
+
+        mVelX = 0.17f;
+        mAnimTicksPerFrame = 18;
+        UpdateAnimSpeed();
+        return;
+    }
+
+    if (aPlant->mSeedType == SeedType::SEED_GARLIC) {
+        if (!mYuckyFace) {
+            mYuckyFace = true;
+            mYuckyFaceCounter = 0;
+            UpdateAnimSpeed();
+            mApp->PlayFoley(FoleyType::FOLEY_CHOMP);
+        }
+        return;
+    }
+
+    if (aPlant->mSeedType == SeedType::SEED_SUN_BEAN) {
+        mApp->PlaySample(SOUND_GULP);
+        aPlant->Die();
+
+        mSunBeanSun += 200;
+        return;
+    }
+
+    const bool aSoftPlant = aPlant->mSeedType == SeedType::SEED_WALLNUT || aPlant->mSeedType == SeedType::SEED_TALLNUT || aPlant->mSeedType == SeedType::SEED_PUMPKINSHELL;
+    if (!aSoftPlant) {
+        mApp->PlayFoley(FoleyType::FOLEY_CHOMP);
+        return;
+    }
+
+    // 普僵坚果过敏
+    if (!mBloated) {
+        mApp->PlayFoley(FoleyType::FOLEY_CHOMP_SOFT);
+    } else if (!mWalnutDeath) {
+        mWalnutDeath = true;
+        mApp->PlayFoley(FoleyType::FOLEY_CHOMP);
+        PlayDeathAnim(0U);
+    }
 }
 
 void Zombie::Animate() {

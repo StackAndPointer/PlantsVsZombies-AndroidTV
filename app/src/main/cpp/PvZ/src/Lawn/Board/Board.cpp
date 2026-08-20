@@ -1230,8 +1230,10 @@ Coin *Board::AddCoin(int theX, int theY, CoinType theCoinType, CoinMotion theCoi
         netplay::PutEvent(event);
     }
 
-    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
         return nullptr;
+    }
+
     return old_Board_AddCoin(this, theX, theY, theCoinType, theCoinMotion);
 }
 

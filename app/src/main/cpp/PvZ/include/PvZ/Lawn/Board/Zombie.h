@@ -145,7 +145,7 @@ public:
     bool mDroppedLoot;                                // 128
     bool mIsRevived;                                  // 新增成员，用于复生僵尸着色
     bool mCanRevived;                                 // 新增成员，用于计入复生池
-    bool mButtered;                                   // 新增成员，用于史莱姆黄优化
+    bool mButtered;                                   // 新增成员，用于史莱姆黄油化
     int mZombieFade;                                  // 33
     bool mFlatTires;                                  // 136
     bool mPoisoned;                                   // 新增成员，判定僵尸是否中毒
@@ -154,6 +154,7 @@ public:
     int mTargetCol;                                   // 36
     float mAltitude;                                  // 37
     bool mHitUmbrella;                                // 152
+    short mSunBeanSun;                                // 阳光豆尚可掉落的阳光总量
     Sexy::Rect mZombieRect;                           // 39 ~ 42
     Sexy::Rect mZombieAttackRect;                     // 43 ~ 46
     int mChilledCounter;                              // 47
@@ -179,6 +180,7 @@ public:
     int mFlyingHealth;                                // 61
     int mFlyingMaxHealth;                             // 62
     bool mDead;                                       // 252
+    short mSunBeanDamageRemainder;                    // 尚未兑换成阳光的伤害
     ZombieID mRelatedZombieID;                        // 64
     ZombieID mFollowerZombieID[MAX_ZOMBIE_FOLLOWERS]; // 65 ~ 68
     bool mPlayingSong;                                // 276
@@ -317,9 +319,6 @@ public:
     void AnimateChewEffect() {
         reinterpret_cast<void (*)(Zombie *)>(Zombie_AnimateChewEffectAddr)(this);
     }
-    void AnimateChewSound() {
-        reinterpret_cast<void (*)(Zombie *)>(Zombie_AnimateChewSoundAddr)(this);
-    }
     void ZombieCatapultFire(Plant *plant) {
         reinterpret_cast<void (*)(Zombie *, Plant *)>(Zombie_ZombieCatapultFireAddr)(this, plant);
     }
@@ -368,6 +367,9 @@ public:
     void CheckIfPreyCaught();
     void Draw(Sexy::Graphics *g);
     void DrawShadow(Sexy::Graphics *g);
+    int GetSunBeanDamageCapacity(unsigned int theDamageFlags);
+    void SpawnSunBeanSun(int theSunValue);
+    void SettleSunBeanSun();
     void DieWithLoot();
     void DieNoLoot();
     void DieNoLoot_Origin();
@@ -479,6 +481,7 @@ public:
     void UpdateZombiePogo();
     bool IsFlying() const;
     bool IsImpFlying() const;
+    void AnimateChewSound();
     void Animate();
     int GetBobsledPosition();
     void BobsledCrash();

@@ -661,6 +661,8 @@ bool LoadGameMain() {
     Coin_MouseDownAddr = libGameMain.GetSymbol("_ZN4Coin9MouseDownEiii");
     Coin_DrawAddr = libGameMain.GetSymbol("_ZN4Coin4DrawEPN4Sexy8GraphicsE");
     Coin_GetColorAddr = libGameMain.GetSymbol("_ZN4Coin8GetColorEv");
+    Coin_IsSunAddr = libGameMain.GetSymbol("_ZN4Coin5IsSunEv");
+    Coin_GetFinalSeedPacketTypeAddr = libGameMain.GetSymbol("_ZN4Coin22GetFinalSeedPacketTypeEv");
 
 
     StoreScreen_UpdateAddr = libGameMain.GetSymbol("_ZN11StoreScreen6UpdateEv");
@@ -1031,6 +1033,7 @@ bool LoadGameMain() {
     ZenGarden_AdvanceCrazyDaveDialogAddr = libGameMain.GetSymbol("_ZN9ZenGarden22AdvanceCrazyDaveDialogEv");
     ZenGarden_GetPottedPlantInWheelbarrowAddr = libGameMain.GetSymbol("_ZN9ZenGarden27GetPottedPlantInWheelbarrowEv");
     ZenGarden_DrawPottedPlantAddr = libGameMain.GetSymbol("_ZN9ZenGarden15DrawPottedPlantEPN4Sexy8GraphicsEffP11PottedPlantfb");
+    ZenGarden_DrawPottedPlantIconAddr = libGameMain.GetSymbol("_ZN9ZenGarden19DrawPottedPlantIconEPN4Sexy8GraphicsEffP11PottedPlant");
     ZenGarden_MovePlantAddr = libGameMain.GetSymbol("_ZN9ZenGarden9MovePlantEP5Plantii");
     ZenGarden_MouseDownWithFullWheelBarrowAddr = libGameMain.GetSymbol("_ZN9ZenGarden28MouseDownWithFullWheelBarrowEii");
     PlantFlowerPotHeightOffsetAddr = libGameMain.GetSymbol("_Z26PlantFlowerPotHeightOffset8SeedTypef");
