@@ -488,6 +488,7 @@ public:
     bool CanBeFrozen();
     void AddButter();
     void MowDown();
+    void MowDown_Original();
     static bool IsZombatarZombie(ZombieType theType);
     void SquishAllInSquare(int theX, int theY, ZombieAttackType theAttackType);
     bool IsWalkingBackwards() const;

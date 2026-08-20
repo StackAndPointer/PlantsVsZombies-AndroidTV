@@ -3106,6 +3106,14 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aZombie->DropHead_Origin(eventZombieDropHead->data2);
             }
         } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_MOW_DOWN: {
+            auto *eventZombieMowDown = static_cast<const U16_Event *>(event);
+            uint16_t clientZombieID = 0;
+            if (homura::FindInMap(serverZombieIDMap, eventZombieMowDown->data, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                aZombie->MowDown_Original();
+            }
+        } break;
         case EVENT_SERVER_BOARD_ZOMBIE_WIN: {
             auto *zombieWinEvent = static_cast<const U16_Event *>(event);
             uint16_t serverZombieID = zombieWinEvent->data;

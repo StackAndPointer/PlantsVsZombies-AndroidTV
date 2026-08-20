@@ -5328,6 +5328,20 @@ void Zombie::AddButter() {
 }
 
 void Zombie::MowDown() {
+    if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
+            return;
+        }
+        if (gTcpClientSocket >= 0) {
+            U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_MOW_DOWN}, uint16_t(mBoard->mZombies.DataArrayGetID(this))};
+            netplay::PutEvent(event);
+        }
+    }
+
+    MowDown_Original();
+}
+
+void Zombie::MowDown_Original() {
     if (mDead || mZombiePhase == ZombiePhase::PHASE_ZOMBIE_MOWERED || mZombieType == ZombieType::ZOMBIE_BOSS)
         return;
 
