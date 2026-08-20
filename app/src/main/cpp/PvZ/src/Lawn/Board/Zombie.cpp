@@ -778,6 +778,9 @@ Plant *Zombie::FindDogTarget() {
         if (aPlant->mRow < aHomeRow - 1 || aPlant->mRow > aHomeRow + 1) {
             continue;
         }
+        if (aPlant->mRow < mRow - 1 || aPlant->mRow > mRow + 1) {
+            continue;
+        }
         if (aPlant->mPlantCol != aDogCol && aPlant->mPlantCol != aFrontCol) {
             continue;
         }
@@ -831,11 +834,20 @@ void Zombie::SetDogPairRow(int theRow) {
 
 void Zombie::UpdateZombieDog() {
     Zombie *aWalker = GetDogPartner();
-    if (aWalker == nullptr || aWalker->IsImmobilizied() || aWalker->mIsEating || (aWalker->mYuckyFace && aWalker->mYuckyFaceCounter <= 169)) {
+    if (aWalker == nullptr) {
         return;
     }
 
     if (mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
+        return;
+    }
+
+    if (mIsEating || aWalker->mIsEating) {
+        mPhaseCounter = 300;
+        return;
+    }
+
+    if (aWalker->IsImmobilizied() || (aWalker->mYuckyFace && aWalker->mYuckyFaceCounter <= 169)) {
         return;
     }
 
@@ -1162,14 +1174,8 @@ void Zombie::UpdateSuperFanImp() {
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_LANDING) {
         Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
         if (aBodyReanim && aBodyReanim->mLoopCount > 0) {
-            if (mHitUmbrella) {
-                mHitUmbrella = false;
-                mZombiePhase = PHASE_IMP_RUNNING;
-                StopEating();
-                StartWalkAnim(0);
-            } else {
-                doPop = true;
-            }
+            mHitUmbrella = false;
+            doPop = true;
         }
     } else if (mZombiePhase == ZombiePhase::PHASE_IMP_PRE_RUN) {
         mZombiePhase = PHASE_IMP_RUNNING;
@@ -5276,8 +5282,8 @@ bool Zombie::EffectedByDamage(unsigned int theDamageRangeFlags) {
         return false; // 存在雪橇时，只有领头僵尸会受到攻击
     }
 
-    // 僵尸狗不按普通地面僵尸处理；只有显式携带 DAMAGES_DOG 的攻击能命中。
-    if (mZombieType == ZombieType::ZOMBIE_DOG) {
+    // 僵尸狗在非奔跑状态时只能被低矮植物或近战攻击命中
+    if (mZombieType == ZombieType::ZOMBIE_DOG && mZombiePhase != ZombiePhase::PHASE_DOG_RUNNING) {
         return TestBit(theDamageRangeFlags, int(DamageRangeFlags::DAMAGES_DOG));
     }
 
@@ -6933,8 +6939,8 @@ Zombie *Zombie::FindZombieGigaFootball() {
 
     Zombie *aZombie = nullptr;
     while (mBoard->IterateZombies(aZombie)) {
-        if (mMindControlled == aZombie->mMindControlled && mZombiePhase != ZombiePhase::PHASE_IMP_GETTING_THROWN && mZombiePhase != ZombiePhase::PHASE_IMP_LANDING
-            && mZombiePhase != ZombiePhase::PHASE_IMP_POPPING && mZombiePhase != ZombiePhase::PHASE_IMP_GETTING_BLOCKED && mZombiePhase != ZombiePhase::PHASE_RISING_FROM_GRAVE
+        if (mMindControlled == aZombie->mMindControlled && mZombiePhase != ZombiePhase::PHASE_IMP_GETTING_THROWN && mZombiePhase != ZombiePhase::PHASE_IMP_POPPING
+            && mZombiePhase != ZombiePhase::PHASE_IMP_GETTING_BLOCKED && mZombiePhase != ZombiePhase::PHASE_RISING_FROM_GRAVE && aZombie->mZombiePhase != ZombiePhase::PHASE_RISING_FROM_GRAVE
             && mZombieHeight != ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED && aZombie->mZombieType == ZombieType::ZOMBIE_GIGA_FOOTBALL && !aZombie->IsDeadOrDying() && !aZombie->IsImmobilizied()
             && aZombie->mRow == mRow) {
             Rect aZombieFootballRect = aZombie->GetZombieAttackRect();
