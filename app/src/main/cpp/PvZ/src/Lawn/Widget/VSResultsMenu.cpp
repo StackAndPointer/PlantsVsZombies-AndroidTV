@@ -342,6 +342,10 @@ void VSResultsMenu::InitFromBoard(Board *theBoard) {
             mSparkleParticleID = gLawnApp->ParticleGetID(sparkle);
         }
     }
+
+    if (mIsOnlineSession && gLawnApp->mPlayerInfo->mVSResultsAutoSaveReplay) {
+        SaveReplay();
+    }
 }
 
 void VSResultsMenu::Update() {
@@ -397,6 +401,71 @@ void VSResultsMenu::OnExit() const {
     }
 }
 
+bool VSResultsMenu::SaveReplay() {
+    if (mIsReplaySession) {
+        LOG_INFO("[REPLAY] ignore save replay in replay session");
+        return false;
+    }
+
+    ReplayMetaInfo meta;
+    const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    std::tm localTm{};
+    localtime_r(&now, &localTm);
+    char timeText[32]{};
+    std::strftime(timeText, sizeof(timeText), "%Y-%m-%d %H:%M", &localTm);
+    meta.hostName = (gServerHostName[0] != '\0') ? gServerHostName : gLawnApp->mPlayerInfo->mName;
+    meta.guestName = (gSecondPlayerName[0] != '\0') ? gSecondPlayerName : "Guest";
+    int winnerSide = -1;
+    int hostCampSide = -1;
+    int guestCampSide = -1;
+    for (int slot = 0; slot < 2; ++slot) {
+        const int sideInSlot = mSides[slot];
+        if (sideInSlot < 0 || sideInSlot > 1) {
+            continue;
+        }
+        const int this76Side = mPlayerIndices[sideInSlot];
+        if (int *playerRecord = GetPlayerRecord((unsigned int)this76Side)) {
+            if (winnerSide == -1 && (playerRecord[0] == 0 || playerRecord[0] == 1)) {
+                winnerSide = playerRecord[0];
+            }
+        }
+        if (this76Side == 0) {
+            hostCampSide = sideInSlot;
+        } else if (this76Side == 1) {
+            guestCampSide = sideInSlot;
+        }
+    }
+    meta.hostCamp = CampNameFromSide(hostCampSide);
+    meta.guestCamp = CampNameFromSide(guestCampSide);
+    if (winnerSide == hostCampSide) {
+        meta.winnerName = meta.hostName;
+    } else if (winnerSide == guestCampSide) {
+        meta.winnerName = meta.guestName;
+    } else {
+        meta.winnerName = "Unknown";
+    }
+    meta.mapName = StrFormat("VSBG_%d", int(mBoardBackground));
+    meta.vsBackground = int(mBoardBackground);
+    meta.boardTicks = mBoardMainCounter;
+    meta.plantDeck = BuildDeckText(mPlantSeeds, 6);
+    meta.zombieDeck = BuildDeckText(mZombieSeeds, 6);
+    meta.createdAt = timeText;
+    meta.fileName = StrFormat("replay_%lld_%s_vs_%s.rpl", static_cast<long long>(now), meta.hostName.c_str(), meta.guestName.c_str());
+    for (char &c : meta.fileName) {
+        if (c == ' ' || c == '/' || c == '\\' || c == ':') {
+            c = '_';
+        }
+    }
+
+    const bool saved = replay::SaveCurrentMatchReplay(meta);
+    LOG_INFO("[REPLAY] save requested, saved={}, file={}", saved, meta.fileName);
+    if (saved) {
+        HideReplayButton(true);
+        gVSResultRequestState = kVSResultRequestStateReplaySaved;
+    }
+    return saved;
+}
+
 void VSResultsMenu::ButtonDepress(int theId) {
     if (mIsFading)
         return;
@@ -409,65 +478,7 @@ void VSResultsMenu::ButtonDepress(int theId) {
     }
 
     if (theId == VSResultsMenu::VSResultsMenu_Save_Replay) {
-        if (mIsReplaySession) {
-            LOG_INFO("[REPLAY] ignore save replay in replay session");
-            return;
-        }
-        ReplayMetaInfo meta;
-        const auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        std::tm localTm{};
-        localtime_r(&now, &localTm);
-        char timeText[32]{};
-        std::strftime(timeText, sizeof(timeText), "%Y-%m-%d %H:%M", &localTm);
-        meta.hostName = (gServerHostName[0] != '\0') ? gServerHostName : gLawnApp->mPlayerInfo->mName;
-        meta.guestName = (gSecondPlayerName[0] != '\0') ? gSecondPlayerName : "Guest";
-        int winnerSide = -1;
-        int hostCampSide = -1;
-        int guestCampSide = -1;
-        for (int slot = 0; slot < 2; ++slot) {
-            const int sideInSlot = mSides[slot];
-            if (sideInSlot < 0 || sideInSlot > 1) {
-                continue;
-            }
-            const int this76Side = mPlayerIndices[sideInSlot];
-            if (int *playerRecord = GetPlayerRecord((unsigned int)this76Side)) {
-                if (winnerSide == -1 && (playerRecord[0] == 0 || playerRecord[0] == 1)) {
-                    winnerSide = playerRecord[0];
-                }
-            }
-            if (this76Side == 0) {
-                hostCampSide = sideInSlot;
-            } else if (this76Side == 1) {
-                guestCampSide = sideInSlot;
-            }
-        }
-        meta.hostCamp = CampNameFromSide(hostCampSide);
-        meta.guestCamp = CampNameFromSide(guestCampSide);
-        if (winnerSide == hostCampSide) {
-            meta.winnerName = meta.hostName;
-        } else if (winnerSide == guestCampSide) {
-            meta.winnerName = meta.guestName;
-        } else {
-            meta.winnerName = "Unknown";
-        }
-        meta.mapName = StrFormat("VSBG_%d", int(mBoardBackground));
-        meta.vsBackground = int(mBoardBackground);
-        meta.boardTicks = mBoardMainCounter;
-        meta.plantDeck = BuildDeckText(mPlantSeeds, 6);
-        meta.zombieDeck = BuildDeckText(mZombieSeeds, 6);
-        meta.createdAt = timeText;
-        meta.fileName = StrFormat("replay_%lld_%s_vs_%s.rpl", static_cast<long long>(now), meta.hostName.c_str(), meta.guestName.c_str());
-        for (char &c : meta.fileName) {
-            if (c == ' ' || c == '/' || c == '\\' || c == ':') {
-                c = '_';
-            }
-        }
-        const bool saved = replay::SaveCurrentMatchReplay(meta);
-        LOG_INFO("[REPLAY] save button clicked, saved={}, file={}", saved, meta.fileName);
-        if (saved && gLawnApp != nullptr) {
-            HideReplayButton(true);
-            gVSResultRequestState = kVSResultRequestStateReplaySaved;
-        }
+        SaveReplay();
         return;
     }
 
@@ -522,7 +533,7 @@ void VSResultsMenu::Draw(Graphics *g) {
         return;
     }
 
-    if (gIsServerModeNetplay && gServerModeTransport == ServerModeTransport::RELAY && mCheckboxController != nullptr) {
+    if (mCheckboxController != nullptr) {
         mCheckboxController->DrawCheckboxLabel(g);
     }
 

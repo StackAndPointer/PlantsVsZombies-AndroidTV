@@ -1562,11 +1562,11 @@ void LawnApp::ShowVSResultsScreen() {
     mWidgetManager->AddWidget(mVSResultsMenu);
     mWidgetManager->BringToFront(mVSResultsMenu);
     mWidgetManager->SetFocus(mVSResultsMenu);
-    if (gIsServerModeNetplay && !mVSResultsMenu->mIsReplaySession && !gIsServerModeSpectator) {
+    const bool connected = (gTcpConnected || gTcpClientSocket >= 0);
+    if (connected && !mVSResultsMenu->mIsReplaySession && !gIsServerModeSpectator) {
         mVSResultsMenu->mCheckboxController = new VSResultsCheckboxController();
         mVSResultsMenu->mCheckboxController->InitCheckboxWidget(mVSResultsMenu);
     }
-    const bool connected = (gTcpConnected || gTcpClientSocket >= 0);
     if (connected) {
         mVSResultsMenu->ShowReplayButton();
     }

@@ -104,10 +104,11 @@ public:
     bool mVSBanMode;
     bool mVSBalancePatchMode;
     bool mVSResultsSendPlayerName;
+    bool mVSResultsAutoSaveReplay;
     bool mHostAllowSpectate;
     Mode3RecentServerStorage serverStorage;
     bool mRenamed;
-    bool mUnused675[70];
+    bool mUnused675[69];
     bool mHapticFeedbackEnabled;
     bool mZombatarEnabled;
     unsigned char mZombatarHat;

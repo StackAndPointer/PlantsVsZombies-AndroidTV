@@ -108,6 +108,7 @@ public:
     void HideReplayButton(bool forceHide);
     void HandleOpponentDisconnected();
     void InitFromBoard(Board *theBoard);
+    bool SaveReplay();
     void ShowReplayButton();
     void KillReplayButton();
 
@@ -125,19 +126,28 @@ class VSResultsCheckboxController final : public Sexy::CheckboxListener {
 public:
     enum {
         VSResultsMenu_Send_Player_Name = 100,
+        VSResultsMenu_Auto_Save_Replay = 101,
     };
 
     Sexy::Checkbox *mSendPlayerNameCheckbox;
+    Sexy::Checkbox *mAutoSaveReplayCheckbox;
 
     VSResultsCheckboxController()
         : Sexy::CheckboxListener()
         , mSendPlayerNameCheckbox(nullptr)
+        , mAutoSaveReplayCheckbox(nullptr)
         , mParentMenu(nullptr) {}
 
     void CheckboxChecked(int theId, bool checked) override {
         if (theId == VSResultsMenu_Send_Player_Name) {
             gLawnApp->mPlayerInfo->mVSResultsSendPlayerName = checked;
             gLawnApp->mPlayerInfo->SaveDetails();
+        } else if (theId == VSResultsMenu_Auto_Save_Replay) {
+            gLawnApp->mPlayerInfo->mVSResultsAutoSaveReplay = checked;
+            gLawnApp->mPlayerInfo->SaveDetails();
+            if (checked && mParentMenu != nullptr && mParentMenu->mSaveReplayButton != nullptr && mParentMenu->mSaveReplayButton->mVisible && !mParentMenu->mSaveReplayButton->mDisabled) {
+                mParentMenu->SaveReplay();
+            }
         }
     }
 
@@ -146,35 +156,52 @@ public:
         if (mParentMenu == nullptr || mParentMenu->mWidgetManager == nullptr || mParentMenu->mIsReplaySession) {
             return;
         }
-        if (mSendPlayerNameCheckbox != nullptr) {
+        if (mSendPlayerNameCheckbox != nullptr || mAutoSaveReplayCheckbox != nullptr) {
             return;
         }
         mSendPlayerNameCheckbox = MakeNewCheckbox(VSResultsMenu_Send_Player_Name, this, mParentMenu, false);
         mSendPlayerNameCheckbox->Resize(-60, 580, 175, 50);
         mSendPlayerNameCheckbox->SetChecked(gLawnApp->mPlayerInfo->mVSResultsSendPlayerName, false);
         mParentMenu->AddWidget(mSendPlayerNameCheckbox);
-        SetCheckboxVisible(gIsServerModeNetplay && gServerModeTransport == ServerModeTransport::RELAY && !gIsServerModeSpectator);
+
+        mAutoSaveReplayCheckbox = MakeNewCheckbox(VSResultsMenu_Auto_Save_Replay, this, mParentMenu, false);
+        mAutoSaveReplayCheckbox->Resize(660, 580, 205, 50);
+        mAutoSaveReplayCheckbox->SetChecked(gLawnApp->mPlayerInfo->mVSResultsAutoSaveReplay, false);
+        mParentMenu->AddWidget(mAutoSaveReplayCheckbox);
+
+        SetSendPlayerNameCheckboxVisible(gIsServerModeNetplay && gServerModeTransport == ServerModeTransport::RELAY && !gIsServerModeSpectator);
+        SetAutoSaveReplayCheckboxVisible((gTcpConnected || gTcpClientSocket >= 0) && !gIsServerModeSpectator);
     }
 
     void DrawCheckboxLabel(Sexy::Graphics *g) const {
-        if (mSendPlayerNameCheckbox == nullptr || g == nullptr || !mSendPlayerNameCheckbox->mVisible) {
+        if (g == nullptr) {
             return;
         }
-        const Sexy::Color color = (mParentMenu != nullptr && mParentMenu->mFocusedChildWidget == mSendPlayerNameCheckbox) ? Sexy::Color(0, 255, 0) : Sexy::Color(107, 110, 145);
         g->SetFont(Sexy::FONT_DWARVENTODCRAFT18);
-        g->SetColor(color);
-        g->DrawString(TodStringTranslate("[SEND_PLAYER_NAME]"), mSendPlayerNameCheckbox->mX + 40, mSendPlayerNameCheckbox->mY + 26);
+        if (mSendPlayerNameCheckbox != nullptr && mSendPlayerNameCheckbox->mVisible) {
+            const Sexy::Color color = (mParentMenu != nullptr && mParentMenu->mFocusedChildWidget == mSendPlayerNameCheckbox) ? Sexy::Color(0, 255, 0) : Sexy::Color(107, 110, 145);
+            g->SetColor(color);
+            g->DrawString(TodStringTranslate("[SEND_PLAYER_NAME]"), mSendPlayerNameCheckbox->mX + 40, mSendPlayerNameCheckbox->mY + 26);
+        }
+        if (mAutoSaveReplayCheckbox != nullptr && mAutoSaveReplayCheckbox->mVisible) {
+            const Sexy::Color color = (mParentMenu != nullptr && mParentMenu->mFocusedChildWidget == mAutoSaveReplayCheckbox) ? Sexy::Color(0, 255, 0) : Sexy::Color(107, 110, 145);
+            g->SetColor(color);
+            g->DrawString(TodStringTranslate("[AUTO_SAVE_REPLAY]"), mAutoSaveReplayCheckbox->mX + 40, mAutoSaveReplayCheckbox->mY + 26);
+        }
     }
 
     void HideCheckboxWidget() {
-        if (mSendPlayerNameCheckbox == nullptr) {
-            return;
+        if (mSendPlayerNameCheckbox != nullptr) {
+            mSendPlayerNameCheckbox->SetVisible(false);
+            mSendPlayerNameCheckbox->mDisabled = true;
         }
-        mSendPlayerNameCheckbox->SetVisible(false);
-        mSendPlayerNameCheckbox->mDisabled = true;
+        if (mAutoSaveReplayCheckbox != nullptr) {
+            mAutoSaveReplayCheckbox->SetVisible(false);
+            mAutoSaveReplayCheckbox->mDisabled = true;
+        }
     }
 
-    void SetCheckboxVisible(bool visible) {
+    void SetSendPlayerNameCheckboxVisible(bool visible) {
         if (mSendPlayerNameCheckbox == nullptr) {
             return;
         }
@@ -182,15 +209,29 @@ public:
         mSendPlayerNameCheckbox->mDisabled = !visible;
     }
 
-    void DestroyCheckboxWidget() {
-        if (mSendPlayerNameCheckbox == nullptr) {
+    void SetAutoSaveReplayCheckboxVisible(bool visible) {
+        if (mAutoSaveReplayCheckbox == nullptr) {
             return;
         }
-        if (mParentMenu != nullptr && mParentMenu->mWidgetManager != nullptr) {
-            mParentMenu->RemoveWidget(mSendPlayerNameCheckbox);
+        mAutoSaveReplayCheckbox->SetVisible(visible);
+        mAutoSaveReplayCheckbox->mDisabled = !visible;
+    }
+
+    void DestroyCheckboxWidget() {
+        if (mSendPlayerNameCheckbox != nullptr) {
+            if (mParentMenu != nullptr && mParentMenu->mWidgetManager != nullptr) {
+                mParentMenu->RemoveWidget(mSendPlayerNameCheckbox);
+            }
+            gLawnApp->SafeDeleteWidget(mSendPlayerNameCheckbox);
+            mSendPlayerNameCheckbox = nullptr;
         }
-        gLawnApp->SafeDeleteWidget(mSendPlayerNameCheckbox);
-        mSendPlayerNameCheckbox = nullptr;
+        if (mAutoSaveReplayCheckbox != nullptr) {
+            if (mParentMenu != nullptr && mParentMenu->mWidgetManager != nullptr) {
+                mParentMenu->RemoveWidget(mAutoSaveReplayCheckbox);
+            }
+            gLawnApp->SafeDeleteWidget(mAutoSaveReplayCheckbox);
+            mAutoSaveReplayCheckbox = nullptr;
+        }
         mParentMenu = nullptr;
     }
 
