@@ -4900,7 +4900,7 @@ void Zombie::EatPlant(Plant *thePlant) {
             return true;
         }
         if (mApp->IsVSMode() && VSSetupAddonWidget::msBalancePatchMode) {
-            return mZombieType != ZombieType::ZOMBIE_NORMAL && mZombieType != ZombieType::ZOMBIE_BOBSLED && mZombieType != ZombieType::ZOMBIE_PEA_HEAD;
+            return mZombieType != ZombieType::ZOMBIE_NORMAL && mZombieType != ZombieType::ZOMBIE_BOBSLED && mZombieType != ZombieType::ZOMBIE_PEA_HEAD && mZombieType != ZombieType::ZOMBIE_DOG;
         }
         return false;
     };
@@ -4959,6 +4959,9 @@ void Zombie::EatZombie(Zombie *theZombie) {
         } else {
             theZombie->TakeDamage(DAMAGE_PER_EAT, 9U);
         }
+    }
+    if (mZombieType == ZombieType::ZOMBIE_DOG) {
+        theZombie->TakeDamage(DAMAGE_PER_EAT, 9U);
     }
     StartEating();
     if (theZombie->mBodyHealth <= 0) {
