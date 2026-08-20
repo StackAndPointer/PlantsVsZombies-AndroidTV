@@ -104,11 +104,6 @@ public:
     float mClipHeight;
 };
 
-struct GigaLightningHit {
-    PlantID mPlantID;
-    int mDamage;
-};
-
 class Coin;
 class GridItem;
 class Plant;

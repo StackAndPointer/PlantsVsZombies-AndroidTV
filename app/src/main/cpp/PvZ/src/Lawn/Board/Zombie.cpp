@@ -2458,13 +2458,9 @@ void Zombie::UpdateGigaGargantuar() {
 
     const bool isRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
 
-    auto spawnLightningHitEffect = [this](Plant *thePlant) {
-        if (thePlant == nullptr || thePlant->mDead) {
-            return;
-        }
-
-        const int aRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, thePlant->mRow, 1);
-        Reanimation *aLightning = mApp->AddReanimation(thePlant->mX, thePlant->mY, aRenderOrder, ReanimationType::REANIM_LIGHTNING_HIT);
+    auto spawnLightningHitEffectAt = [this](int theX, int theY, int theRow) {
+        const int aRenderOrder = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, theRow, 1);
+        Reanimation *aLightning = mApp->AddReanimation(theX, theY, aRenderOrder, ReanimationType::REANIM_LIGHTNING_HIT);
         if (aLightning != nullptr) {
             mApp->PlayFoley(FoleyType::FOLEY_POWER_POLE_HIFI);
             aLightning->SetFramesForLayer("anim_hit");
@@ -2473,7 +2469,23 @@ void Zombie::UpdateGigaGargantuar() {
         }
     };
 
-    auto damagePlant = [this, &spawnLightningHitEffect](Plant *thePlant, int theDamage, bool theSpawnHitEffect) {
+    auto spawnLightningPlantHitEffect = [&spawnLightningHitEffectAt](Plant *thePlant) {
+        if (thePlant == nullptr || thePlant->NotOnGround()) {
+            return;
+        }
+
+        spawnLightningHitEffectAt(thePlant->mX, thePlant->mY, thePlant->mRow);
+    };
+
+    auto spawnLightningZombieHitEffect = [&spawnLightningHitEffectAt](Zombie *theZombie) {
+        if (theZombie == nullptr || theZombie->IsDeadOrDying()) {
+            return;
+        }
+
+        spawnLightningHitEffectAt(theZombie->mX, theZombie->mY, theZombie->mRow);
+    };
+
+    auto damagePlant = [this, &spawnLightningPlantHitEffect](Plant *thePlant, int theDamage, bool theSpawnHitEffect) {
         if (thePlant == nullptr || thePlant->mDead || thePlant->NotOnGround()) {
             return;
         }
@@ -2486,7 +2498,7 @@ void Zombie::UpdateGigaGargantuar() {
         thePlant->mEatenFlashCountdown = std::max(thePlant->mEatenFlashCountdown, 25);
 
         if (theSpawnHitEffect) {
-            spawnLightningHitEffect(thePlant);
+            spawnLightningPlantHitEffect(thePlant);
         }
 
         if (thePlant->mPlantHealth > 0) {
@@ -2501,58 +2513,110 @@ void Zombie::UpdateGigaGargantuar() {
         }
     };
 
-    auto findLightningMainTarget = [this]() -> Plant * {
-        if (mMindControlled) {
-            return nullptr;
+    struct LightningMainTarget {
+        Plant *mPlant = nullptr;
+        Zombie *mZombie = nullptr;
+        int mCenterX = 0;
+        int mCenterY = 0;
+
+        bool IsValid() const {
+            return mPlant != nullptr || mZombie != nullptr;
         }
-
-        Plant *aBestPlant = nullptr;
-        int aBestDistance = INT_MAX;
-
-        const int aZombieCenterX = mX + mWidth / 2;
-
-        Plant *aPlant = nullptr;
-        while (mBoard->IteratePlants(aPlant)) {
-            if (aPlant->NotOnGround()) {
-                continue;
-            }
-
-            if (aPlant->mRow != mRow || aPlant->IsLowProfile()) {
-                continue; // 仅索敌本行的非低矮植物
-            }
-
-            Plant *aTopPlant = mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_EATING_ORDER);
-            if (aTopPlant != aPlant) {
-                continue;
-            }
-
-            Rect aPlantRect = aPlant->GetPlantRect();
-            const int aPlantCenterX = aPlantRect.mX + aPlantRect.mWidth / 2;
-            if (aPlantCenterX >= aZombieCenterX) {
-                continue;
-            }
-
-            const int aDistance = aZombieCenterX - aPlantCenterX;
-            if (aDistance < aBestDistance) {
-                aBestDistance = aDistance;
-                aBestPlant = aPlant;
-            }
-        }
-
-        return aBestPlant;
     };
 
-    auto refreshLightningMainTarget = [this, &findLightningMainTarget]() -> Plant * {
-        Plant *aTargetPlant = findLightningMainTarget();
-        if (aTargetPlant != nullptr) {
-            mTargetPlantID = PlantID(mBoard->mPlants.DataArrayGetID(aTargetPlant));
-            mTargetCol = aTargetPlant->mPlantCol;
+    auto findLightningMainTarget = [this]() -> LightningMainTarget {
+        LightningMainTarget aBestTarget{};
+
+        const int aLightningOriginX = static_cast<int>(mPosX);
+        int aBestDistance = INT_MAX;
+
+        if (!mMindControlled) {
+            Plant *aPlant = nullptr;
+            while (mBoard->IteratePlants(aPlant)) {
+                if (aPlant->NotOnGround() || aPlant->mRow != mRow) {
+                    continue;
+                }
+
+                Rect aPlantRect = aPlant->GetPlantRect();
+                const int aCenterX = aPlantRect.mX + aPlantRect.mWidth / 2;
+                const int aCenterY = aPlantRect.mY + aPlantRect.mHeight / 2;
+                if (aCenterX >= aLightningOriginX) {
+                    continue;
+                }
+
+                const int aDistance = aLightningOriginX - aCenterX;
+                if (aDistance < aBestDistance) {
+                    aBestDistance = aDistance;
+                    aBestTarget.mPlant = aPlant;
+                    aBestTarget.mZombie = nullptr;
+                    aBestTarget.mCenterX = aCenterX;
+                    aBestTarget.mCenterY = aCenterY;
+                }
+            }
+        }
+
+        Zombie *aZombie = nullptr;
+        while (mBoard->IterateZombies(aZombie)) {
+            if (aZombie == this || !aZombie->IsOnBoard() || aZombie->IsDeadOrDying() || aZombie->mRow != mRow) {
+                continue;
+            }
+
+            if (aZombie->mMindControlled == mMindControlled) {
+                continue;
+            }
+
+            Rect aZombieRect = aZombie->GetZombieRect();
+            const int aCenterX = aZombieRect.mX + aZombieRect.mWidth / 2;
+            const int aCenterY = aZombieRect.mY + aZombieRect.mHeight / 2;
+
+            int aDistance;
+
+            if (mMindControlled) {
+                if (aCenterX <= aLightningOriginX) {
+                    continue;
+                }
+
+                aDistance = aCenterX - aLightningOriginX;
+            } else {
+                if (aCenterX >= aLightningOriginX) {
+                    continue;
+                }
+
+                aDistance = aLightningOriginX - aCenterX;
+            }
+
+            if (aDistance < aBestDistance) {
+                aBestDistance = aDistance;
+                aBestTarget.mPlant = nullptr;
+                aBestTarget.mZombie = aZombie;
+                aBestTarget.mCenterX = aCenterX;
+                aBestTarget.mCenterY = aCenterY;
+            }
+        }
+
+        return aBestTarget;
+    };
+
+    auto refreshLightningMainTarget = [this, &findLightningMainTarget]() -> LightningMainTarget {
+        LightningMainTarget aTarget = findLightningMainTarget();
+
+        if (aTarget.mPlant != nullptr) {
+            mTargetPlantID = PlantID(mBoard->mPlants.DataArrayGetID(aTarget.mPlant));
+            mTargetCol = aTarget.mPlant->mPlantCol;
+        } else if (aTarget.mZombie != nullptr) {
+            mTargetPlantID = PlantID::PLANTID_NULL;
+
+            Rect aRect = aTarget.mZombie->GetZombieRect();
+            const int aCenterX = aRect.mX + aRect.mWidth / 2;
+            const int aCenterY = aRect.mY + aRect.mHeight / 2;
+
+            mTargetCol = mBoard->PixelToGridX(aCenterX, aCenterY);
         } else {
             mTargetPlantID = PlantID::PLANTID_NULL;
             mTargetCol = -1;
         }
 
-        return aTargetPlant;
+        return aTarget;
     };
 
     auto throwGigaImp = [this]() {
@@ -2700,54 +2764,133 @@ void Zombie::UpdateGigaGargantuar() {
         const int aLightningElapsedTicks = GIGA_LIGHTNING_DURATION - std::clamp(mPhaseCounter, 0, GIGA_LIGHTNING_DURATION);
         const bool aSpawnHitEffect = aLightningElapsedTicks == 1 || (aLightningElapsedTicks > 0 && aLightningElapsedTicks % GIGA_LIGHTNING_HIT_EFFECT_INTERVAL == 0);
 
-        Plant *aMainTarget = refreshLightningMainTarget();
-        int aLightningLeft;
+        LightningMainTarget aMainTarget = refreshLightningMainTarget();
+        const int aLightningOriginX = mX;
 
-        if (mTargetCol >= 0) {
-            const int aLeftCol = std::max(0, mTargetCol - 1);
-            aLightningLeft = mBoard->GridToPixelX(aLeftCol, mRow);
-        } else {
-            aLightningLeft = mBoard->GridToPixelX(0, mRow);
-        }
+        auto isInsideLightningRange = [this, &aMainTarget, aLightningOriginX](int theCenterX) -> bool {
+            if (mMindControlled) {
+                if (theCenterX <= aLightningOriginX) {
+                    return false;
+                }
 
-        const int aLightningRight = mX + mWidth / 2;
+                if (aMainTarget.IsValid() && theCenterX > aMainTarget.mCenterX) {
+                    return false;
+                }
+            } else {
+                if (theCenterX >= aLightningOriginX) {
+                    return false;
+                }
+
+                if (aMainTarget.IsValid() && theCenterX < aMainTarget.mCenterX) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
+        struct GigaLightningHit {
+            PlantID mPlantID;
+            int mDamage;
+        };
         std::vector<GigaLightningHit> aHits;
 
-        Plant *aPlant = nullptr;
-        while (mBoard->IteratePlants(aPlant)) {
-            if (aPlant->NotOnGround()) {
+        struct GigaLightningZombieHit {
+            ZombieID mZombieID;
+            int mDamage;
+        };
+        std::vector<GigaLightningZombieHit> aZombieHits;
+
+        if (!mMindControlled) {
+            Plant *aPlant = nullptr;
+            while (mBoard->IteratePlants(aPlant)) {
+                if (aPlant->NotOnGround()) {
+                    continue;
+                }
+
+                if (std::abs(aPlant->mRow - mRow) > 1) {
+                    continue;
+                }
+
+                Rect aPlantRect = aPlant->GetPlantRect();
+                const int aCenterX = aPlantRect.mX + aPlantRect.mWidth / 2;
+
+                const bool aInsideLightningBeam = std::abs(aPlant->mRow - mRow) <= 1 && isInsideLightningRange(aCenterX);
+
+                // 如果主目标是僵尸，则以该僵尸为中心产生范围溅射
+                const bool aInsideZombieTargetSplash = aMainTarget.mZombie != nullptr && GetCircleRectOverlap(aMainTarget.mCenterX, aMainTarget.mCenterY, JackInTheBoxZombieRadius, aPlantRect);
+
+                if (!aInsideLightningBeam && !aInsideZombieTargetSplash) {
+                    continue;
+                }
+
+                auto aPlantID = PlantID(mBoard->mPlants.DataArrayGetID(aPlant));
+                int aDamage = GIGA_LIGHTNING_SPLASH_DAMAGE;
+
+                if (aMainTarget.mPlant == aPlant) {
+                    aDamage = GIGA_LIGHTNING_MAIN_DAMAGE;
+                }
+
+                aHits.push_back({aPlantID, aDamage});
+            }
+
+            for (const GigaLightningHit &aHit : aHits) {
+                Plant *aHitPlant = mBoard->mPlants.DataArrayTryToGet(aHit.mPlantID);
+
+                if (aHitPlant == nullptr || aHitPlant->NotOnGround()) {
+                    continue;
+                }
+
+                damagePlant(aHitPlant, aHit.mDamage, aSpawnHitEffect);
+            }
+        }
+
+        Zombie *aZombie = nullptr;
+        while (mBoard->IterateZombies(aZombie)) {
+            if (aZombie == this || aZombie->mDead || !aZombie->IsOnBoard() || aZombie->IsDeadOrDying()) {
                 continue;
             }
 
-            if (std::abs(aPlant->mRow - mRow) > 1) {
+            if (aZombie->mMindControlled == mMindControlled) {
                 continue;
             }
 
-            Rect aPlantRect = aPlant->GetPlantRect();
-            const int aPlantLeft = aPlantRect.mX;
-            const int aPlantRight = aPlantRect.mX + aPlantRect.mWidth;
+            Rect aRect = aZombie->GetZombieRect();
+            const int aCenterX = aRect.mX + aRect.mWidth / 2;
 
-            if (aPlantRight < aLightningLeft || aPlantLeft > aLightningRight) {
+            const bool aInsideLightningBeam = std::abs(aZombie->mRow - mRow) <= 1 && isInsideLightningRange(aCenterX);
+
+            const bool aInsideTargetSplash =
+                aMainTarget.IsValid() && std::abs(aZombie->mRow - mRow) <= 1 && GetCircleRectOverlap(aMainTarget.mCenterX, aMainTarget.mCenterY, JackInTheBoxZombieRadius, aRect);
+
+            if (!aInsideLightningBeam && !aInsideTargetSplash) {
                 continue;
             }
-
-            auto aPlantID = PlantID(mBoard->mPlants.DataArrayGetID(aPlant));
 
             int aDamage = GIGA_LIGHTNING_SPLASH_DAMAGE;
-            if (aPlant == aMainTarget) {
+
+            if (aMainTarget.mZombie == aZombie) {
                 aDamage = GIGA_LIGHTNING_MAIN_DAMAGE;
             }
 
-            aHits.push_back({aPlantID, aDamage});
+            aZombieHits.push_back({mBoard->ZombieGetID(aZombie), aDamage});
         }
 
-        for (const GigaLightningHit &aHit : aHits) {
-            Plant *aHitPlant = mBoard->mPlants.DataArrayTryToGet(aHit.mPlantID);
-            if (aHitPlant == nullptr || aHitPlant->NotOnGround()) {
+        for (const GigaLightningZombieHit &aHit : aZombieHits) {
+            Zombie *aHitZombie = mBoard->mZombies.DataArrayTryToGet(aHit.mZombieID);
+            if (aHitZombie == nullptr || aHitZombie == this || aHitZombie->mDead || aHitZombie->IsDeadOrDying()) {
                 continue;
             }
 
-            damagePlant(aHitPlant, aHit.mDamage, aSpawnHitEffect);
+            if (aHitZombie->mMindControlled == mMindControlled) {
+                continue;
+            }
+
+            if (aSpawnHitEffect) {
+                spawnLightningZombieHitEffect(aHitZombie);
+            }
+
+            aHitZombie->TakeDamage(aHit.mDamage, 0U);
         }
 
         refreshLightningMainTarget();
@@ -2786,10 +2929,18 @@ void Zombie::UpdateGigaGargantuar() {
 
         mHasObject = false;
 
-        Plant *aMainTarget = findLightningMainTarget();
-        if (aMainTarget != nullptr) {
-            mTargetPlantID = PlantID(mBoard->mPlants.DataArrayGetID(aMainTarget));
-            mTargetCol = aMainTarget->mPlantCol;
+        LightningMainTarget aMainTarget = findLightningMainTarget();
+        if (aMainTarget.mPlant != nullptr) {
+            mTargetPlantID = PlantID(mBoard->mPlants.DataArrayGetID(aMainTarget.mPlant));
+            mTargetCol = aMainTarget.mPlant->mPlantCol;
+        } else if (aMainTarget.mZombie != nullptr) {
+            mTargetPlantID = PlantID::PLANTID_NULL;
+
+            Rect aRect = aMainTarget.mZombie->GetZombieRect();
+            const int aCenterX = aRect.mX + aRect.mWidth / 2;
+            const int aCenterY = aRect.mY + aRect.mHeight / 2;
+
+            mTargetCol = mBoard->PixelToGridX(aCenterX, aCenterY);
         } else {
             mTargetPlantID = PlantID::PLANTID_NULL;
             mTargetCol = -1;
