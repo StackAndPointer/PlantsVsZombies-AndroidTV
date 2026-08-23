@@ -2142,7 +2142,6 @@ static int GetVSCostDefault(SeedType theSeedType) {
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_SPORESHROOM:
-        case SeedType::SEED_PEANUT:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -2155,10 +2154,12 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_BLOOMERANG:
         case SeedType::SEED_BONK_CHOY:
+        case SeedType::SEED_PEANUT:
         case SeedType::SEED_ZOMBIE_BUNGEE:
         case SeedType::SEED_ZOMBIE_SNORKEL:
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
         case SeedType::SEED_ZOMBIE_JALAPENO_HEAD:
+        case SeedType::SEED_ZOMBIE_TELEPORTATION:
             return 125;
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:
@@ -2220,6 +2221,7 @@ static int GetVSRefreshTimeDefault(SeedType theSeedType) {
             case SeedType::SEED_ZOMBIE_EXPLORER:
             case SeedType::SEED_ZOMBIE_ZOMBLOB:
             case SeedType::SEED_ZOMBIE_DOGWALKER:
+            case SeedType::SEED_ZOMBIE_TELEPORTATION:
                 return 3000;
             case SeedType::SEED_ZOMBIE_NEWSPAPER:
             case SeedType::SEED_ZOMBIE_SCREEN_DOOR:

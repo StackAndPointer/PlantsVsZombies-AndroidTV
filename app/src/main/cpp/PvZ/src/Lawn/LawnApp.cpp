@@ -218,10 +218,12 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_GIGA_ZOMBIEPOLEVAULTERHEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieGigaPolevaulterHead");
     addonImages.IMAGE_REANIM_ZOMBIE_EXPLORER_HEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieExplorerHead");
     addonImages.IMAGE_REANIM_ZOMBIE_DOGWALKER_HEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieDogWalkerHead");
+    addonImages.IMAGE_REANIM_ZOMBIE_TELEPORTATION_HEAD = GetImageByFileName("addonFiles/particles/ExtendedZombies/ZombieTeleportationHead");
     addonImages.IMAGE_PROJECTILEPOLE = GetImageByFileName("addonFiles/images/ExtendedZombies/Zombie_giga_polevaulter_pole");
     addonImages.IMAGE_PROJECTILEZOMBLOB = GetImageByFileName("addonFiles/images/ExtendedZombies/zombie_zomblob_split");
     addonImages.IMAGE_PROJECTILESPORE = GetImageByFileName("addonFiles/images/ProjectileSpore");
     addonImages.IMAGE_PROJECTILEBOOMERANG = GetImageByFileName("addonFiles/images/ProjectileBoomerang");
+    addonImages.IMAGE_PROJECTILETELEPORTATION = GetImageByFileName("addonFiles/images/ProjectileTeleportation");
     addonImages.IMAGE_REANIM_ZOMBLOBHEAD_BUTTERED = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombiezomblobhead_buttered");
     addonImages.IMAGE_REANIM_ZOMBIE_ZOMBLOB_BODY_BUTTERED = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_zomblob_body_buttered");
     addonImages.IMAGE_REANIM_ZOMBIE_ZOMBLOB_BODY_DYING_BUTTERED = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_zomblob_body_dying_buttered");
@@ -264,6 +266,8 @@ void LawnApp::LoadAddonImages() {
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_HEAD2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_head2");
     addonImages.IMAGE_REANIM_ZOMBIE_GIGA_GARGANTUAR_TELEPHONEPOLE_COIL = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_giga_gargantuar_telephonepole_coil");
     addonImages.IMAGE_REANIM_ZOMBIE_DOGWALKER_OUTERARM_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_dogwalker_outerarm_upper2");
+    addonImages.IMAGE_REANIM_ZOMBIE_TELEPORTATION_OUTERARM_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_teleportation_outerarm_upper2");
+    addonImages.IMAGE_REANIM_ZOMBIE_TELEPORTATION_TELEPHONE = GetImageByFileName("addonFiles/reanim/ExtendedZombies/zombie_teleportation_telephone");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower2");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_LOWER3 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_lower3");
     addonImages.IMAGE_REANIM_CELERY_STALKER_ARM2_UPPER2 = GetImageByFileName("addonFiles/reanim/ExtendedPlants/celery_stalker_arm2_upper2");
@@ -326,6 +330,7 @@ void LawnApp::LoadAddonSounds() {
     addonSounds.giga_laugh = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Laugh");
     addonSounds.giga_laugh2 = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Laugh2");
     addonSounds.giga_laugh3 = GetSoundByFileName("addonFiles/sounds/GigaGarg_PowerPole_Laugh3");
+    addonSounds.teleportation = GetSoundByFileName("addonFiles/sounds/teleportation");
 
     int addonSoundsNum = (sizeof(addonSounds) / sizeof(int));
     mCompletedLoadingThreadTasks += 54 * addonSoundsNum;

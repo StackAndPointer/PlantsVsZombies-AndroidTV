@@ -406,6 +406,8 @@ public:
     void HandleDogPartnerLost();
     void UpdateDogWalker();
     void UpdateZombieDog();
+    void UpdateZombieTeleportation();
+    bool FindTeleportationTarget();
     Plant *FindDogTarget();
     void SetDogPairRow(int theRow);
     void UpdateZombieGargantuar();

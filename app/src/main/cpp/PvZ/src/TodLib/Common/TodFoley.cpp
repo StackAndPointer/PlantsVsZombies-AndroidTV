@@ -103,6 +103,7 @@ auto GetNewLawnFoleyParamArray() -> FoleyParams (&)[FoleyType::EXTENDED_NUM_FOLE
             {FoleyType::FOLEY_GIGA_LAUGH, 0.0f, {&addonSounds.giga_laugh}, 0U},
             {FoleyType::FOLEY_GIGA_LAUGH2, 0.0f, {&addonSounds.giga_laugh2}, 0U},
             {FoleyType::FOLEY_GIGA_LAUGH3, 0.0f, {&addonSounds.giga_laugh3}, 0U},
+            {FoleyType::FOLEY_TELEPORTATION, 0.0f, {&addonSounds.teleportation}, 0U},
             {FoleyType::FOLEY_ICEBERG, 0.0f, {&addonSounds.iceberg}, 0U},
             {FoleyType::FOLEY_CELERY_STALKER_RISE, 0.0f, {&addonSounds.celery_stalker_rise}, 0U},
             {FoleyType::FOLEY_CELERY_STALKER_ATTACK, 0.0f, {&addonSounds.celery_stalker_attack}, 0U},

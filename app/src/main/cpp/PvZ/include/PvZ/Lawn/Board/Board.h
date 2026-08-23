@@ -411,6 +411,9 @@ public:
     ReplayControlsWidget *mReplayControlsWidget = nullptr;
 
     Projectile *AddProjectile(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType);
+    void SpawnTeleportEffect(float theX, float theY, int theRow);
+    void TeleportZombie(Zombie *theZombie, float theDestX);
+    bool TeleportPlant(Plant *thePlant, int theDestGridX, int theDestGridY);
     int PixelToGridX(int theX, int theY) {
         return reinterpret_cast<int (*)(Board *, int, int)>(Board_PixelToGridXAddr)(this, theX, theY);
     }

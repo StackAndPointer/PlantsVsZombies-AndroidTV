@@ -35,6 +35,7 @@
 #include "PvZ/TodLib/Effect/Attachment.h"
 #include "PvZ/TodLib/Effect/Reanimator.h"
 
+#include <algorithm>
 #include <numbers>
 
 using namespace Sexy;
@@ -117,10 +118,12 @@ ProjectileDefinition gExtendedProjectileDefinition[] = {
     {ProjectileType::PROJECTILE_ZOMBLOB, 0, 0},
     {ProjectileType::PROJECTILE_SPORE, 0, 50},
     {ProjectileType::PROJECTILE_BOOMERANG, 0, 20},
+    {ProjectileType::PROJECTILE_TELEPORTATION, 0, 0},
 };
 
 void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, int theRow, ProjectileType theProjectileType) {
-    if (!isOnlyTouchFireWood && theProjectileType != ProjectileType::PROJECTILE_ZOMBLOB && theProjectileType != ProjectileType::PROJECTILE_BOOMERANG) {
+    if (!isOnlyTouchFireWood && theProjectileType != ProjectileType::PROJECTILE_ZOMBLOB && theProjectileType != ProjectileType::PROJECTILE_BOOMERANG
+        && theProjectileType != ProjectileType::PROJECTILE_TELEPORTATION) {
         // 僵尸子弹与加农炮子弹NULL
         if (theProjectileType == ProjectileType::PROJECTILE_COBBIG || theProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA) {
             old_Projectile_ProjectileInitialize(this, theX, theY, theRenderOrder, theRow, theProjectileType);
@@ -172,15 +175,16 @@ Plant *Projectile::FindCollisionTargetPlant() {
         if (aPlant->mRow != mRow)
             continue;
 
-        if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
+        if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL
+            || mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION) {
             if (aPlant->IsLowProfile()) // 僵尸子弹不能击中低矮植物
                 continue;
         }
 
         Rect aPlantRect = aPlant->GetPlantRect();
         if (GetRectOverlap(aProjectileRect, aPlantRect) > 8) {
-            if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE
-                || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL) {
+            if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL
+                || mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION) {
                 return mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_EATING_ORDER);
             } else {
                 return mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_CATAPULT_ORDER);
@@ -1210,6 +1214,64 @@ void Projectile::CheckForCollision() {
         return;
     }
 
+    if (mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION) {
+        const Rect aProjectileRect = GetProjectileRect();
+        Plant *aPlant = FindCollisionTargetPlant();
+        Zombie *aZombie = nullptr;
+        Zombie *aBestZombie = nullptr;
+        while (mBoard->IterateZombies(aZombie)) {
+            if (aZombie->mDead || aZombie->IsDeadOrDying() || aZombie->mRow != mRow || mBoard->ZombieGetID(aZombie) == mTargetZombieID) {
+                continue;
+            }
+            if (GetRectOverlap(aProjectileRect, aZombie->GetZombieRect()) > 8 && (aBestZombie == nullptr || aZombie->mX > aBestZombie->mX)) {
+                aBestZombie = aZombie;
+            }
+        }
+
+        if (aPlant == nullptr && aBestZombie == nullptr) {
+            if (mPosX > 800.0f || mPosX + mWidth < 0.0f) {
+                Die();
+            }
+            return;
+        }
+
+        const bool aHitPlant = aPlant != nullptr && (aBestZombie == nullptr || aPlant->mX >= aBestZombie->mX);
+        Reanimation *aBulletFlash = mApp->AddReanimation(mPosX, mPosY + 17.0f, mRenderOrder + 1, ReanimationType::REANIM_TELEPORTATION_BULLET_FLASH);
+        if (aBulletFlash != nullptr) {
+            aBulletFlash->SetFramesForLayer("anim_flame");
+            aBulletFlash->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_FULL_LAST_FRAME;
+            aBulletFlash->mAnimRate = 24.0f;
+        }
+        const bool aRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
+        if (!aRemoteClient) {
+            if (aHitPlant) {
+                const int aDestGridX = aPlant->mPlantCol + 2;
+                const int aDestGridY = aPlant->mRow;
+                const uint16_t aPlantID = uint16_t(mBoard->mPlants.DataArrayGetID(aPlant));
+                const bool aDidTeleport = mBoard->TeleportPlant(aPlant, aDestGridX, aDestGridY);
+                if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
+                    U16U16_Event event{};
+                    event.type = EventType::EVENT_SERVER_BOARD_PLANT_TELEPORT;
+                    event.data1 = aPlantID;
+                    event.data2 = aDidTeleport ? uint16_t(aDestGridX) : UINT16_MAX;
+                    netplay::PutEvent(event);
+                }
+            } else {
+                const float aDestX = std::max(0.0f, aBestZombie->mPosX - 160.0f);
+                mBoard->TeleportZombie(aBestZombie, aDestX);
+                if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
+                    U16UNI32_Event event{};
+                    event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_TELEPORT;
+                    event.data1 = uint16_t(mBoard->mZombies.DataArrayGetID(aBestZombie));
+                    event.data2.f32 = aDestX;
+                    netplay::PutEvent(event);
+                }
+            }
+        }
+        Die();
+        return;
+    }
+
     // 修复豌豆僵尸的子弹无法击中魅惑僵尸、修复随机子弹飞出屏幕不自动消失导致闪退。
     if (mMotionType == ProjectileMotion::MOTION_PUFF && mProjectileAge >= 75) {
         Die();
@@ -1445,6 +1507,8 @@ void Projectile::Draw(Graphics *g) {
         aScaleX = 0.8f;
         aScaleY = 0.5f;
         aImage = addonImages.IMAGE_PROJECTILEBOOMERANG;
+    } else if (mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION) {
+        aImage = addonImages.IMAGE_PROJECTILETELEPORTATION;
     }
 
     bool aMirror = false;

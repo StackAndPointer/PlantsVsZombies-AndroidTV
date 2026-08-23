@@ -869,6 +869,8 @@ ZombieType Challenge::IZombieSeedTypeToZombieType(SeedType theSeedType) {
             return ZOMBIE_GIGA_GARGANTUAR;
         case SEED_ZOMBIE_DOGWALKER:
             return ZOMBIE_DOGWALKER;
+        case SEED_ZOMBIE_TELEPORTATION:
+            return ZOMBIE_TELEPORTATION;
         default:
             return ZOMBIE_INVALID;
     }

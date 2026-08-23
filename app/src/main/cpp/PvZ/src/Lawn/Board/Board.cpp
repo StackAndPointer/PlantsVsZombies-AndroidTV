@@ -414,6 +414,58 @@ Projectile *Board::AddProjectile(int theX, int theY, int theRenderOrder, int the
     return aProjectile;
 }
 
+void Board::SpawnTeleportEffect(float theX, float theY, int theRow) {
+    constexpr float TELEPORT_REANIM_OFFSET_X = -10.0f;
+    constexpr float TELEPORT_REANIM_OFFSET_Y = -60.0f;
+    const int aRenderOrder = MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, theRow, 1);
+    Reanimation *aTeleport = mApp->AddReanimation(theX + TELEPORT_REANIM_OFFSET_X, theY + TELEPORT_REANIM_OFFSET_Y, aRenderOrder, ReanimationType::REANIM_TELEPORTATION);
+    if (aTeleport != nullptr) {
+        aTeleport->SetFramesForLayer("anim_teleportation");
+        aTeleport->mLoopType = ReanimLoopType::REANIM_PLAY_ONCE_FULL_LAST_FRAME;
+        aTeleport->mAnimRate = 24.0f;
+        mApp->PlayFoley(FoleyType::FOLEY_TELEPORTATION);
+    }
+}
+
+void Board::TeleportZombie(Zombie *theZombie, float theDestX) {
+    if (theZombie == nullptr || theZombie->IsDeadOrDying()) {
+        return;
+    }
+
+    SpawnTeleportEffect(theZombie->mPosX + 30.0f, theZombie->mPosY + 55.0f, theZombie->mRow);
+    theZombie->mPosX = std::max(0.0f, theDestX);
+    theZombie->mX = int(theZombie->mPosX);
+    theZombie->mJustGotShotCounter = 150;
+    SpawnTeleportEffect(theZombie->mPosX + 30.0f, theZombie->mPosY + 55.0f, theZombie->mRow);
+}
+
+bool Board::TeleportPlant(Plant *thePlant, int theDestGridX, int theDestGridY) {
+    if (thePlant == nullptr || thePlant->NotOnGround()) {
+        return false;
+    }
+
+    const int aOriginGridX = thePlant->mPlantCol;
+    const int aOriginGridY = thePlant->mRow;
+    SpawnTeleportEffect(GridToPixelX(aOriginGridX, aOriginGridY), GridToPixelY(aOriginGridX, aOriginGridY) + 20.0f, aOriginGridY);
+
+    const SeedType aSeedType = thePlant->mSeedType == SeedType::SEED_IMITATER ? thePlant->mImitaterType : thePlant->mSeedType;
+    const bool aCanPlant =
+        theDestGridX >= 0 && theDestGridX < MAX_GRID_SIZE_X && theDestGridY >= 0 && theDestGridY < MAX_GRID_SIZE_Y && CanPlantAt(theDestGridX, theDestGridY, aSeedType) == PlantingReason::PLANTING_OK;
+    if (!aCanPlant) {
+        thePlant->Die();
+        return false;
+    }
+
+    thePlant->mPlantCol = theDestGridX;
+    thePlant->mRow = theDestGridY;
+    thePlant->mX = GridToPixelX(theDestGridX, theDestGridY);
+    thePlant->mY = GridToPixelY(theDestGridX, theDestGridY);
+    thePlant->mEatenFlashCountdown = 150;
+    thePlant->UpdateReanim();
+    SpawnTeleportEffect(GridToPixelX(theDestGridX, theDestGridY), GridToPixelY(theDestGridX, theDestGridY) + 20.0f, theDestGridY);
+    return true;
+}
+
 bool Board::IterateProjectiles(Projectile *&theProjectile) {
     if (theProjectile == reinterpret_cast<Projectile *>(-1)) {
         return false;
@@ -2916,6 +2968,36 @@ void Board::processServerEvent(const BaseEvent *event) {
                 Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
                 aZombie->SetRow(event1->data2);
                 aZombie->StartWalkAnim(20);
+            }
+        } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_TELEPORTATION_SHOOT: {
+            auto *eventShoot = static_cast<const U16_Event *>(event);
+            uint16_t clientZombieID = 0;
+            if (homura::FindInMap(serverZombieIDMap, eventShoot->data, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                aZombie->StopEating();
+                aZombie->mZombiePhase = ZombiePhase::PHASE_TELEPORTATION_SHOOTING;
+                aZombie->PlayZombieReanim("anim_shoot", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 10, 24.0f);
+            }
+        } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_TELEPORT: {
+            auto *eventTeleport = static_cast<const U16UNI32_Event *>(event);
+            uint16_t clientZombieID = 0;
+            if (homura::FindInMap(serverZombieIDMap, eventTeleport->data1, clientZombieID)) {
+                TeleportZombie(mZombies.DataArrayGet(clientZombieID), eventTeleport->data2.f32);
+            }
+        } break;
+        case EVENT_SERVER_BOARD_PLANT_TELEPORT: {
+            auto *eventTeleport = static_cast<const U16U16_Event *>(event);
+            uint16_t clientPlantID = 0;
+            if (homura::FindInMap(serverPlantIDMap, eventTeleport->data1, clientPlantID)) {
+                Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
+                if (eventTeleport->data2 == UINT16_MAX) {
+                    TeleportPlant(aPlant, int(UINT16_MAX), aPlant->mRow);
+                    serverPlantIDMap.erase(eventTeleport->data1);
+                } else {
+                    TeleportPlant(aPlant, eventTeleport->data2, aPlant->mRow);
+                }
             }
         } break;
         case EVENT_SERVER_BOARD_ZOMBIE_PHASE_COUNTER: {

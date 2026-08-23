@@ -97,6 +97,7 @@ ZombieDefinition gExtendedZombieDefs[] = {
     {ZOMBIE_GIGA_IMP, REANIM_GIGA_IMP, 10, 48, 1, 0, "GIGA_IMP"},
     {ZOMBIE_DOGWALKER, REANIM_DOGWALKER, 2, 18, 5, 1000, "DOGWALKER_ZOMBIE"},
     {ZOMBIE_DOG, REANIM_DOG, 1, 18, 1, 0, "ZOMBIE_DOG"},
+    {ZOMBIE_TELEPORTATION, REANIM_ZOMBIE_TELEPORTATION, 2, 18, 5, 1000, "TELEPORTATION_ZOMBIE"},
 };
 
 ZombieDefinition &GetZombieDefinition(ZombieType theZombieType) {
@@ -320,6 +321,13 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             PickRandomSpeed();
             break;
 
+        case ZombieType::ZOMBIE_TELEPORTATION:
+            mBodyHealth = 500;
+            mVariant = false;
+            mZombieAttackRect = Rect(20, 0, 50, 115);
+            mPhaseCounter = 1000;
+            break;
+
         case ZombieType::ZOMBIE_GIGA_GARGANTUAR: {
             mWidth = 180;
             mHeight = 180;
@@ -392,9 +400,9 @@ void Zombie::CheckIfPreyCaught() {
         || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_RIDING || mZombiePhase == ZombiePhase::PHASE_DOLPHIN_IN_JUMP || mZombiePhase == ZombiePhase::PHASE_SNORKEL_INTO_POOL
         || mZombiePhase == ZombiePhase::PHASE_SNORKEL_WALKING || mZombiePhase == ZombiePhase::PHASE_LADDER_PLACING || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_CHARGING
         || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_TACKLING || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_KICKING || mZombiePhase == ZombiePhase::PHASE_IMP_POPPING
-        || mZombiePhase == ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK || mZombieHeight == ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED || mZombieHeight == ZombieHeight::HEIGHT_UP_LADDER
-        || mZombieHeight == ZombieHeight::HEIGHT_IN_TO_POOL || mZombieHeight == ZombieHeight::HEIGHT_OUT_OF_POOL || IsTangleKelpTarget() || mZombieHeight == ZombieHeight::HEIGHT_FALLING || !mHasHead
-        || IsFlying()) {
+        || mZombiePhase == ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK || mZombiePhase == ZombiePhase::PHASE_TELEPORTATION_SHOOTING || mZombieHeight == ZombieHeight::HEIGHT_GETTING_BUNGEE_DROPPED
+        || mZombieHeight == ZombieHeight::HEIGHT_UP_LADDER || mZombieHeight == ZombieHeight::HEIGHT_IN_TO_POOL || mZombieHeight == ZombieHeight::HEIGHT_OUT_OF_POOL || IsTangleKelpTarget()
+        || mZombieHeight == ZombieHeight::HEIGHT_FALLING || !mHasHead || IsFlying()) {
         return;
     }
 
@@ -557,6 +565,90 @@ void Zombie::UpdateActions() {
     if (mZombieType == ZombieType::ZOMBIE_DOG) {
         UpdateZombieDog();
     }
+    if (mZombieType == ZombieType::ZOMBIE_TELEPORTATION) {
+        UpdateZombieTeleportation();
+    }
+}
+
+void Zombie::UpdateZombieTeleportation() {
+    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    if (aBodyReanim == nullptr || IsDeadOrDying()) {
+        return;
+    }
+    const bool aRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
+
+    if (!mHasHead) {
+        if (mZombiePhase == ZombiePhase::PHASE_TELEPORTATION_SHOOTING) {
+            mZombiePhase = ZombiePhase::PHASE_ZOMBIE_NORMAL;
+            StartWalkAnim(10);
+        }
+        return;
+    }
+
+    if (mZombiePhase == ZombiePhase::PHASE_TELEPORTATION_SHOOTING) {
+        if (aBodyReanim->ShouldTriggerTimedEvent(0.5f)) {
+            constexpr float aOriginOffsetX = 5.0f;
+            constexpr float aOriginOffsetY = 45.0f;
+            Projectile *aProjectile = mBoard->AddProjectile(int(mPosX + aOriginOffsetX), int(mPosY + aOriginOffsetY - mAltitude), mRenderOrder + 1, mRow, ProjectileType::PROJECTILE_TELEPORTATION);
+            aProjectile->mMotionType = ProjectileMotion::MOTION_BACKWARDS;
+            aProjectile->mTargetZombieID = mBoard->ZombieGetID(this);
+        }
+
+        if (aBodyReanim->mLoopCount > 0) {
+            mZombiePhase = ZombiePhase::PHASE_ZOMBIE_NORMAL;
+            mPhaseCounter = aRemoteClient ? 1500 : RandRangeInt(1000, 1500);
+            StartWalkAnim(10);
+        }
+        return;
+    }
+
+    if (aRemoteClient) {
+        return;
+    }
+
+    if (mPhaseCounter <= 0 && !IsImmobilizied() && FindTeleportationTarget()) {
+        StopEating();
+        mZombiePhase = ZombiePhase::PHASE_TELEPORTATION_SHOOTING;
+        PlayZombieReanim("anim_shoot", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 10, 24.0f);
+        if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
+            U16_Event event{};
+            event.type = EventType::EVENT_SERVER_BOARD_ZOMBIE_TELEPORTATION_SHOOT;
+            event.data = uint16_t(mBoard->mZombies.DataArrayGetID(this));
+            netplay::PutEvent(event);
+        }
+    }
+}
+
+bool Zombie::FindTeleportationTarget() {
+    const float aProjectileOriginX = mPosX + 5.0f;
+
+    Plant *aPlant = nullptr;
+    while (mBoard->IteratePlants(aPlant)) {
+        if (aPlant->NotOnGround() || aPlant->mRow != mRow || aPlant->IsLowProfile()) {
+            continue;
+        }
+
+        const Rect aPlantRect = aPlant->GetPlantRect();
+        if (aPlantRect.mX < aProjectileOriginX && aPlantRect.mX + aPlantRect.mWidth > 0) {
+            return true;
+        }
+    }
+
+    const ZombieID aSelfID = mBoard->ZombieGetID(this);
+    Zombie *aZombie = nullptr;
+    while (mBoard->IterateZombies(aZombie)) {
+        if (aZombie->mDead || aZombie->IsDeadOrDying() || aZombie->mRow != mRow || mBoard->ZombieGetID(aZombie) == aSelfID) {
+            continue;
+        }
+
+        const Rect aZombieRect = aZombie->GetZombieRect();
+        const float aZombieCenterX = aZombieRect.mX + aZombieRect.mWidth * 0.5f;
+        if (aZombieCenterX < aProjectileOriginX && aZombieRect.mX + aZombieRect.mWidth > 0) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 void Zombie::UpdatePlaying() {
@@ -6291,6 +6383,8 @@ void Zombie::DropHead_Origin(unsigned int theDamageFlags) {
             } else if (mZombieType == ZombieType::ZOMBIE_DOGWALKER) {
                 aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_DOGWALKER_HEAD);
                 BreakRope();
+            } else if (mZombieType == ZombieType::ZOMBIE_TELEPORTATION) {
+                aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_TELEPORTATION_HEAD);
             }
         }
         return;
@@ -6615,6 +6709,11 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
             ReanimShowTrack("Zombie_dogwalker_outerarm_lower", RENDER_GROUP_HIDDEN);
             ReanimShowTrack("Zombie_dogwalker_outerarm_hand", RENDER_GROUP_HIDDEN);
             break;
+        case ZombieType::ZOMBIE_TELEPORTATION:
+            ReanimShowPrefix("zombie_teleportation_outerarm_lower", RENDER_GROUP_HIDDEN);
+            ReanimShowPrefix("zombie_teleportation_outerarm_hand", RENDER_GROUP_HIDDEN);
+            ReanimShowPrefix("zombie_teleportation_telephone", RENDER_GROUP_HIDDEN);
+            break;
         default:
             ReanimShowPrefix("Zombie_outerarm_lower", RENDER_GROUP_HIDDEN);
             ReanimShowPrefix("Zombie_outerarm_hand", RENDER_GROUP_HIDDEN);
@@ -6668,6 +6767,10 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
                 GetTrackPosition("Zombie_dogwalker_outerarm_lower", aPosX, aPosY);
                 aBodyReanim->SetImageOverride("Zombie_dogwalker_outerarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_DOGWALKER_OUTERARM_UPPER2);
                 break;
+            case ZombieType::ZOMBIE_TELEPORTATION:
+                GetTrackPosition("Zombie_teleportation_outerarm_lower", aPosX, aPosY);
+                aBodyReanim->SetImageOverride("Zombie_teleportation_outerarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_TELEPORTATION_OUTERARM_UPPER2);
+                break;
             default:
                 GetTrackPosition("Zombie_outerarm_lower", aPosX, aPosY);
                 aBodyReanim->SetImageOverride("Zombie_outerarm_upper", IMAGE_REANIM_ZOMBIE_OUTERARM_UPPER2);
@@ -6707,6 +6810,9 @@ void Zombie::SetupReanimForLostArm(unsigned int theDamageFlags) {
                 case ZombieType::ZOMBIE_EXPLORER:
                 case ZombieType::ZOMBIE_DOGWALKER:
                     aParticle->OverrideImage(nullptr, IMAGE_REANIM_ZOMBIE_OUTERARM_HAND);
+                    break;
+                case ZombieType::ZOMBIE_TELEPORTATION:
+                    aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_TELEPORTATION_TELEPHONE);
                     break;
                 case ZombieType::ZOMBIE_SUNDAY_EDITION:
                     aParticle->OverrideImage(nullptr, addonImages.IMAGE_REANIM_ZOMBIE_SUNDAY_EDITION_LEFTARM_LOWER);
@@ -7639,6 +7745,10 @@ void Zombie::SetupLostArmReanim() {
         case ZombieType::ZOMBIE_GIGA_IMP:
             ReanimShowTrack("Zombie_giga_outerarm_lower", RENDER_GROUP_HIDDEN);
             break;
+        case ZombieType::ZOMBIE_TELEPORTATION:
+            ReanimShowPrefix("Zombie_teleportation_outerarm_lower", RENDER_GROUP_HIDDEN);
+            ReanimShowPrefix("Zombie_teleportation_outerarm_hand", RENDER_GROUP_HIDDEN);
+            break;
         default:
             ReanimShowPrefix("Zombie_outerarm_lower", -1);
             ReanimShowPrefix("Zombie_outerarm_hand", -1);
@@ -7715,6 +7825,9 @@ void Zombie::SetupLostArmReanim() {
                 break;
             case ZombieType::ZOMBIE_YETI:
                 aBodyReanim->SetImageOverride("Zombie_yeti_outerarm_upper", Sexy::IMAGE_REANIM_ZOMBIE_YETI_OUTERARM_UPPER2);
+                break;
+            case ZombieType::ZOMBIE_TELEPORTATION:
+                aBodyReanim->SetImageOverride("Zombie_teleportation_outerarm_upper", addonImages.IMAGE_REANIM_ZOMBIE_TELEPORTATION_OUTERARM_UPPER2);
                 break;
             default:
                 aBodyReanim->SetImageOverride("Zombie_outerarm_upper", Sexy::IMAGE_REANIM_ZOMBIE_OUTERARM_UPPER2);
@@ -8112,7 +8225,7 @@ bool Zombie::ZombieNotWalking() {
         || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_TAKE || mZombiePhase == ZombiePhase::PHASE_POLEVAULTER_THROW || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_TACKLING
         || mZombiePhase == ZombiePhase::PHASE_FOOTBALL_KICKING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_THROW_PREPARING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_THROW_END
         || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_PREPARING || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_ATTACK
-        || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_END || mZombiePhase == ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK) {
+        || mZombiePhase == ZombiePhase::PHASE_GIGA_GARGANTUAR_LIGHTNING_END || mZombiePhase == ZombiePhase::PHASE_DOGWALKER_ROPE_BREAK || mZombiePhase == ZombiePhase::PHASE_TELEPORTATION_SHOOTING) {
         return true;
     }
 
@@ -8733,12 +8846,11 @@ void Zombie::Animate() {
             if (mZombieType == ZombieType::ZOMBIE_POLEVAULTER || mZombieType == ZombieType::ZOMBIE_GIGA_POLEVAULTER) {
                 aLeftHandTime = 0.38f;
                 aRightHandTime = 0.8f;
-            } else if (mZombieType == ZombieType::ZOMBIE_NEWSPAPER || mZombieType == ZombieType::ZOMBIE_LADDER || mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION) {
-                aLeftHandTime = 0.42f;
-                aRightHandTime = 0.42f;
+            } else if (mZombieType == ZombieType::ZOMBIE_NEWSPAPER || mZombieType == ZombieType::ZOMBIE_LADDER || mZombieType == ZombieType::ZOMBIE_SUNDAY_EDITION
+                       || mZombieType == ZombieType::ZOMBIE_TELEPORTATION) {
+                aLeftHandTime = aRightHandTime = 0.42f;
             } else if (mZombieType == ZombieType::ZOMBIE_JACK_IN_THE_BOX) {
-                aLeftHandTime = 0.53f;
-                aRightHandTime = 0.53f;
+                aLeftHandTime = aRightHandTime = 0.53f;
             } else if (mZombieType == ZombieType::ZOMBIE_BOBSLED) {
                 aLeftHandTime = 0.33f;
                 aRightHandTime = 0.83f;
