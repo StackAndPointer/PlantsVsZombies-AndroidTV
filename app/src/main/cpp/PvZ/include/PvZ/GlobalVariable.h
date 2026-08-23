@@ -257,6 +257,8 @@ struct AddonImages {
     Sexy::Image *IMAGE_REANIM_SWEET_POTATO_MOUTH2;
     Sexy::Image *IMAGE_REANIM_SWEET_POTATO_MOUTH3;
     Sexy::Image *IMAGE_REANIM_SWEET_POTATO_EYE3;
+    Sexy::Image *IMAGE_REANIM_PEANUT_HEAD1_2;
+    Sexy::Image *IMAGE_REANIM_PEANUT_HEAD2_2;
     Sexy::Image *IMAGE_REANIM_ICE1;
     Sexy::Image *IMAGE_REANIM_ICE2;
     Sexy::Image *IMAGE_REANIM_ICE3;

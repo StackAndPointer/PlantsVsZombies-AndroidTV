@@ -315,6 +315,7 @@ public:
     void Animate();
     void AnimateCeleryStalker();
     void AnimateSweetPotato();
+    void AnimatePeanut();
     void PlayBodyReanim(const char *theTrackName, ReanimLoopType theLoopType, int theBlendTime, float theAnimRate);
     void SpikeweedAttack();
     void SpikeRockTakeDamage();
@@ -328,6 +329,7 @@ public:
     void UpdateProductionPlant();
     void UpdateShooting();
     void UpdateShooter();
+    void LaunchPeanut();
     void CobCannonFire(int x, int y);
     void Fire(Zombie *theTargetZombie, int theRow, PlantWeapon thePlantWeapon, GridItem *theTargetGridItem);
     void Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlantWeapon, GridItem *theTargetGridItem);

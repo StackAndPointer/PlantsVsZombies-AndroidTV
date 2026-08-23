@@ -488,6 +488,7 @@ void DrawSeedPacket(Sexy::Graphics *g,
         case SeedType::SEED_SPORESHROOM:
         case SeedType::SEED_SWEET_POTATO:
         case SeedType::SEED_SUN_BEAN:
+        case SeedType::SEED_PEANUT:
             offsetY = 12.0f;
             offsetX = 8.0f;
             theDrawScale = 0.4f;

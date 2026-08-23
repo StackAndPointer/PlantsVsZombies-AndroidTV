@@ -2273,7 +2273,11 @@ void Board::processServerEvent(const BaseEvent *event) {
             uint16_t clientPlantID = 0;
             if (homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
                 Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
-                old_Plant_FindTargetAndFire(aPlant, event1->data1, PlantWeapon(event1->data2));
+                if (aPlant->mSeedType == SeedType::SEED_PEANUT) {
+                    aPlant->LaunchPeanut();
+                } else {
+                    old_Plant_FindTargetAndFire(aPlant, event1->data1, PlantWeapon(event1->data2));
+                }
                 if (aPlant->mSeedType == SEED_LEFTPEATER) {
                     Reanimation *aHeadReanim = mApp->ReanimationGet(aPlant->mHeadReanimID);
                     Reanimation *aBodyReanim = mApp->ReanimationGet(aPlant->mBodyReanimID);

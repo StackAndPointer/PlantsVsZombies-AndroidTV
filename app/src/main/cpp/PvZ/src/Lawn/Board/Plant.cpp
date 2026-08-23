@@ -111,6 +111,7 @@ PlantDefinition gExtendedPlantDefs[]{
     {SeedType::SEED_SWEET_POTATO, nullptr, ReanimationType::REANIM_SWEET_POTATO, 0, 150, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "SWEET_POTATO"},
     {SeedType::SEED_CHILLY_PEPPER, nullptr, ReanimationType::REANIM_CHILLY_PEPPER, 0, 100, 5000, PlantSubClass::SUBCLASS_NORMAL, 0, "CHILLY_PEPPER"},
     {SeedType::SEED_SUN_BEAN, nullptr, ReanimationType::REANIM_SUN_BEAN, 0, 50, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "SUN_BEAN"},
+    {SeedType::SEED_PEANUT, nullptr, ReanimationType::REANIM_PEANUT, 0, 150, 3000, PlantSubClass::SUBCLASS_SHOOTER, 200, "PEANUT"},
     {SeedType::SEED_IMP_PEAR, nullptr, ReanimationType::REANIM_IMP_PEAR, 0, 100, 3000, PlantSubClass::SUBCLASS_NORMAL, 0, "IMP_PEAR"},
 };
 
@@ -143,6 +144,9 @@ void Plant::PlantInitialize(int theGridX, int theGridY, SeedType theSeedType, Se
         }
         case SeedType::SEED_SUN_BEAN:
             mPlantMaxHealth = 150;
+            break;
+        case SeedType::SEED_PEANUT:
+            mPlantMaxHealth = 4000;
             break;
         default:
             break;
@@ -191,6 +195,8 @@ int Plant::GetDamageRangeFlags(PlantWeapon thePlantWeapon) const {
     switch (mSeedType) {
         case SeedType::SEED_CACTUS:
             return thePlantWeapon == PlantWeapon::WEAPON_SECONDARY ? 1 : 2;
+        case SeedType::SEED_PEANUT:
+            return thePlantWeapon == PlantWeapon::WEAPON_SECONDARY ? 9 : 1; // 下方的头可攻击地面僵尸和僵尸狗
         case SeedType::SEED_CHERRYBOMB:
         case SeedType::SEED_JALAPENO:
         case SeedType::SEED_COBCANNON:
@@ -367,6 +373,8 @@ void Plant::Animate() {
         AnimateCeleryStalker();
     } else if (mSeedType == SeedType::SEED_SWEET_POTATO) {
         AnimateSweetPotato();
+    } else if (mSeedType == SeedType::SEED_PEANUT) {
+        AnimatePeanut();
     }
 
     UpdateBlink();
@@ -425,6 +433,29 @@ void Plant::AnimateSweetPotato() {
     } else {
         aBodyReanim->SetImageOverride("SweetPotato_body", nullptr);
         aBodyReanim->SetImageOverride("SweetPotato_mouth", nullptr);
+    }
+}
+
+void Plant::AnimatePeanut() {
+    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    Image *aImageOverride = aBodyReanim->GetImageOverride("peanut_head1");
+    Image *aImageOverride2 = aBodyReanim->GetImageOverride("peanut_head2");
+    if (mPlantHealth < mPlantMaxHealth / 4) {
+        if (aImageOverride2 != addonImages.IMAGE_REANIM_PEANUT_HEAD2_2) {
+            aBodyReanim->SetImageOverride("peanut_head2", addonImages.IMAGE_REANIM_PEANUT_HEAD2_2);
+        }
+    } else if (mPlantHealth < mPlantMaxHealth / 2) {
+        aBodyReanim->AssignRenderGroupToPrefix("peanut_head1", RENDER_GROUP_HIDDEN);
+        aBodyReanim->AssignRenderGroupToPrefix("peanut_mouth1", RENDER_GROUP_HIDDEN);
+    } else if (mPlantHealth < mPlantMaxHealth * 3 / 4) {
+        if (aImageOverride != addonImages.IMAGE_REANIM_PEANUT_HEAD1_2) {
+            aBodyReanim->SetImageOverride("peanut_head1", addonImages.IMAGE_REANIM_PEANUT_HEAD1_2);
+        }
+    } else {
+        aBodyReanim->SetImageOverride("peanut_head1", nullptr);
+        aBodyReanim->SetImageOverride("peanut_mouth1", nullptr);
+        aBodyReanim->SetImageOverride("peanut_head2", nullptr);
+        aBodyReanim->SetImageOverride("peanut_mouth2", nullptr);
     }
 }
 
@@ -1409,6 +1440,7 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
         case SeedType::SEED_SPLITPEA:
         case SeedType::SEED_GATLINGPEA:
         case SeedType::SEED_LEFTPEATER:
+        case SeedType::SEED_PEANUT:
             aProjectileType = ProjectileType::PROJECTILE_PEA;
             break;
         case SeedType::SEED_SNOWPEA:
@@ -1525,6 +1557,10 @@ void Plant::Fire_Origin(Zombie *theTargetZombie, int theRow, PlantWeapon thePlan
     } else if (mSeedType == SeedType::SEED_BLOOMERANG) {
         aOriginX = mX + 10;
         aOriginY = mY - 18;
+    } else if (mSeedType == SeedType::SEED_PEANUT) {
+        const bool aTopHeadIsFiring = thePlantWeapon == PlantWeapon::WEAPON_PRIMARY;
+        aOriginX = mX + 30;
+        aOriginY = mY + (aTopHeadIsFiring ? 12 : 38);
     } else {
         aOriginX = mX + 10;
         aOriginY = mY + 5;
@@ -1989,8 +2025,8 @@ GridItem *Plant::FindTargetGridItem(int theRow, PlantWeapon thePlantWeapon) {
             }
 
             if (aBestGridItem == nullptr || aGridX < aLastGridX) {
-                if (mSeedType == SeedType::SEED_FUMESHROOM && aGridX - mPlantCol > 3) {
-                    // 如果是大喷菇，则索敌三格以内的靶子或墓碑
+                if ((mSeedType == SeedType::SEED_FUMESHROOM || mSeedType == SeedType::SEED_PEANUT) && aGridX - mPlantCol > 3) {
+                    // 如果是大喷菇或花生射手，则索敌三格以内的靶子或墓碑
                     continue;
                 }
                 if (mSeedType == SeedType::SEED_PUFFSHROOM || mSeedType == SeedType::SEED_SEASHROOM) {
@@ -2106,6 +2142,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
             return 75;
         case SeedType::SEED_CACTUS:
         case SeedType::SEED_SPORESHROOM:
+        case SeedType::SEED_PEANUT:
         case SeedType::SEED_ZOMBIE_POLEVAULTER:
         case SeedType::SEED_ZOMBIE_PAIL:
         case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
@@ -2563,7 +2600,8 @@ bool Plant::IsUpgrade(SeedType theSeedType) {
 }
 
 bool Plant::IsDefender(SeedType theSeedType) {
-    return theSeedType == SeedType::SEED_WALLNUT || theSeedType == SeedType::SEED_TALLNUT || theSeedType == SeedType::SEED_PUMPKINSHELL || theSeedType == SeedType::SEED_SWEET_POTATO;
+    return theSeedType == SeedType::SEED_WALLNUT || theSeedType == SeedType::SEED_TALLNUT || theSeedType == SeedType::SEED_PUMPKINSHELL || theSeedType == SeedType::SEED_SWEET_POTATO
+        || theSeedType == SeedType::SEED_PEANUT;
 }
 
 Rect Plant::GetPlantRect() {
@@ -2613,6 +2651,7 @@ Rect Plant::GetPlantAttackRect(PlantWeapon thePlantWeapon) {
                 aRect = Rect(mX + 60, mY, 230, mHeight);
                 break;
             case SeedType::SEED_FUMESHROOM:
+            case SeedType::SEED_PEANUT:
                 aRect = Rect(mX + 60, mY, 340, mHeight);
                 break;
             case SeedType::SEED_GLOOMSHROOM:
@@ -2838,6 +2877,21 @@ void Plant::UpdateProductionPlant() {
     old_Plant_UpdateProductionPlant(this);
 }
 
+void Plant::LaunchPeanut() {
+    Reanimation *aBodyReanim = mApp->ReanimationTryToGet(mBodyReanimID);
+    if (aBodyReanim == nullptr) {
+        return;
+    }
+
+    if (mPlantHealth >= 2000) {
+        mShootingCounter = 140;
+        PlayBodyReanim("anim_shooting1", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+    } else {
+        mShootingCounter = 30;
+        PlayBodyReanim("anim_shooting2", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+    }
+}
+
 void Plant::UpdateShooting() {
     if (NotOnGround() || mShootingCounter == 0)
         return;
@@ -2849,7 +2903,17 @@ void Plant::UpdateShooting() {
         AddAttachedParticle(mX + 85, mY + 31, aRenderPosition, ParticleEffect::PARTICLE_FUMECLOUD);
     }
 
-    if (mSeedType == SeedType::SEED_GLOOMSHROOM) {
+    if (mSeedType == SeedType::SEED_PEANUT) {
+        if (mShootingCounter == 115) {
+            if (mPlantHealth >= 2000) {
+                Fire(nullptr, mRow, PlantWeapon::WEAPON_PRIMARY, nullptr);
+            }
+        } else if (mShootingCounter == 40) {
+            PlayBodyReanim("anim_shooting2", ReanimLoopType::REANIM_PLAY_ONCE_AND_HOLD, 20, 24.0f);
+        } else if (mShootingCounter == 15) {
+            Fire(nullptr, mRow, PlantWeapon::WEAPON_SECONDARY, nullptr);
+        }
+    } else if (mSeedType == SeedType::SEED_GLOOMSHROOM) {
         if (mShootingCounter == 136 || mShootingCounter == 108 || mShootingCounter == 80 || mShootingCounter == 52) {
             int aRenderPosition = Board::MakeRenderOrder(RenderLayer::RENDER_LAYER_PARTICLE, mRow, 0);
             AddAttachedParticle(mX + 40, mY + 40, aRenderPosition, ParticleEffect::PARTICLE_GLOOMCLOUD);
@@ -3008,7 +3072,6 @@ void Plant::UpdateShooting() {
 }
 
 void Plant::UpdateShooter() {
-
     if (mApp->mGameMode == GAMEMODE_MP_VS && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)) {
         return;
     }
@@ -3174,7 +3237,16 @@ bool Plant::FindTargetAndFire(int theRow, PlantWeapon thePlantWeapon) {
     }
 
     bool result;
-    if (mSeedType == SeedType::SEED_BLOOMERANG) {
+    if (mSeedType == SeedType::SEED_PEANUT) {
+        Zombie *aZombie = FindTargetZombie(theRow, PlantWeapon::WEAPON_SECONDARY);
+        GridItem *aGridItem = FindTargetGridItem(theRow, PlantWeapon::WEAPON_SECONDARY);
+        if (aZombie == nullptr && aGridItem == nullptr) {
+            return false;
+        }
+
+        LaunchPeanut();
+        result = true;
+    } else if (mSeedType == SeedType::SEED_BLOOMERANG) {
         if (HasActiveBoomerang() || mState == PlantState::STATE_BLOOMERANG_CATCHING || mState == PlantState::STATE_UMBRELLA_TRIGGERED || mState == PlantState::STATE_UMBRELLA_REFLECTING) {
             return false;
         }
