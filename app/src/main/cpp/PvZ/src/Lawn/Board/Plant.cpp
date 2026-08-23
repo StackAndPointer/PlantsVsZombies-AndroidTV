@@ -2520,18 +2520,12 @@ int Plant::GetRefreshTime(SeedType theSeedType, SeedType theImitaterType) {
             Challenge::msVSShuffleMode ? GetVSRefreshTimeShuffle(theSeedType) : (VSSetupAddonWidget::msBalancePatchMode ? GetVSRefreshTimeBalanced(theSeedType) : GetVSRefreshTimeDefault(theSeedType));
         if (gLawnApp->mBoard->mChallenge->IsMPSuddenDeath() && Challenge::gVSSuddenDeathMode == 1) {
             // sd 不减冷却的卡片
+            if (IsDefender(theSeedType)) {
+                return aRefreshTime;
+            }
             switch (theSeedType) {
-                // 墓碑和向日葵，sd 用不到
-                case SeedType::SEED_ZOMBIE_GRAVESTONE:
-                case SeedType::SEED_SUNFLOWER:
-                // 默认五个不减 cd 的
-                case SeedType::SEED_TALLNUT:
-                case SeedType::SEED_WALLNUT:
-                case SeedType::SEED_PUMPKINSHELL:
                 case SeedType::SEED_ZOMBIE_TRASHCAN:
                 case SeedType::SEED_ZOMBIE_SCREEN_DOOR:
-                // 新增不减 cd
-                case SeedType::SEED_SWEET_POTATO:
                     return aRefreshTime;
                 // 平衡调整后 cd 减幅下降
                 case SeedType::SEED_POTATOMINE:
