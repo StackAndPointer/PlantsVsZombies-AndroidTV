@@ -432,11 +432,31 @@ void Board::TeleportZombie(Zombie *theZombie, float theDestX) {
         return;
     }
 
-    SpawnTeleportEffect(theZombie->mPosX + 30.0f, theZombie->mPosY + 55.0f, theZombie->mRow);
-    theZombie->mPosX = std::max(0.0f, theDestX);
-    theZombie->mX = int(theZombie->mPosX);
-    theZombie->mJustGotShotCounter = 150;
-    SpawnTeleportEffect(theZombie->mPosX + 30.0f, theZombie->mPosY + 55.0f, theZombie->mRow);
+    Zombie *aPartner = nullptr;
+    if (theZombie->mZombieType == ZombieType::ZOMBIE_DOGWALKER || theZombie->mZombieType == ZombieType::ZOMBIE_DOG) {
+        aPartner = theZombie->GetDogPartner();
+        if (aPartner != nullptr && aPartner->IsDeadOrDying()) {
+            aPartner = nullptr;
+        }
+    }
+
+    float aDeltaX = std::max(0.0f, theDestX) - theZombie->mPosX;
+    if (aPartner != nullptr) {
+        aDeltaX = std::max(aDeltaX, -aPartner->mPosX);
+    }
+
+    auto TeleportOneZombie = [this, aDeltaX](Zombie *aZombie) {
+        SpawnTeleportEffect(aZombie->mPosX + 30.0f, aZombie->mPosY + 55.0f, aZombie->mRow);
+        aZombie->mPosX += aDeltaX;
+        aZombie->mX = int(aZombie->mPosX);
+        aZombie->mJustGotShotCounter = 150;
+        SpawnTeleportEffect(aZombie->mPosX + 30.0f, aZombie->mPosY + 55.0f, aZombie->mRow);
+    };
+
+    TeleportOneZombie(theZombie);
+    if (aPartner != nullptr) {
+        TeleportOneZombie(aPartner);
+    }
 }
 
 bool Board::TeleportPlant(Plant *thePlant, int theDestGridX, int theDestGridY) {

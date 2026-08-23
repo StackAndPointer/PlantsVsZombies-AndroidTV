@@ -190,7 +190,8 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
         case ZombieType::ZOMBIE_BALLOON:
             if (mApp->IsVSMode() && IsOnBoard()) {
                 mAltitude = 0.0f;
-                mFlyingHealth = 150;
+                mFlyingHealth = 370;
+                PickRandomSpeed();
             }
             break;
 
@@ -7877,7 +7878,7 @@ void Zombie::PickRandomSpeed() {
     if (mApp->IsVSMode() && (gTcpConnected || gIsReplayMode))
         return;
 
-    if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_WALKING_IN_POOL) {
+    if (mZombiePhase == ZombiePhase::PHASE_SNORKEL_WALKING_IN_POOL || (IsFlying() && mApp->IsVSMode())) {
         mVelX = 0.3f;
     } else if (mZombiePhase == ZombiePhase::PHASE_DIGGER_WALKING) { // 矿工行走
         if (mApp->IsIZombieLevel()) {
