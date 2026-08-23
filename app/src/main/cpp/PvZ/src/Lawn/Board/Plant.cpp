@@ -577,6 +577,11 @@ void Plant::UpdateSweetPotato() {
         return;
     }
 
+    // 搭上梯子的甜薯不再吸引相邻行的僵尸。
+    if (mBoard->GetLadderAt(mPlantCol, mRow) != nullptr) {
+        return;
+    }
+
     const int aFrontCol = mPlantCol + 1;
     if (aFrontCol >= MAX_GRID_SIZE_X) {
         return;
@@ -594,7 +599,7 @@ void Plant::UpdateSweetPotato() {
         const bool aZombieIsPoolRow = IsPoolRow(theZombie->mRow);
 
         while (mBoard->IteratePlants(aSweetPotato)) {
-            if (aSweetPotato->mSeedType != SeedType::SEED_SWEET_POTATO || aSweetPotato->mPlantCol != mPlantCol) {
+            if (aSweetPotato->mSeedType != SeedType::SEED_SWEET_POTATO || aSweetPotato->mPlantCol != mPlantCol || mBoard->GetLadderAt(aSweetPotato->mPlantCol, aSweetPotato->mRow) != nullptr) {
                 continue;
             }
 
@@ -627,8 +632,8 @@ void Plant::UpdateSweetPotato() {
             continue;
         }
 
-        if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE || aZombie->mZombieType == ZombieType::ZOMBIE_CATAPULT || aZombie->mZombieType == ZombieType::ZOMBIE_BOSS
-            || aZombie->mZombieType == ZombieType::ZOMBIE_DOGWALKER || aZombie->mZombieType == ZombieType::ZOMBIE_DOG || !aZombie->CanBeFrozen() || aZombie->ZombieNotWalking()) {
+        if (aZombie->mZombieType == ZombieType::ZOMBIE_BUNGEE || aZombie->mZombieType == ZombieType::ZOMBIE_CATAPULT || aZombie->mZombieType == ZombieType::ZOMBIE_BOSS || !aZombie->CanBeFrozen()
+            || aZombie->ZombieNotWalking()) {
             continue;
         }
 

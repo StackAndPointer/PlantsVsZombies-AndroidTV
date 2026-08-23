@@ -864,6 +864,7 @@ Plant *Zombie::FindDogTarget() {
 
     Plant *aBestPlant = nullptr;
     float aBestDistance = 1.0e30f;
+    bool aBestIsSweetPotato = false;
 
     Plant *aPlant = nullptr;
     while (mBoard->IteratePlants(aPlant)) {
@@ -893,9 +894,12 @@ Plant *Zombie::FindDogTarget() {
         }
 
         const float aDistance = std::max(0.0f, aForwardDistance);
-        if (aBestPlant == nullptr || aDistance < aBestDistance || (std::fabs(aDistance - aBestDistance) < 0.01f && aPlant->mRow == mRow && aBestPlant->mRow != mRow)) {
+        const bool aIsSweetPotato = aPlant->mSeedType == SeedType::SEED_SWEET_POTATO && mBoard->GetLadderAt(aPlant->mPlantCol, aPlant->mRow) == nullptr;
+        if (aBestPlant == nullptr || (aIsSweetPotato && !aBestIsSweetPotato)
+            || (aIsSweetPotato == aBestIsSweetPotato && (aDistance < aBestDistance || (std::fabs(aDistance - aBestDistance) < 0.01f && aPlant->mRow == mRow && aBestPlant->mRow != mRow)))) {
             aBestPlant = aPlant;
             aBestDistance = aDistance;
+            aBestIsSweetPotato = aIsSweetPotato;
         }
     }
 
@@ -7009,7 +7013,8 @@ bool Zombie::CanTargetPlant(Plant *thePlant, ZombieAttackType theAttackType) {
 
     if (mZombiePhase == ZombiePhase::PHASE_LADDER_CARRYING || mZombiePhase == ZombiePhase::PHASE_LADDER_PLACING) {
         bool aPlaceLadder = false;
-        if (thePlant->mSeedType == SeedType::SEED_WALLNUT || thePlant->mSeedType == SeedType::SEED_TALLNUT || thePlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
+        if (thePlant->mSeedType == SeedType::SEED_WALLNUT || thePlant->mSeedType == SeedType::SEED_TALLNUT || thePlant->mSeedType == SeedType::SEED_PUMPKINSHELL
+            || thePlant->mSeedType == SeedType::SEED_SWEET_POTATO) {
             aPlaceLadder = true;
         }
 
