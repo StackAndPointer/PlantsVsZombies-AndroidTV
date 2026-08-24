@@ -2168,6 +2168,14 @@ void Board::processServerEvent(const BaseEvent *event) {
                 serverGridItemIDMap.erase(serverGridItemID);
             }
         } break;
+        case EVENT_SERVER_BOARD_GRIDITEM_TAKE_DAMAGE: {
+            auto *eventGridItemDamage = static_cast<const U16U16U8_Event *>(event);
+            uint16_t clientGridItemID = 0;
+            if (homura::FindInMap(serverGridItemIDMap, eventGridItemDamage->data1, clientGridItemID)) {
+                GridItem *aGridItem = mGridItems.DataArrayGet(clientGridItemID);
+                aGridItem->TakeDamage_Origin(eventGridItemDamage->data2, eventGridItemDamage->data3);
+            }
+        } break;
         case EVENT_SERVER_BOARD_GRIDITEM_LAUNCHCOUNTER: {
             auto *event1 = static_cast<const U16U16_Event *>(event);
             uint16_t clientGridItemID = 0;

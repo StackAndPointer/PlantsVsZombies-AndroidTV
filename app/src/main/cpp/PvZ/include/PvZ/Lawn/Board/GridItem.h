@@ -114,6 +114,7 @@ public:
     void AddGraveStoneParticles() const;
     void DrawMPTarget(Sexy::Graphics *g);
     void TakeDamage(int theDamage, unsigned int theDamageFlags);
+    void TakeDamage_Origin(int theDamage, unsigned int theDamageFlags);
     Sexy::Rect GetItemRect() const;
 
 protected:

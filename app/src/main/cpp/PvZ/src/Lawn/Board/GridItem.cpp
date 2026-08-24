@@ -904,6 +904,23 @@ void GridItem::TakeDamage(int theDamage, unsigned int theDamageFlags) {
         return;
     }
 
+    if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
+        return;
+    }
+
+    if (gTcpClientSocket >= 0) {
+        U16U16U8_Event event{};
+        event.type = EventType::EVENT_SERVER_BOARD_GRIDITEM_TAKE_DAMAGE;
+        event.data1 = uint16_t(mBoard->mGridItems.DataArrayGetID(this));
+        event.data2 = uint16_t(theDamage);
+        event.data3 = uint8_t(theDamageFlags);
+        netplay::PutEvent(event);
+    }
+
+    TakeDamage_Origin(theDamage, theDamageFlags);
+}
+
+void GridItem::TakeDamage_Origin(int theDamage, unsigned int theDamageFlags) {
     if (mGridItemType == GridItemType::GRIDITEM_MP_TARGET_ZOMBIE) {
         if (mDead || mVSTargetZombieHealth <= 0) {
             return;

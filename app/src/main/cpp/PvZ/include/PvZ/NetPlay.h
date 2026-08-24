@@ -31,7 +31,7 @@
 #include <utility>
 #include <vector>
 
-inline constexpr uint32_t NETPLAY_VERSION = 3193;
+inline constexpr uint32_t NETPLAY_VERSION = 3194;
 
 // 联机事件只传输 DataArray ID 的低 16 位；slot/index 0 是合法对象 ID，
 // 因此不能使用游戏内部值为 0 的 PLANTID_NULL / ZOMBIEID_NULL / GRIDITEMID_NULL 作为网络空值。
@@ -120,6 +120,7 @@ enum EventType : uint8_t {
     EVENT_SERVER_BOARD_GRIDITEM_ADDMOUND,
     EVENT_SERVER_BOARD_GRIDITEM_ADDPOLE,
     EVENT_SERVER_BOARD_GRIDITEM_TAEGETZOMBIE_DIE,
+    EVENT_SERVER_BOARD_GRIDITEM_TAKE_DAMAGE,
 
     EVENT_SERVER_BOARD_PLANT_LAUNCHCOUNTER,                // 同步生产植物如向日葵、阳光菇的生产发光
     EVENT_SERVER_BOARD_PLANT_SHOOTER_LAUNCH,               // 播放杨桃、三线射手的开火动画
