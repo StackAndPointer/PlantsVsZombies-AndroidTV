@@ -170,6 +170,11 @@ void Projectile::ProjectileInitialize(int theX, int theY, int theRenderOrder, in
 Plant *Projectile::FindCollisionTargetPlant() {
     Rect aProjectileRect = GetProjectileRect();
 
+    // 魅惑传送僵尸的子弹只作用于敌方僵尸，不影响植物。
+    if (mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION && mReturning) {
+        return nullptr;
+    }
+
     Plant *aPlant = nullptr;
     while (mBoard->IteratePlants(aPlant)) {
         if (aPlant->mRow != mRow)
@@ -179,13 +184,20 @@ Plant *Projectile::FindCollisionTargetPlant() {
             || mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION) {
             if (aPlant->IsLowProfile()) // 僵尸子弹不能击中低矮植物
                 continue;
+            if (mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION && aPlant->mSeedType == SeedType::SEED_INSTANT_COFFEE)
+                continue;
         }
 
         Rect aPlantRect = aPlant->GetPlantRect();
         if (GetRectOverlap(aProjectileRect, aPlantRect) > 8) {
             if (mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_PEA || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_POLE || mProjectileType == ProjectileType::PROJECTILE_ZOMBIE_FIREBALL
                 || mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION) {
-                return mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_EATING_ORDER);
+                Plant *aTopPlant = mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_EATING_ORDER);
+                if (mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION && aTopPlant != nullptr
+                    && (aTopPlant->NotOnGround() || aTopPlant->IsLowProfile() || aTopPlant->mSeedType == SeedType::SEED_INSTANT_COFFEE)) {
+                    return aPlant;
+                }
+                return aTopPlant;
             } else {
                 return mBoard->GetTopPlantAt(aPlant->mPlantCol, aPlant->mRow, PlantPriority::TOPPLANT_CATAPULT_ORDER);
             }
@@ -1220,10 +1232,11 @@ void Projectile::CheckForCollision() {
         Zombie *aZombie = nullptr;
         Zombie *aBestZombie = nullptr;
         while (mBoard->IterateZombies(aZombie)) {
-            if (aZombie->mDead || aZombie->IsDeadOrDying() || aZombie->mRow != mRow || mBoard->ZombieGetID(aZombie) == mTargetZombieID) {
+            if (!aZombie->IsValidTeleportationTarget() || aZombie->mRow != mRow || mBoard->ZombieGetID(aZombie) == mTargetZombieID || (mReturning && aZombie->mMindControlled)) {
                 continue;
             }
-            if (GetRectOverlap(aProjectileRect, aZombie->GetZombieRect()) > 8 && (aBestZombie == nullptr || aZombie->mX > aBestZombie->mX)) {
+            const bool aPreferThisZombie = aBestZombie == nullptr || (mReturning ? aZombie->mX < aBestZombie->mX : aZombie->mX > aBestZombie->mX);
+            if (GetRectOverlap(aProjectileRect, aZombie->GetZombieRect()) > 8 && aPreferThisZombie) {
                 aBestZombie = aZombie;
             }
         }
@@ -1245,19 +1258,19 @@ void Projectile::CheckForCollision() {
         const bool aRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
         if (!aRemoteClient) {
             if (aHitPlant) {
-                const int aDestGridX = aPlant->mPlantCol + 2;
+                const int aSearchStartGridX = aPlant->mPlantCol + 1;
                 const int aDestGridY = aPlant->mRow;
                 const uint16_t aPlantID = uint16_t(mBoard->mPlants.DataArrayGetID(aPlant));
-                const bool aDidTeleport = mBoard->TeleportPlant(aPlant, aDestGridX, aDestGridY);
+                const bool aDidTeleport = mBoard->TeleportPlant(aPlant, aSearchStartGridX, aDestGridY);
                 if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
                     U16U16_Event event{};
                     event.type = EventType::EVENT_SERVER_BOARD_PLANT_TELEPORT;
                     event.data1 = aPlantID;
-                    event.data2 = aDidTeleport ? uint16_t(aDestGridX) : UINT16_MAX;
+                    event.data2 = aDidTeleport ? uint16_t(aPlant->mPlantCol) : UINT16_MAX;
                     netplay::PutEvent(event);
                 }
             } else {
-                const float aDestX = std::max(0.0f, aBestZombie->mPosX - 160.0f);
+                const float aDestX = mReturning ? aBestZombie->mPosX + 100.0f : std::max(0.0f, aBestZombie->mPosX - 100.0f);
                 mBoard->TeleportZombie(aBestZombie, aDestX);
                 if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
                     U16UNI32_Event event{};
@@ -1512,7 +1525,7 @@ void Projectile::Draw(Graphics *g) {
     }
 
     bool aMirror = false;
-    if (mMotionType == ProjectileMotion::MOTION_BEE_BACKWARDS) {
+    if (mMotionType == ProjectileMotion::MOTION_BEE_BACKWARDS || (mProjectileType == ProjectileType::PROJECTILE_TELEPORTATION && mReturning)) {
         aMirror = true;
     }
 

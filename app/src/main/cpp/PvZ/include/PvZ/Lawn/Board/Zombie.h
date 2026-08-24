@@ -408,6 +408,7 @@ public:
     void UpdateZombieDog();
     void UpdateZombieTeleportation();
     bool FindTeleportationTarget();
+    bool IsValidTeleportationTarget();
     Plant *FindDogTarget();
     void SetDogPairRow(int theRow);
     void UpdateZombieGargantuar();

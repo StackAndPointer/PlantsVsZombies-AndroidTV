@@ -2143,6 +2143,7 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_SUNDAY_EDITION:
         case SeedType::SEED_ZOMBIE_EXPLORER:
         case SeedType::SEED_ZOMBIE_DOGWALKER:
+        case SeedType::SEED_ZOMBIE_TELEPORTATION:
             return 100;
         case SeedType::SEED_TORCHWOOD:
         case SeedType::SEED_BLOOMERANG:
@@ -2153,7 +2154,6 @@ static int GetVSCostDefault(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_SNORKEL:
         case SeedType::SEED_ZOMBIE_DOLPHIN_RIDER:
         case SeedType::SEED_ZOMBIE_JALAPENO_HEAD:
-        case SeedType::SEED_ZOMBIE_TELEPORTATION:
             return 125;
         case SeedType::SEED_SNOWPEA:
         case SeedType::SEED_REPEATER:

@@ -460,7 +460,7 @@ void Board::TeleportZombie(Zombie *theZombie, float theDestX) {
 }
 
 bool Board::TeleportPlant(Plant *thePlant, int theDestGridX, int theDestGridY) {
-    if (thePlant == nullptr || thePlant->NotOnGround()) {
+    if (thePlant == nullptr || thePlant->NotOnGround() || thePlant->IsInvulnerable()) {
         return false;
     }
 
@@ -469,20 +469,30 @@ bool Board::TeleportPlant(Plant *thePlant, int theDestGridX, int theDestGridY) {
     SpawnTeleportEffect(GridToPixelX(aOriginGridX, aOriginGridY), GridToPixelY(aOriginGridX, aOriginGridY) + 20.0f, aOriginGridY);
 
     const SeedType aSeedType = thePlant->mSeedType == SeedType::SEED_IMITATER ? thePlant->mImitaterType : thePlant->mSeedType;
-    const bool aCanPlant =
-        theDestGridX >= 0 && theDestGridX < MAX_GRID_SIZE_X && theDestGridY >= 0 && theDestGridY < MAX_GRID_SIZE_Y && CanPlantAt(theDestGridX, theDestGridY, aSeedType) == PlantingReason::PLANTING_OK;
-    if (!aCanPlant) {
+    const int aDestGridY = aOriginGridY;
+    int aDestGridX = -1;
+    const int aSearchStartGridX = std::max(aOriginGridX + 1, theDestGridX);
+    if (theDestGridY == aDestGridY) {
+        for (int aGridX = aSearchStartGridX; aGridX < MAX_GRID_SIZE_X; ++aGridX) {
+            if (CanPlantAt(aGridX, aDestGridY, aSeedType) == PlantingReason::PLANTING_OK) {
+                aDestGridX = aGridX;
+                break;
+            }
+        }
+    }
+
+    if (aDestGridX == -1) {
         thePlant->Die();
         return false;
     }
 
-    thePlant->mPlantCol = theDestGridX;
-    thePlant->mRow = theDestGridY;
-    thePlant->mX = GridToPixelX(theDestGridX, theDestGridY);
-    thePlant->mY = GridToPixelY(theDestGridX, theDestGridY);
+    thePlant->mPlantCol = aDestGridX;
+    thePlant->mRow = aDestGridY;
+    thePlant->mX = GridToPixelX(aDestGridX, aDestGridY);
+    thePlant->mY = GridToPixelY(aDestGridX, aDestGridY);
     thePlant->mEatenFlashCountdown = 150;
     thePlant->UpdateReanim();
-    SpawnTeleportEffect(GridToPixelX(theDestGridX, theDestGridY), GridToPixelY(theDestGridX, theDestGridY) + 20.0f, theDestGridY);
+    SpawnTeleportEffect(GridToPixelX(aDestGridX, aDestGridY), GridToPixelY(aDestGridX, aDestGridY) + 20.0f, aDestGridY);
     return true;
 }
 

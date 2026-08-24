@@ -326,7 +326,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             mBodyHealth = 500;
             mVariant = false;
             mZombieAttackRect = Rect(20, 0, 50, 115);
-            mPhaseCounter = 1000;
+            mPhaseCounter = RandRangeInt(1000, 1500);
             break;
 
         case ZombieType::ZOMBIE_GIGA_GARGANTUAR: {
@@ -578,6 +578,11 @@ void Zombie::UpdateZombieTeleportation() {
     }
     const bool aRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
 
+    if (mZombiePhase == ZombiePhase::PHASE_TELEPORTATION_PRE_SHOOT) {
+        mPhaseCounter = 500;
+        mZombiePhase = ZombiePhase::PHASE_ZOMBIE_NORMAL;
+    }
+
     if (!mHasHead) {
         if (mZombiePhase == ZombiePhase::PHASE_TELEPORTATION_SHOOTING) {
             mZombiePhase = ZombiePhase::PHASE_ZOMBIE_NORMAL;
@@ -588,11 +593,12 @@ void Zombie::UpdateZombieTeleportation() {
 
     if (mZombiePhase == ZombiePhase::PHASE_TELEPORTATION_SHOOTING) {
         if (aBodyReanim->ShouldTriggerTimedEvent(0.5f)) {
-            constexpr float aOriginOffsetX = 5.0f;
-            constexpr float aOriginOffsetY = 45.0f;
+            const float aOriginOffsetX = mMindControlled ? 95.0f : 5.0f;
+            constexpr float aOriginOffsetY = 30.0f;
             Projectile *aProjectile = mBoard->AddProjectile(int(mPosX + aOriginOffsetX), int(mPosY + aOriginOffsetY - mAltitude), mRenderOrder + 1, mRow, ProjectileType::PROJECTILE_TELEPORTATION);
-            aProjectile->mMotionType = ProjectileMotion::MOTION_BACKWARDS;
+            aProjectile->mMotionType = mMindControlled ? ProjectileMotion::MOTION_STRAIGHT : ProjectileMotion::MOTION_BACKWARDS;
             aProjectile->mTargetZombieID = mBoard->ZombieGetID(this);
+            aProjectile->mReturning = mMindControlled;
         }
 
         if (aBodyReanim->mLoopCount > 0) {
@@ -622,34 +628,42 @@ void Zombie::UpdateZombieTeleportation() {
 
 bool Zombie::FindTeleportationTarget() {
     const float aProjectileOriginX = mPosX + 5.0f;
+    const auto IsAhead = [this, aProjectileOriginX](float theLeft, float theRight) {
+        return mMindControlled ? theRight > aProjectileOriginX && theLeft < WIDE_BOARD_WIDTH : theLeft < aProjectileOriginX && theRight > 0.0f;
+    };
 
-    Plant *aPlant = nullptr;
-    while (mBoard->IteratePlants(aPlant)) {
-        if (aPlant->NotOnGround() || aPlant->mRow != mRow || aPlant->IsLowProfile()) {
-            continue;
-        }
+    if (!mMindControlled) {
+        Plant *aPlant = nullptr;
+        while (mBoard->IteratePlants(aPlant)) {
+            if (aPlant->NotOnGround() || aPlant->mRow != mRow || aPlant->IsLowProfile() || aPlant->mSeedType == SeedType::SEED_INSTANT_COFFEE) {
+                continue;
+            }
 
-        const Rect aPlantRect = aPlant->GetPlantRect();
-        if (aPlantRect.mX < aProjectileOriginX && aPlantRect.mX + aPlantRect.mWidth > 0) {
-            return true;
+            const Rect aPlantRect = aPlant->GetPlantRect();
+            if (IsAhead(float(aPlantRect.mX), float(aPlantRect.mX + aPlantRect.mWidth))) {
+                return true;
+            }
         }
     }
 
     const ZombieID aSelfID = mBoard->ZombieGetID(this);
     Zombie *aZombie = nullptr;
     while (mBoard->IterateZombies(aZombie)) {
-        if (aZombie->mDead || aZombie->IsDeadOrDying() || aZombie->mRow != mRow || mBoard->ZombieGetID(aZombie) == aSelfID) {
+        if (!aZombie->IsValidTeleportationTarget() || aZombie->mRow != mRow || mBoard->ZombieGetID(aZombie) == aSelfID || (mMindControlled && aZombie->mMindControlled)) {
             continue;
         }
 
         const Rect aZombieRect = aZombie->GetZombieRect();
-        const float aZombieCenterX = aZombieRect.mX + aZombieRect.mWidth * 0.5f;
-        if (aZombieCenterX < aProjectileOriginX && aZombieRect.mX + aZombieRect.mWidth > 0) {
+        if (IsAhead(float(aZombieRect.mX), float(aZombieRect.mX + aZombieRect.mWidth))) {
             return true;
         }
     }
 
     return false;
+}
+
+bool Zombie::IsValidTeleportationTarget() {
+    return !IsDeadOrDying() && mZombieType != ZombieType::ZOMBIE_BUNGEE && mZombieType != ZombieType::ZOMBIE_DOG && mZombiePhase != ZombiePhase::PHASE_DIGGER_TUNNELING && !IsBobsledTeamWithSled();
 }
 
 void Zombie::UpdatePlaying() {
@@ -3985,6 +3999,9 @@ void Zombie::UpdateZombieRiseFromGrave() {
                 break;
             case ZOMBIE_DOG:
                 mZombiePhase = PHASE_DOG_RUNNING;
+                break;
+            case ZOMBIE_TELEPORTATION:
+                mZombiePhase = PHASE_TELEPORTATION_PRE_SHOOT;
                 break;
             default:
                 mZombiePhase = PHASE_ZOMBIE_NORMAL;
