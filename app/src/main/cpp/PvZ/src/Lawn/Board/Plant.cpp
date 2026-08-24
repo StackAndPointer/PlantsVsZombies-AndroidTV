@@ -1146,8 +1146,13 @@ void Plant::DoSpecial() {
     // 试图修复辣椒爆炸后反而在本行的末尾处产生冰道。失败。
 
     if (mApp->IsVSMode() && mApp->mGameScene == SCENE_PLAYING) {
-        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode)
+        if (gTcpConnected || gIsServerModeSpectator || gIsReplayMode) {
             return;
+        }
+        if (gTcpClientSocket >= 0) {
+            U16_Event event = {{EventType::EVENT_SERVER_BOARD_PLANT_DO_SPECIAL}, uint16_t(mBoard->mPlants.DataArrayGetID(this))};
+            netplay::PutEvent(event);
+        }
     }
 
     DoSpecial_Origin();
@@ -3648,14 +3653,14 @@ void Plant::UpdateIcebergLettuce() {
             }
 
             Zombie *aZombie = mBoard->ZombieGet(mTargetZombieID);
-            IceAZombie(aZombie);
-
             if (gTcpClientSocket >= 0) {
                 U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_PLANT_ICE_A_ZOMBIE},
                                       uint16_t(mBoard->mPlants.DataArrayGetID(this)),
                                       aZombie == nullptr ? NETPLAY_ZOMBIE_ID_NULL : uint16_t(mBoard->mZombies.DataArrayGetID(aZombie))};
                 netplay::PutEvent(event);
             }
+
+            IceAZombie(aZombie);
         }
     }
 }

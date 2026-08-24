@@ -2324,15 +2324,15 @@ void Board::processServerEvent(const BaseEvent *event) {
             }
         } break;
         case EVENT_SERVER_BOARD_PLANT_ICE_A_ZOMBIE: {
-            auto *eventIcebergLettuceDoSpecial = static_cast<const U16U16_Event *>(event);
-            uint16_t serverPlantID = eventIcebergLettuceDoSpecial->data1;
+            auto *eventIceAZombie = static_cast<const U16U16_Event *>(event);
+            uint16_t serverPlantID = eventIceAZombie->data1;
             uint16_t clientPlantID = 0;
             if (homura::FindInMap(serverPlantIDMap, serverPlantID, clientPlantID)) {
                 Plant *aPlant = mPlants.DataArrayGet(clientPlantID);
                 Zombie *aZombie = nullptr;
-                if (eventIcebergLettuceDoSpecial->data2 != NETPLAY_ZOMBIE_ID_NULL) {
+                if (eventIceAZombie->data2 != NETPLAY_ZOMBIE_ID_NULL) {
                     uint16_t clientZombieID = 0;
-                    if (homura::FindInMap(serverZombieIDMap, eventIcebergLettuceDoSpecial->data2, clientZombieID)) {
+                    if (homura::FindInMap(serverZombieIDMap, eventIceAZombie->data2, clientZombieID)) {
                         aZombie = mZombies.DataArrayGet(clientZombieID);
                     }
                 }
