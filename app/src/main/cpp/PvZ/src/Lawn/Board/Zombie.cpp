@@ -3676,7 +3676,7 @@ void Zombie::UpdateZombieJalapenoHead() {
                 if (FindZombieTarget()) {
                     doBurn = true;
                 } else if (Plant *aPlant = FindPlantTarget(ZombieAttackType::ATTACKTYPE_CHEW)) {
-                    if (aPlant->IsInvulnerable() || aPlant->mSeedType == SeedType::SEED_HYPNOSHROOM || aPlant->mSeedType == SeedType::SEED_GARLIC) {
+                    if (aPlant->IsInvulnerable() || aPlant->mSeedType == SeedType::SEED_HYPNOSHROOM || aPlant->mSeedType == SeedType::SEED_GARLIC || aPlant->mSeedType == SeedType::SEED_SUN_BEAN) {
                         if (!aPlant->mIsAsleep) {
                             return;
                         }
@@ -8946,6 +8946,12 @@ void Zombie::DoSpecial() {
             U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_DO_SPECIAL}, uint16_t(mBoard->mZombies.DataArrayGetID(this))};
             netplay::PutEvent(event);
         }
+    }
+
+    if (mZombieType == ZOMBIE_JACK_IN_THE_BOX || mZombieType == ZOMBIE_JALAPENO_HEAD || mZombieType == ZOMBIE_SUPER_FAN_IMP || mZombieType == ZOMBIE_GIGA_IMP) {
+        // 自爆不结算阳光豆储存的阳光
+        mSunBeanSun = 0;
+        mSunBeanDamageRemainder = 0;
     }
 
     switch (mZombieType) {
