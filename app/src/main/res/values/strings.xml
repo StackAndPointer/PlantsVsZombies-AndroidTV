@@ -5,7 +5,11 @@
     <string name="close">Close</string>
     <string name="minimize">Minimize</string>
     <string name="about">About</string>
-    <string name="about_message">Version: %1$s\nCommit SHA: %2$s</string>
+    <string name="about_version">Version: %1$s</string>
+    <string name="about_branch">Branch: %1$s</string>
+    <string name="about_commit_num">Commit Number: %1$s</string>
+    <string name="about_commit_hash">Commit Hash: %1$s</string>
+    <string name="source_code">Source Code</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="cheat_menu_close_description">Long press to close cheat menu</string>
     <string name="cheat_menu_close_message">Cheat menu was closed</string>

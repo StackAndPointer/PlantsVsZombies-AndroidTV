@@ -1887,25 +1887,31 @@ public class SetActivity extends Activity {
                 hideOrNot();
                 break;
             case 2:
-                String aboutMsg = getString(R.string.about_message, BuildConfig.VERSION_NAME, BuildConfig.GIT_COMMIT_SHA);
+                String aboutMsg = String.join("\n",
+                        getString(R.string.about_version, BuildConfig.VERSION_NAME),
+                        getString(R.string.about_branch, BuildConfig.GIT_BRANCH),
+                        getString(R.string.about_commit_num, BuildConfig.GIT_COMMIT_NUM),
+                        getString(R.string.about_commit_hash, BuildConfig.GIT_COMMIT_HASH)
+                );
                 new AlertDialog.Builder(this)
                         .setTitle(R.string.about)
                         .setMessage(aboutMsg)
-                        .setNegativeButton(R.string.close, null)
-                        .setPositiveButton(
-                                android.R.string.copy,
-                                (dialogInterface, n) -> {
-                                    var clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
-                                    clipboard.setPrimaryClip(
-                                            ClipData.newPlainText(getString(R.string.about), aboutMsg)
-                                    );
-                                    Toast.makeText(
-                                            this,
-                                            getString(R.string.copied_to_clipboard),
-                                            Toast.LENGTH_SHORT
-                                    ).show();
-                                }
-                        ).show();
+                        .setNegativeButton(android.R.string.copy, (dialogInterface, n) -> {
+                            var clipboard = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                            clipboard.setPrimaryClip(
+                                    ClipData.newPlainText(getString(R.string.about), aboutMsg)
+                            );
+                            Toast.makeText(
+                                    this,
+                                    getString(R.string.copied_to_clipboard),
+                                    Toast.LENGTH_SHORT
+                            ).show();
+                        })
+                        .setPositiveButton(R.string.source_code, (dialogInterface, n) -> {
+                            Intent intent = new Intent(Intent.ACTION_VIEW)
+                                    .setData(Uri.parse(BuildConfig.GIT_REPO_URL));
+                            startActivity(intent);
+                        }).show();
                 break;
             default:
                 break;
