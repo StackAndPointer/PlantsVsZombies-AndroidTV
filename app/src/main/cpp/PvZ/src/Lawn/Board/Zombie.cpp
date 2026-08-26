@@ -313,7 +313,7 @@ void Zombie::ZombieInitialize(int theRow, ZombieType theType, bool theVariant, Z
             break;
 
         case ZombieType::ZOMBIE_DOG:
-            mBodyHealth = 270;
+            mBodyHealth = 330;
             mVariant = false;
             mZombieRect = Rect(20, 60, 50, 55);
             mZombieAttackRect = Rect(15, 60, 40, 55);

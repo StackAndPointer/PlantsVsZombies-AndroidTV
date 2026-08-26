@@ -909,13 +909,10 @@ void Plant::Draw(Sexy::Graphics *g) {
     // 如果玩家开了 植物显血
     if (showPlantHealth
         || (showNutGarlicSpikeHealth
-            && (mSeedType == SeedType::SEED_WALLNUT ||        //
-                mSeedType == SeedType::SEED_TALLNUT ||        //
-                mSeedType == SeedType::SEED_PUMPKINSHELL ||   //
-                mSeedType == SeedType::SEED_GARLIC ||         //
-                mSeedType == SeedType::SEED_SPIKEROCK ||      //
-                mSeedType == SeedType::SEED_CELERY_STALKER || //
-                mSeedType == SeedType::SEED_SWEET_POTATO))) {
+            && (IsDefender(mSeedType) ||                 //
+                mSeedType == SeedType::SEED_GARLIC ||    //
+                mSeedType == SeedType::SEED_SPIKEROCK || //
+                mSeedType == SeedType::SEED_CELERY_STALKER))) {
         if (!IsOnlineServerModeActive()) {
             pvzstl::string str = StrFormat("%d/%d", mPlantHealth, mPlantMaxHealth);
             g->SetFont(Sexy::FONT_DWARVENTODCRAFT12);
@@ -2265,6 +2262,7 @@ static int GetVSCostBalanced(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_SNORKEL:  // 125 -> 25
             aCost = 25;
             break;
+        case SeedType::SEED_POTATOMINE:          // 25 -> 50
         case SeedType::SEED_TANGLEKELP:          // 25 -> 50
         case SeedType::SEED_BLOVER:              // 100 -> 50
         case SeedType::SEED_PUMPKINSHELL:        // 125 -> 50
@@ -2281,25 +2279,26 @@ static int GetVSCostBalanced(SeedType theSeedType) {
         case SeedType::SEED_ZOMBIE_EXPLORER:      // 100 -> 75
             aCost = 75;
             break;
-        case SeedType::SEED_SQUASH:   // 75 -> 100 削弱窝瓜!!!
-        case SeedType::SEED_TALLNUT:  // 125 -> 100
-        case SeedType::SEED_SPLITPEA: // 125 -> 100
+        case SeedType::SEED_SQUASH:         // 75 -> 100 削弱窝瓜!!!
+        case SeedType::SEED_TALLNUT:        // 125 -> 100
+        case SeedType::SEED_SPLITPEA:       // 125 -> 100
+        case SeedType::SEED_BLOOMERANG:     // 125 -> 100
+        case SeedType::SEED_ZOMBIE_ZOMBLOB: // 150 -> 100
             aCost = 100;
             break;
         case SeedType::SEED_SNOWPEA:                 // 150 -> 125
+        case SeedType::SEED_ZOMBONI:                 // 175 -> 125
         case SeedType::SEED_ZOMBIE_DIGGER:           // 150 -> 125
         case SeedType::SEED_ZOMBIE_LADDER:           // 150 -> 125
         case SeedType::SEED_ZOMBIE_CATAPULT:         // 200 -> 125
         case SeedType::SEED_ZOMBIE_GIGA_POLEVAULTER: // 150 -> 125
-        case SeedType::SEED_ZOMBIE_ZOMBLOB:          // 150 -> 125
             aCost = 125;
             break;
-        case SeedType::SEED_ZOMBONI: // 175 -> 125
-            aCost = 125;
+        case SeedType::SEED_ZOMBIE_POGO: // 225 -> 175
+            aCost = 150;
             break;
         case SeedType::SEED_DOOMSHROOM:  // 125 -> 175
         case SeedType::SEED_CACTUS:      // 100 -> 175
-        case SeedType::SEED_ZOMBIE_POGO: // 225 -> 175
         case SeedType::SEED_ZOMBIE_FLAG: // 300 -> 175
             aCost = 175;
             break;
@@ -2337,7 +2336,6 @@ static int GetVSCostShuffle(SeedType theSeedType) {
             return 125;
         case SeedType::SEED_JALAPENO:        // 125 -> 150
         case SeedType::SEED_TORCHWOOD:       // 125 -> 150
-        case SeedType::SEED_BLOOMERANG:      // 125 -> 150
         case SeedType::SEED_ZOMBIE_BUNGEE:   // 125 -> 150
         case SeedType::SEED_ZOMBIE_CATAPULT: // 200 -> 150
             return 150;
@@ -2363,12 +2361,12 @@ static int GetVSCostShuffle(SeedType theSeedType) {
 static int GetVSRefreshTimeBalanced(SeedType theSeedType) {
     int aRefreshTime = GetVSRefreshTimeDefault(theSeedType);
     switch (theSeedType) {
-        case SeedType::SEED_SNOWPEA:                // 7.5 -> 15
         case SeedType::SEED_REPEATER:               // 7.5 -> 15
         case SeedType::SEED_PUFFSHROOM:             // 7.5 -> 15
         case SeedType::SEED_CACTUS:                 // 7.5 -> 15
         case SeedType::SEED_SPLITPEA:               // 7.5 -> 15
         case SeedType::SEED_KERNELPULT:             // 7.5 -> 15
+        case SeedType::SEED_BLOOMERANG:             // 7.5 -> 15
         case SeedType::SEED_ZOMBIE_NORMAL:          // 7.5 -> 15
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX: // 30 -> 15
         case SeedType::SEED_ZOMBIE_SNORKEL:         // 7.5 -> 15
