@@ -45,7 +45,7 @@ android {
 
         buildConfigField("String", "GIT_BRANCH", "\"${gitBranch}\"")
         buildConfigField("String", "GIT_COMMIT_HASH", "\"${gitCommitHash}\"")
-        buildConfigField("String", "GIT_COMMIT_NUM", "\"${gitCommitNum}\"")
+        buildConfigField("int", "GIT_COMMIT_NUM", gitCommitNum)
         buildConfigField("String", "GIT_REPO_URL", "\"${gitRepoUrl}\"")
     }
 

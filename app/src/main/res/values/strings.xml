@@ -7,7 +7,7 @@
     <string name="about">About</string>
     <string name="about_version">Version: %1$s</string>
     <string name="about_branch">Branch: %1$s</string>
-    <string name="about_commit_num">Commit Number: %1$s</string>
+    <string name="about_commit_num">Commit Number: %1$d</string>
     <string name="about_commit_hash">Commit Hash: %1$s</string>
     <string name="source_code">Source Code</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
