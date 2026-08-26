@@ -953,7 +953,7 @@ PlantingReason Board::CanPlantAt(int theGridX, int theGridY, SeedType theSeedTyp
         }
 
         // 坚果包扎术
-        if ((theSeedType == SeedType::SEED_WALLNUT || theSeedType == SeedType::SEED_TALLNUT) && aAidPurchased) {
+        if ((Plant::IsDefender(theSeedType)) && aAidPurchased) {
             if (aNormalPlant->mPlantHealth < aNormalPlant->mPlantMaxHealth * 2 / 3 && aNormalPlant->mSeedType == theSeedType
                 && aNormalPlant->mOnBungeeState != PlantOnBungeeState::GETTING_GRABBED_BY_BUNGEE) {
                 return PlantingReason::PLANTING_OK;
