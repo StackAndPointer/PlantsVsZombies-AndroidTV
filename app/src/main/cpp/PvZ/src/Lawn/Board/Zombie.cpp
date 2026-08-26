@@ -663,7 +663,8 @@ bool Zombie::FindTeleportationTarget() {
 }
 
 bool Zombie::IsValidTeleportationTarget() {
-    return !IsDeadOrDying() && mZombieType != ZombieType::ZOMBIE_BUNGEE && mZombieType != ZombieType::ZOMBIE_DOG && mZombiePhase != ZombiePhase::PHASE_DIGGER_TUNNELING && !IsBobsledTeamWithSled();
+    return !IsDeadOrDying() && mZombieType != ZombieType::ZOMBIE_BUNGEE && mZombieType != ZombieType::ZOMBIE_DOG && !IsBobsledTeamWithSled() && mZombiePhase != ZombiePhase::PHASE_DIGGER_TUNNELING
+        && mZombiePhase != ZombiePhase::PHASE_POLEVAULTER_IN_VAULT;
 }
 
 void Zombie::UpdatePlaying() {

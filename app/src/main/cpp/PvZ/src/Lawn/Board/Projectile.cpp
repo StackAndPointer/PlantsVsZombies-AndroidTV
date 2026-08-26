@@ -1258,7 +1258,7 @@ void Projectile::CheckForCollision() {
         const bool aRemoteClient = mApp->IsVSMode() && (gTcpConnected || gIsServerModeSpectator || gIsReplayMode);
         if (!aRemoteClient) {
             if (aHitPlant) {
-                const int aSearchStartGridX = aPlant->mPlantCol + 1;
+                const int aSearchStartGridX = aPlant->mPlantCol + 2;
                 const int aDestGridY = aPlant->mRow;
                 const uint16_t aPlantID = uint16_t(mBoard->mPlants.DataArrayGetID(aPlant));
                 const bool aDidTeleport = mBoard->TeleportPlant(aPlant, aSearchStartGridX, aDestGridY);
@@ -1270,7 +1270,7 @@ void Projectile::CheckForCollision() {
                     netplay::PutEvent(event);
                 }
             } else {
-                const float aDestX = mReturning ? aBestZombie->mPosX + 100.0f : std::max(0.0f, aBestZombie->mPosX - 100.0f);
+                const float aDestX = mReturning ? aBestZombie->mPosX + 160.0f : std::max(0.0f, aBestZombie->mPosX - 160.0f);
                 mBoard->TeleportZombie(aBestZombie, aDestX);
                 if (mApp->IsVSMode() && gTcpClientSocket >= 0) {
                     U16UNI32_Event event{};

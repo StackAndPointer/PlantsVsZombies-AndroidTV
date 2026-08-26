@@ -471,7 +471,7 @@ bool Board::TeleportPlant(Plant *thePlant, int theDestGridX, int theDestGridY) {
     const SeedType aSeedType = thePlant->mSeedType == SeedType::SEED_IMITATER ? thePlant->mImitaterType : thePlant->mSeedType;
     const int aDestGridY = aOriginGridY;
     int aDestGridX = -1;
-    const int aSearchStartGridX = std::max(aOriginGridX + 1, theDestGridX);
+    const int aSearchStartGridX = std::max(aOriginGridX + 2, theDestGridX);
     if (theDestGridY == aDestGridY) {
         for (int aGridX = aSearchStartGridX; aGridX < MAX_GRID_SIZE_X; ++aGridX) {
             if (CanPlantAt(aGridX, aDestGridY, aSeedType) == PlantingReason::PLANTING_OK) {
