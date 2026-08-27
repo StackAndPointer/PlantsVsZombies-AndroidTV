@@ -8005,6 +8005,9 @@ void Zombie::ApplyBurn() {
         return;
     }
 
+    // 立即结算阳光豆的阳光
+    SettleSunBeanSun();
+
     if (mZombieType == ZombieType::ZOMBIE_SQUASH_HEAD && !mHasHead) {
         Reanimation *aReanim = mApp->ReanimationTryToGet(mSpecialHeadReanimID);
         if (aReanim) {
@@ -8821,6 +8824,10 @@ void Zombie::AnimateChewSound() {
         aPlant->Die();
 
         mSunBeanSun += 200;
+        if (gTcpClientSocket >= 0) {
+            U16U16_Event event = {{EventType::EVENT_SERVER_BOARD_ZOMBIE_SUN_BEAN_SUN}, uint16_t(mBoard->mZombies.DataArrayGetID(this)), uint16_t(mSunBeanSun)};
+            netplay::PutEvent(event);
+        }
         return;
     }
 

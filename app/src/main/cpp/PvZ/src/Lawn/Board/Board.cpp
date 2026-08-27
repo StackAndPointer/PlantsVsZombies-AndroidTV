@@ -3008,6 +3008,14 @@ void Board::processServerEvent(const BaseEvent *event) {
                 aZombie->StartWalkAnim(20);
             }
         } break;
+        case EVENT_SERVER_BOARD_ZOMBIE_SUN_BEAN_SUN: {
+            auto *sunBeanEvent = static_cast<const U16U16_Event *>(event);
+            uint16_t clientZombieID = 0;
+            if (homura::FindInMap(serverZombieIDMap, sunBeanEvent->data1, clientZombieID)) {
+                Zombie *aZombie = mZombies.DataArrayGet(clientZombieID);
+                aZombie->mSunBeanSun = short(sunBeanEvent->data2);
+            }
+        } break;
         case EVENT_SERVER_BOARD_ZOMBIE_TELEPORTATION_SHOOT: {
             auto *eventShoot = static_cast<const U16_Event *>(event);
             uint16_t clientZombieID = 0;
