@@ -2282,7 +2282,6 @@ static int GetVSCostBalanced(SeedType theSeedType) {
         case SeedType::SEED_SQUASH:         // 75 -> 100 削弱窝瓜!!!
         case SeedType::SEED_TALLNUT:        // 125 -> 100
         case SeedType::SEED_SPLITPEA:       // 125 -> 100
-        case SeedType::SEED_BLOOMERANG:     // 125 -> 100
         case SeedType::SEED_ZOMBIE_ZOMBLOB: // 150 -> 100
             aCost = 100;
             break;
@@ -2336,6 +2335,7 @@ static int GetVSCostShuffle(SeedType theSeedType) {
             return 125;
         case SeedType::SEED_JALAPENO:        // 125 -> 150
         case SeedType::SEED_TORCHWOOD:       // 125 -> 150
+        case SeedType::SEED_BLOOMERANG:      // 125 -> 150
         case SeedType::SEED_ZOMBIE_BUNGEE:   // 125 -> 150
         case SeedType::SEED_ZOMBIE_CATAPULT: // 200 -> 150
             return 150;
@@ -2364,9 +2364,7 @@ static int GetVSRefreshTimeBalanced(SeedType theSeedType) {
         case SeedType::SEED_REPEATER:               // 7.5 -> 15
         case SeedType::SEED_PUFFSHROOM:             // 7.5 -> 15
         case SeedType::SEED_CACTUS:                 // 7.5 -> 15
-        case SeedType::SEED_SPLITPEA:               // 7.5 -> 15
         case SeedType::SEED_KERNELPULT:             // 7.5 -> 15
-        case SeedType::SEED_BLOOMERANG:             // 7.5 -> 15
         case SeedType::SEED_ZOMBIE_NORMAL:          // 7.5 -> 15
         case SeedType::SEED_ZOMBIE_JACK_IN_THE_BOX: // 30 -> 15
         case SeedType::SEED_ZOMBIE_SNORKEL:         // 7.5 -> 15
