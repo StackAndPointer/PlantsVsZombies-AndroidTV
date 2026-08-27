@@ -565,6 +565,9 @@ public:
     int CountSunBeingCollected(int thePlayerIndex) {
         return reinterpret_cast<int (*)(Board *, int)>(Board_CountSunBeingCollectedAddr)(this, thePlayerIndex);
     }
+    int CountSunFlowers() {
+        return reinterpret_cast<int (*)(Board *)>(Board_CountSunFlowersAddr)(this);
+    }
     int GridCellWidth(int theGridX, int theGridY) {
         return reinterpret_cast<int (*)(Board *, int, int)>(Board_GridCellWidthAddr)(this, theGridX, theGridY);
     }

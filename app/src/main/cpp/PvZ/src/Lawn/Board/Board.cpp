@@ -953,9 +953,9 @@ PlantingReason Board::CanPlantAt(int theGridX, int theGridY, SeedType theSeedTyp
         }
 
         // 坚果包扎术
-        if ((Plant::IsDefender(theSeedType)) && aAidPurchased) {
-            if (aNormalPlant->mPlantHealth < aNormalPlant->mPlantMaxHealth * 2 / 3 && aNormalPlant->mSeedType == theSeedType
-                && aNormalPlant->mOnBungeeState != PlantOnBungeeState::GETTING_GRABBED_BY_BUNGEE) {
+        if (Plant::IsDefender(theSeedType) && theSeedType != SeedType::SEED_PUMPKINSHELL && aAidPurchased) {
+            int aDamageThreshold = aNormalPlant->mSeedType == SeedType::SEED_PEANUT ? aNormalPlant->mPlantMaxHealth * 3 / 4 : aNormalPlant->mPlantMaxHealth * 2 / 3;
+            if (aNormalPlant->mPlantHealth < aDamageThreshold && aNormalPlant->mSeedType == theSeedType && aNormalPlant->mOnBungeeState != PlantOnBungeeState::GETTING_GRABBED_BY_BUNGEE) {
                 return PlantingReason::PLANTING_OK;
             }
         }
@@ -4533,13 +4533,14 @@ void Board::MouseMove(int x, int y) {
 }
 
 void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerIndex) {
-
+    // 右击鼠标：放下卡牌
     if (theClickCount < 0) {
         RefreshSeedPacketFromCursor(thePlayerIndex);
         mApp->PlayFoley(FoleyType::FOLEY_DROP);
         return;
     }
 
+    // 我是僵尸模式中，交由 Challenge 处理
     if (mApp->IsIZombieLevel()) {
         mChallenge->IZombieMouseDownWithZombie(x, y, theClickCount, thePlayerIndex);
         return;
@@ -4549,49 +4550,51 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
         return;
     }
 
-    SeedType plantingSeedType = GetSeedTypeInCursor(thePlayerIndex);
-    int gridX = PixelToGridX(x, y);
-    int gridY = PixelToGridY(x, y);
-    if (gridX < 0 || gridX >= MAX_GRID_SIZE_X || gridY < 0 || gridY >= MAX_GRID_SIZE_Y) {
+    SeedType aPlantingSeedType = GetSeedTypeInCursor(thePlayerIndex);
+    int aGridX = PixelToGridX(x, y);
+    int aGridY = PixelToGridY(x, y);
+
+    // 不在场地内的点击：放下卡牌
+    if (aGridX < 0 || aGridX >= MAX_GRID_SIZE_X || aGridY < 0 || aGridY >= MAX_GRID_SIZE_Y) {
         RefreshSeedPacketFromCursor(thePlayerIndex);
         mApp->PlayFoley(FoleyType::FOLEY_DROP);
         return;
     }
 
-
-    CursorObject *cursor = mCursorObject[thePlayerIndex];
-    GamepadControls *gamepad = nullptr;
-    SeedBank *seedBank = nullptr;
+    CursorObject *aCursor = mCursorObject[thePlayerIndex];
+    GamepadControls *aGamepad = nullptr;
+    SeedBank *aSeedBank = nullptr;
     if (mApp->IsVSMode()) {
-        gamepad = mGamepadControls[0]->mIsZombie ? mGamepadControls[1] : mGamepadControls[0];
-        seedBank = mSeedBank[0]->mIsZombie ? mSeedBank[1] : mSeedBank[0];
+        aGamepad = mGamepadControls[0]->mIsZombie ? mGamepadControls[1] : mGamepadControls[0];
+        aSeedBank = mSeedBank[0]->mIsZombie ? mSeedBank[1] : mSeedBank[0];
     } else {
-        gamepad = mGamepadControls[thePlayerIndex];
-        seedBank = gamepad->GetSeedBank();
+        aGamepad = mGamepadControls[thePlayerIndex];
+        aSeedBank = aGamepad->GetSeedBank();
     }
 
     if (mApp->IsIZombieLevel() || (mApp->mGameMode == GameMode::GAMEMODE_MULTI_PLAYER && thePlayerIndex > 0)) {
-        HitResult hitResult = {};
-        mChallenge->MouseDown(x, y, theClickCount, &hitResult, thePlayerIndex);
+        HitResult aHitResult{};
+        mChallenge->MouseDown(x, y, theClickCount, &aHitResult, thePlayerIndex);
         return;
     }
 
-    PlantingReason reason = CanPlantAt(gridX, gridY, plantingSeedType);
-    if (reason != PlantingReason::PLANTING_OK) {
-        if (reason == PlantingReason::PLANTING_ONLY_ON_GRAVES) {
+    PlantingReason aReason = CanPlantAt(aGridX, aGridY, aPlantingSeedType);
+    if (aReason != PlantingReason::PLANTING_OK) {
+        // 根据不同的种植原因播放相应的提示字幕
+        if (aReason == PlantingReason::PLANTING_ONLY_ON_GRAVES) {
             DisplayAdvice("[ADVICE_GRAVEBUSTERS_ON_GRAVES]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_GRAVEBUSTERS_ON_GRAVES);
-        } else if (plantingSeedType == SeedType::SEED_LILYPAD && reason == PlantingReason::PLANTING_ONLY_IN_POOL) {
+        } else if (aPlantingSeedType == SeedType::SEED_LILYPAD && aReason == PlantingReason::PLANTING_ONLY_IN_POOL) {
             DisplayAdvice("[ADVICE_LILYPAD_ON_WATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_LILYPAD_ON_WATER);
-        } else if (plantingSeedType == SeedType::SEED_TANGLEKELP && reason == PlantingReason::PLANTING_ONLY_IN_POOL) {
+        } else if (aPlantingSeedType == SeedType::SEED_TANGLEKELP && aReason == PlantingReason::PLANTING_ONLY_IN_POOL) {
             DisplayAdvice("[ADVICE_TANGLEKELP_ON_WATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_TANGLEKELP_ON_WATER);
-        } else if (plantingSeedType == SeedType::SEED_SEASHROOM && reason == PlantingReason::PLANTING_ONLY_IN_POOL) {
+        } else if (aPlantingSeedType == SeedType::SEED_SEASHROOM && aReason == PlantingReason::PLANTING_ONLY_IN_POOL) {
             DisplayAdvice("[ADVICE_SEASHROOM_ON_WATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_SEASHROOM_ON_WATER);
-        } else if (reason == PlantingReason::PLANTING_ONLY_ON_GROUND) {
+        } else if (aReason == PlantingReason::PLANTING_ONLY_ON_GROUND) {
             DisplayAdvice("[ADVICE_POTATO_MINE_ON_LILY]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_POTATOE_MINE_ON_LILY);
-        } else if (reason == PlantingReason::PLANTING_NOT_PASSED_LINE) {
+        } else if (aReason == PlantingReason::PLANTING_NOT_PASSED_LINE) {
             DisplayAdvice("[ADVICE_NOT_PASSED_LINE]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NOT_PASSED_LINE);
-        } else if (reason == PlantingReason::PLANTING_NEEDS_UPGRADE) {
-            switch (plantingSeedType) {
+        } else if (aReason == PlantingReason::PLANTING_NEEDS_UPGRADE) {
+            switch (aPlantingSeedType) {
                 case SeedType::SEED_GATLINGPEA:
                     DisplayAdvice("[ADVICE_ONLY_ON_REPEATERS]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_ONLY_ON_REPEATERS);
                     break;
@@ -4619,46 +4622,50 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
                 default:
                     break;
             }
-        } else if (reason == PlantingReason::PLANTING_NOT_ON_ART) {
+        } else if (aReason == PlantingReason::PLANTING_NOT_ON_ART) {
             DisplayAdvice("[ADVICE_WRONG_ART_TYPE]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_WRONG_ART_TYPE);
-        } else if (reason == PlantingReason::PLANTING_NEEDS_POT) {
+        } else if (aReason == PlantingReason::PLANTING_NEEDS_POT) {
             if (mApp->IsFirstTimeAdventureMode() && mLevel == 41) {
                 DisplayAdvice("[ADVICE_PLANT_NEED_POT1]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NEED_POT);
             } else {
                 DisplayAdvice("[ADVICE_PLANT_NEED_POT2]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NEED_POT);
             }
-        } else if (reason == PlantingReason::PLANTING_NOT_ON_GRAVE) {
+        } else if (aReason == PlantingReason::PLANTING_NOT_ON_GRAVE) {
             DisplayAdvice("[ADVICE_PLANT_NOT_ON_GRAVE]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NOT_ON_GRAVE);
-        } else if (reason == PlantingReason::PLANTING_NOT_ON_CRATER) {
-            if (IsPoolSquare(gridX, gridY)) {
+        } else if (aReason == PlantingReason::PLANTING_NOT_ON_CRATER) {
+            if (IsPoolSquare(aGridX, aGridY)) {
                 DisplayAdvice("[ADVICE_CANT_PLANT_THERE]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_CANT_PLANT_THERE);
             } else {
                 DisplayAdvice("[ADVICE_PLANT_NOT_ON_CRATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NOT_ON_CRATER);
             }
-        } else if (reason == PlantingReason::PLANTING_NOT_ON_WATER) {
+        } else if (aReason == PlantingReason::PLANTING_NOT_ON_WATER) {
             if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_ZEN_GARDEN && mApp->mZenGarden->mGardenType == GARDEN_AQUARIUM) {
                 DisplayAdvice("[ZEN_ONLY_AQUATIC_PLANTS]", MessageStyle::MESSAGE_STYLE_HINT_TALL_FAST, AdviceType::ADVICE_NONE);
-            } else if (plantingSeedType == SeedType::SEED_POTATOMINE) {
+            } else if (aPlantingSeedType == SeedType::SEED_POTATOMINE) {
                 DisplayAdvice("[ADVICE_POTATO_MINE_ON_LILY]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_POTATOE_MINE_ON_LILY);
             } else {
                 DisplayAdvice("[ADVICE_PLANT_NOT_ON_WATER]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANT_NOT_ON_WATER);
             }
-        } else if (reason == PlantingReason::PLANTING_NEEDS_GROUND) {
+        } else if (aReason == PlantingReason::PLANTING_NEEDS_GROUND) {
             DisplayAdvice("[ADVICE_PLANTING_NEEDS_GROUND]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANTING_NEEDS_GROUND);
-        } else if (reason == PlantingReason::PLANTING_NEEDS_SLEEPING) {
+        } else if (aReason == PlantingReason::PLANTING_NEEDS_SLEEPING) {
             DisplayAdvice("[ADVICE_PLANTING_NEED_SLEEPING]", MessageStyle::MESSAGE_STYLE_HINT_FAST, AdviceType::ADVICE_PLANTING_NEED_SLEEPING);
         }
 
-        if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE || mApp->IsWhackAZombieLevel()) {
+        // 特定情况下，放下原有手持的植物
+        if (aCursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE || mApp->IsWhackAZombieLevel()) {
             RefreshSeedPacketFromCursor(thePlayerIndex);
             mApp->PlayFoley(FoleyType::FOLEY_DROP);
         } else {
             RefreshSeedPacketFromCursor(thePlayerIndex);
             mApp->PlaySample(SOUND_BUZZER);
         }
+        // 不可种植的情况至此结束，直接跳转至返回
         return;
     }
 
+    /* 以下为植物类型可以种植的情况 */
+    // 清除种植相关的提示字幕
     ClearAdvice(AdviceType::ADVICE_PLANTING_NEED_SLEEPING);
     ClearAdvice(AdviceType::ADVICE_CANT_PLANT_THERE);
     ClearAdvice(AdviceType::ADVICE_PLANTING_NEEDS_GROUND);
@@ -4683,119 +4690,112 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
     ClearAdvice(AdviceType::ADVICE_PLANT_POTATOE_MINE_ON_LILY);
     ClearAdvice(AdviceType::ADVICE_SURVIVE_FLAGS);
 
-    if (!mApp->mEasyPlantingCheat && cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK && !HasConveyorBeltSeedBank(thePlayerIndex)) {
-        if (!TakeSunMoney(GetCurrentPlantCost(plantingSeedType, SeedType::SEED_NONE), thePlayerIndex)) {
+    // 无免费种植、非传送带关卡的卡槽植物，判断阳光是否充足：充足则扣除阳光，不足则退出
+    if (!mApp->mEasyPlantingCheat && aCursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK && !HasConveyorBeltSeedBank(thePlayerIndex)) {
+        if (!TakeSunMoney(GetCurrentPlantCost(aPlantingSeedType, SeedType::SEED_NONE), thePlayerIndex)) {
             return;
         }
     }
 
-    bool isAwake = false;
-    int wakeUpCounter = 0;
-    PlantsOnLawn plantOnLawn = {};
-    GetPlantsOnLawn(gridX, gridY, &plantOnLawn);
-    Plant *normalPlant = plantOnLawn.mNormalPlant;
-    Plant *pumpkinPlant = plantOnLawn.mPumpkinPlant;
-    if (normalPlant != nullptr && normalPlant->IsUpgradableTo(plantingSeedType)) {
-        if (plantingSeedType == SeedType::SEED_GLOOMSHROOM) {
-            isAwake = !normalPlant->mIsAsleep;
-            wakeUpCounter = normalPlant->mWakeUpCounter;
+    // 升级种植或坚果包扎术等情况时，先将原植物销毁
+    bool aIsAwake = false;
+    int aWakeUpCounter = 0;
+    PlantsOnLawn aPlantOnLawn{};
+    GetPlantsOnLawn(aGridX, aGridY, &aPlantOnLawn);
+    Plant *aNormalPlant = aPlantOnLawn.mNormalPlant;
+    Plant *aPumpkinPlant = aPlantOnLawn.mPumpkinPlant;
+    if (aNormalPlant != nullptr && aNormalPlant->IsUpgradableTo(aPlantingSeedType)) {
+        if (aPlantingSeedType == SeedType::SEED_GLOOMSHROOM) {
+            aIsAwake = !aNormalPlant->mIsAsleep;
+            aWakeUpCounter = aNormalPlant->mWakeUpCounter;
         }
-        normalPlant->Die();
+        aNormalPlant->Die();
     }
-    if ((plantingSeedType == SeedType::SEED_WALLNUT || plantingSeedType == SeedType::SEED_TALLNUT) && normalPlant != nullptr) {
-        if (normalPlant->mSeedType == plantingSeedType) {
-            normalPlant->Die();
-        }
-    }
-    if (plantingSeedType == SeedType::SEED_PUMPKINSHELL && pumpkinPlant != nullptr) {
-        if (pumpkinPlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
-            pumpkinPlant->Die();
+    if (Plant::IsDefender(aPlantingSeedType) && aPlantingSeedType != SeedType::SEED_PUMPKINSHELL && aNormalPlant != nullptr) {
+        if (aNormalPlant->mSeedType == aPlantingSeedType) {
+            aNormalPlant->Die();
         }
     }
-    if (plantingSeedType == SeedType::SEED_COBCANNON) {
-        Plant *rightPlant = GetTopPlantAt(gridX + 1, gridY, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
-        if (rightPlant != nullptr) {
-            rightPlant->Die();
+    if (aPlantingSeedType == SeedType::SEED_PUMPKINSHELL && aPumpkinPlant != nullptr) {
+        if (aPumpkinPlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
+            aPumpkinPlant->Die();
         }
     }
-    if (plantingSeedType == SeedType::SEED_CATTAIL) {
-        if (plantOnLawn.mUnderPlant != nullptr) {
-            plantOnLawn.mUnderPlant->Die();
+    if (aPlantingSeedType == SeedType::SEED_COBCANNON) {
+        Plant *aRightPlant = GetTopPlantAt(aGridX + 1, aGridY, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
+        if (aRightPlant != nullptr) {
+            aRightPlant->Die();
         }
-        if (normalPlant != nullptr) {
-            normalPlant->Die();
+    }
+    if (aPlantingSeedType == SeedType::SEED_CATTAIL) {
+        if (aPlantOnLawn.mUnderPlant != nullptr) {
+            aPlantOnLawn.mUnderPlant->Die();
+        }
+        if (aNormalPlant != nullptr) {
+            aNormalPlant->Die();
         }
     }
 
-    if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE) {
-        mApp->mZenGarden->MovePlant(mPlants.DataArrayGet(cursor->mGlovePlantID), gridX, gridY);
-    } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_WHEEL_BARROW) {
+    if (aCursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_GLOVE) {
+        mApp->mZenGarden->MovePlant(mPlants.DataArrayGet(aCursor->mGlovePlantID), aGridX, aGridY);
+    } else if (aCursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_WHEEL_BARROW) {
         mApp->mZenGarden->MouseDownWithFullWheelBarrow(x, y);
-    } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
-        AddPlant(gridX, gridY, cursor->mType, cursor->mImitaterType, thePlayerIndex, true);
-        if (cursor->mCoinID != COINID_NULL) {
-            mCoins.DataArrayGet(cursor->mCoinID)->Die();
-            cursor->mCoinID = COINID_NULL;
+    } else if (aCursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_USABLE_COIN) {
+        AddPlant(aGridX, aGridY, aCursor->mType, aCursor->mImitaterType, thePlayerIndex, true);
+        if (aCursor->mCoinID != COINID_NULL) {
+            mCoins.DataArrayGet(aCursor->mCoinID)->Die();
+            aCursor->mCoinID = COINID_NULL;
         }
-    } else if (cursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK) {
-        Plant *plant = AddPlant(gridX, gridY, cursor->mType, cursor->mImitaterType, thePlayerIndex, true);
-        if (plant != nullptr) {
-            if (isAwake) {
-                plant->SetSleeping(false);
+    } else if (aCursor->mCursorType == CursorType::CURSOR_TYPE_PLANT_FROM_BANK) {
+        Plant *aPlant = AddPlant(aGridX, aGridY, aCursor->mType, aCursor->mImitaterType, thePlayerIndex, true);
+        if (aPlant != nullptr) {
+            if (aIsAwake) {
+                aPlant->SetSleeping(false);
             } else {
-                plant->mWakeUpCounter = wakeUpCounter;
+                aPlant->mWakeUpCounter = aWakeUpCounter;
             }
         }
-        seedBank->mSeedPackets[gamepad->mSelectedSeedIndex].Deactivate();
-        seedBank->mSeedPackets[gamepad->mSelectedSeedIndex].WasPlanted(thePlayerIndex);
+        aSeedBank->mSeedPackets[aGamepad->mSelectedSeedIndex].Deactivate();
+        aSeedBank->mSeedPackets[aGamepad->mSelectedSeedIndex].WasPlanted(thePlayerIndex);
     } else {
         return;
     }
 
+    // 柱子关卡中，一列种植
     if (mApp->mGameMode == GameMode::GAMEMODE_CHALLENGE_COLUMN) {
-        for (int row = 0; row < MAX_GRID_SIZE_Y; ++row) {
-            if (row == gridY || CanPlantAt(gridX, row, plantingSeedType) != PlantingReason::PLANTING_OK) {
+        for (int aRow = 0; aRow < MAX_GRID_SIZE_Y; ++aRow) {
+            if (aRow == aGridY || CanPlantAt(aGridX, aRow, aPlantingSeedType) != PlantingReason::PLANTING_OK) {
                 continue;
             }
-            if (plantingSeedType == SeedType::SEED_WALLNUT || plantingSeedType == SeedType::SEED_TALLNUT) {
-                Plant *rowNormalPlant = GetTopPlantAt(gridX, row, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
-                if (rowNormalPlant != nullptr && rowNormalPlant->mSeedType == plantingSeedType) {
-                    rowNormalPlant->Die();
+            if (aPlantingSeedType == SeedType::SEED_WALLNUT || aPlantingSeedType == SeedType::SEED_TALLNUT) {
+                aNormalPlant = GetTopPlantAt(aGridX, aRow, PlantPriority::TOPPLANT_ONLY_NORMAL_POSITION);
+                if (aNormalPlant != nullptr && aNormalPlant->mSeedType == aPlantingSeedType) {
+                    aNormalPlant->Die();
                 }
             }
-            if (plantingSeedType == SeedType::SEED_PUMPKINSHELL) {
-                Plant *rowPumpkinPlant = GetTopPlantAt(gridX, row, PlantPriority::TOPPLANT_ONLY_PUMPKIN);
-                if (rowPumpkinPlant != nullptr && rowPumpkinPlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
-                    rowPumpkinPlant->Die();
+            if (aPlantingSeedType == SeedType::SEED_PUMPKINSHELL) {
+                aNormalPlant = GetTopPlantAt(aGridX, aRow, PlantPriority::TOPPLANT_ONLY_PUMPKIN);
+                if (aNormalPlant != nullptr && aNormalPlant->mSeedType == SeedType::SEED_PUMPKINSHELL) {
+                    aNormalPlant->Die();
                 }
             }
-            AddPlant(gridX, row, cursor->mType, cursor->mImitaterType, thePlayerIndex, true);
+            AddPlant(aGridX, aRow, aCursor->mType, aCursor->mImitaterType, thePlayerIndex, true);
         }
     }
 
-    auto countSunFlowers = [this]() {
-        int count = 0;
-        Plant *plant = nullptr;
-        while (IteratePlants(plant)) {
-            if (plant->mSeedType == SeedType::SEED_SUNFLOWER) {
-                ++count;
-            }
-        }
-        return count;
-    };
-
+    // 设置教程状态相关
     if (thePlayerIndex == 0 && mTutorialState == TutorialState::TUTORIAL_LEVEL_1_PLANT_PEASHOOTER) {
-        SetTutorialState((int)mPlants.mSize >= 2 ? TutorialState::TUTORIAL_LEVEL_1_COMPLETED : TutorialState::TUTORIAL_LEVEL_1_REFRESH_PEASHOOTER);
+        SetTutorialState(int(mPlants.mSize) >= 2 ? TutorialState::TUTORIAL_LEVEL_1_COMPLETED : TutorialState::TUTORIAL_LEVEL_1_REFRESH_PEASHOOTER);
     } else if (thePlayerIndex == 0 && mTutorialState == TutorialState::TUTORIAL_LEVEL_2_PLANT_SUNFLOWER) {
-        int sunFlowerCount = countSunFlowers();
-        if (plantingSeedType == SeedType::SEED_SUNFLOWER && sunFlowerCount == 2) {
+        int aSunFlowersCount = CountSunFlowers();
+        if (aPlantingSeedType == SeedType::SEED_SUNFLOWER && aSunFlowersCount == 2) {
             DisplayAdvice("[ADVICE_MORE_SUNFLOWERS]", MessageStyle::MESSAGE_STYLE_TUTORIAL_LEVEL2, AdviceType::ADVICE_NONE);
             if (!mSeedBank[0]->mSeedPackets[1].CanPickUp()) {
                 SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_REFRESH_SUNFLOWER);
             } else {
                 SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_PICK_UP_SUNFLOWER);
             }
-        } else if (sunFlowerCount >= 3) {
+        } else if (aSunFlowersCount >= 3) {
             SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_COMPLETED);
         } else if (!mSeedBank[0]->mSeedPackets[1].CanPickUp()) {
             SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_REFRESH_SUNFLOWER);
@@ -4803,7 +4803,7 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
             SetTutorialState(TutorialState::TUTORIAL_LEVEL_2_PICK_UP_SUNFLOWER);
         }
     } else if (thePlayerIndex == 0 && mTutorialState == TutorialState::TUTORIAL_MORESUN_PLANT_SUNFLOWER) {
-        if (countSunFlowers() >= 3) {
+        if (CountSunFlowers() >= 3) {
             SetTutorialState(TutorialState::TUTORIAL_MORESUN_COMPLETED);
             DisplayAdvice("[ADVICE_PLANT_SUNFLOWER5]", MessageStyle::MESSAGE_STYLE_TUTORIAL_LATER, AdviceType::ADVICE_PLANT_SUNFLOWER5);
             mTutorialTimer = -1;
@@ -4814,10 +4814,12 @@ void Board::MouseDownWithPlant(int x, int y, int theClickCount, int thePlayerInd
         }
     }
 
+    // 保龄球关卡，播放保龄球滚动的音效
     if (mApp->IsWallnutBowlingLevel()) {
         mApp->PlaySample(SOUND_BOWLING);
     }
 
+    // 重置鼠标
     ClearCursor(thePlayerIndex);
 }
 

@@ -61,6 +61,7 @@ bool LoadGameMain() {
     Board_MouseDownWithToolAddr = libGameMain.GetSymbol("_ZN5Board17MouseDownWithToolEiii10CursorTypei");
     Board_ToolHitTestAddr = libGameMain.GetSymbol("_ZN5Board11ToolHitTestEii");
     Board_RefreshSeedPacketFromCursorAddr = libGameMain.GetSymbol("_ZN5Board27RefreshSeedPacketFromCursorEi");
+    Board_CountSunFlowersAddr = libGameMain.GetSymbol("_ZN5Board15CountSunFlowersEv");
     Board_CountPlantByTypeAddr = libGameMain.GetSymbol("_ZN5Board16CountPlantByTypeE8SeedType");
     Board_SetTutorialStateAddr = libGameMain.GetSymbol("_ZN5Board16SetTutorialStateE13TutorialState");
     Board_NewPlantAddr = libGameMain.GetSymbol("_ZN5Board8NewPlantEii8SeedTypeS0_i");

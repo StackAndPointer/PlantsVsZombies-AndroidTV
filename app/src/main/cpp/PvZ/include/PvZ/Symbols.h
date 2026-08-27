@@ -72,6 +72,7 @@ inline void *Board_ClearCursorAddr;
 inline void *Board_UpdateGameAddr;
 inline void *Board_UpdateGameObjectsAddr;
 inline void *Board_MouseDownWithToolAddr;
+inline void *Board_CountSunFlowersAddr;
 inline void *Board_CountPlantByTypeAddr;
 inline void *Board_SetTutorialStateAddr;
 inline void *Board_NewPlantAddr;
