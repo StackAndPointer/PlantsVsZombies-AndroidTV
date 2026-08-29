@@ -49,8 +49,7 @@ LawnDialogDraw gBaseLawnDialogDraw = nullptr;
 
 AISettingsWidget::AISettingsWidget(VSSetupAddonWidget *owner)
     : mOwner(owner) {
-    reinterpret_cast<void (*)(LawnDialog *, LawnApp *, Sexy::Image *, int, bool, const pvzstl::string &, const pvzstl::string &, const pvzstl::string &, int)>(LawnDialog_LawnDialogAddr)(
-        this, gLawnApp, Sexy::IMAGE_OPTIONS_MENUBACK, VSSetupAddonWidget::VSSetupAddonWidget_AISettings, true, "", "", "", 0);
+    LawnDialog::_constructor(gLawnApp, Sexy::IMAGE_OPTIONS_MENUBACK, VSSetupAddonWidget::VSSetupAddonWidget_AISettings, true, "", "", "", 0);
     // Keep the standard LawnDialog pass enabled so IMAGE_OPTIONS_MENUBACK is
     // drawn behind the AI controls.
     mDrawStandardBack = true;
@@ -108,7 +107,7 @@ void AISettingsWidget::_destructor() {
     delete mEnhancementCheckbox;
     delete mZombieAICheckbox;
     delete mPlantAICheckbox;
-    reinterpret_cast<void (*)(LawnDialog *)>(LawnDialog_Delete2Addr)(this);
+    LawnDialog::_destructor();
 }
 
 void AISettingsWidget::_destructor2() {
