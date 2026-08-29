@@ -22,7 +22,6 @@
 
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/LawnApp.h"
-#include "PvZ/Lawn/Widget/AISettingsWidget.h"
 #include "PvZ/SexyAppFramework/Widget/ButtonListener.h"
 #include "PvZ/SexyAppFramework/Widget/CheckboxListener.h"
 #include "PvZ/SexyAppFramework/Widget/Widget.h"
@@ -39,24 +38,26 @@ class ButtonWidget;
 class Widget;
 } // namespace Sexy
 
+class AISettingsWidget;
+
 class VSSetupAddonWidget final : public Sexy::CheckboxListener {
 public:
     enum {
         VSSetupAddonWidget_ExtraPacket = 12,
-        VSSetupAddonWidget_ExtendedSeeds,
-        VSSetupAddonWidget_BanMode,
-        VSSetupAddonWidget_BalancePatch,
-        VSSetupAddonWidget_PlantAI,
-        VSSetupAddonWidget_ZombieAI,
-        VSSetupAddonWidget_AIEnhancement,
-        VSSetupAddonWidget_Back,
-        VSSetupAddonWidget_GlobalBP,
-        // Keep the existing setup/network IDs stable. The remaining
-        // controls are local-only AI preferences.
-        VSSetupAddonWidget_AIDraftDisabled,
-        VSSetupAddonWidget_AITemplateDeckDisabled,
-        VSSetupAddonWidget_AISettings,
-        VSSetupAddonWidget_AISettingsClose,
+        VSSetupAddonWidget_ExtendedSeeds = 13,
+        VSSetupAddonWidget_BanMode = 14,
+        VSSetupAddonWidget_BalancePatch = 15,
+        VSSetupAddonWidget_Back = 16,
+        VSSetupAddonWidget_GlobalBP = 17,
+        // Local-only AI preferences are appended so existing setup/network
+        // IDs remain stable for events, saves, and replays.
+        VSSetupAddonWidget_PlantAI = 18,
+        VSSetupAddonWidget_ZombieAI = 19,
+        VSSetupAddonWidget_AIEnhancement = 20,
+        VSSetupAddonWidget_AIDraftDisabled = 21,
+        VSSetupAddonWidget_AITemplateDeckDisabled = 22,
+        VSSetupAddonWidget_AISettings = 23,
+        VSSetupAddonWidget_AISettingsClose = 24,
     };
 
     enum GlobalBpMode {
