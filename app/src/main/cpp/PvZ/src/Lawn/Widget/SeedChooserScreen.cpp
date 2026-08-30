@@ -33,13 +33,13 @@
 #include "PvZ/Lawn/Widget/GameButton.h"
 #include "PvZ/Lawn/Widget/ImitaterDialog.h"
 #include "PvZ/Lawn/Widget/StoreScreen.h"
+#include "PvZ/Lawn/Widget/VSActionAIDraftPolicy.h"
 #include "PvZ/NetPlay.h"
 #include "PvZ/SexyAppFramework/Graphics/Font.h"
 #include "PvZ/SexyAppFramework/Misc/MTRand.h"
 #include "PvZ/SexyAppFramework/SexyAppBase.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
-#include "PvZ/Lawn/Widget/VSActionAIDraftPolicy.h"
 
 #include <unistd.h>
 
