@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "VSActionAIExecutor.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIExecutor.h"
 
 #include "PvZ/Lawn/Board/Board.h"
 #include "PvZ/Lawn/Board/Coin.h"

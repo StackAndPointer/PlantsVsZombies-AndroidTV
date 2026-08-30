@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "ZombieAI.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIZombie/ZombieAI.h"
 
 #include "PvZ/Lawn/Board/Plant.h"
 #include <cmath>

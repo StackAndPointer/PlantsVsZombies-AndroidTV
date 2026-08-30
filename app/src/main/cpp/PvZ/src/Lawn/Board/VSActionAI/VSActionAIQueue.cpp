@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "VSActionAIQueue.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIQueue.h"
 
 #include <algorithm>
 #include <utility>

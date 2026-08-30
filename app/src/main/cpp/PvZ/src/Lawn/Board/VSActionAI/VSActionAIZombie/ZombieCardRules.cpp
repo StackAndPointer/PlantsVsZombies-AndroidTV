@@ -17,9 +17,9 @@
  * PlantsVsZombies-AndroidTV. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "ZombieCardRules.h"
-#include "Lawn/Board/VSActionAI/VSActionAICardRules.h"
-#include "Lawn/Board/VSActionAI/VSActionAIPolicy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIZombie/ZombieCardRules.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAICardRules.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIPolicy.h"
 
 #include <algorithm>
 #include <initializer_list>

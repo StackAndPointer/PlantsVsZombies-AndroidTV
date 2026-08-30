@@ -11,11 +11,11 @@
 
 #include "PvZ/Lawn/VSActionSystem.h"
 #include "PvZ/Lawn/VSActionAIDecision.h"
-#include "VSActionAIExecutor.h"
-#include "VSActionAIGameState.h"
-#include "VSActionAIPolicy.h"
-#include "VSActionAIQueue.h"
-#include "VSActionAIStrategy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIExecutor.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIGameState.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIPolicy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIQueue.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIStrategy.h"
 
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"

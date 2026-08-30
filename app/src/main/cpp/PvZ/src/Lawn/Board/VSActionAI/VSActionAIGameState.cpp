@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "VSActionAIGameState.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIGameState.h"
 
 #include "PvZ/GlobalVariable.h"
 #include "PvZ/Lawn/Board/Board.h"

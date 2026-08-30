@@ -20,7 +20,7 @@
 #ifndef PVZ_LAWN_BOARD_VS_ACTION_AI_STRATEGY_H
 #define PVZ_LAWN_BOARD_VS_ACTION_AI_STRATEGY_H
 
-#include "VSActionAIPlacement.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIPlacement.h"
 
 #include <cstdint>
 #include <array>

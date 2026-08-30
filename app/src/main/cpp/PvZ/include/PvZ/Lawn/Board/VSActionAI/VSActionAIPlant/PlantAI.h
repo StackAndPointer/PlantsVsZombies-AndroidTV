@@ -20,7 +20,7 @@
 #ifndef PVZ_LAWN_BOARD_VS_ACTION_AI_PLANT_AI_H
 #define PVZ_LAWN_BOARD_VS_ACTION_AI_PLANT_AI_H
 
-#include "PlantAIPlanning.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIPlant/PlantAIPlanning.h"
 
 #include <initializer_list>
 

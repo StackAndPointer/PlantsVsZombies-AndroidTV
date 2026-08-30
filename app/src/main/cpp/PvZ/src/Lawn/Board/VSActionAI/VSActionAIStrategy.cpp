@@ -9,9 +9,9 @@
  * option) any later version.
  */
 
-#include "VSActionAIStrategy.h"
-#include "VSActionAICardRules.h"
-#include "VSActionAIPolicy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIStrategy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAICardRules.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIPolicy.h"
 
 #include "PvZ/Lawn/VSActionSystem.h"
 #include "PvZ/SexyAppFramework/Buffer.h"

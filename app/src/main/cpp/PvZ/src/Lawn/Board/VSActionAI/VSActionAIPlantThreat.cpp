@@ -9,8 +9,8 @@
  * option) any later version.
  */
 
-#include "VSActionAICardRules.h"
-#include "VSActionAIThreat.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAICardRules.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIThreat.h"
 
 #include <cmath>
 #include <algorithm>

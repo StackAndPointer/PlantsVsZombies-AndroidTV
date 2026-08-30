@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "VSActionAICardRules.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAICardRules.h"
 
 namespace vsai::detail {
 

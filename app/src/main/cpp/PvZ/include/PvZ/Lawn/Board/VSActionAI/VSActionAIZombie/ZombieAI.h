@@ -20,7 +20,7 @@
 #ifndef PVZ_LAWN_BOARD_VS_ACTION_AI_ZOMBIE_AI_H
 #define PVZ_LAWN_BOARD_VS_ACTION_AI_ZOMBIE_AI_H
 
-#include "ZombieAIPlanning.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIZombie/ZombieAIPlanning.h"
 
 namespace vsai::detail {
 

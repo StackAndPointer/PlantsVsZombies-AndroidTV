@@ -9,11 +9,11 @@
  * option) any later version.
  */
 
-#include "VSActionAIThreat.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIThreat.h"
 
-#include "VSActionAILanePolicy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAILanePolicy.h"
 
-#include "VSActionAIStrategy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIStrategy.h"
 
 #include <cmath>
 #include <algorithm>

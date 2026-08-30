@@ -9,7 +9,7 @@
  * option) any later version.
  */
 
-#include "VSActionAIState.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIState.h"
 
 #include "PvZ/Lawn/Common/GameConstants.h"
 

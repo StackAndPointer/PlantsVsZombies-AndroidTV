@@ -9,9 +9,9 @@
  * option) any later version.
  */
 
-#include "VSActionAIPlacement.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIPlacement.h"
 
-#include "VSActionAILanePolicy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAILanePolicy.h"
 
 #include "PvZ/Lawn/Board/GridItem.h"
 #include "PvZ/Lawn/Common/GameConstants.h"

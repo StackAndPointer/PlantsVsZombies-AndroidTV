@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "VSActionAIDraftPolicy.h"
+#include "PvZ/Lawn/Widget/VSActionAIDraftPolicy.h"
 
 #include "PvZ/SexyAppFramework/Buffer.h"
 #include "PvZ/SexyAppFramework/SexyAppBase.h"

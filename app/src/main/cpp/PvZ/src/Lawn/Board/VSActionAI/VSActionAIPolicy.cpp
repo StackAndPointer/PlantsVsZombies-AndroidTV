@@ -17,7 +17,7 @@
  * PlantsVsZombies-AndroidTV. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "VSActionAIPolicy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIPolicy.h"
 
 #include "PvZ/Lawn/Widget/VSSetupAddonWidget.h"
 

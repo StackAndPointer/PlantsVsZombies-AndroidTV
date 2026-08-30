@@ -39,7 +39,7 @@
 #include "PvZ/SexyAppFramework/SexyAppBase.h"
 #include "PvZ/Symbols.h"
 #include "PvZ/TodLib/Common/TodStringFile.h"
-#include "VSActionAIDraftPolicy.h"
+#include "PvZ/Lawn/Widget/VSActionAIDraftPolicy.h"
 
 #include <unistd.h>
 

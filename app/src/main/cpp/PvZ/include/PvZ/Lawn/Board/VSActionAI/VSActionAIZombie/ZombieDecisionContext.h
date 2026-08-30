@@ -20,7 +20,7 @@
 #ifndef PVZ_LAWN_BOARD_VS_ACTION_AI_ZOMBIE_DECISION_CONTEXT_H
 #define PVZ_LAWN_BOARD_VS_ACTION_AI_ZOMBIE_DECISION_CONTEXT_H
 
-#include "ZombieCardRules.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIZombie/ZombieCardRules.h"
 
 #include <array>
 

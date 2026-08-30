@@ -11,7 +11,7 @@
 
 #include "PvZ/Lawn/VSActionAIDecision.h"
 
-#include "VSActionAIStrategy.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIStrategy.h"
 
 namespace vsai {
 

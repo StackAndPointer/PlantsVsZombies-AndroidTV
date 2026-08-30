@@ -20,7 +20,7 @@
 #ifndef PVZ_LAWN_BOARD_VS_ACTION_AI_THREAT_H
 #define PVZ_LAWN_BOARD_VS_ACTION_AI_THREAT_H
 
-#include "VSActionAIState.h"
+#include "PvZ/Lawn/Board/VSActionAI/VSActionAIState.h"
 
 namespace vsai::detail {
 
