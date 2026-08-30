@@ -19,7 +19,7 @@
 
 #include "ZombieAI.h"
 
-#include "../VSActionAILanePolicy.h"
+#include "Lawn/Board/VSActionAI/VSActionAILanePolicy.h"
 
 #include <cmath>
 #include <algorithm>

@@ -19,7 +19,7 @@
 
 #include "PlantAI.h"
 
-#include "../VSActionAITacticalRules.h"
+#include "Lawn/Board/VSActionAI/VSActionAITacticalRules.h"
 
 #include "PvZ/Lawn/Common/GameConstants.h"
 #include <cmath>

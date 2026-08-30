@@ -20,7 +20,7 @@
 #ifndef PVZ_LAWN_BOARD_VS_ACTION_AI_PLANT_DECISION_CONTEXT_H
 #define PVZ_LAWN_BOARD_VS_ACTION_AI_PLANT_DECISION_CONTEXT_H
 
-#include "../VSActionAIThreat.h"
+#include "Lawn/Board/VSActionAI/VSActionAIThreat.h"
 
 #include <optional>
 

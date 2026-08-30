@@ -20,7 +20,7 @@ file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
 )
 add_library(Homura SHARED Main.cpp ${SRC_FILES})
 
-target_include_directories(Homura PRIVATE Homura/include PvZ/include)
+target_include_directories(Homura PRIVATE Homura/include PvZ/include PvZ/src)
 
 target_compile_options(Homura PRIVATE
         -Werror

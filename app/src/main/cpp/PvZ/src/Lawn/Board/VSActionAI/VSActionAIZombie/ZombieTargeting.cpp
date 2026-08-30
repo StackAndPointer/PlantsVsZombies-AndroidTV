@@ -19,7 +19,7 @@
 
 #include "ZombieAI.h"
 
-#include "../VSActionAITacticalRules.h"
+#include "Lawn/Board/VSActionAI/VSActionAITacticalRules.h"
 
 #include <cmath>
 #include <algorithm>

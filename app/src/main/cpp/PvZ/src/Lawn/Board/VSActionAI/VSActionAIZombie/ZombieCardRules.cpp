@@ -18,8 +18,8 @@
  */
 
 #include "ZombieCardRules.h"
-#include "../VSActionAICardRules.h"
-#include "../VSActionAIPolicy.h"
+#include "Lawn/Board/VSActionAI/VSActionAICardRules.h"
+#include "Lawn/Board/VSActionAI/VSActionAIPolicy.h"
 
 #include <algorithm>
 #include <initializer_list>
